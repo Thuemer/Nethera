@@ -185,5 +185,3 @@ A: Meist 5–20 Minuten. Wenn zusätzliche Paketinstallation nötig ist, kann es
 ---
 
 ### Ende
-
-Wenn du möchtest, erstelle ich dir eine angepasste Schritt‑für‑Schritt‑Anleitung für **genau dein** Router‑Modell (ggf. mit Kommandozeilen‑Befehlen). Dann nenn mir bitte Modellbezeichnung + Hardware‑Version (z. B. "Archer C7 v5").
