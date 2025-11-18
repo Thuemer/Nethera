@@ -1,4 +1,54 @@
-
 @startuml
+title Nethera
 
+package "Frontend (Web/App)" {
+    class WebUI
+
+    class AuthModule {
+        +login()
+        +register()
+        
+    }
+
+    WebUI --> "Cloud API" : REST/JSON
+    AuthModule --> "Cloud API" : Verschlüsselt (Recherche nötig)
+}
+
+package "Cloud Backend (Quarkus)" {
+    class CloudAPI {
+        +POST /config/update
+        +GET /router/status
+        +GET /profiles
+    }
+
+    class ProfileService {
+        +validateProfile()
+        +generateRouterConfig()
+    }
+
+    class RouterConnector {
+        +sendConfig(routerId, json)
+        +fetchStatus(routerId)
+    }
+
+    class PostgreSQLDB {
+        +Users
+        +Profiles
+        +RouterSettings
+        +Logs
+    }
+
+    CloudAPI --> ProfileService
+    ProfileService --> PostgreSQLDB
+    ProfileService --> RouterConnector
+}
+
+package "Router (OpenWRT)" {
+    class NetheraDaemon
+
+    class OpenWRTModules
+}
+
+NetheraDaemon --> OpenWRTModules : nutzt
+"Cloud Connector" <-- NetheraDaemon : HTTP(S)/JSON
 @enduml
