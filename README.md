@@ -55,7 +55,4 @@ npx live-server .
 
 - Pinterest: https://pin.it/2GTQ6jTph
 - Figma: https://www.figma.com/design/5G9cHovtzrnUnOK0Hz4hKx/Nethera-UI?node-id=0-1&m=dev&t=AvRlocKcx4yQaN3R-1
-<<<<<<< HEAD
 - Farbpalette: https://www.realtimecolors.com/?colors=E5EBE7-212121-144659-001818-63E5C5&fonts=Inter-Inter
-=======
->>>>>>> 84ea3f979b7f6a04b99d12b62ac84565f6f73061
