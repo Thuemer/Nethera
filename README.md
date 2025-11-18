@@ -36,6 +36,13 @@ npx serve .
 npx live-server .
 ```
 
+##Farbpalette
+- \#001818
+- \#144659
+- \#E5EBE7
+- \#63E5C5
+- \#212121 
+
 ## Mitwirkende
 
 - Deniz Bernecker
