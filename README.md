@@ -2,7 +2,7 @@
 
 <!-- Logo -->
 <p align="center">
-  <img src="Logo/Nethera-Logo.jpg" alt="Nethera Logo" width="200"/>
+  <img src="./Documentation/nethera_logo.png" alt="Nethera Logo" width="200"/>
 </p>
 
 ## Kurzbeschreibung
