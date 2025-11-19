@@ -52,7 +52,7 @@ In dieser Anleitung beschreibe ich alle drei mit klaren Schritten für Windows/m
 
    * Wähle das richtige **Target** (z. B. `ath79`, `mediatek`, `ipq807x`) und die **Hardware‑Version** (v1, v2...).
    * Wenn du unsicher bist: nimm die stabile Version (stable), nicht die snapshots, außer du weißt, was du tust.
-4. **Herunterladen:** Lade die Datei `-factory` (falls vom Hersteller‑Firmware) oder `-sysupgrade` (falls du bereits OpenWrt hast) entsprechend den Hinweise auf der Geräte‑Seite herunter.
+4. **Herunterladen:** Lade die Datei `-tftp-recovery` (falls vom Hersteller‑Firmware) oder `-sysupgrade` (falls du bereits OpenWrt hast) entsprechend den Hinweise auf der Geräte‑Seite herunter.
 
 > **Wichtig:** Die ToH‑Seite sagt dir meistens, welche Datei du für "Factory install" verwenden musst. Folge genau diesen Angaben.
 

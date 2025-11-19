@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nethera</title>
+
+  <!-- Reveal.js CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@4.4.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@4.4.0/dist/theme/white.css" id="theme">
+
+  <style>
+    :root {
+      --blue: #007acc;
+      --blue-dark: #005b99;
+      --light-bg: #f3f9fd;
+      --text: #1b1b1b;
+    }
+
+    body {
+      font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+    }
+
+    /* Reveal Global Scaling + Centering */
+    .reveal {
+      font-size: 1.1em;
+      text-align: center;
+    }
+
+    section {
+      padding: 1em 2em;
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100%;
+    }
+
+    /* Headings */
+    h1 {
+      font-size: 3.2em;
+      color: var(--blue);
+      margin-bottom: 0.3em;
+    }
+
+    h2 {
+      font-size: 2.3em;
+      color: var(--blue-dark);
+      margin-bottom: 0.8em;
+    }
+
+    h3 {
+      font-size: 1.4em;
+      margin-bottom: 0.4em;
+      color: var(--blue-dark);
+    }
+
+    p, li {
+      font-size: 1.1em;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    ul, ol {
+      padding-left: 1.5em;
+      text-align: left;
+    }
+
+    /* Layout elements */
+    .columns {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .card {
+      background: var(--light-bg);
+      padding: 1.4rem;
+      border-radius: 15px;
+      flex: 1;
+      min-width: 260px;
+      max-width: 320px;
+      text-align: left;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-top: 5px solid var(--blue);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+
+    .image-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      max-width: 1000px;
+    }
+
+    .image-right img {
+      width: 40%;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+    }
+
+    /* Ziele */
+    .goals {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-top: 2.5rem;
+      flex-wrap: wrap;
+      max-width: 1000px;
+    }
+
+    .goal {
+      text-align: center;
+      flex: 1;
+      min-width: 220px;
+      max-width: 280px;
+      padding: 1rem;
+    }
+
+    .goal-icon {
+      background: var(--light-bg);
+      border-radius: 50%;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem auto;
+      font-size: 2rem;
+      color: var(--blue);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .goal h3 {
+      color: var(--blue-dark);
+      font-size: 1.3em;
+      margin-bottom: 0.4rem;
+    }
+
+    small {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .title-logo {
+      width: 300px;
+      margin-top: 1.5rem;
+      border-radius: 12px;
+    }
+
+    .highlight {
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .fade-in {
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- TITEL -->
+      <section>
+        <h1>Nethera</h1>
+        <p><small>Projektpräsentation – Tobias Huemer, Manuel Freihaut, Deniz Bernecker, Nico Hofer, Moritz Kapeller</small></p>
+        <svg width="116" height="87" viewBox="0 0 116 87" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_d_198_141)">
+<path d="M81.156 51.3732L82 48.6197L68.3331 4L60.9109 28.0506L59 34.2871L72.6954 79L81.156 51.3732Z" fill="#1B98E0"/>
+<path d="M87.191 29L95 3L90.5316 6.97761L83.7526 13.0105C83.0996 13.5911 82.8441 14.4993 83.0949 15.3363L87.191 29Z" fill="#1B98E0"/>
+<path d="M67 2.56247C66.6129 2.20976 66.1054 2 65.5598 2H50.7643C50.2187 2 49.7112 2.20821 49.3241 2.56091V2.56402H49.321C49.033 2.82816 48.8105 3.17154 48.6931 3.56931L46.7987 9.98018L34.7983 50.6548L26 80.4764C26.381 80.8058 26.8718 81 27.3976 81H42.193C42.7219 81 43.2141 80.8042 43.5967 80.4717C43.8603 80.2433 44.0707 79.9497 44.2033 79.6094L58.1605 32.3017L67 2.56247Z" fill="#1B98E0"/>
+<path d="M111.88 10.179C111.687 9.61667 111.269 9.13626 110.69 8.88293L103.994 5.94331L97.705 3.18134C97.248 2.98053 96.7478 2.95118 96.2847 3.07012L87.7229 31.5039L81.9122 50.8315L73 80.4794C73.3859 80.8054 73.8815 81 74.4141 81H89.401C89.9352 81 90.4354 80.8038 90.8228 80.4748C91.0899 80.2462 91.303 79.9542 91.4373 79.6159L107.706 25.4995L108.041 24.3858L111.908 11.5229C112.044 11.0687 112.025 10.6022 111.881 10.182" fill="#1B98E0"/>
+<path d="M28.0321 68.3304L34 48.6914L20.4325 4.04312C20.176 3.2007 19.2327 2.7702 18.4192 3.12482L4.88299 9.02486C4.19938 9.32219 3.8474 10.0794 4.06328 10.7871L24.7907 79L28.0336 68.3304H28.0321Z" fill="#1B98E0"/>
+</g>
+<defs>
+<filter id="filter0_d_198_141" x="0" y="0" width="116" height="87" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="2"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_198_141"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_198_141" result="shape"/>
+</filter>
+</defs>
+</svg>
+      </section>
+
+      <!-- PROJEKTINFOS -->
+      <section>
+        <h2>Projektinformationen</h2>
+        <p style="max-width:800px;">Moderne, einfache und übersichtliche <strong>Netzwerkverwaltung</strong> mit zusätzlichen Features für Normalverbraucher</p>
+        <ul style="max-width:600px;">
+          <li><strong>Projektstart:</strong> 2025</li>
+          <li><strong>Technologien:</strong> OpenWRT, IPTables, BusyBox (Router); HTML, CSS, JS/TS (Frontend); Quarkus, PostgreSQL DB (Cloud)</li>
+          <li><strong>Zielgruppe:</strong> Familien, Technikinterressierte</li>
+        </ul>
+        <p style="max-width:800px;">Im folgenden Teil wird das <span class="highlight">Systemdesign</span> und die <span class="highlight">Funktionalität</span> vorgestellt.</p>
+      </section>
+
+      <!-- SYSTEM & FUNKTIONEN -->
+      <section>
+        <!-- Sub-Slide 1 -->
+        <section>
+          <div class="image-right">
+            <div style="max-width:500px;">
+              <h2>Nethera Netzwerkverwaltung</h2>
+              <p>Einfache Netzwerkkonfiguration von Handy/Computer aus - modernes & übersichtliches UI - zusätzliche fortgeschrittene Features vereinfacht</p>
+            </div>
+
+            <svg width="116" height="87" viewBox="0 0 116 87" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_d_198_141)">
+<path d="M81.156 51.3732L82 48.6197L68.3331 4L60.9109 28.0506L59 34.2871L72.6954 79L81.156 51.3732Z" fill="#1B98E0"/>
+<path d="M87.191 29L95 3L90.5316 6.97761L83.7526 13.0105C83.0996 13.5911 82.8441 14.4993 83.0949 15.3363L87.191 29Z" fill="#1B98E0"/>
+<path d="M67 2.56247C66.6129 2.20976 66.1054 2 65.5598 2H50.7643C50.2187 2 49.7112 2.20821 49.3241 2.56091V2.56402H49.321C49.033 2.82816 48.8105 3.17154 48.6931 3.56931L46.7987 9.98018L34.7983 50.6548L26 80.4764C26.381 80.8058 26.8718 81 27.3976 81H42.193C42.7219 81 43.2141 80.8042 43.5967 80.4717C43.8603 80.2433 44.0707 79.9497 44.2033 79.6094L58.1605 32.3017L67 2.56247Z" fill="#1B98E0"/>
+<path d="M111.88 10.179C111.687 9.61667 111.269 9.13626 110.69 8.88293L103.994 5.94331L97.705 3.18134C97.248 2.98053 96.7478 2.95118 96.2847 3.07012L87.7229 31.5039L81.9122 50.8315L73 80.4794C73.3859 80.8054 73.8815 81 74.4141 81H89.401C89.9352 81 90.4354 80.8038 90.8228 80.4748C91.0899 80.2462 91.303 79.9542 91.4373 79.6159L107.706 25.4995L108.041 24.3858L111.908 11.5229C112.044 11.0687 112.025 10.6022 111.881 10.182" fill="#1B98E0"/>
+<path d="M28.0321 68.3304L34 48.6914L20.4325 4.04312C20.176 3.2007 19.2327 2.7702 18.4192 3.12482L4.88299 9.02486C4.19938 9.32219 3.8474 10.0794 4.06328 10.7871L24.7907 79L28.0336 68.3304H28.0321Z" fill="#1B98E0"/>
+</g>
+<defs>
+<filter id="filter0_d_198_141" x="0" y="0" width="116" height="87" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="2"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_198_141"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_198_141" result="shape"/>
+</filter>
+</defs>
+</svg>
+          </div>
+        </section>
+
+        <!-- Sub-Slide 2 -->
+        
+      </section>
+      <section>
+        <h2>ProjektAntrag</h2>
+
+        <!-- Sub-slide with 9:16 (portrait) image -->
+        <section>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
+            <div style="width:420px;max-width:40vw;background:var(--light-bg);border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+              <img src="./Img/ProjektAntrag.png" alt="Projektantrag (Portrait)" style="width:100%;height:100%;object-fit:cover;display:block;">
+            </div>
+            <p style="max-width:720px;">Kurze Beschreibung des Projektantrags.</p>
+          </div>
+        </section>
+      </section>
+
+      <section>
+        <h2>Plakat für Tag der offenen Tür</h2>
+        <div style="display:flex;justify-content:center;">
+          <div style="width:20vw; max-height:70vh; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px; background:var(--light-bg); border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+            <img src="Img/Plakat ITP.png" alt="Plakat ITP" style="width:auto; height:auto; display:block;">
+          </div>
+        </div>
+      </section>
+
+      <section>
+        
+
+        <section>
+          <h3>Sprint Review #1 </h3>
+          <p>12.11.2025</p>
+          <img src="./Img/Sprint1/clockify.png" alt="Zeitaufzeichnung">
+        </section>
+
+        <section>
+          <h3>Verwendete Userstorys</h3>
+          <img src="./Img/Sprint1/userstory.png" style="width: 35%;" alt="Userstorys">
+        </section>
+
+        <section>
+          <h3>Frontend</h3>
+          <img src="./Img/Sprint1/frontend.png" style="width: 35%;" alt="Frontend">
+        </section>
+
+        <section>
+          <h3>Backend</h3>
+          <img src="./Img/Sprint1/backend.png" style="width: 35%;" alt="Backend">
+        </section>
+
+        <section>
+          <h3>ERD</h3>
+          <img src="../plantUML/public/ERD.svg" style="width: 35%;" alt="ERD">
+        </section>
+
+        <section>
+          <h3>Organisatorisch</h3>
+          <img src="./Img/Sprint1/organisatorisch.png" style="width: 40%;" alt="Organisatorisch">
+        </section>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Reveal.js Script -->
+  <script src="https://unpkg.com/reveal.js@4.4.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      slideNumber: true,
+      transition: 'fade',
+      width: 1280,
+      height: 720,
+      margin: 0.05,
+      minScale: 0.8,
+      maxScale: 1.2,
+      center: true
+    });
+  </script>
+</body>
+</html>

@@ -157,3 +157,5 @@ Damit bleibt `main` stabil, während du experimentierst.
 - [Medium: Understanding Git Branching](https://medium.com/@jacoblogan98/understanding-git-branching-5d01f3dda541)
 
 ---
+
+Author: Moritz Kapeller
