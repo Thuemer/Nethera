@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>step-by-step</title>
+    <link rel="stylesheet" href="../css/stepbystep.css">
+</head>
+<body>
+    <h1 id="headline">Nethera: Alles der Reihe nach...</h1>
+
+    
+<div class="grid-container">
+  <div class="grid-box">1</div>
+  <div class="grid-box">2</div>
+  <div class="grid-box">3</div>
+  <div class="grid-box">4</div>
+  <div class="grid-box">5</div>
+</div>
+
+<script>
+const dots = [
+    { x: 150, y: 200, size: 75 },
+    { x: 1200, y: 700, size: 50 },
+    { x: 375, y: 650, size: 75 },
+    { x: 900, y: 350, size: 80 },
+    { x: 1400, y: 200, size: 100 }
+];
+
+dots.forEach(d => {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.style.left = d.x + 'px';
+    dot.style.top = d.y + 'px';
+    dot.style.width = d.size + 'px';
+    dot.style.height = d.size + 'px';
+    document.body.appendChild(dot);
+});
+</script>
+
+
+</body>
+</html>
