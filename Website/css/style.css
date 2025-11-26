@@ -1,0 +1,68 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #212121;
+    color: white;
+    font-family: "Roboto", sans-serif;
+}
+
+/* Headline */
+
+#headline {
+    display: flex;
+    background-color: #1B7B7B;
+    top: 0;
+    padding-left: 5vw;
+    padding-top: 4vh;
+    padding-bottom: 4vh;
+}
+
+#nethera-logo {
+    padding-right: 0.6vw;
+}
+
+/* Text */
+
+#text {
+    padding-top: 15vh;
+    padding-left: 8vw;
+}
+
+#text h1 {
+    font-size: 5rem;
+}
+
+#text h2 {
+    font-size: 2rem;
+}
+
+/* Farbverlauf hinter Router */
+
+.router-wrapper {
+    position: relative;
+    margin-left: 20vw;
+}
+
+.router-wrapper::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    transform: translate(-50%, -50%);
+    z-index: -1;
+
+    background: radial-gradient(
+    circle,
+        rgba(0, 230, 165, 0.55) 100%,
+        rgba(0, 230, 165, 0.18) 40%,
+        rgba(0, 230, 165, 0.05) 70%,
+        rgba(0, 230, 165, 0) 100%
+    );
+
+  filter: blur(60px); 
+}
