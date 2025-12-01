@@ -113,12 +113,12 @@ boxes.forEach(box => {
         boxes.forEach(b => b.classList.remove('expanded'));
 
         if (alreadyOpen) {
-            container.classList.remove('showExpanded');   // ✨ Container zurücksetzen
+            container.classList.remove('showExpanded'); 
             return;
         }
 
         box.classList.add('expanded');
-        container.classList.add('showExpanded');          // ✨ Nur 1 Box sichtbar
+        container.classList.add('showExpanded');         
     });
 });
 
