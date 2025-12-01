@@ -24,10 +24,13 @@
         </div>
 
         <div class="expandedContent">
-            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <h2>Router auswählen:</h2>
-            <p>Wählen Sie einen Router Ihrer Wahl aus der bereitgestellten Liste aus: <a style="text-decoration: none; color: rgba(0,255,204,0.2); cursor: grab;" href="step_by_step.html">Router-bestellen</a> <br> 
-            Infos zu den Features finden Sie auf unserer <a style="text-decoration: none; color: rgba(0,255,204,0.2); cursor: grab;" href="features.html">Features-Seite</a></p>
+            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
+            <img class="expandedImage" src="../images/StepbyStep/Wähle_einen_Router.png" alt="Illustration">
+            <div>
+            <p>Wählen Sie einen Router Ihrer Wahl aus <br> der bereitgestellten Liste aus: <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="step_by_step.html">Router-bestellen</a> <br> 
+            Infos zu den Features finden Sie auf unserer <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="features.html">Features-Seite</a></p>
+        </div>
         </div>
     </div>
 
@@ -45,8 +48,11 @@
         <div class="expandedContent">
             <h2>Router bestellen:</h2>
             <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
-            <p>Sie werden mit diesem <a style="text-decoration: none; color: rgba(0,255,204,0.2); cursor: grab;" href="step_by_step.html">Link</a> auf unsere Bestellseite weitergeleitet. <br>
+            <img class="expandedImage" src="../images/StepbyStep/Router_bestellen.png" alt="Illustration">
+            <div>
+            <p>Sie werden mit diesem <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="step_by_step.html">Link</a> auf unsere Bestellseite weitergeleitet. <br>
             Nach der Lieferung des Routers können Sie einen Schritt weitergehen...</p>
+        </div>
         </div>
     </div>
 
@@ -62,10 +68,13 @@
         </div>
 
         <div class="expandedContent">
-            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <h2>App herunterladen:</h2>
+            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
+            <img class="expandedImage" src="../images/StepbyStep/Nethera_App_Laden.png" alt="Illustration">
+            <div>
             <p>Öffnen Sie ihren App-Store auf ihrem Handy oder Laptop 
             <br> Suchen Sie die Nethera-App und laden Sie diese herunter.</p>
+        </div>
         </div>
     </div>
 
@@ -74,17 +83,19 @@
         <div class="defaultContent">
             <img class="numbersInBox" src="../images/StepbyStep/number-circle-four.svg" alt="Four">
             <div class="gridDesc">Registrieren</div>
-
             <div class="numbersInBoxBottomWrap">
                 <img class="numbersInBoxBottom" src="../images/StepbyStep/Registrieren.png" alt="Illustration">
             </div>
         </div>
 
         <div class="expandedContent">
-            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <h2>Registrieren:</h2>
+            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
+            <img class="expandedImage" src="../images/StepbyStep/Registrieren.png" alt="Illustration">
+            <div>
             <p>Erstellen Sie sich in der App ein neues Konto. 
             <br> Benutzen Sie ein starkes Passwort um ihr Heimnetzwerk gut zu schützen!</p>
+        </div>
         </div>
     </div>
 
@@ -100,11 +111,13 @@
         </div>
 
         <div class="expandedContent">
-            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <h2>Router verbinden:</h2>
-            <p>Folgen Sie nun unserer detaillierten Anleitung um sich mit dem Router zu verbinden. <br>
-            Alles im Überblick. Alles unter Kontrolle. Nethera.
+            <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
+            <img class="expandedImage" src="../images/StepbyStep/Router_verbinden.png" alt="Illustration">
+            <div>
+            <p>Folgen Sie nun unserer detaillierten Anleitung <br> um sich mit dem Router zu verbinden. 
             </p>
+        </div>
         </div>
     </div>
 
@@ -116,20 +129,27 @@
 const container = document.querySelector('.grid-container');
 const boxes = document.querySelectorAll('.grid-box');
 
-boxes.forEach(box => {
-    box.addEventListener('click', () => {
+function focusBox(index) {
+    boxes.forEach((box, i) => {
+        box.classList.remove('active', 'neighbor', 'hidden');
 
-        const alreadyOpen = box.classList.contains('expanded');
-
-        boxes.forEach(b => b.classList.remove('expanded'));
-
-        if (alreadyOpen) {
-            container.classList.remove('showExpanded'); 
-            return;
+        if (i === index) {
+            box.classList.add('active');
+        } else if (i === index - 1 || i === index + 1) {
+            box.classList.add('neighbor');
+        } else {
+            box.classList.add('hidden');
         }
+    });
+}
 
-        box.classList.add('expanded');
-        container.classList.add('showExpanded');         
+boxes.forEach((box, index) => {
+    box.addEventListener('click', () => {
+        if (box.classList.contains('active')) {
+            boxes.forEach(b => b.classList.remove('active', 'neighbor', 'hidden'));
+        } else {
+            focusBox(index);
+        }
     });
 });
 
