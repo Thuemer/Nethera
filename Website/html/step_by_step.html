@@ -7,18 +7,122 @@
     <link rel="stylesheet" href="../css/stepbystep.css">
 </head>
 <body>
-    <h1 id="headline">Nethera: Alles der Reihe nach...</h1>
 
-    
+<h1 id="headline">Nethera: Alles der Reihe nach...</h1>
+
 <div class="grid-container">
-  <div class="grid-box">1</div>
-  <div class="grid-box">2</div>
-  <div class="grid-box">3</div>
-  <div class="grid-box">4</div>
-  <div class="grid-box">5</div>
+
+    <!-- BOX 1 -->
+    <div class="grid-box">
+        <div class="defaultContent">
+            <img class="numbersInBox" src="../images/StepbyStep/number-circle-one.svg" alt="One">
+            <div class="gridDesc">Wähle einen Router</div>
+
+            <div class="numbersInBoxBottomWrap">
+                <img class="numbersInBoxBottom" src="../images/StepbyStep/Wähle_einen_Router.png" alt="Illustration">
+            </div>
+        </div>
+
+        <div class="expandedContent">
+            <h2>Router auswählen</h2>
+            <p>Hier erscheint der vollständige Text, wenn die Box geöffnet wird.</p>
+        </div>
+    </div>
+
+    <!-- BOX 2 -->
+    <div class="grid-box">
+        <div class="defaultContent">
+            <img class="numbersInBox" src="../images/StepbyStep/number-circle-two.svg" alt="Two">
+            <div class="gridDesc">Router bestellen</div>
+
+            <div class="numbersInBoxBottomWrap">
+                <img class="numbersInBoxBottom" src="../images/StepbyStep/Router_bestellen.png" alt="Illustration">
+            </div>
+        </div>
+
+        <div class="expandedContent">
+            <h2>Router bestellen</h2>
+            <p>Informationen zum Bestellprozess erscheinen hier.</p>
+        </div>
+    </div>
+
+    <!-- BOX 3 -->
+    <div class="grid-box">
+        <div class="defaultContent">
+            <img class="numbersInBox" src="../images/StepbyStep/number-circle-three.svg" alt="Three">
+            <div class="gridDesc">App herunterladen</div>
+
+            <div class="numbersInBoxBottomWrap">
+                <img class="numbersInBoxBottom" src="../images/StepbyStep/Nethera_App_Laden.png" alt="Illustration">
+            </div>
+        </div>
+
+        <div class="expandedContent">
+            <h2>App herunterladen</h2>
+            <p>Hier steht der Aufklapptext über die App.</p>
+        </div>
+    </div>
+
+    <!-- BOX 4 -->
+    <div class="grid-box">
+        <div class="defaultContent">
+            <img class="numbersInBox" src="../images/StepbyStep/number-circle-four.svg" alt="Four">
+            <div class="gridDesc">Registrieren</div>
+
+            <div class="numbersInBoxBottomWrap">
+                <img class="numbersInBoxBottom" src="../images/StepbyStep/Registrieren.png" alt="Illustration">
+            </div>
+        </div>
+
+        <div class="expandedContent">
+            <h2>Registrieren</h2>
+            <p>Hier stehen Infos zum Account.</p>
+        </div>
+    </div>
+
+    <!-- BOX 5 -->
+    <div class="grid-box">
+        <div class="defaultContent">
+            <img class="numbersInBox" src="../images/StepbyStep/number-circle-five.svg" alt="Five">
+            <div class="gridDesc">Router verbinden</div>
+
+            <div class="numbersInBoxBottomWrap">
+                <img class="numbersInBoxBottom" src="../images/StepbyStep/Router_verbinden.png" alt="Illustration">
+            </div>
+        </div>
+
+        <div class="expandedContent">
+            <h2>Router verbinden</h2>
+            <p>Hier erscheinen Verbindungshinweise.</p>
+        </div>
+    </div>
+
 </div>
 
 <script>
+   
+
+const container = document.querySelector('.grid-container');
+const boxes = document.querySelectorAll('.grid-box');
+
+boxes.forEach(box => {
+    box.addEventListener('click', () => {
+
+        const alreadyOpen = box.classList.contains('expanded');
+
+        boxes.forEach(b => b.classList.remove('expanded'));
+
+        if (alreadyOpen) {
+            container.classList.remove('showExpanded');   // ✨ Container zurücksetzen
+            return;
+        }
+
+        box.classList.add('expanded');
+        container.classList.add('showExpanded');          // ✨ Nur 1 Box sichtbar
+    });
+});
+
+
 const dots = [
     { x: 150, y: 200, size: 75 },
     { x: 1200, y: 700, size: 50 },
@@ -36,8 +140,7 @@ dots.forEach(d => {
     dot.style.height = d.size + 'px';
     document.body.appendChild(dot);
 });
+
 </script>
-
-
 </body>
 </html>
