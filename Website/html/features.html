@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features</title>
+    <link rel="stylesheet" href="../css/features.css">
+    
+</head>
+<body>
+    
+<div class="container">
+
+    <!-- AD-Blocker -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>AD-Blocker - ganz leicht</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Blockiert Werbung auf allen Geräten im Netzwerk.</span>
+        </div>
+
+        <div class="box-content">
+            <p>
+                Filtert Werbung im Internet, sorgt für schnelleres Surfen und mehr Datenschutz.
+                Schützt automatisch alle Geräte im Netzwerk, ohne einzelne Apps anpassen zu müssen.
+            </p>
+        </div>
+    </div>
+
+    <!-- Priorisierung -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Priorisierung - Leistung verteilen</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Bestimme, welches Gerät mehr Internetleistung erhält.</span>
+        </div>
+
+        <div class="box-content">
+            <p>
+                Du entscheidest, welches Gerät im Netzwerk mehr Internetleistung bekommt.
+                Andere Geräte bekommen dann weniger, damit das wichtigste Gerät immer flüssig läuft – beim Streamen, Gaming oder Arbeiten.
+            </p>
+        </div>
+    </div>
+
+    <!-- Blacklists -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Blacklists - Websites sperren</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Bestimme, welche Websites im Netzwerk blockiert werden.</span>
+        </div>
+
+        <div class="box-content">
+            <p>
+                Sperre unerwünschte oder gefährliche Websites für alle Geräte im Netzwerk.
+                Perfekt für Eltern, Firmen oder Gäste-Netzwerke.
+            </p>
+        </div>
+    </div>
+
+    <!-- Zeitbeschränkung -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Zeitbeschränkung - Internetsperre planen</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Lege fest, wann Internet erlaubt oder gesperrt ist.</span>
+        </div>
+
+        <div class="box-content">
+            <p>
+                Plane Internetsperren automatisch zu bestimmten Zeiten.
+                Ideal für Kindergeräte, Arbeitszeiten oder Nachtruhe.
+            </p>
+        </div>
+    </div>
+
+    <!-- Mobile Verwaltung -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Mobile Verwaltung - Smartphone Steuerung</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Alle Funktionen einfach per Smartphone steuern.</span>
+        </div>
+
+        <div class="box-content">
+            <p>
+                Steuere dein gesamtes Netzwerk bequem über eine mobile App.
+                Von überall Geräte verwalten, Regeln setzen oder Statistiken abrufen.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+    <script>
+
+        document.querySelectorAll(".container-box").forEach(box => {
+            const header = box.querySelector(".flex");
+            const content = box.querySelector(".box-content");
+            const caret = box.querySelector(".caret-down");
+            const preview = box.querySelector(".preview");
+
+            header.addEventListener("click", () => {
+
+                if (content.style.maxHeight) {
+                    // Zuklappen
+                    content.style.maxHeight = null;
+                    caret.classList.remove("caret-rotated");
+
+                    // Preview wieder anzeigen
+                    preview.style.opacity = 1;
+                } else {
+                    // Aufklappen
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    caret.classList.add("caret-rotated");
+
+                    // Preview ausblenden
+                    preview.style.opacity = 0;
+                }
+            });
+        });
+
+
+
+
+
+        const dots = [
+            { x: 150, y: 200, size: 75 },
+            { x: 1200, y: 700, size: 50 },
+            { x: 375, y: 650, size: 75 },
+            { x: 900, y: 350, size: 80 },
+            { x: 1400, y: 200, size: 100 }
+        ];
+
+        dots.forEach(d => {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            dot.style.left = d.x + 'px';
+            dot.style.top = d.y + 'px';
+            dot.style.width = d.size + 'px';
+            dot.style.height = d.size + 'px';
+            document.body.appendChild(dot);
+        });
+
+    </script>
+
+</body>
+</html>
