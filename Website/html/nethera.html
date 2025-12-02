@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>step-by-step</title>
-    <link rel="stylesheet" href="../css/stepbystep.css">
+    <link rel="stylesheet" href="../css/nethera.css">
+    <script src="../js/nethera.js" defer></script>
 </head>
 <body>
 
@@ -29,7 +30,7 @@
             <img class="expandedImage" src="../images/StepbyStep/Wähle_einen_Router.png" alt="Illustration">
             <div>
             <p>Wählen Sie einen Router Ihrer Wahl aus <br> der bereitgestellten Liste aus: <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="step_by_step.html">Router-bestellen</a> <br> 
-            Infos zu den Features finden Sie auf unserer <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="features.html">Features-Seite</a></p>
+            Infos zu den Features finden Sie auf unserer <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="nethera.html">Features-Seite</a></p>
         </div>
         </div>
     </div>
@@ -233,85 +234,5 @@
     </div>
 
 </div>
-
-
-
-<script>
-   
-
-const container = document.querySelector('.grid-container');
-const boxes = document.querySelectorAll('.grid-box');
-
-function focusBox(index) {
-    boxes.forEach((box, i) => {
-        box.classList.remove('active', 'neighbor', 'hidden');
-
-        if (i === index) {
-            box.classList.add('active');
-        } else if (i === index - 1 || i === index + 1) {
-            box.classList.add('neighbor');
-        } else {
-            box.classList.add('hidden');
-        }
-    });
-}
-
-boxes.forEach((box, index) => {
-    box.addEventListener('click', () => {
-        if (box.classList.contains('active')) {
-            boxes.forEach(b => b.classList.remove('active', 'neighbor', 'hidden'));
-        } else {
-            focusBox(index);
-        }
-    });
-});
-
-   document.querySelectorAll(".container-box").forEach(box => {
-            const header = box.querySelector(".flex");
-            const content = box.querySelector(".box-content");
-            const caret = box.querySelector(".caret-down");
-            const preview = box.querySelector(".preview");
-
-            header.addEventListener("click", () => {
-
-                if (content.style.maxHeight) {
-                    // Zuklappen
-                    content.style.maxHeight = null;
-                    caret.classList.remove("caret-rotated");
-
-                    // Preview wieder anzeigen
-                    preview.style.opacity = 1;
-                } else {
-                    // Aufklappen
-                    content.style.maxHeight = content.scrollHeight + "px";
-                    caret.classList.add("caret-rotated");
-
-                    // Preview ausblenden
-                    preview.style.opacity = 0;
-                }
-            });
-        });
-
-
-
-const dots = [
-    { x: 150, y: 200, size: 75 },
-    { x: 1200, y: 700, size: 50 },
-    { x: 375, y: 650, size: 75 },
-    { x: 900, y: 350, size: 80 },
-    { x: 1400, y: 200, size: 100 }
-];
-
-dots.forEach(d => {
-    const dot = document.createElement('div');
-    dot.className = 'dot';
-    dot.style.left = d.x + 'px';
-    dot.style.top = d.y + 'px';
-    dot.style.width = d.size + 'px';
-    dot.style.height = d.size + 'px';
-    document.body.appendChild(dot);
-});
-
-</script>
 </body>
 </html>
