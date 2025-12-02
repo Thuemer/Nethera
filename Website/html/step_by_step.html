@@ -123,6 +123,119 @@
 
 </div>
 
+<h1 id="headline1">Wir bieten diese features</h1>
+
+<div class="container">
+
+    <!-- AD-Blocker -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>AD-Blocker - ganz leicht</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Blockiert Werbung auf allen Geräten im Netzwerk.</span>
+        </div>
+
+        <div class="box-content">
+            <img class="info-icon-open" src="../images/info.svg" alt="Info">
+            <p>
+                Filtert Werbung im Internet, sorgt für schnelleres Surfen und mehr Datenschutz.
+                Schützt automatisch alle Geräte im Netzwerk, ohne einzelne Apps anpassen zu müssen.
+            </p>
+        </div>
+    </div>
+
+    <!-- Priorisierung -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Priorisierung - Leistung verteilen</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Bestimme, welches Gerät mehr Internetleistung erhält.</span>
+        </div>
+
+        <div class="box-content">
+            <img class="info-icon-open" src="../images/info.svg" alt="Info">
+            <p>
+                Du entscheidest, welches Gerät im Netzwerk mehr Internetleistung bekommt.
+                Andere Geräte bekommen dann weniger, damit das wichtigste Gerät immer flüssig läuft – beim Streamen, Gaming oder Arbeiten.
+            </p>
+        </div>
+    </div>
+
+    <!-- Blacklists -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Blacklists - Websites sperren</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Bestimme, welche Websites im Netzwerk blockiert werden.</span>
+        </div>
+
+        <div class="box-content">
+            <img class="info-icon-open" src="../images/info.svg" alt="Info">
+            <p>
+                Sperre unerwünschte oder gefährliche Websites für alle Geräte im Netzwerk.
+                Perfekt für Eltern, Firmen oder Gäste-Netzwerke.
+            </p>
+        </div>
+    </div>
+
+    <!-- Zeitbeschränkung -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Zeitbeschränkung - Internetsperre planen</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Lege fest, wann Internet erlaubt oder gesperrt ist.</span>
+        </div>
+
+        <div class="box-content">
+            <img class="info-icon-open" src="../images/info.svg" alt="Info">
+            <p>
+                Plane Internetsperren automatisch zu bestimmten Zeiten.
+                Ideal für Kindergeräte, Arbeitszeiten oder Nachtruhe.
+            </p>
+        </div>
+    </div>
+
+    <!-- Mobile Verwaltung -->
+    <div class="container-box">
+        <div class="flex">
+            <h1>Mobile Verwaltung - Smartphone Steuerung</h1>
+            <img class="caret-down" src="../images/caret-down.svg">
+        </div>
+
+        <div class="preview">
+            <img class="info-icon" src="../images/info.svg" alt="Info">
+            <span>Alle Funktionen einfach per Smartphone steuern.</span>
+        </div>
+
+        <div class="box-content">
+            <img class="info-icon-open" src="../images/info.svg" alt="Info">
+            <p>
+                Steuere dein gesamtes Netzwerk bequem über eine mobile App.
+                Von überall Geräte verwalten, Regeln setzen oder Statistiken abrufen.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+
+
 <script>
    
 
@@ -152,6 +265,33 @@ boxes.forEach((box, index) => {
         }
     });
 });
+
+   document.querySelectorAll(".container-box").forEach(box => {
+            const header = box.querySelector(".flex");
+            const content = box.querySelector(".box-content");
+            const caret = box.querySelector(".caret-down");
+            const preview = box.querySelector(".preview");
+
+            header.addEventListener("click", () => {
+
+                if (content.style.maxHeight) {
+                    // Zuklappen
+                    content.style.maxHeight = null;
+                    caret.classList.remove("caret-rotated");
+
+                    // Preview wieder anzeigen
+                    preview.style.opacity = 1;
+                } else {
+                    // Aufklappen
+                    content.style.maxHeight = content.scrollHeight + "px";
+                    caret.classList.add("caret-rotated");
+
+                    // Preview ausblenden
+                    preview.style.opacity = 0;
+                }
+            });
+        });
+
 
 
 const dots = [
