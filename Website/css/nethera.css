@@ -215,6 +215,8 @@ body {
     padding-bottom: 4vh;
     width: 100%;
     position: static; 
+    color: white;
+    font-family: "Roboto", sans-serif;
 }
 
 
