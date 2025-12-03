@@ -5,6 +5,7 @@ body {
     padding: 0;
     text-align: center;
     overflow-x: hidden;
+    
 }
 
 
@@ -262,5 +263,91 @@ body {
     font-size: 5rem;
     text-align: center;
     margin-top: 5vw;
+}
+
+
+
+#nethera-logo {
+    padding-right: 0.6vw;
+}
+
+
+#text {
+    padding-top: 15vh;
+    padding-left: 8vw;
+    color: white;
+    text-align: left;
+}
+
+#text h1 {
+    font-size: 5rem;
+}
+
+#text h2 {
+    font-size: 2rem;
+    font-weight: 100;
+}
+
+
+.router-wrapper {
+    margin-top: 0vw;
+    margin-left: 40vw;
+}
+
+.nethera-router {
+    position: absolute;
+    left: 52.5vw;
+    top: 28.5vh;   
+    width: 23.5vw;
+    z-index: 5;  
+}
+
+
+.router-wrapper::before {
+    content: "";
+    position: absolute;
+    width: 250px;
+    height: 200px;
+    transform: translate(-90%, -90%);
+    z-index: -1;
+
+    background: radial-gradient(
+    circle,
+        rgba(99, 229, 197, 1) 100%,
+        rgba(0, 230, 165, 0.18) 40%,
+        rgba(0, 230, 165, 0.05) 70%,
+        rgba(0, 230, 165, 0) 100%
+    );
+
+  filter: blur(70px); 
+}
+
+/* Button */
+
+.button {
+    margin-top: 5vh;
+    background: linear-gradient(135deg, #144659, #63E5C5);
+    border-radius: 12px;
+    width: 8vw;
+    height: 6vh;
+
+    display: flex;
+    justify-content: center; 
+    align-items: center;     
+
+    padding: 0 1rem;          
+    text-align: center;
+
+    font-weight: bold;
+    font-size: larger;
+}
+
+/* Linie mit Farbverlauf */
+
+.line {
+    width: 100%;
+    height: 3vh;
+    background: linear-gradient(135deg, #144659, #63E5C5);
+    margin-top: 25vh;
 }
 

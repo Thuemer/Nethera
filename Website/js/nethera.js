@@ -75,3 +75,45 @@ for (let r = 0; r < repeats; r++) {
         document.body.appendChild(dot);
     });
 }
+
+
+
+function smoothScrollTo(element) {
+  const targetY = element.getBoundingClientRect().top + window.pageYOffset;
+  const startY = window.pageYOffset;
+  const distance = targetY - startY;
+  const duration = 1000; // ms
+  let start = null;
+
+  function step(timestamp) {
+    if (!start) start = timestamp;
+    const progress = timestamp - start;
+    const ease = 1 - Math.pow(1 - progress / duration, 3); // easeOutCubic
+    window.scrollTo(0, startY + distance * ease);
+    if (progress < duration) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('more-btn');
+  const target = document.getElementById('steps');
+
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    smoothScrollTo(target);
+  });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  const featuresLink = document.getElementById('features-link');
+  const target2 = document.getElementById('steps2'); // Ziel-Section
+
+  if (featuresLink && target2) {
+    featuresLink.addEventListener('click', e => {
+      e.preventDefault();
+      smoothScrollTo(target2);
+    });
+  }
+});
