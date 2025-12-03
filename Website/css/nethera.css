@@ -2,7 +2,6 @@ body {
     background: #212121;
     font-family: "Roboto", sans-serif;
     margin: 0;
-    margin-top: 10vw;
     padding: 0;
     text-align: center;
     overflow-x: hidden;
@@ -205,6 +204,22 @@ body {
     object-fit: contain;
 }
 
+
+#headlineHead {
+    display: flex;
+    background-color: #1B7B7B;
+    margin-top: 0;
+    padding-left: 5vw;
+    padding-top: 4vh;
+    padding-bottom: 4vh;
+    width: 100%;
+    position: static; 
+}
+
+
+#nethera-logo {
+    padding-right: 0.6vw;
+}
 
 .container-box {
     border-color: cyan;
