@@ -107,7 +107,7 @@ body {
 
 .grid-box.active {
     flex: 0 0 55%; 
-    height: 30vw; 
+    height: 32.5vw; 
 }
 
 .grid-box.neighbor {
