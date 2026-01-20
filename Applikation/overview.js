@@ -103,6 +103,8 @@ const cards = Array.from(document.querySelectorAll('.card'));
 const buttons = document.querySelectorAll(".bottom-nav button");
 
 function fitCardsPool() {
+        if (editMode) return;
+
     const dashboard = document.querySelector('.dashboard');
     const visibleCards = cards.filter(c => !c.classList.contains('hidden'));
     const gap = 20;
@@ -186,3 +188,110 @@ buttons.forEach(button => {
 // Laden & Resize
 window.addEventListener("load", fitCardsPool);
 window.addEventListener("resize", fitCardsPool);
+
+
+let editMode = false;
+
+document.getElementById("editToggle").onclick = () => {
+    editMode = !editMode;
+    document.body.classList.toggle("edit-mode", editMode);
+
+    if (!editMode) saveLayout();
+};
+
+
+cards.forEach(card => {
+    let offsetX, offsetY, dragging = false;
+
+    card.addEventListener("mousedown", e => {
+        if (!editMode) return;
+        dragging = true;
+        offsetX = e.clientX - card.offsetLeft;
+        offsetY = e.clientY - card.offsetTop;
+        card.style.zIndex = 1000;
+    });
+
+    document.addEventListener("mousemove", e => {
+        if (!dragging) return;
+        card.style.left = `${e.clientX - offsetX}px`;
+        card.style.top = `${e.clientY - offsetY}px`;
+    });
+
+    document.addEventListener("mouseup", () => {
+        dragging = false;
+        card.style.zIndex = "";
+    });
+});
+ 
+
+cards.forEach(card => {
+    const handle = document.createElement("div");
+    handle.className = "resize-handle";
+    card.appendChild(handle);
+
+    let resizing = false;
+
+    handle.addEventListener("mousedown", e => {
+        if (!editMode) return;
+        e.stopPropagation();
+        resizing = true;
+    });
+
+    document.addEventListener("mousemove", e => {
+        if (!resizing) return;
+        card.style.width = `${e.clientX - card.offsetLeft}px`;
+        card.style.height = `${e.clientY - card.offsetTop}px`;
+    });
+
+    document.addEventListener("mouseup", () => resizing = false);
+});
+
+
+function saveLayout() {
+    const layout = {};
+    cards.forEach(card => {
+        layout[card.dataset.section] = {
+            left: card.style.left,
+            top: card.style.top,
+            width: card.style.width,
+            height: card.style.height
+        };
+    });
+    localStorage.setItem("dashboardLayout", JSON.stringify(layout));
+}
+
+
+function loadLayout() {
+    const saved = JSON.parse(localStorage.getItem("dashboardLayout"));
+    if (!saved) return;
+
+    cards.forEach(card => {
+        const l = saved[card.dataset.section];
+        if (!l) return;
+
+        Object.assign(card.style, l);
+        card.style.position = "absolute";
+    });
+}
+
+window.addEventListener("load", loadLayout);
+
+
+document.getElementById("resetLayout").onclick = () => {
+    localStorage.removeItem("dashboardLayout");
+
+    editMode = false;
+    document.body.classList.remove("edit-mode");
+
+    cards.forEach(card => {
+        card.style.left = "";
+        card.style.top = "";
+        card.style.width = "";
+        card.style.height = "";
+        card.style.position = "";
+        card.style.zIndex = "";
+    });
+
+    setTimeout(fitCardsPool, 50);
+};
+
