@@ -26,7 +26,7 @@ function drawLines(){
     line.setAttribute("y1",rY);
     line.setAttribute("x2",gX);
     line.setAttribute("y2",gY);
-    line.setAttribute("stroke","#0ff");
+    line.setAttribute("stroke","#2FB09A");
     line.setAttribute("stroke-width","2");
     line.setAttribute("stroke-opacity","0.7");
     svg.appendChild(line);
@@ -41,7 +41,7 @@ function drawLines(){
       l.setAttribute("y1",gY);
       l.setAttribute("x2",dX);
       l.setAttribute("y2",dY);
-      l.setAttribute("stroke","#0ff");
+      l.setAttribute("stroke","#2FB09A");
       l.setAttribute("stroke-width","2");
       l.setAttribute("stroke-opacity","0.7");
       svg.appendChild(l);

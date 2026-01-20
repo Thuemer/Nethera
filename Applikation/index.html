@@ -12,15 +12,16 @@
         #home { display: flex; height:100%; }
 
         /* Navigation (collapsible) */
-        #nav-bar { width: 240px; background:#1e1e1e; color:#fff; padding:16px; box-sizing:border-box; position:relative; transition: width 200ms ease; overflow:hidden; }
+        #nav-bar { width: 240px; background:#144659; color:#fff; padding:16px; box-sizing:border-box; position:relative; transition: width 200ms ease; overflow:visible; }
         #nav-bar.collapsed { width: 68px; }
 
-        #nav-bar .brand { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        /* Brand: make background span full width of the nav (continuous color) */
+        #nav-bar .brand { display:flex; align-items:center; gap:10px; margin: -16px -16px 12px -16px; background:#2FB09A; padding:12px 16px; border-radius:0; }
         #nav-bar .brand img { width:36px; height:36px; display:block; }
-        #nav-bar .brand .name { font-size:18px; font-weight:700; color:#fff; }
+        #nav-bar .brand .name { font-size:28px; font-weight:800; color:#ffffff; }
         #nav-bar.collapsed .brand .name { display:none; }
 
-        #nav-toggle { position:absolute; top:12px; right:-12px; background:rgba(255,255,255,0.04); border:0; color:#cfd6da; cursor:pointer; font-size:14px; padding:6px 8px; border-radius:6px; z-index:20; }
+        #nav-toggle { position:absolute; top:12px; right:-20px; background:rgba(255,255,255,0.04); border:0; color:#cfd6da; cursor:pointer; font-size:14px; padding:6px 8px; border-radius:6px; z-index:1000; pointer-events:auto; }
 
         #nav-bar h3.section-title { margin:8px 0 6px 0; font-size:12px; text-transform:uppercase; letter-spacing:0.6px; color:#9aa0a6; }
         #nav-bar.collapsed h3.section-title span.title-text { display:none; }
