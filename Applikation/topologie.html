@@ -1,1 +1,48 @@
-nico file
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Netzwerk-Topologie mit Gruppen</title>
+<link rel="stylesheet" href="topologie.css">
+</head>
+<body>
+
+<div id="topology">
+  <img src="router.png" id="router">
+
+  <!-- Gruppenknoten -->
+  <div class="group" data-group="Kinder">Kinder</div>
+  <div class="group" data-group="Eltern">Eltern</div>
+  <div class="group" data-group="Alle">Alle</div>
+
+  <!-- Geräte -->
+  <div class="device" data-name="Manu's iPhone" data-time="600" data-group="Kinder"></div>
+  <div class="device" data-name="PC Wohnzimmer" data-time="3320" data-group="Kinder"></div>
+  <div class="device" data-name="PS5" data-time="3912" data-group="Kinder"></div>
+
+  <div class="device" data-name="Lena's Laptop" data-time="1260" data-group="Eltern"></div>
+  <div class="device" data-name="Tablet Küche" data-time="612" data-group="Eltern"></div>
+
+  <div class="device" data-name="Smart TV" data-time="12300" data-group="Alle"></div>
+  <div class="device" data-name="NAS" data-time="18000" data-group="Alle"></div>
+
+  <svg id="lines"></svg>
+
+  <!-- Edit Box -->
+  <div class="edit-box" id="edit-box">
+    <input type="text" id="edit-name" placeholder="Name">
+    <input type="text" id="edit-group" placeholder="Gruppe">
+    <button id="edit-save">Speichern</button>
+  </div>
+</div>
+
+<!-- Bottom Info -->
+<div id="bottom-info">
+  <button id="prev-device">&lt;</button>
+  <div id="device-detail"></div>
+  <button id="next-device">&gt;</button>
+</div>
+
+<script src="topologie.js"></script>
+</body>
+</html>
