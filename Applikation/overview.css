@@ -1,0 +1,178 @@
+/* RESET */
+* {
+    box-sizing: border-box;
+    font-family: system-ui, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #212121;
+    color: #fff;
+    overflow: hidden; /* KEIN Scrollen */
+}
+
+/* ROUTER BOX */
+.router-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.router-right {
+    text-align: right;
+}
+
+.online {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4ade80;
+    font-weight: 500;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+}
+
+.count {
+    font-size: 22px;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+/* DASHBOARD POOL */
+.dashboard {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    transform: translate(5vw, 1.5vw);
+}
+
+
+/* CARD */
+.card {
+    background: #1c1f1e;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 120px;   /* kompakt von Anfang an */
+    min-height: 80px;   /* kompakt */
+    transition: all 0.5s ease; /* smooth Größe & Position */
+    opacity: 1;
+}
+
+.card.hidden {
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+}
+
+/* CARD HEADER */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.icon {
+    font-size: 20px;
+    color: #6ee7c8;
+}
+
+/* FEATURES */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.feature-list li {
+    padding-left: 2vw;
+    margin: 1.75vw 0;
+    position: relative;
+    transform: translateY();
+}
+
+.feature-list li::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    position: absolute;
+    left: 0;
+    top: 6px;
+}
+
+.ok::before { background: #4ade80; }
+.bad::before { background: #f87171; }
+
+/* ACTIVITY */
+.activity {
+    background: #fff;
+    color: #000;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
+
+.activity.ok {
+    background: #6ee7c8;
+}
+
+.activity.warn {
+    background: #facc15;
+}
+
+/* DNS */
+.dns div {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+}
+
+/* LEGEND */
+.legend {
+    margin-top: 10px;
+}
+
+.upload { color: #3b82f6; margin-right: 10px; }
+.download { color: #6ee7c8; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+}
+
+.bottom-nav button {
+    background: #134e4a;
+    border: none;
+    color: #fff;
+    border-radius: 14px;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.bottom-nav button.active {
+    background: #2dd4bf;
+}
