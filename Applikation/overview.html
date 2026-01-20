@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="overview.css">
 </head>
 <body>
+
+
 <div class="dashboard">
 
     <!-- Status-->
@@ -18,7 +20,7 @@
     <div class="router-box">
         <div>
             <div>Status</div>
-            <div>Verbundene Geräte</div>
+            <div class="under">Verbundene Geräte</div>
         </div>
 
         <div class="router-right">
@@ -65,11 +67,12 @@
             <h2>Aktivität</h2>
             <span class="icon">📶</span>
         </div>
-
+        <div class="allAcitivities">
         <div class="activity ok">📶 iPhone von Helmut verbunden</div>
         <div class="activity ok">📶 Jakob verbunden</div>
         <div class="activity">❌ Lex 4587 verlassen</div>
         <div class="activity warn">⚠️ gesperrte Website angefragt</div>
+        </div>
     </div>
 
     <!-- DNS -->
@@ -78,11 +81,12 @@
             <h2>DNS Übersicht (Heute)</h2>
             <span class="icon">🛡</span>
         </div>
-
+        <div class="dns_all">
         <div class="dns">
-            <div><span>Werbungen Blockiert:</span><strong>238</strong></div>
-            <div><span>Tracker Verhindert:</span><strong>27</strong></div>
-            <div><span>Fehlgeschlagene Anfragen:</span><strong>2</strong></div>
+            <div><span class="dnstext">Werbungen Blockiert:</span><strong>238</strong></div>
+            <div><span class="dnstext">Tracker Verhindert:</span><strong>27</strong></div>
+            <div><span class="dnstext">Fehlgeschlagene Anfragen:</span><strong>2</strong></div>
+        </div>
         </div>
     </div>
 
@@ -96,6 +100,17 @@
     <button data-filter="status">🔔<span>STATUS</span></button>
     <button data-filter="features">🛠<span>CONFIG</span></button>
 </nav>
+
+<div class="layout-controls">
+    <button id="editToggle" class="control-btn edit">
+        ✏️ <span>Layout bearbeiten</span>
+    </button>
+
+    <button id="resetLayout" class="control-btn reset">
+        ♻️ <span>Zurücksetzen</span>
+    </button>
+</div>
+
 
 <script src="overview.js"></script>
 </body>
