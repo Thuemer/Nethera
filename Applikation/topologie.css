@@ -62,6 +62,11 @@ svg {
   will-change: left, top, transform;
 }
 
+/* When the user is actively dragging, disable positional transitions so elements follow instantly. */
+#topology.dragging .group, #topology.dragging .device {
+  transition: none !important;
+}
+
 .group:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
 .device:hover { transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 14px rgba(0,0,0,0.35); }
 

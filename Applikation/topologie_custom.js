@@ -38,19 +38,30 @@ class NetworkDevice extends HTMLElement {
             offsetY=e.clientY - this.offsetTop;
             dragging=false;
 
+            // disable transitions during drag for immediate response
+            try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.add('dragging'); }catch(e){}
+
             const moveHandler = e=>{
                 const dx = e.clientX-startX;
                 const dy = e.clientY-startY;
                 if(Math.abs(dx)>2||Math.abs(dy)>2) dragging=true;
                 this.style.left = e.clientX - offsetX + 'px';
                 this.style.top = e.clientY - offsetY + 'px';
+                // update cached center for device to help drawLines avoid reflow
+                this._cx = this.offsetLeft + (this.offsetWidth||30)/2;
+                this._cy = this.offsetTop + (this.offsetHeight||30)/2;
                 const group = topology.groups.find(g=>g.dataset.group===this.dataset.group);
                 if(group){ this.offsetX = this.offsetLeft - group.offsetLeft; this.offsetY = this.offsetTop - group.offsetTop; }
-                topology.drawLines();
+                // throttle redraw for smoother performance
+                topology.scheduleDraw();
             };
             const upHandler = ()=>{ document.removeEventListener('mousemove',moveHandler); document.removeEventListener('mouseup',upHandler); };
             document.addEventListener('mousemove',moveHandler);
             document.addEventListener('mouseup',upHandler);
+            document.addEventListener('mouseup', ()=>{
+                // re-enable transitions after drag ends
+                try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.remove('dragging'); }catch(e){}
+            }, { once: true });
         });
 
         this.addEventListener('click', ()=>{
@@ -94,6 +105,8 @@ class NetworkGroup extends HTMLElement {
             offsetX=e.clientX - this.offsetLeft;
             offsetY=e.clientY - this.offsetTop;
             dragging=false;
+            // disable transitions for responsive dragging
+            try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.add('dragging'); }catch(e){}
 
             const moveHandler = e=>{
                 const dx=e.clientX-startX, dy=e.clientY-startY;
@@ -101,18 +114,29 @@ class NetworkGroup extends HTMLElement {
                 this.style.left = e.clientX-offsetX+'px';
                 this.style.top = e.clientY-offsetY+'px';
 
+                // position children devices immediately and update cached centers
                 topology.devices.filter(d=>d.dataset.group===this.dataset.group)
                     .forEach(dev=>{
-                        dev.style.left = this.offsetLeft + this.offsetWidth/2 + dev.offsetX - dev.offsetWidth/2+'px';
-                        dev.style.top = this.offsetTop + this.offsetHeight/2 + dev.offsetY - dev.offsetHeight/2+'px';
+                        const left = this.offsetLeft + this.offsetWidth/2 + (dev.offsetX||0) - (dev.offsetWidth||30)/2;
+                        const top = this.offsetTop + this.offsetHeight/2 + (dev.offsetY||0) - (dev.offsetHeight||30)/2;
+                        dev.style.left = left + 'px';
+                        dev.style.top = top + 'px';
+                        dev._cx = left + (dev.offsetWidth||30)/2;
+                        dev._cy = top + (dev.offsetHeight||30)/2;
                     });
-                topology.drawLines();
+                // update group cached center as well
+                this._cx = this.offsetLeft + this.offsetWidth/2;
+                this._cy = this.offsetTop + this.offsetHeight/2;
+                // throttle redraw
+                topology.scheduleDraw();
             };
             const upHandler = ()=>{ document.removeEventListener('mousemove',moveHandler); document.removeEventListener('mouseup',upHandler); };
             document.addEventListener('mousemove',moveHandler);
             document.addEventListener('mouseup',upHandler);
+            document.addEventListener('mouseup', ()=>{ try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.remove('dragging'); }catch(e){} }, { once: true });
         });
     }
+
 }
 
 // NetworkTopology: root element that creates groups/devices, computes layout and draws lines.
@@ -247,24 +271,32 @@ class NetworkTopology extends HTMLElement {
         if(!this.svg) return;
         if(!this.router) return;
         this.svg.innerHTML='';
+        // Prefer cached center positions (_cx/_cy) where available to avoid
+        // forcing layout reflow via getBoundingClientRect on every frame.
         const rRect=this.router.getBoundingClientRect();
-        const rX=rRect.left + rRect.width/2;
-        const rY=rRect.top + rRect.height/2;
+        const rX=this.router._cx ?? (rRect.left + rRect.width/2);
+        const rY=this.router._cy ?? (rRect.top + rRect.height/2);
 
         this.groups.forEach(group=>{
-            const gRect=group.getBoundingClientRect();
-            const gX=gRect.left+gRect.width/2;
-            const gY=gRect.top+gRect.height/2;
+            // use cached center if available
+            const gX = group._cx ?? (group.getBoundingClientRect().left + group.getBoundingClientRect().width/2);
+            const gY = group._cy ?? (group.getBoundingClientRect().top + group.getBoundingClientRect().height/2);
             this.createLine(rX,rY,gX,gY);
 
             this.devices.filter(d=>d.dataset.group===group.dataset.group)
                 .forEach(dev=>{
-                    const dRect=dev.getBoundingClientRect();
-                    const dX=dRect.left+dRect.width/2;
-                    const dY=dRect.top+dRect.height/2;
+                    const dX = dev._cx ?? (dev.getBoundingClientRect().left + dev.getBoundingClientRect().width/2);
+                    const dY = dev._cy ?? (dev.getBoundingClientRect().top + dev.getBoundingClientRect().height/2);
                     this.createLine(gX,gY,dX,dY);
                 });
         });
+    }
+
+    // Schedule a draw on the next animation frame (throttles multiple calls).
+    scheduleDraw(){
+        if(this._rafScheduled) return;
+        this._rafScheduled = true;
+        requestAnimationFrame(()=>{ this._rafScheduled = false; this.drawLines(); });
     }
 
     createLine(x1,y1,x2,y2){
@@ -351,6 +383,12 @@ class NetworkTopology extends HTMLElement {
                 });
             });
 
+            // Ensure any lingering 'dragging' class is removed so transitions are active
+            try{ const tRoot = this.querySelector('#topology'); if(tRoot && tRoot.classList.contains('dragging')) tRoot.classList.remove('dragging'); }catch(e){}
+
+            // Force a layout reflow so the browser registers the "from" positions
+            void this.offsetWidth;
+
             // apply targets on next animation frame to trigger transitions
             requestAnimationFrame(()=>{
                 requestAnimationFrame(()=>{
@@ -380,15 +418,22 @@ class NetworkTopology extends HTMLElement {
             });
             this._hasAnimatedInitial = true;
         } else {
-            // not first pass: apply targets immediately
-            groupTargets.forEach(t=>{
-                const {group, gLeft, gTop} = t;
-                group.style.left = gLeft + 'px';
-                group.style.top = gTop + 'px';
-                const children = this.devices.filter(d=>d.dataset.group===group.dataset.group);
-                children.forEach(dev=>{
-                    if(dev._targetLeft!=null){ dev.style.left = dev._targetLeft + 'px'; dev.style.top = dev._targetTop + 'px'; }
+            // not first pass: animate to new targets
+            try{ const tRoot = this.querySelector('#topology'); if(tRoot && tRoot.classList.contains('dragging')) tRoot.classList.remove('dragging'); }catch(e){}
+            // force reflow so transitions fire when we set new positions
+            void this.offsetWidth;
+            requestAnimationFrame(()=>{
+                groupTargets.forEach(t=>{
+                    const {group, gLeft, gTop} = t;
+                    group.style.left = gLeft + 'px';
+                    group.style.top = gTop + 'px';
+                    const children = this.devices.filter(d=>d.dataset.group===group.dataset.group);
+                    children.forEach(dev=>{
+                        if(dev._targetLeft!=null){ dev.style.left = dev._targetLeft + 'px'; dev.style.top = dev._targetTop + 'px'; }
+                    });
                 });
+                // draw lines after positions set so transitions can animate them smoothly
+                this.drawLines();
             });
         }
 
