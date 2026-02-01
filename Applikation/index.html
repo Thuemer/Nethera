@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nethera</title>
+    <link rel="icon" href="nethera_logo.png">
+
 
     <style>
         html, body { height: 100%; }
@@ -12,30 +14,37 @@
         #home { display: flex; height:100%; }
 
         /* Navigation (collapsible) */
-        #nav-bar { width: 240px; background:#144659; color:#fff; padding:16px; box-sizing:border-box; position:relative; transition: width 200ms ease; overflow:visible; }
+        #nav-bar { width: 240px; background:#144659; color:#fff; padding:16px; box-sizing:border-box; position:relative; transition: width 260ms cubic-bezier(.2,.9,.2,1), box-shadow 200ms ease; overflow:visible; box-shadow: 6px 0 24px rgba(0,0,0,0.45); }
         #nav-bar.collapsed { width: 68px; }
 
         /* Brand: make background span full width of the nav (continuous color) */
-        #nav-bar .brand { display:flex; align-items:center; gap:10px; margin: -16px -16px 12px -16px; background:#2FB09A; padding:12px 16px; border-radius:0; }
-        #nav-bar .brand img { width:36px; height:36px; display:block; }
-        #nav-bar .brand .name { font-size:28px; font-weight:800; color:#ffffff; }
+        #nav-bar .brand { display:flex; align-items:center; gap:10px; margin: -16px -16px 12px -16px; background:#2FB09A; padding:12px 16px; border-radius:6px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
+        #nav-bar .brand img { width:36px; height:36px; display:block; border-radius:6px; }
+        #nav-bar .brand .name { font-size:22px; font-weight:800; color:#ffffff; letter-spacing:0.6px; }
         #nav-bar.collapsed .brand .name { display:none; }
 
-        #nav-toggle { position:absolute; top:12px; right:-20px; background:rgba(255,255,255,0.04); border:0; color:#cfd6da; cursor:pointer; font-size:14px; padding:6px 8px; border-radius:6px; z-index:1000; pointer-events:auto; }
+        #nav-toggle { position:absolute; top:12px; right:-20px; background:rgba(255,255,255,0.04); border:0; color:#cfd6da; cursor:pointer; font-size:14px; padding:8px 10px; border-radius:10px; z-index:1000; pointer-events:auto; box-shadow: 0 6px 14px rgba(0,0,0,0.35); transition: transform 180ms ease, background 160ms ease; }
+        #nav-bar.collapsed #nav-toggle { transform: rotate(180deg); }
 
         #nav-bar h3.section-title { margin:8px 0 6px 0; font-size:12px; text-transform:uppercase; letter-spacing:0.6px; color:#9aa0a6; }
         #nav-bar.collapsed h3.section-title span.title-text { display:none; }
 
         #nav-bar .nav-list { list-style:none; padding:0; margin:6px 0 12px 0; }
-        #nav-bar .nav-list li { margin:6px 0; }
-        #nav-bar .nav-item { display:flex; align-items:center; gap:10px; padding:8px 10px; color:#e6e6e6; text-decoration:none; border-radius:6px; cursor:pointer; }
-        #nav-bar .nav-item:hover { background:rgba(255,255,255,0.03); }
-        #nav-bar .nav-item .icon { width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; color:#fff; }
-        #nav-bar .nav-item .icon svg { width:20px; height:20px; display:block; fill:currentColor; }
-        #nav-bar .nav-item .label { white-space:nowrap; }
+        #nav-bar .nav-list li { margin:8px 0; }
+        #nav-bar .nav-item { display:flex; align-items:center; gap:12px; padding:10px 12px; color:#e6e6e6; text-decoration:none; border-radius:8px; cursor:pointer; transition: transform 180ms cubic-bezier(.2,.9,.2,1), background 160ms ease, opacity 200ms ease; }
+        #nav-bar .nav-item:hover { background:rgba(255,255,255,0.04); transform: translateX(6px); }
+        #nav-bar .nav-item:active { transform: translateX(2px); }
+        #nav-bar .nav-item .icon { width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; color:#fff; flex:0 0 22px; }
+        #nav-bar .nav-item .icon svg { width:22px; height:22px; display:block; fill:currentColor; opacity:0.96; }
+        #nav-bar .nav-item .label { white-space:nowrap; font-weight:600; font-size:14px; }
         #nav-bar.collapsed .nav-item .label { display:none; }
+        #nav-bar .nav-item .label { transition: opacity 160ms ease; }
 
         #nav-bar .spacer { height:12px; }
+
+        /* subtle stagger for nav items on first paint */
+        #nav-bar .nav-item { opacity: 0; transform: translateX(-8px); }
+        #nav-bar.ready .nav-item { opacity: 1; transform: translateX(0); }
 
         /* Screen: fill remaining space and host the iframe */
         #screen { flex:1; min-height:100%; box-sizing:border-box; }
@@ -56,7 +65,7 @@
             <ul class="nav-list">
                 <li><a class="nav-item" data-src="overview.html"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h7l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM13 3.5V9h5.5L13 3.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"></path></svg></span><span class="label">Übersicht</span></a></li>
                 <li><a class="nav-item"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v12H3zM1 18h22v2H1z"></path></svg></span><span class="label">Geräte</span></a></li>
-                <li><a class="nav-item" data-src="topologie.html"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v13l-6 3-6-3-6 3V6z"></path></svg></span><span class="label">Topologie</span></a></li>
+                <li><a class="nav-item" data-src="topologie_custom.html"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l6-3 6 3 6-3v13l-6 3-6-3-6 3V6z"></path></svg></span><span class="label">Topologie</span></a></li>
             </ul>
 
             <div class="spacer"></div>
@@ -75,7 +84,7 @@
             </ul>
         </div>
         <div id="screen">
-            <iframe id="screen-frame" src="topologie.html" title="Topologie"></iframe>
+            <iframe id="screen-frame" src="topologie_custom.html" title="Topologie"></iframe>
         </div>
             
     </div>
@@ -87,10 +96,16 @@
             const toggle = document.getElementById('nav-toggle');
 
             // Load initially stored state
-            if(localStorage.getItem('nav-collapsed') === '1'){
+            const collapsedState = localStorage.getItem('nav-collapsed') === '1';
+            if(collapsedState){
                 nav.classList.add('collapsed');
-                toggle.textContent = '▶';
             }
+            // set aria attributes for accessibility
+            toggle.setAttribute('aria-expanded', String(!collapsedState));
+            toggle.setAttribute('aria-pressed', collapsedState ? 'true' : 'false');
+
+            // mark nav as ready to run entrance animations
+            requestAnimationFrame(()=> nav.classList.add('ready'));
 
             function loadIntoFrame(url){
                 // Directly set iframe src (works with file:// and http://)
@@ -111,7 +126,9 @@
 
             toggle.addEventListener('click', () => {
                 const collapsed = nav.classList.toggle('collapsed');
-                toggle.textContent = collapsed ? '▶' : '◀';
+                // update accessible attributes and persisted state
+                toggle.setAttribute('aria-expanded', String(!collapsed));
+                toggle.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
                 localStorage.setItem('nav-collapsed', collapsed ? '1' : '0');
             });
         })();
