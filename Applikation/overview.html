@@ -7,95 +7,31 @@
     <link rel="stylesheet" href="overview.css">
 </head>
 <body>
-<div class="dashboard">
 
-    <!-- Status-->
-        <div class="card"  data-section="status">
-    <div class="card-header">
-        <h2>Router</h2>
+<dashboard-container>
+    <div class="dashboard">
+        <!-- Router Status -->
+        <router-card></router-card>
+
+        <!-- Features -->
+        <features-card></features-card>
+
+        <!-- Speed Chart -->
+        <speed-card></speed-card>
+
+        <!-- Activity -->
+        <activity-card></activity-card>
+
+        <!-- DNS Overview -->
+        <dns-card></dns-card>
     </div>
+</dashboard-container>
 
-    <div class="router-box">
-        <div>
-            <div>Status</div>
-            <div>Verbundene Geräte</div>
-        </div>
+<!-- Bottom Navigation -->
+<dashboard-nav></dashboard-nav>
 
-        <div class="router-right">
-            <div class="online">
-                <span class="dot"></span> Online
-            </div>
-            <div class="count">11</div>
-        </div>
-    </div>
-</div>
-
-    <!-- FEATURES -->
-    <div class="card" data-section="features">
-        <div class="card-header">
-            <h2>Features</h2>
-            <span class="icon">🛠</span>
-        </div>
-
-        <ul class="feature-list">
-            <li class="ok">Werbung Blockieren</li>
-            <li class="bad">Blockiere Liste: Streaming Dienste</li>
-            <li class="bad">Blockiere Liste: Gast</li>
-            <li class="ok">Priorisiere: Figma</li>
-        </ul>
-    </div>
-
-    <!-- SPEED -->
-    <div class="card" data-section="speed">
-        <div class="card-header">
-            <h2>Speed</h2>
-            <span class="icon">⏱</span>
-        </div>
-
-        <canvas id="speedChart" width="400" height="200"></canvas>
-        <div class="legend">
-            <span class="upload">● Upload</span>
-            <span class="download">● Download</span>
-        </div>
-    </div>
-
-    <!-- ACTIVITY -->
-    <div class="card" data-section="activity">
-        <div class="card-header">
-            <h2>Aktivität</h2>
-            <span class="icon">📶</span>
-        </div>
-
-        <div class="activity ok">📶 iPhone von Helmut verbunden</div>
-        <div class="activity ok">📶 Jakob verbunden</div>
-        <div class="activity">❌ Lex 4587 verlassen</div>
-        <div class="activity warn">⚠️ gesperrte Website angefragt</div>
-    </div>
-
-    <!-- DNS -->
-    <div class="card" data-section="dns" >
-        <div class="card-header">
-            <h2>DNS Übersicht (Heute)</h2>
-            <span class="icon">🛡</span>
-        </div>
-
-        <div class="dns">
-            <div><span>Werbungen Blockiert:</span><strong>238</strong></div>
-            <div><span>Tracker Verhindert:</span><strong>27</strong></div>
-            <div><span>Fehlgeschlagene Anfragen:</span><strong>2</strong></div>
-        </div>
-    </div>
-
-</div>
-
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-    <button data-filter="activity">📶<span>Aktivität</span></button>
-    <button data-filter="dns">🛡<span>DNS</span></button>
-    <button data-filter="speed">⏱<span>SPEED</span></button>
-    <button data-filter="status">🔔<span>STATUS</span></button>
-    <button data-filter="features">🛠<span>CONFIG</span></button>
-</nav>
+<!-- Layout Controls -->
+<layout-controls></layout-controls>
 
 <script src="overview.js"></script>
 </body>

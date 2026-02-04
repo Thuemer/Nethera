@@ -10,11 +10,23 @@ body { margin:0; background:#121212; font-family:sans-serif; overflow:hidden; }
   z-index:10;
 }
 
+/* Make the router image visual but not intercept mouse events so nearby groups/devices
+   can still be clicked and dragged. */
+#router { pointer-events: none; user-select: none; -webkit-user-drag: none; }
+
+/* Extra safety: if pointer-events is overridden, block typical interaction events on the router */
+#router[draggable="false"] { -webkit-user-drag: none; }
+
+/* Prevent focus outlines and selection highlights (Firefox) for the router image */
+#router, #router:focus, #router:active { outline: none !important; box-shadow: none !important; border: none !important; }
+#router::-moz-focus-inner { border: 0; }
+#router { -moz-user-select: none; -webkit-user-select: none; }
+
 .group {
   position:absolute;
   width:100px;
   height:50px;
-  background:#0ff;
+  background:#2FB09A;
   border-radius:25px;
   text-align:center;
   line-height:50px;
@@ -28,14 +40,14 @@ body { margin:0; background:#121212; font-family:sans-serif; overflow:hidden; }
   position:absolute;
   width:30px;
   height:30px;
-  background:#0ff;
+  background:#2FB09A;
   border-radius:50%;
   cursor:pointer;
   z-index:5;
   transition: background 0.2s;
 }
 
-.device.selected { background:yellow; }
+.device.selected { background:#144659; }
 
 svg {
   position:absolute;
@@ -44,10 +56,34 @@ svg {
   pointer-events:none;
 }
 
+/* Smooth transitions and modern visual polish */
+.group, .device {
+  transition: left 240ms cubic-bezier(.2,.8,.2,1), top 240ms cubic-bezier(.2,.8,.2,1), transform 180ms ease, box-shadow 180ms ease;
+  will-change: left, top, transform;
+}
+
+/* When the user is actively dragging, disable positional transitions so elements follow instantly. */
+#topology.dragging .group, #topology.dragging .device {
+  transition: none !important;
+}
+
+.group:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
+.device:hover { transform: translateY(-3px) scale(1.08); box-shadow: 0 6px 14px rgba(0,0,0,0.35); }
+
+.group:focus, .device:focus { outline: 2px solid rgba(47,176,154,0.9); outline-offset: 4px; }
+
+.device.selected { background:#144659; transform: scale(1.05); box-shadow: 0 10px 22px rgba(0,0,0,0.45); }
+
+svg line { stroke-linecap: round; transition: stroke-opacity 200ms ease; }
+
+.device-info { transition: opacity 200ms ease, transform 200ms ease; opacity: 0.98; }
+
+#bottom-info { transition: background 220ms ease, color 220ms ease; }
+
 .device-info {
   position:absolute;
   background:#222;
-  color:#0ff;
+  color:#2FB09A;
   padding:5px;
   border-radius:5px;
   pointer-events:none;
@@ -59,7 +95,7 @@ svg {
 .edit-box {
   position:absolute;
   background:#333;
-  color:#0ff;
+  color:#2FB09A;
   padding:10px;
   border-radius:8px;
   z-index:50;
@@ -68,10 +104,10 @@ svg {
 }
 .edit-box input {
   display:block; width:100%; margin-bottom:6px; padding:4px;
-  background:#222; border:1px solid #0ff; border-radius:4px; color:#0ff;
+  background:#222; border:1px solid #2FB09A; border-radius:4px; color:#ffffff;
 }
 .edit-box button {
-  background:#0ff; color:#000; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;
+  background:#2FB09A; color:#000; border:none; padding:5px 8px; border-radius:4px; cursor:pointer;
 }
 
 #bottom-info {
@@ -81,7 +117,7 @@ svg {
   width:100%;
   height:60px;
   background:#111;
-  color:#0ff;
+  color:#2FB09A;
   font-size:14px;
   display:flex;
   align-items:center;
@@ -93,7 +129,7 @@ svg {
 #bottom-info button {
   width:50px;
   height:30px;
-  background:#0ff;
+  background:#2FB09A;
   color:#000;
   border:none;
   border-radius:5px;
