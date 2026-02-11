@@ -1,4 +1,3 @@
-
 // Basis Card-Komponente
 class DashboardCard extends HTMLElement {
     constructor() {
