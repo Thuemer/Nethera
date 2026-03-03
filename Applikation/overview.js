@@ -118,18 +118,22 @@ class RouterCard extends HTMLElement {
             <div class="card-header">
                 <h2>Router</h2>
             </div>
+
             <div class="router-box">
                 <div>
                     <div>Status</div>
                     <div class="under">Verbundene Geräte</div>
                     <div class="under">Firmware</div>
                 </div>
+
                 <div class="router-right">
                     <div class="online">
                         <span class="dot"></span> ${status}
                     </div>
+
                     <div class="count">${devices}</div>
-                    <div>${firmware}</div>
+
+                    <div class="firmware_element">${firmware}</div>
                 </div>
             </div>
         `;

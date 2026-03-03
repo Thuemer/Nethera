@@ -17,13 +17,21 @@ body {
     margin-top: 1vw;
 }
 
+.router-right > div {
+    margin-top: 2.25vw;
+}
+
+.router-right > div:first-child {
+    margin-top: 0;
+}
+
 .under {
-    margin-top: 3vw;
+    margin-top: 2.25vw;
 }
 
 .router-right {
     text-align: right;
-    transform: translateY(-1vw);
+    transform: translateY(-1vw);;
 }
 
 .online {
@@ -32,7 +40,15 @@ body {
     gap: 6px;
     color: #4ade80;
     font-weight: 500;
+    transform: translateY(-0.5vw);
 }
+
+
+.firmware_element {
+    transform: translateY(0.5vw);
+    margin-top: 1vw;
+}
+
 
 .dot {
     width: 8px;
@@ -144,7 +160,7 @@ body {
 
 /* DNS */
 .dns_all {
-    margin-top: -1vw;
+    margin-top: -2vw;
 }
 .dns div {
     display: flex;
