@@ -1,68 +1,26 @@
 // Basis Card-Komponente
-const ROUTER_API_URL = 'http://localhost:8080/api/routers/list';
-let primaryRouterPromise = null;
-
-function formatDateTime(value) {
-    if (!value) return '—';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-
-    return date.toLocaleString('de-DE', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function formatTime(value) {
-    if (!value) return '--:--';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-
-    return date.toLocaleTimeString('de-DE', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-function sortByTimestamp(items) {
-    return [...(items || [])].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-}
-
-async function getPrimaryRouter() {
-    if (!primaryRouterPromise) {
-        primaryRouterPromise = fetch(ROUTER_API_URL, {
-            headers: {
-                Accept: 'application/json'
-            }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`API Fehler: ${response.status}`);
-                }
-
-                return response.json();
-            })
-            .then(routers => {
-                if (!Array.isArray(routers) || routers.length === 0) {
-                    throw new Error('Keine Routerdaten gefunden');
-                }
-
-                return routers[0];
-            });
-    }
-
-    return primaryRouterPromise;
-}
-
 class DashboardCard extends HTMLElement {
     constructor() {
         super();
     }
+
+
+    async loadRouterData() {
+    try {
+        const response = await fetch("http://localhost:8080/api/routers/list");
+        const data = await response.json();
+
+        const router = data[0]; // du hast nur einen Router
+
+        this.updateRouterCard(router);
+        this.updateActivityCard(router);
+        this.updateSpeedCard(router);
+        this.updateDnsCard(router);
+
+    } catch (error) {
+        console.error("Backend Fehler:", error);
+    }
+}
 
     connectedCallback() {
         this.classList.add('card');
@@ -87,33 +45,15 @@ class DashboardCard extends HTMLElement {
 class RouterCard extends HTMLElement {
     constructor() {
         super();
-        this.router = null;
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'status');
-
-        this.render();
-        this.loadRouterData();
-    }
-
-    async loadRouterData() {
-        try {
-            this.router = await getPrimaryRouter();
-        } catch (error) {
-            this.router = null;
-            console.error('RouterCard:', error);
-        }
-
-        this.render();
-    }
-
-    render() {
-        const devices = this.router?.devices?.length ?? 0;
-        const status = this.router?.isOnline ? 'Online' : 'Offline';
-        const firmware = this.router?.firmware || '—';
-
+        
+        const devices = this.getAttribute('devices') || '11';
+        const status = this.getAttribute('status') || 'Online';
+        
         this.innerHTML = `
             <div class="card-header">
                 <h2>Router</h2>
@@ -122,14 +62,12 @@ class RouterCard extends HTMLElement {
                 <div>
                     <div>Status</div>
                     <div class="under">Verbundene Geräte</div>
-                    <div class="under">Firmware</div>
                 </div>
                 <div class="router-right">
                     <div class="online">
                         <span class="dot"></span> ${status}
                     </div>
                     <div class="count">${devices}</div>
-                    <div>${firmware}</div>
                 </div>
             </div>
         `;
@@ -140,46 +78,22 @@ class RouterCard extends HTMLElement {
 class FeaturesCard extends HTMLElement {
     constructor() {
         super();
-        this.router = null;
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'features');
-
-        this.render();
-        this.loadRouterData();
-    }
-
-    async loadRouterData() {
-        try {
-            this.router = await getPrimaryRouter();
-        } catch (error) {
-            this.router = null;
-            console.error('FeaturesCard:', error);
-        }
-
-        this.render();
-    }
-
-    render() {
-        const latestDns = sortByTimestamp(this.router?.dnsStats).at(-1);
-        const latestSpeed = sortByTimestamp(this.router?.speedStats).at(-1);
-        const routerName = this.router?.name || '—';
-        const model = this.router?.model || '—';
-        const blocked = latestDns?.blockedQueries ?? '—';
-        const download = latestSpeed?.downloadSpeed != null ? `${latestSpeed.downloadSpeed.toFixed(1)} Mbit/s` : '—';
-
+        
         this.innerHTML = `
             <div class="card-header">
                 <h2>Features</h2>
                 <span class="icon">🛠</span>
             </div>
             <ul class="feature-list">
-                <li class="ok">Router: ${routerName}</li>
-                <li class="ok">Modell: ${model}</li>
-                <li class="ok">Blockierte DNS-Anfragen: ${blocked}</li>
-                <li class="ok">Aktueller Download: ${download}</li>
+                <li class="ok">Werbung Blockieren</li>
+                <li class="bad">Blockiere Liste: Streaming Dienste</li>
+                <li class="bad">Blockiere Liste: Gast</li>
+                <li class="ok">Priorisiere: Figma</li>
             </ul>
         `;
     }
@@ -189,9 +103,9 @@ class FeaturesCard extends HTMLElement {
 class SpeedCard extends HTMLElement {
     constructor() {
         super();
-        this.upload = [];
-        this.download = [];
-        this.labels = [];
+        this.upload = [30, 220, 300, 250];
+        this.download = [220, 250, 190, 300];
+        this.labels = ["12:00", "12:05", "12:10", "12:15"];
         this.padding = {
             left: 50,
             right: 20,
@@ -215,37 +129,15 @@ class SpeedCard extends HTMLElement {
                 <span class="download">● Download</span>
             </div>
         `;
-
-        this.loadSpeedData();
-    }
-
-    async loadSpeedData() {
-        try {
-            const router = await getPrimaryRouter();
-            const sortedSpeedStats = sortByTimestamp(router?.speedStats);
-
-            this.upload = sortedSpeedStats.map(entry => Number(entry.uploadSpeed) || 0);
-            this.download = sortedSpeedStats.map(entry => Number(entry.downloadSpeed) || 0);
-            this.labels = sortedSpeedStats.map(entry => formatTime(entry.timestamp));
-        } catch (error) {
-            this.upload = [];
-            this.download = [];
-            this.labels = [];
-            console.error('SpeedCard:', error);
-        }
-
+        
+        // Warte, bis DOM vollständig gerendert ist
+        this.addEventListener('DOMContentLoaded', () => this.drawChart(), { once: true });
         requestAnimationFrame(() => this.drawChart());
     }
 
     drawChart() {
         const canvas = this.querySelector('.speedChart');
         if (!canvas) return;
-
-        if (this.upload.length === 0 || this.download.length === 0 || this.labels.length === 0) {
-            this.upload = [0];
-            this.download = [0];
-            this.labels = ['--:--'];
-        }
         
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -286,7 +178,7 @@ class SpeedCard extends HTMLElement {
                 (i / steps) *
                     (canvas.height - this.padding.top - this.padding.bottom);
 
-            ctx.fillText(`${val} Mbit/s`, 5, y + 4);
+            ctx.fillText(`${val} MB/s`, 5, y + 4);
 
             ctx.strokeStyle = "#333";
             ctx.beginPath();
@@ -299,7 +191,7 @@ class SpeedCard extends HTMLElement {
         this.labels.forEach((label, i) => {
             const x =
                 this.padding.left +
-                ((this.labels.length === 1 ? 0 : i / (this.labels.length - 1))) *
+                (i / (this.labels.length - 1)) *
                     (canvas.width - this.padding.left - this.padding.right);
 
             ctx.fillText(label, x - 12, canvas.height - 10);
@@ -314,7 +206,7 @@ class SpeedCard extends HTMLElement {
         data.forEach((val, i) => {
             const x =
                 this.padding.left +
-                ((data.length === 1 ? 0 : i / (data.length - 1))) *
+                (i / (data.length - 1)) *
                     (canvas.width - this.padding.left - this.padding.right);
 
             const y =
@@ -334,60 +226,22 @@ class SpeedCard extends HTMLElement {
 class ActivityCard extends HTMLElement {
     constructor() {
         super();
-        this.logs = [];
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'activity');
-
-        this.render();
-        this.loadActivityData();
-    }
-
-    async loadActivityData() {
-        try {
-            const router = await getPrimaryRouter();
-            this.logs = sortByTimestamp(router?.activityLogs).reverse();
-        } catch (error) {
-            this.logs = [];
-            console.error('ActivityCard:', error);
-        }
-
-        this.render();
-    }
-
-    getTypeClass(eventType) {
-        if (eventType === 'CONNECTED') return 'ok';
-        if (eventType === 'BLOCKED_URL') return 'warn';
-        return '';
-    }
-
-    getTypeIcon(eventType) {
-        if (eventType === 'CONNECTED') return '📶';
-        if (eventType === 'DISCONNECTED') return '❌';
-        if (eventType === 'BLOCKED_URL') return '⚠️';
-        return '•';
-    }
-
-    render() {
-        const logHtml = this.logs.length
-            ? this.logs
-                .map(log => `
-                    <div class="activity ${this.getTypeClass(log.eventType)}">
-                        ${this.getTypeIcon(log.eventType)} ${log.details} (${formatTime(log.timestamp)})
-                    </div>
-                `)
-                .join('')
-            : '<div class="activity">Keine Aktivitäten vorhanden</div>';
-
+        
         this.innerHTML = `
             <div class="card-header">
                 <h2>Aktivität</h2>
                 <span class="icon">📶</span>
             </div>
             <div class="allAcitivities">
-                ${logHtml}
+                <div class="activity ok">📶 iPhone von Helmut verbunden</div>
+                <div class="activity ok">📶 Jakob verbunden</div>
+                <div class="activity">❌ Lex 4587 verlassen</div>
+                <div class="activity warn">⚠️ gesperrte Website angefragt</div>
             </div>
         `;
     }
@@ -397,45 +251,16 @@ class ActivityCard extends HTMLElement {
 class DnsCard extends HTMLElement {
     constructor() {
         super();
-        this.dnsStats = [];
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'dns');
-
-        this.render();
-        this.loadDnsData();
-    }
-
-    async loadDnsData() {
-        try {
-            const router = await getPrimaryRouter();
-            this.dnsStats = sortByTimestamp(router?.dnsStats || []);
-        } catch (error) {
-            this.dnsStats = [];
-            console.error('DnsCard:', error);
-        }
-
-        this.render();
-    }
-
-    render() {
-        const totals = this.dnsStats.reduce(
-            (acc, entry) => ({
-                blocked: acc.blocked + (Number(entry.blockedQueries) || 0),
-                trackers: acc.trackers + (Number(entry.trackersDetected) || 0),
-                total: acc.total + (Number(entry.totalQueries) || 0)
-            }),
-            { blocked: 0, trackers: 0, total: 0 }
-        );
-
-        const latestEntry = this.dnsStats.at(-1) || null;
-        const blocked = this.dnsStats.length ? totals.blocked : '—';
-        const trackers = this.dnsStats.length ? totals.trackers : '—';
-        const total = this.dnsStats.length ? totals.total : '—';
-        const timestamp = formatDateTime(latestEntry?.timestamp);
-
+        
+        const blocked = this.getAttribute('blocked') || '238';
+        const prevented = this.getAttribute('prevented') || '27';
+        const failed = this.getAttribute('failed') || '2';
+        
         this.innerHTML = `
             <div class="card-header">
                 <h2>DNS Übersicht (Heute)</h2>
@@ -444,9 +269,8 @@ class DnsCard extends HTMLElement {
             <div class="dns_all">
                 <div class="dns">
                     <div><span class="dnstext">Werbungen Blockiert:</span><strong>${blocked}</strong></div>
-                    <div><span class="dnstext">Tracker Verhindert:</span><strong>${trackers}</strong></div>
-                    <div><span class="dnstext">Anfragen Gesamt:</span><strong>${total}</strong></div>
-                    <div><span class="dnstext">Letztes Update:</span><strong>${timestamp}</strong></div>
+                    <div><span class="dnstext">Tracker Verhindert:</span><strong>${prevented}</strong></div>
+                    <div><span class="dnstext">Fehlgeschlagene Anfragen:</span><strong>${failed}</strong></div>
                 </div>
             </div>
         `;
