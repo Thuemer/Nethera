@@ -7,6 +7,8 @@
  Debug logs and in-page error overlay have been removed for a clean production build.
 */
 
+const ROUTERS_API_URL = 'http://localhost:8080/api/routers/list';
+
 // NetworkDevice: visual device node. Supports dragging and showing a small info box.
 class NetworkDevice extends HTMLElement {
     constructor() {
@@ -81,7 +83,7 @@ class NetworkDevice extends HTMLElement {
         const rect=this.getBoundingClientRect();
         this.infoBox.style.left = (rect.right + 5)+'px';
         this.infoBox.style.top = rect.top+'px';
-        this.infoBox.innerHTML = `<b>${this.dataset.name}</b><br>Im Netzwerk seit: ${time}<br>Gruppe: ${this.dataset.group}`;
+        this.infoBox.innerHTML = `<b>${this.dataset.name}</b><br>Zuletzt gesehen: ${time}<br>IP: ${this.dataset.ipAddress || '-'}<br>Gruppe: ${this.dataset.group}`;
     }
 }
 
@@ -144,6 +146,8 @@ class NetworkTopology extends HTMLElement {
     constructor(){
         super();
         this.groups=[]; this.devices=[]; this.selectedIndex=0;
+        this.routerData = null;
+        this.infoUpdateInterval = null;
     }
 
     connectedCallback(){
@@ -167,10 +171,12 @@ class NetworkTopology extends HTMLElement {
         window.addEventListener('resize', () => { this.initLayout(); this.drawLines(); });
 
         this.querySelector('#prev-device').addEventListener('click', ()=>{
+            if(!this.devices.length) return;
             this.selectedIndex=(this.selectedIndex-1+this.devices.length)%this.devices.length;
             this.showBottomInfo(this.selectedIndex);
         });
         this.querySelector('#next-device').addEventListener('click', ()=>{
+            if(!this.devices.length) return;
             this.selectedIndex=(this.selectedIndex+1)%this.devices.length;
             this.showBottomInfo(this.selectedIndex);
         });
@@ -181,29 +187,133 @@ class NetworkTopology extends HTMLElement {
         }
     }
 
-    addGroupsAndDevices(){
-        // Gruppen
-        const groupNames=["Kinder","Eltern","Alle"];
-        groupNames.forEach(name=>this.addGroup(name));
+    async addGroupsAndDevices(){
+        try{
+            const routers = await this.fetchRouters();
+            if(!Array.isArray(routers) || routers.length===0){
+                this.showEmptyState('Keine Routerdaten von der API erhalten.');
+                return;
+            }
 
-        // Geräte
-        this.addDevice("Manu's iPhone","Kinder",600);
-        this.addDevice("PC Wohnzimmer","Kinder",3320);
-        this.addDevice("PS5","Kinder",3912);
-        this.addDevice("Lena's Laptop","Eltern",1260);
-        this.addDevice("Tablet Küche","Eltern",612);
-        this.addDevice("Smart TV","Alle",12300);
-        this.addDevice("NAS","Alle",18000);
+            this.routerData = routers[0];
+            this.populateTopologyFromApi(this.routerData);
+        }catch(e){
+            this.showEmptyState('Routerdaten konnten nicht geladen werden.');
+        }
+    }
 
-        // Wait one frame so the browser can apply styles/layout to the newly appended elements
+    async fetchRouters(){
+        const response = await fetch(ROUTERS_API_URL, {
+            method: 'GET',
+            headers: { Accept: 'application/json' }
+        });
+        if(!response.ok){
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+        return response.json();
+    }
+
+    populateTopologyFromApi(router){
+        this.clearTopology();
+
+        const devices = Array.isArray(router.devices) ? router.devices : [];
+        const groupOrder = ['wifi','lan','other'];
+        const groups = [...new Set(devices.map(d => this.normalizeConnectionType(d.connectionType)))];
+
+        groups
+            .sort((a,b)=>groupOrder.indexOf(a)-groupOrder.indexOf(b))
+            .forEach(group=>this.addGroup(this.toGroupLabel(group)));
+
+        devices.forEach(deviceData=>{
+            const normalizedType = this.normalizeConnectionType(deviceData.connectionType);
+            const groupLabel = this.toGroupLabel(normalizedType);
+            this.addDevice(
+                deviceData.hostname || deviceData.ipAddress || deviceData.macAddress || `Gerät ${deviceData.id}`,
+                groupLabel,
+                0,
+                {
+                    id: deviceData.id,
+                    ipAddress: deviceData.ipAddress,
+                    macAddress: deviceData.macAddress,
+                    hostname: deviceData.hostname,
+                    connectionType: normalizedType,
+                    lastSeen: deviceData.lastSeen
+                }
+            );
+        });
+
         setTimeout(()=>{
             this.initLayout();
             this.drawLines();
             this.updateDeviceInfo();
-            this.showBottomInfo(this.selectedIndex);
-
-            setInterval(()=>{ this.updateDeviceInfo(); this.showBottomInfo(this.selectedIndex); },1000);
+            if(this.devices.length){
+                this.selectedIndex = 0;
+                this.showBottomInfo(this.selectedIndex);
+            }
+            this.startInfoUpdates();
         }, 50);
+    }
+
+    clearTopology(){
+        this.groups.forEach(group => group.remove());
+        this.devices.forEach(device => {
+            if(device.infoBox) device.infoBox.remove();
+            device.remove();
+        });
+        this.groups = [];
+        this.devices = [];
+        this.selectedIndex = 0;
+        this.stopInfoUpdates();
+    }
+
+    showEmptyState(message){
+        this.clearTopology();
+        if(this.bottomDetail){
+            this.bottomDetail.textContent = message;
+        }
+        this.drawLines();
+    }
+
+    startInfoUpdates(){
+        this.stopInfoUpdates();
+        this.infoUpdateInterval = setInterval(()=>{
+            this.updateDeviceInfo();
+            if(this.devices.length){
+                this.showBottomInfo(this.selectedIndex);
+            }
+        }, 1000);
+    }
+
+    stopInfoUpdates(){
+        if(this.infoUpdateInterval){
+            clearInterval(this.infoUpdateInterval);
+            this.infoUpdateInterval = null;
+        }
+    }
+
+    normalizeConnectionType(connectionType){
+        const value = (connectionType || '').toString().trim().toLowerCase();
+        if(value === 'wifi') return 'wifi';
+        if(value === 'lan') return 'lan';
+        return 'other';
+    }
+
+    toGroupLabel(connectionType){
+        if(connectionType === 'wifi') return 'WLAN';
+        if(connectionType === 'lan') return 'LAN';
+        return 'Sonstige';
+    }
+
+    formatLastSeen(lastSeenRaw){
+        if(!lastSeenRaw) return 'unbekannt';
+        const lastSeenDate = new Date(lastSeenRaw);
+        if(Number.isNaN(lastSeenDate.getTime())) return 'unbekannt';
+
+        const diffSeconds = Math.max(0, Math.floor((Date.now() - lastSeenDate.getTime()) / 1000));
+        if(diffSeconds < 60) return `vor ${diffSeconds}s`;
+        if(diffSeconds < 3600) return `vor ${Math.floor(diffSeconds/60)}min`;
+        if(diffSeconds < 86400) return `vor ${Math.floor(diffSeconds/3600)}h`;
+        return `vor ${Math.floor(diffSeconds/86400)}d`;
     }
 
     addGroup(name){
@@ -236,7 +346,7 @@ class NetworkTopology extends HTMLElement {
         return group;
     }
 
-    addDevice(name, groupName, time){
+    addDevice(name, groupName, time, meta={}){
         let device;
         try{
             device = document.createElement('network-device');
@@ -251,6 +361,12 @@ class NetworkTopology extends HTMLElement {
             }
         }
         device.dataset.name=name; device.dataset.group=groupName; device.dataset.time=time;
+        if(meta.id!=null) device.dataset.deviceId = String(meta.id);
+        if(meta.hostname) device.dataset.hostname = meta.hostname;
+        if(meta.ipAddress) device.dataset.ipAddress = meta.ipAddress;
+        if(meta.macAddress) device.dataset.macAddress = meta.macAddress;
+        if(meta.connectionType) device.dataset.connectionType = meta.connectionType;
+        if(meta.lastSeen) device.dataset.lastSeen = meta.lastSeen;
         // Accessibility: make devices focusable and provide aria-label/role
         try{ device.setAttribute('tabindex','0'); device.setAttribute('role','button'); device.setAttribute('aria-label', `${name}, Gruppe ${groupName}`); }catch(e){ }
         // assign original class so topologie.css applies
@@ -445,8 +561,15 @@ class NetworkTopology extends HTMLElement {
         if(!this.devices || !this.devices.length) return;
         this.devices.forEach(dev=>{
             try{
-                dev.dataset.time=parseInt(dev.dataset.time)+1;
-                if(typeof dev.updateInfoBox==='function') dev.updateInfoBox(this.formatTime(dev.dataset.time),this);
+                let displayTime = 'unbekannt';
+                if(dev.dataset.lastSeen){
+                    displayTime = this.formatLastSeen(dev.dataset.lastSeen);
+                }else{
+                    dev.dataset.time = String((parseInt(dev.dataset.time,10)||0)+1);
+                    displayTime = this.formatTime(parseInt(dev.dataset.time,10)||0);
+                }
+                dev.dataset.timeLabel = displayTime;
+                if(typeof dev.updateInfoBox==='function') dev.updateInfoBox(displayTime,this);
             }catch(e){ }
         });
     }
@@ -458,7 +581,8 @@ class NetworkTopology extends HTMLElement {
         try{
             this.devices.forEach(dev=>dev.classList && dev.classList.remove('selected'));
             d.classList && d.classList.add('selected');
-            if(this.bottomDetail) this.bottomDetail.innerHTML=`<b>${d.dataset.name}</b> | Gruppe: ${d.dataset.group} | Netzwerkzeit: ${this.formatTime(d.dataset.time)}`;
+            const timeLabel = d.dataset.timeLabel || this.formatLastSeen(d.dataset.lastSeen);
+            if(this.bottomDetail) this.bottomDetail.innerHTML=`<b>${d.dataset.name}</b> | Gruppe: ${d.dataset.group} | IP: ${d.dataset.ipAddress || '-'} | MAC: ${d.dataset.macAddress || '-'} | Zuletzt gesehen: ${timeLabel}`;
         }catch(e){ }
     }
 }
