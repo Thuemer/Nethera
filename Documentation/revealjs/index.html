@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>BIND vs dnsmasq</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Reveal.js CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js/dist/reveal.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js/dist/theme/night.css">
+
+  <style>
+    h1, h2, h3 {
+      text-transform: none;
+    }
+    .highlight {
+      color: #4fc3f7;
+      font-weight: bold;
+    }
+    .two-columns {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+    }
+    .two-columns div {
+      width: 45%;
+    }
+  
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 24px;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    border: 1px solid #3a3f44;
+    padding: 15px;
+    text-align: left;
+  }
+
+  .comparison-table thead {
+    background-color: #111827;
+    color: #ffffff;
+  }
+
+  .comparison-table tbody tr:nth-child(even) {
+    background-color: #1f2937;
+  }
+
+  .comparison-table tbody tr:nth-child(odd) {
+    background-color: #0f172a;
+  }
+
+  .comparison-table th {
+    font-weight: bold;
+  }
+  </style>
+</head>
+
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- Startfolie -->
+<section>
+  <h2>BIND vs dnsmasq</h2>
+  <h3>Enterprise vs Lightweight</h3>
+  <br>
+  <p class="fragment">Tobias, Deniz, Nico, Moritz, Manuel</p>
+</section>
+
+<!-- BIND Intro -->
+<section>
+  <h2>BIND</h2>
+  <p><span class="highlight">Typ:</span> Vollwertiger DNS-Server</p>
+  <p><span class="highlight">Einsatz:</span> Professionelle, skalierbare DNS-Infrastrukturen</p>
+</section>
+
+<!-- BIND Eigenschaften -->
+<section>
+  <h3>BIND – Eigenschaften</h3>
+  <ul>
+    <li class="fragment">Autoritativer DNS-Server</li>
+    <li class="fragment">Rekursiver Resolver möglich</li>
+    <li class="fragment">DNSSEC-Unterstützung</li>
+    <li class="fragment">Forward- & Reverse-Zonen</li>
+    <li class="fragment">Hohe Konfigurierbarkeit</li>
+  </ul>
+</section>
+
+<!-- BIND Einsatzbereiche -->
+<section>
+  <h3>BIND – Einsatzbereiche</h3>
+  <ul>
+    <li class="fragment">Unternehmensnetzwerke</li>
+    <li class="fragment">Rechenzentren</li>
+    <li class="fragment">Hosting-Umgebungen</li>
+    <li class="fragment">Öffentliche Domainverwaltung</li>
+  </ul>
+</section>
+
+<!-- dnsmasq Intro -->
+<section>
+  <h2>dnsmasq</h2>
+  <p><span class="highlight">Typ:</span> DNS-Forwarder mit integriertem DHCP</p>
+  <p><span class="highlight">Einsatz:</span> Kleine Netzwerke & Lab-Umgebungen</p>
+</section>
+
+<!-- dnsmasq Eigenschaften -->
+<section>
+  <h3>dnsmasq – Eigenschaften</h3>
+  <ul>
+    <li class="fragment">DNS-Forwarding mit Caching</li>
+    <li class="fragment">Integrierter DHCP-Server</li>
+    <li class="fragment">Sehr einfache Konfiguration</li>
+    <li class="fragment">Geringer Ressourcenverbrauch</li>
+  </ul>
+</section>
+
+<!-- dnsmasq Einsatzbereiche -->
+<section>
+  <h3>dnsmasq – Einsatzbereiche</h3>
+  <ul>
+    <li class="fragment">Heimnetzwerke</li>
+    <li class="fragment">Kleine Unternehmensnetze</li>
+    <li class="fragment">Virtuelle Maschinen</li>
+    <li class="fragment">Router / Embedded-Systeme</li>
+  </ul>
+</section>
+
+<!-- Vergleich -->
+<!--<section>
+  <h2>Direkter Vergleich</h2>
+  <div class="two-columns">
+    <div>
+      <h3>BIND</h3>
+      <ul>
+        <li>Hoher Funktionsumfang</li>
+        <li>Skalierbar</li>
+        <li>DNSSEC</li>
+        <li>Mehr Ressourcen</li>
+      </ul>
+    </div>
+    <div>
+      <h3>dnsmasq</h3>
+      <ul>
+        <li>Einfach & leichtgewichtig</li>
+        <li>DNS + DHCP</li>
+        <li>Sehr wenig Ressourcen</li>
+        <li>Begrenzte Funktionen</li>
+      </ul>
+    </div>
+  </div>
+</section>
+-->
+<section>
+  <h2>Vergleich: BIND vs dnsmasq</h2>
+
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>Kriterium</th>
+        <th>BIND</th>
+        <th>dnsmasq</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Komplexität</td>
+        <td>Hoch</td>
+        <td>Niedrig</td>
+      </tr>
+      <tr>
+        <td>Autoritativer DNS</td>
+        <td>Ja</td>
+        <td>Eingeschränkt</td>
+      </tr>
+      <tr>
+        <td>DHCP integriert</td>
+        <td>Nein</td>
+        <td>Ja</td>
+      </tr>
+      <tr>
+        <td>Zielumgebung</td>
+        <td>Enterprise</td>
+        <td>Kleine Netze / Lab</td>
+      </tr>
+      <tr>
+        <td>Hardwarebedarf</td>
+        <td>Mittel bis Hoch</td>
+        <td>Sehr gering</td>
+      </tr>
+      <tr>
+        <td>Geeignet für Router</td>
+        <td>Unüblich</td>
+        <td>Sehr geeignet</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Hardware Vergleich -->
+<section>
+  <h2>Hardware-Anforderungen</h2>
+  <div class="two-columns">
+    <div>
+      <h3>BIND</h3>
+      <p>Mittlerer bis hoher RAM- & CPU-Bedarf</p>
+      <p>Dedizierte Server oder starke VMs</p>
+      <p>Dauerbetrieb & Redundanz</p>
+    </div>
+    <div>
+      <h3>dnsmasq</h3>
+      <p>Sehr geringer Ressourcenbedarf</p>
+      <p>Raspberry Pi oder Router-Hardware</p>
+      <p>Kein dedizierter Server nötig</p>
+    </div>
+  </div>
+</section>
+
+<!-- Abschluss -->
+<section>
+  <h2>What do we need?</h2>
+  <ul>
+    <li class="fragment"><strong>Kleine Umgebung?</strong> → dnsmasq</li>
+    <li class="fragment"><strong>Große Infrastruktur?</strong> → BIND</li>
+    <li class="fragment"><strong>Hohe Sicherheit & Skalierung?</strong> → BIND</li>
+    <li class="fragment"><strong>Einfach & schnell?</strong> → dnsmasq</li>
+  </ul>
+  <br>
+  <h3 class="fragment">Die Wahl hängt vom Einsatzzweck ab.</h3>
+</section>
+
+</div>
+</div>
+
+<script src="https://unpkg.com/reveal.js/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: true,
+    transition: "fade"
+  });
+</script>
+
+</body>
+</html>
