@@ -50,6 +50,12 @@
         #screen { flex:1; min-height:100%; box-sizing:border-box; }
 
         #screen iframe { width:100%; height:100%; border:0; display:block; }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.1); /* leichtes Highlight */
+            transform: translateX(6px);         /* kleine Bewegung wie beim Hover */
+            box-shadow: inset 4px 0 0 #2FB09A; /* farblicher Balken links */
+        }
     </style>
 </head>
 <body>
@@ -89,49 +95,63 @@
             
     </div>
     <script>
-        (function(){
-            const nav = document.getElementById('nav-bar');
-            const items = document.querySelectorAll('#nav-bar .nav-item');
-            const frame = document.getElementById('screen-frame');
-            const toggle = document.getElementById('nav-toggle');
+       (function(){
+    const nav = document.getElementById('nav-bar');
+    const items = document.querySelectorAll('#nav-bar .nav-item');
+    const frame = document.getElementById('screen-frame');
+    const toggle = document.getElementById('nav-toggle');
 
-            // Load initially stored state
-            const collapsedState = localStorage.getItem('nav-collapsed') === '1';
-            if(collapsedState){
-                nav.classList.add('collapsed');
-            }
-            // set aria attributes for accessibility
-            toggle.setAttribute('aria-expanded', String(!collapsedState));
-            toggle.setAttribute('aria-pressed', collapsedState ? 'true' : 'false');
+    // Load initially stored state
+    const collapsedState = localStorage.getItem('nav-collapsed') === '1';
+    if(collapsedState){
+        nav.classList.add('collapsed');
+    }
+    // set aria attributes for accessibility
+    toggle.setAttribute('aria-expanded', String(!collapsedState));
+    toggle.setAttribute('aria-pressed', collapsedState ? 'true' : 'false');
 
-            // mark nav as ready to run entrance animations
-            requestAnimationFrame(()=> nav.classList.add('ready'));
+    // mark nav as ready to run entrance animations
+    requestAnimationFrame(()=> nav.classList.add('ready'));
 
-            function loadIntoFrame(url){
-                // Directly set iframe src (works with file:// and http://)
-                try{
-                    frame.src = url;
-                }catch(e){
-                    frame.srcdoc = `<div style="color:#111;background:#fff;padding:20px;font-family:sans-serif;"><h2>Fehler</h2><p>Kann <strong>${url}</strong> nicht laden.</p></div>`;
-                }
-            }
+    function loadIntoFrame(url){
+        try{
+            frame.src = url;
+        }catch(e){
+            frame.srcdoc = `<div style="color:#111;background:#fff;padding:20px;font-family:sans-serif;"><h2>Fehler</h2><p>Kann <strong>${url}</strong> nicht laden.</p></div>`;
+        }
+    }
 
-            items.forEach(it => {
-                it.addEventListener('click', e => {
-                    const url = it.getAttribute('data-src');
-                    if(!url) return;
-                    loadIntoFrame(url);
-                });
-            });
+    // Alle nav-items click handler + active state
+    items.forEach(it => {
+        it.addEventListener('click', e => {
+            const url = it.getAttribute('data-src');
+            if(!url) return;
 
-            toggle.addEventListener('click', () => {
-                const collapsed = nav.classList.toggle('collapsed');
-                // update accessible attributes and persisted state
-                toggle.setAttribute('aria-expanded', String(!collapsed));
-                toggle.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
-                localStorage.setItem('nav-collapsed', collapsed ? '1' : '0');
-            });
-        })();
+            // iframe laden
+            loadIntoFrame(url);
+
+            // Aktuelles Item markieren
+            items.forEach(i => i.classList.remove('active'));
+            it.classList.add('active');
+        });
+    });
+
+    // Initial active highlight basierend auf iframe src
+    const currentSrc = frame.src;
+    items.forEach(it => {
+        if(it.getAttribute('data-src') === currentSrc){
+            it.classList.add('active');
+        }
+    });
+
+    // Toggle Sidebar
+    toggle.addEventListener('click', () => {
+        const collapsed = nav.classList.toggle('collapsed');
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+        toggle.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+        localStorage.setItem('nav-collapsed', collapsed ? '1' : '0');
+    });
+})();   
     </script>
 </body>
 </html>
