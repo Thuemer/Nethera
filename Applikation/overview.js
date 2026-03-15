@@ -120,7 +120,7 @@ class RouterCard extends HTMLElement {
             </div>
 
             <div class="router-box">
-                <div>
+                <div id="router-left">
                     <div>Status</div>
                     <div class="under">Verbundene Geräte</div>
                     <div class="under">Firmware</div>
@@ -176,7 +176,7 @@ class FeaturesCard extends HTMLElement {
 
         this.innerHTML = `
             <div class="card-header">
-                <h2>Features</h2>
+                <h2>Allgemein</h2>
                 <span class="icon">🛠</span>
             </div>
             <ul class="feature-list">
@@ -647,10 +647,15 @@ class DashboardContainer extends HTMLElement {
     setupCardDragAndDrop() {
         this.cards.forEach(card => {
             let offsetX, offsetY, dragging = false;
+            let resizing = false;
+
+            const MIN_WIDTH = 220;
+            const MIN_HEIGHT = 140;
 
             // Drag
             card.addEventListener('mousedown', e => {
                 if (!this.editMode) return;
+                if (resizing) return;
                 dragging = true;
                 offsetX = e.clientX - card.offsetLeft;
                 offsetY = e.clientY - card.offsetTop;
@@ -669,26 +674,44 @@ class DashboardContainer extends HTMLElement {
             });
 
             // Resize
-            const handle = document.createElement('div');
-            handle.className = 'resize-handle';
-            card.appendChild(handle);
+            const attachResizeHandle = () => {
+                let handle = card.querySelector(':scope > .resize-handle');
+                if (handle) return;
 
-            let resizing = false;
+                handle = document.createElement('div');
+                handle.className = 'resize-handle';
+                card.appendChild(handle);
 
-            handle.addEventListener('mousedown', e => {
-                if (!this.editMode) return;
-                e.stopPropagation();
-                resizing = true;
+                handle.addEventListener('mousedown', e => {
+                    if (!this.editMode) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dragging = false;
+                    resizing = true;
+                    card.style.zIndex = 1000;
+                });
+            };
+
+            attachResizeHandle();
+
+            // Some cards re-render with innerHTML after API updates and drop the handle.
+            // Watch for child changes and re-attach it so every card stays resizable.
+            const observer = new MutationObserver(() => {
+                attachResizeHandle();
             });
+            observer.observe(card, { childList: true });
 
             document.addEventListener('mousemove', e => {
                 if (!resizing) return;
-                card.style.width = `${e.clientX - card.offsetLeft}px`;
-                card.style.height = `${e.clientY - card.offsetTop}px`;
+                const nextWidth = Math.max(MIN_WIDTH, e.clientX - card.offsetLeft);
+                const nextHeight = Math.max(MIN_HEIGHT, e.clientY - card.offsetTop);
+                card.style.width = `${nextWidth}px`;
+                card.style.height = `${nextHeight}px`;
             });
 
             document.addEventListener('mouseup', () => {
                 resizing = false;
+                card.style.zIndex = '';
             });
         });
     }

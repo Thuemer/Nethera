@@ -1,12 +1,26 @@
+:root {
+    --bg-main: #212121;
+    --bg-card: #1c1f1e;
+    --bg-card-2: #232826;
+    --line: rgba(255, 255, 255, 0.08);
+    --text-main: #ffffff;
+    --text-soft: #b8c0bd;
+    --accent: #2fb09a;
+    --accent-2: #144659;
+}
+
 * {
     box-sizing: border-box;
-    font-family: system-ui, sans-serif;
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
 }
 
 body {
     margin: 0;
-    background: #212121;
-    color: #fff;
+    background:
+        radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%),
+        var(--bg-main);
+    color: var(--text-main);
     overflow: hidden; 
 }
 
@@ -18,7 +32,7 @@ body {
 }
 
 .router-right > div {
-    margin-top: 2.25vw;
+    margin-top: 1vw;
 }
 
 .router-right > div:first-child {
@@ -38,7 +52,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #4ade80;
+    color: #7be1cf;
     font-weight: 500;
     transform: translateY(-0.5vw);
 }
@@ -53,7 +67,7 @@ body {
 .dot {
     width: 8px;
     height: 8px;
-    background: #4ade80;
+    background: #2fb09a;
     border-radius: 50%;
 }
 
@@ -75,10 +89,11 @@ body {
 
 /* CARD */
 .card {
-    background: #1c1f1e;
-    border-radius: 12px;
+    background: linear-gradient(155deg, var(--bg-card), var(--bg-card-2));
+    border: 1px solid var(--line);
+    border-radius: 14px;
     padding: 15px;
-    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    box-shadow: 0 10px 28px rgba(0,0,0,.35);
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -99,12 +114,17 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 5vh;
+}
+
+.card-header h2 {
+    margin: 0;
+    letter-spacing: 0.015em;
 }
 
 .icon {
     font-size: 20px;
-    color: #6ee7c8;
+    color: #7be1cf;
 }
 
 /* FEATURES */
@@ -112,7 +132,7 @@ body {
     list-style: none;
     padding: 0;
     margin: 0;
-    margin-top: -1.5vw;
+    margin-top: -3vh;
     font-size: 1.25rem;
 }
 
@@ -138,12 +158,13 @@ body {
 
 /* ACTIVITY */
 .activity {
-    background: #fff;
-    color: #000;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
     font-size: 1rem;
     padding: 10px 14px;
     border-radius: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 2vh;
 }
 
 .allAcitivities {
@@ -151,11 +172,13 @@ body {
 }
 
 .activity.ok {
-    background: #6ee7c8;
+    background: rgba(47, 176, 154, 0.16);
+    border-color: rgba(47, 176, 154, 0.3);
 }
 
 .activity.warn {
-    background: #facc15;
+    background: rgba(245, 158, 11, 0.16);
+    border-color: rgba(245, 158, 11, 0.3);
 }
 
 /* DNS */
@@ -165,7 +188,7 @@ body {
 .dns div {
     display: flex;
     justify-content: space-between;
-    margin: 1.5vw 0;
+    margin: 1vw 0;
 }
 
 .dnstext {
@@ -178,29 +201,32 @@ body {
 }
 
 .legend {
-    margin-top: 2vw;
+    margin-top: 0.5vw;
     margin-left: 8vw;
     position: fixed;
 }
 
 .upload { color: #3b82f6; margin-right: 10px; }
-.download { color: #6ee7c8; }
+.download { color: #7be1cf; }
 
 .bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: #1a1a1a;
+    background: rgba(18, 24, 22, 0.92);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     justify-content: space-around;
     padding: 10px 0;
 }
 
 .bottom-nav button {
-    background: #134e4a;
-    border: none;
-    color: #fff;
+    background: linear-gradient(135deg, rgba(20, 70, 89, 0.75), rgba(47, 176, 154, 0.6));
+    border: 1px solid rgba(255,255,255,.1);
+    color: var(--text-main);
     border-radius: 14px;
     padding: 10px 16px;
     display: flex;
@@ -212,22 +238,37 @@ body {
 }
 
 .bottom-nav button.active {
-    background: #2dd4bf;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
 }
 
 .edit-mode .card {
     cursor: move;
 }
 
+#router-left {
+    margin-top: -2vh;
+}
+
 .resize-handle {
     position: absolute;
-    width: 8px;
-    height: 8px;
+    width: 16px;
+    height: 16px;
     right: 6px;
     bottom: 6px;
-    background: #2dd4bf;
-    border-radius: 4px;
+    background: var(--accent);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 5px;
     cursor: se-resize;
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+body.edit-mode .resize-handle {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .layout-controls {
@@ -251,8 +292,8 @@ body {
     font-weight: 500;
     letter-spacing: .2px;
 
-    border: 1px solid rgba(255,255,255,.08);
-    background: rgba(28, 31, 30, 0.75);
+    border: 1px solid var(--line);
+    background: linear-gradient(155deg, rgba(28, 31, 30, 0.88), rgba(35, 40, 38, 0.88));
     color: #e5e7eb;
 
     backdrop-filter: blur(10px);
@@ -277,18 +318,18 @@ body {
 }
 
 .control-btn.edit {
-    border-color: rgba(45, 212, 191, 0.35);
+    border-color: rgba(47, 176, 154, 0.35);
 }
 
 .control-btn.edit:hover {
-    background: rgba(45, 212, 191, 0.15);
-    color: #6ee7c8;
+    background: rgba(47, 176, 154, 0.15);
+    color: #7be1cf;
 }
 
 body.edit-mode .control-btn.edit {
-    background: rgba(45, 212, 191, 0.25);
-    color: #2dd4bf;
-    box-shadow: 0 0 0 1px rgba(45,212,191,.4),
+    background: rgba(47, 176, 154, 0.25);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(47,176,154,.4),
                 0 10px 30px rgba(0,0,0,.5);
 }
 
@@ -328,7 +369,7 @@ body.edit-mode .control-btn.edit {
 #hammer_knows {
     position: absolute;
     top: 1vh;
-    left: 15vw;
+    left: 12vw;
     width: auto;              
     height: auto;
     display: flex;
@@ -339,23 +380,24 @@ body.edit-mode .control-btn.edit {
 }
 
 #hammer_knows_design {
-    font-size: 3rem;               /* größer und auffälliger */
-    font-weight: 800;              /* fetter */
-    color: #2FB09A;                /* Brand Mint/Türkis */
-    letter-spacing: 0.8vw;         /* stylisches Letter-Spacing */
+    font-size: 2.6rem;              
+    font-weight: 800;              
+    color: #7be1cf;              
+    letter-spacing: 0.5vw;        
+    border: 1px solid var(--line);
+    background: linear-gradient(155deg, rgba(28, 31, 30, 0.75), rgba(35, 40, 38, 0.75));
     text-shadow: 0 0 6px rgba(47,176,154,0.3),
                  0 0 12px rgba(47,176,154,0.2),
-                 0 2px 8px rgba(0,0,0,0.15);  /* mehr Tiefe */
-    padding: 0.5rem 4rem;          /* breiterer Hintergrund */
+                 0 2px 8px rgba(0,0,0,0.15); 
+    padding: 0.45rem 2rem;         
     border-radius: 12px;
-    background: rgba(47,176,154,0.08);  /* subtiler Hintergrund */
     display: inline-block;
     transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2)); /* leichter 3D Effekt */
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2)); 
 }
 
 #hammer_knows_design:hover {
-    transform: scale(1.08) rotate(-1deg);  /* leichte Dynamik beim Hover */
+    transform: scale(1.08) rotate(-1deg);  
     box-shadow: 0 0 18px rgba(47,176,154,0.5), 0 4px 12px rgba(0,0,0,0.25);
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
 }
