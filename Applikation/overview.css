@@ -172,9 +172,11 @@ body {
     font-size: 1.25rem;
 }
 
-#speedChart {
-    margin-top: -2.5vw;
+.speedChart {
+    position: relative;
+    top: -4vh;
 }
+
 .legend {
     margin-top: 2vw;
     margin-left: 8vw;
