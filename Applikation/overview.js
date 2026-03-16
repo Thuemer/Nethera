@@ -112,6 +112,7 @@ class RouterCard extends HTMLElement {
     render() {
         const devices = this.router?.devices?.length ?? 0;
         const status = this.router?.isOnline ? 'Online' : 'Offline';
+        const lastSeen = formatDateTime(this.router?.lastSeen);
         const firmware = this.router?.firmware || '—';
 
         this.innerHTML = `
@@ -129,6 +130,7 @@ class RouterCard extends HTMLElement {
                 <div class="router-right">
                     <div class="online">
                         <span class="dot"></span> ${status}
+                        <span class="online-last-seen">Online seit: ${lastSeen}</span>
                     </div>
 
                     <div class="count">${devices}</div>

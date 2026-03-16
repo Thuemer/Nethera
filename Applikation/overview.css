@@ -54,7 +54,19 @@ body {
     gap: 6px;
     color: #7be1cf;
     font-weight: 500;
+    position: relative;
     transform: translateY(-0.5vw);
+}
+
+.online-last-seen {
+    position: absolute;
+    top: calc(100% - 0.15vw);
+    font-size: 0.68rem;
+    line-height: 1;
+    right: 0vw;
+    color: var(--text-soft);
+    white-space: nowrap;
+    pointer-events: none;
 }
 
 
@@ -367,37 +379,36 @@ body.edit-mode .control-btn.edit {
 }
 
 #hammer_knows {
-    position: absolute;
-    top: 1vh;
-    left: 12vw;
-    width: auto;              
+    position: fixed;
+    top: 3.25vw;
+    left: 4vw;
+    width: auto;
     height: auto;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    pointer-events: none;     
+    pointer-events: none;
 }
 
 #hammer_knows_design {
-    font-size: 2.6rem;              
-    font-weight: 800;              
-    color: #7be1cf;              
-    letter-spacing: 0.5vw;        
-    border: 1px solid var(--line);
-    background: linear-gradient(155deg, rgba(28, 31, 30, 0.75), rgba(35, 40, 38, 0.75));
-    text-shadow: 0 0 6px rgba(47,176,154,0.3),
-                 0 0 12px rgba(47,176,154,0.2),
-                 0 2px 8px rgba(0,0,0,0.15); 
-    padding: 0.45rem 2rem;         
-    border-radius: 12px;
+    font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
+    font-size: 2.4rem;
+    font-weight: 500;
+    color: #ffffff;
+    letter-spacing: 0.08vw;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.25);
     display: inline-block;
-    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2)); 
+    transition: color 0.25s ease, text-shadow 0.25s ease;
 }
 
 #hammer_knows_design:hover {
-    transform: scale(1.08) rotate(-1deg);  
-    box-shadow: 0 0 18px rgba(47,176,154,0.5), 0 4px 12px rgba(0,0,0,0.25);
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25));
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.28);
+}
+
+@media (max-width: 900px) {
+    #hammer_knows {
+        right: 0;
+    }
 }
