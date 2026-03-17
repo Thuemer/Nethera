@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenverkehr</title>
+    <link rel="icon" href="nethera_logo.png">
+    <link rel="stylesheet" href="traffic.css">
+</head>
+<body>
+    <main class="traffic-page">
+        <section class="hero card">
+            <div>
+                <p class="eyebrow">Nethera Dashboard</p>
+                <h1>Datenverkehr</h1>
+                <p class="subline">Übersicht des aktuellen Netzwerkverkehrs und Bandnutzung.</p>
+            </div>
+            <button id="refreshButton" class="refresh-btn" type="button">Neu laden</button>
+        </section>
+
+        <section class="stats-grid" aria-label="Datenverkehr Kennzahlen">
+            <article class="card stat">
+                <p>Download</p>
+                <strong id="statDownload">-- Mb/s</strong>
+                <span class="stat-detail">Durchsatz</span>
+            </article>
+            <article class="card stat">
+                <p>Upload</p>
+                <strong id="statUpload">-- Mb/s</strong>
+                <span class="stat-detail">Durchsatz</span>
+            </article>
+            <article class="card stat">
+                <p>Aktive Verbindungen</p>
+                <strong id="statConnections">0</strong>
+                <span class="stat-detail">Gesamtzahl</span>
+            </article>
+            <article class="card stat">
+                <p>Datenvolumen heute</p>
+                <strong id="statVolume">-- GB</strong>
+                <span class="stat-detail">Übertragen</span>
+            </article>
+        </section>
+
+        <section class="card traffic-info">
+            <h2>Echtzeit-Verkehr</h2>
+            <div class="traffic-chart-placeholder">
+                <p>Verkehrsdiagramm</p>
+                <p style="font-size: 12px; color: var(--text-soft);">Datenvisualisierung wird hier angezeigt</p>
+            </div>
+        </section>
+
+        <section class="card traffic-table">
+            <h2>Top Verbindungen</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Gerät</th>
+                            <th>IP-Adresse</th>
+                            <th>Protokoll</th>
+                            <th>Download</th>
+                            <th>Upload</th>
+                        </tr>
+                    </thead>
+                    <tbody id="traffic-table-body">
+                        <tr>
+                            <td>--</td>
+                            <td>--</td>
+                            <td>--</td>
+                            <td>--</td>
+                            <td>--</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="traffic.js"></script>
+</body>
+</html>

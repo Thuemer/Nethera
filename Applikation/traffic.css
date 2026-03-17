@@ -1,0 +1,204 @@
+:root {
+    --bg-main: #212121;
+    --bg-card: #1c1f1e;
+    --bg-card-2: #232826;
+    --line: rgba(255, 255, 255, 0.08);
+    --text-main: #ffffff;
+    --text-soft: #b8c0bd;
+    --accent: #2fb09a;
+    --accent-2: #144659;
+    --warn: #f59e0b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 28px;
+    color: var(--text-main);
+    background:
+        radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%),
+        var(--bg-main);
+    font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.traffic-page {
+    display: grid;
+    gap: 18px;
+}
+
+.card {
+    background: linear-gradient(155deg, var(--bg-card), var(--bg-card-2));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.hero {
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.eyebrow {
+    margin: 0;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    font-size: 12px;
+}
+
+h1 {
+    margin: 4px 0 2px;
+    font-size: clamp(28px, 4vw, 36px);
+}
+
+h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.subline {
+    margin: 0;
+    color: var(--text-soft);
+}
+
+.refresh-btn {
+    border: 0;
+    padding: 12px 18px;
+    border-radius: 12px;
+    color: white;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-1px);
+}
+
+.refresh-btn:active {
+    transform: translateY(0);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+
+.stat {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat p {
+    margin: 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-soft);
+    font-weight: 600;
+}
+
+.stat strong {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stat-detail {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.traffic-info {
+    padding: 20px;
+}
+
+.traffic-chart-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    background: rgba(47, 176, 154, 0.04);
+}
+
+.traffic-chart-placeholder p {
+    margin: 0;
+    color: var(--text-soft);
+}
+
+.traffic-table {
+    padding: 20px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+thead {
+    border-bottom: 1px solid var(--line);
+}
+
+th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 11px;
+}
+
+td {
+    padding: 14px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+}
+
+tbody tr:hover {
+    background: rgba(47, 176, 154, 0.08);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 16px;
+    }
+
+    .hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    table {
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 10px 6px;
+    }
+}
