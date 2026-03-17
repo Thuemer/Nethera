@@ -167,6 +167,11 @@ class NetworkTopology extends HTMLElement {
         this.svg=this.querySelector('#lines');
         this.bottomDetail=this.querySelector('#device-detail');
 
+        // Ensure first line render is correct after router image dimensions are available.
+        if(this.router && !this.router.complete){
+            this.router.addEventListener('load', ()=> this.drawLines(), { once: true });
+        }
+
         // Recalculate layout on window resize for a responsive, compact arrangement
         window.addEventListener('resize', () => { this.initLayout(); this.drawLines(); });
 
@@ -387,25 +392,37 @@ class NetworkTopology extends HTMLElement {
         if(!this.svg) return;
         if(!this.router) return;
         this.svg.innerHTML='';
-        // Prefer cached center positions (_cx/_cy) where available to avoid
-        // forcing layout reflow via getBoundingClientRect on every frame.
-        const rRect=this.router.getBoundingClientRect();
-        const rX=this.router._cx ?? (rRect.left + rRect.width/2);
-        const rY=this.router._cy ?? (rRect.top + rRect.height/2);
+        const topologyRect = this.querySelector('#topology')?.getBoundingClientRect();
+        if(!topologyRect) return;
+        const routerCenter = this.getLocalCenter(this.router, topologyRect);
+        const rX = routerCenter.x;
+        const rY = routerCenter.y;
 
         this.groups.forEach(group=>{
-            // use cached center if available
-            const gX = group._cx ?? (group.getBoundingClientRect().left + group.getBoundingClientRect().width/2);
-            const gY = group._cy ?? (group.getBoundingClientRect().top + group.getBoundingClientRect().height/2);
+            const groupCenter = this.getLocalCenter(group, topologyRect);
+            const gX = groupCenter.x;
+            const gY = groupCenter.y;
             this.createLine(rX,rY,gX,gY);
 
             this.devices.filter(d=>d.dataset.group===group.dataset.group)
                 .forEach(dev=>{
-                    const dX = dev._cx ?? (dev.getBoundingClientRect().left + dev.getBoundingClientRect().width/2);
-                    const dY = dev._cy ?? (dev.getBoundingClientRect().top + dev.getBoundingClientRect().height/2);
+                    const devCenter = this.getLocalCenter(dev, topologyRect);
+                    const dX = devCenter.x;
+                    const dY = devCenter.y;
                     this.createLine(gX,gY,dX,dY);
                 });
         });
+    }
+
+    getLocalCenter(el, topologyRect){
+        if(el._cx != null && el._cy != null){
+            return { x: el._cx, y: el._cy };
+        }
+        const rect = el.getBoundingClientRect();
+        return {
+            x: rect.left - topologyRect.left + rect.width / 2,
+            y: rect.top - topologyRect.top + rect.height / 2
+        };
     }
 
     // Schedule a draw on the next animation frame (throttles multiple calls).
