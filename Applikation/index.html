@@ -90,7 +90,7 @@
             </ul>
         </div>
         <div id="screen">
-            <iframe id="screen-frame" src="topologie_custom.html" title="Topologie"></iframe>
+            <iframe id="screen-frame" src="overview.html" title="Übersicht"></iframe>
         </div>
             
     </div>
@@ -137,7 +137,7 @@
     });
 
     // Initial active highlight basierend auf iframe src
-    const currentSrc = frame.src;
+    const currentSrc = frame.src.split('/').pop(); // nur der Dateiname
     items.forEach(it => {
         if(it.getAttribute('data-src') === currentSrc){
             it.classList.add('active');

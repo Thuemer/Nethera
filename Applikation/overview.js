@@ -201,7 +201,7 @@ class SpeedCard extends HTMLElement {
         this.padding = {
             left: 50,
             right: 20,
-            top: 20,
+            top: 40,
             bottom: 40
         };
     }
