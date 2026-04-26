@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konfiguration</title>
+  <link rel="icon" href="nethera_logo.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="page">
+    <app-hero title="Konfiguration" text="Lokale Demo-Einstellungen für Router, Schutz und Anzeige." button="Speichern"></app-hero>
+
+    <section class="grid two-grid">
+      <app-card title="Router" icon="📡">
+        <text-field id="routerName" label="Routername" value="Nethera Router"></text-field>
+        <select-field id="securityMode" label="Sicherheitsmodus" options="Normal,Streng,Locker"></select-field>
+        <config-row title="Automatische Updates" text="Firmware-Updates im Hintergrund erlauben" checked></config-row>
+        <config-row title="DNS Blocking" text="Tracker und bekannte Werbedomains blockieren" checked></config-row>
+      </app-card>
+
+      <app-card title="Netzwerk" icon="🧩">
+        <text-field label="LAN Netzwerk" value="192.168.0.0/24"></text-field>
+        <text-field label="Gateway" value="192.168.0.1"></text-field>
+        <config-row title="Gastnetzwerk" text="Separates WLAN für Gäste aktivieren"></config-row>
+        <config-row title="Profi-Metriken" text="Zusätzliche technische Werte anzeigen" checked></config-row>
+      </app-card>
+    </section>
+
+    <app-card title="Hinweis" icon="ℹ️">
+      <p class="muted">Diese Seite speichert aktuell nur Demo-Einstellungen im Browser. Für echte Änderungen brauchst du später Backend-Endpunkte wie PATCH /api/routers/{id}/config.</p>
+    </app-card>
+
+    <data-status id="statusBox" text="Noch nichts gespeichert."></data-status>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="components.js"></script>
+  <script src="configuration.js"></script>
+</body>
+</html>

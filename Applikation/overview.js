@@ -377,8 +377,10 @@ class ActivityCard extends HTMLElement {
     }
 
     render() {
-        const logHtml = this.logs.length
-            ? this.logs
+        const visibleLogs = this.logs.slice(0, 3);
+
+        const logHtml = visibleLogs.length
+            ? visibleLogs
                 .map(log => `
                     <div class="activity ${this.getTypeClass(log.eventType)}">
                         ${this.getTypeIcon(log.eventType)} ${log.details} (${formatTime(log.timestamp)})

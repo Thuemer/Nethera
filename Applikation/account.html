@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account</title>
+  <link rel="icon" href="nethera_logo.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main class="page">
+    <app-hero title="Account" text="Profil, Rechte und Benachrichtigungen für den aktuellen Nutzer." button="Speichern"></app-hero>
+
+    <section class="grid two-grid">
+      <app-card title="Profil" icon="👤">
+        <div class="account-box">
+          <div class="avatar">DB</div>
+          <div>
+            <h2>Deniz Bernecker</h2>
+            <p class="muted">Lokaler Administrator</p>
+          </div>
+        </div>
+        <text-field id="displayName" label="Anzeigename" value="Deniz Bernecker"></text-field>
+        <text-field id="email" label="E-Mail" value="denizbernecker@example.com"></text-field>
+      </app-card>
+
+      <app-card title="Benachrichtigungen" icon="🔔">
+        <config-row title="Security Warnungen" text="Bei geblockten Domains und neuen Geräten informieren" checked></config-row>
+        <config-row title="Traffic Warnungen" text="Bei ungewöhnlich hohem Datenverkehr informieren" checked></config-row>
+        <config-row title="Wöchentlicher Bericht" text="Kurze Zusammenfassung am Wochenende"></config-row>
+      </app-card>
+    </section>
+
+    <app-card title="Rollen" icon="🛡️">
+      <div class="kv-list">
+        <div class="kv"><span>Rolle</span><strong>Admin</strong></div>
+        <div class="kv"><span>Berechtigung</span><strong>Geräte ansehen, markieren und konfigurieren</strong></div>
+        <div class="kv"><span>Login</span><strong>Demo / lokal</strong></div>
+      </div>
+    </app-card>
+
+    <data-status id="statusBox" text="Bereit."></data-status>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="components.js"></script>
+  <script src="account.js"></script>
+</body>
+</html>
