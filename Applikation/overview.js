@@ -115,28 +115,26 @@ class RouterCard extends HTMLElement {
         const lastSeen = formatDateTime(this.router?.lastSeen);
         const firmware = this.router?.firmware || '—';
 
+        const isOnline = this.router?.isOnline;
+
         this.innerHTML = `
             <div class="card-header">
                 <h2>Router</h2>
             </div>
 
-            <div class="router-box">
-                <div id="router-left">
-                    <div>Status</div>
-                    <div class="under">Verbundene Clients</div>
-                    <div class="under">Firmware</div>
-                </div>
-
-                <div class="router-right">
-                    <div class="online">
-                        <span class="dot"></span> ${status}
-                        <span class="online-last-seen">Online seit: ${lastSeen}</span>
+            <div class="card-content-stack">
+                <div class="card-kpi-row">
+                    <div class="card-kpi">
+                        <span class="card-kpi-label">Status</span>
+                        <span class="card-kpi-value"><span class="status-pill ${isOnline ? '' : 'offline'}"><span class="dot"></span>${status}</span></span>
                     </div>
-
-                    <div class="count">${devices}</div>
-
-                    <div class="firmware_element">${firmware}</div>
+                    <div class="card-kpi align-right">
+                        <span class="card-kpi-label">Clients</span>
+                        <span class="card-kpi-value">${devices}</span>
+                    </div>
                 </div>
+                <div class="card-detail-row"><span class="card-detail-label">Zuletzt gesehen</span><span class="card-detail-value">${lastSeen}</span></div>
+                <div class="card-detail-row"><span class="card-detail-label">Firmware</span><span class="card-detail-value">${firmware}</span></div>
             </div>
         `;
     }
@@ -181,11 +179,11 @@ class FeaturesCard extends HTMLElement {
                 <h2>Allgemein</h2>
                 <span class="icon">🛠</span>
             </div>
-            <ul class="feature-list">
-                <li class="ok">Router: ${routerName}</li>
-                <li class="ok">Modell: ${model}</li>
-                <li class="ok">Blockierte DNS-Anfragen: ${blocked}</li>
-                <li class="ok">Aktueller Download: ${download}</li>
+            <ul class="feature-list content-list">
+                <li class="ok"><span class="feature-line"><span class="feature-name">Router</span><span class="feature-value">${routerName}</span></span></li>
+                <li class="ok"><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
+                <li class="ok"><span class="feature-line"><span class="feature-name">Blockierte DNS</span><span class="feature-value">${blocked}</span></span></li>
+                <li class="ok"><span class="feature-line"><span class="feature-name">Download</span><span class="feature-value">${download}</span></span></li>
             </ul>
         `;
     }
@@ -216,6 +214,10 @@ class SpeedCard extends HTMLElement {
                 <h2>Speed</h2>
                 <span class="icon">⏱</span>
             </div>
+            <div class="speed-summary">
+                <div class="card-kpi"><span class="card-kpi-label">Upload</span><span class="card-kpi-value" id="uploadValue">—</span></div>
+                <div class="card-kpi align-right"><span class="card-kpi-label">Download</span><span class="card-kpi-value" id="downloadValue">—</span></div>
+            </div>
             <canvas class="speedChart" width="620" height="260"></canvas>
             <div class="legend">
                 <span class="upload">● Upload</span>
@@ -234,6 +236,12 @@ class SpeedCard extends HTMLElement {
             this.upload = sortedSpeedStats.map(entry => Number(entry.uploadSpeed) || 0);
             this.download = sortedSpeedStats.map(entry => Number(entry.downloadSpeed) || 0);
             this.labels = sortedSpeedStats.map(entry => formatTime(entry.timestamp));
+
+            const latestSpeed = sortedSpeedStats.at(-1);
+            const uploadValue = this.querySelector('#uploadValue');
+            const downloadValue = this.querySelector('#downloadValue');
+            if (uploadValue) uploadValue.textContent = latestSpeed?.uploadSpeed != null ? `${Number(latestSpeed.uploadSpeed).toFixed(1)} Mbit/s` : '—';
+            if (downloadValue) downloadValue.textContent = latestSpeed?.downloadSpeed != null ? `${Number(latestSpeed.downloadSpeed).toFixed(1)} Mbit/s` : '—';
         } catch (error) {
             this.upload = [];
             this.download = [];
@@ -370,6 +378,7 @@ class ActivityCard extends HTMLElement {
 
     getTypeClass(eventType) {
         if (eventType === 'CONNECTED') return 'ok';
+        if (eventType === 'DISCONNECTED') return 'offline';
         if (eventType === 'BLOCKED_URL') return 'warn';
         return '';
     }
@@ -381,18 +390,32 @@ class ActivityCard extends HTMLElement {
         return '•';
     }
 
+    getTypeLabel(eventType) {
+        if (eventType === 'CONNECTED') return 'Verbunden';
+        if (eventType === 'DISCONNECTED') return 'Getrennt';
+        if (eventType === 'BLOCKED_URL') return 'Blockiert';
+        return 'Ereignis';
+    }
+
     render() {
-        const visibleLogs = this.logs.slice(0, 3);
+        const visibleLogs = this.logs.slice(0, 2);
 
         const logHtml = visibleLogs.length
             ? visibleLogs
                 .map(log => `
                     <div class="activity ${this.getTypeClass(log.eventType)}">
-                        <span class="activity-time">${formatDateTime(log.timestamp)}</span><span class="activity-text">${this.getTypeIcon(log.eventType)} ${log.details}</span>
+                        <div class="activity-top">
+                            <span class="activity-badge">${this.getTypeLabel(log.eventType)}</span>
+                            <span class="activity-time">${formatDateTime(log.timestamp)}</span>
+                        </div>
+                        <div class="activity-text">
+                            <span class="activity-event-icon">${this.getTypeIcon(log.eventType)}</span>
+                            <span class="activity-message">${log.details || 'Keine Details vorhanden'}</span>
+                        </div>
                     </div>
                 `)
                 .join('')
-            : '<div class="activity">Keine Aktivitäten vorhanden</div>';
+            : '<div class="activity activity-empty">Keine Aktivitäten vorhanden</div>';
 
         this.innerHTML = `
             <div class="card-header">
@@ -455,11 +478,11 @@ class DnsCard extends HTMLElement {
                 <span class="icon">🛡</span>
             </div>
             <div class="dns_all">
-                <div class="dns">
-                    <div><span class="dnstext">Werbungen Blockiert:</span><strong>${blocked}</strong></div>
-                    <div><span class="dnstext">Tracker Verhindert:</span><strong>${trackers}</strong></div>
-                    <div><span class="dnstext">Anfragen Gesamt:</span><strong>${total}</strong></div>
-                    <div><span class="dnstext">Letztes Update:</span><strong>${timestamp}</strong></div>
+                <div class="dns dns-list">
+                    <div class="dns-row"><span class="dns-label">Werbung blockiert</span><strong class="dns-value">${blocked}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Tracker verhindert</span><strong class="dns-value">${trackers}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Anfragen gesamt</span><strong class="dns-value">${total}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Letztes Update</span><strong class="dns-value">${timestamp}</strong></div>
                 </div>
             </div>
         `;
