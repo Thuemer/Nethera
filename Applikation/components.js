@@ -237,7 +237,7 @@ class DeviceCard extends HTMLElement {
     this.innerHTML = `
       <article class="device-card ${blocked ? 'blocked' : ''}">
         <div>
-          <h3>${escapeHtml(d.hostname || 'Unbekanntes Gerät')}</h3>
+          <h3>${escapeHtml(d.hostname || 'Unbekanntes Client')}</h3>
           <p>${escapeHtml(d.ipAddress || '—')} · ${escapeHtml(d.macAddress || '—')}</p>
           <p class="muted">Zuletzt gesehen: ${formatDateTime(d.lastSeen)}</p>
         </div>
@@ -263,7 +263,7 @@ class DeviceDetailModal extends HTMLElement {
   }
   open(device) {
     this.querySelector('.modal-content').innerHTML = `
-      <h2>${escapeHtml(device.hostname || 'Gerät')}</h2>
+      <h2>${escapeHtml(device.hostname || 'Client')}</h2>
       <div class="detail-grid">
         <span>IP-Adresse</span><strong>${escapeHtml(device.ipAddress || '—')}</strong>
         <span>MAC-Adresse</span><strong>${escapeHtml(device.macAddress || '—')}</strong>

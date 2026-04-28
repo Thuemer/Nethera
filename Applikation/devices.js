@@ -132,7 +132,7 @@ function applyFilters() {
 }
 
 async function loadDevices() {
-    setMessage('Lade aktuelle Client-Daten ...');
+    setMessage('Lade Clients ...');
 
     try {
         const response = await fetch(ROUTER_API_URL, {
@@ -169,7 +169,7 @@ async function loadDevices() {
         updateStats();
         renderTable();
 
-        setMessage(`Clientdaten konnten nicht geladen werden: ${error.message}`, true);
+        setMessage(`Clients konnten nicht geladen werden: ${error.message}`, true);
         console.error('loadDevices:', error);
     }
 }

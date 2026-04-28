@@ -43,7 +43,7 @@ class RouterCard extends HTMLElement {
             <div class="router-box">
                 <div>
                     <div>Status</div>
-                    <div class="under">Verbundene Geräte</div>
+                    <div class="under">Verbundene Clients</div>
                 </div>
                 <div class="router-right">
                     <div class="online">
@@ -223,7 +223,6 @@ class ActivityCard extends HTMLElement {
                 <div class="activity ok">📶 iPhone von Helmut verbunden</div>
                 <div class="activity ok">📶 Jakob verbunden</div>
                 <div class="activity">❌ Lex 4587 verlassen</div>
-                <div class="activity warn">⚠️ gesperrte Website angefragt</div>
             </div>
         `;
     }
@@ -245,7 +244,7 @@ class DnsCard extends HTMLElement {
         
         this.innerHTML = `
             <div class="card-header">
-                <h2>DNS Übersicht (Heute)</h2>
+                <h2>DNS Heute</h2>
                 <span class="icon">🛡</span>
             </div>
             <div class="dns_all">
@@ -271,7 +270,7 @@ class DashboardNav extends HTMLElement {
         this.innerHTML = `
             <button data-filter="activity">📶<span>Aktivität</span></button>
             <button data-filter="dns">🛡<span>DNS</span></button>
-            <button data-filter="speed">⏱<span>SPEED</span></button>
+            <button data-filter="speed">⏱<span>Speed</span></button>
             <button data-filter="status">🔔<span>STATUS</span></button>
             <button data-filter="features">🛠<span>CONFIG</span></button>
         `;
@@ -312,6 +311,7 @@ class LayoutControls extends HTMLElement {
             <button id="editToggle" class="control-btn edit">
                 ✏️ <span>Layout bearbeiten</span>
             </button>
+            <p class="layout-hint" id="layoutHint">Layout bearbeiten aktivieren, dann Boxen verschieben oder unten rechts skalieren.</p>
             <button id="resetLayout" class="control-btn reset">
                 ♻️ <span>Zurücksetzen</span>
             </button>

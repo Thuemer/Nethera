@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Übersicht</title>
+    <title>Dashboard</title>
     <link rel="icon" href="nethera_logo.png">
     <link rel="stylesheet" href="overview.css" id="overview-stylesheet">
     <script>
@@ -19,7 +19,7 @@
         <div>
             <p class="eyebrow">Nethera Dashboard</p>
             <h1>Dashboard</h1>
-            <p class="subline">Alle aktuellen Netzwerkdaten und Statusinformationen auf einen Blick.</p>
+            <p class="subline">Status, Speed und aktuelle Ereignisse deines Netzwerks.</p>
         </div>
         <layout-controls></layout-controls>
     </section>
@@ -46,10 +46,6 @@
 <!-- Bottom Navigation -->
 <dashboard-nav></dashboard-nav>
 
-<script>
-    const script = document.createElement('script');
-    script.src = `overview.js?v=${Date.now()}`;
-    document.body.appendChild(script);
-</script>
+<script src="overview.js?v=20260302"></script>
 </body>
 </html>

@@ -24,41 +24,9 @@ body {
     var(--bg-main);
 }
 
-.topology-page {
-  display: grid;
-  gap: 18px;
-}
-
-.hero {
-  padding: 18px 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.control-btn {
-  border: 0;
-  padding: 12px 18px;
-  border-radius: 12px;
-  color: white;
-  background: linear-gradient(135deg, var(--accent-2), var(--accent));
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.control-btn:hover {
-  transform: translateY(-1px);
-}
-
-.control-btn:active {
-  transform: translateY(1px);
-}
-
 network-topology {
   display: block;
-  height: calc(100vh - 160px);
+  height: calc(100vh - 40px);
   position: relative;
 }
 
@@ -239,3 +207,23 @@ svg line { stroke-linecap: round; transition: stroke-opacity 200ms ease; }
   }
   #bottom-info button { width: 30px; height: 28px; }
 }
+/* Lehrer-Feedback: Regroup, ruhigere Linien, kompaktere Topologie */
+#regroup-topology {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 40;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  color: #fff;
+  padding: 9px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0,0,0,.28);
+}
+#regroup-topology:hover { transform: translateY(-1px); }
+.group { width: 118px; font-size: 14px; }
+.device-info { font-size: 13px; line-height: 1.35; }
+svg line { stroke-width: 1.5; stroke-opacity: .42; }
+#device-detail { font-size: 13px; }

@@ -155,6 +155,7 @@ class NetworkTopology extends HTMLElement {
         this.innerHTML=`
         <div id="topology">
             <img src="router.png" id="router" draggable="false" tabindex="-1" aria-hidden="true">
+            <button id="regroup-topology" type="button">Neu anordnen</button>
             <svg id="lines"></svg>
         </div>
         <div id="bottom-info">
@@ -175,15 +176,6 @@ class NetworkTopology extends HTMLElement {
         // Recalculate layout on window resize for a responsive, compact arrangement
         window.addEventListener('resize', () => { this.initLayout(); this.drawLines(); });
 
-        const regroupButton = document.getElementById('regroupButton');
-        if (regroupButton) {
-            regroupButton.addEventListener('click', () => {
-                this._hasAnimatedInitial = false;
-                this.initLayout();
-                this.drawLines();
-            });
-        }
-
         this.querySelector('#prev-device').addEventListener('click', ()=>{
             if(!this.devices.length) return;
             this.selectedIndex=(this.selectedIndex-1+this.devices.length)%this.devices.length;
@@ -193,6 +185,10 @@ class NetworkTopology extends HTMLElement {
             if(!this.devices.length) return;
             this.selectedIndex=(this.selectedIndex+1)%this.devices.length;
             this.showBottomInfo(this.selectedIndex);
+        });
+
+        this.querySelector('#regroup-topology')?.addEventListener('click', ()=>{
+            this.regroup();
         });
 
         this.addGroupsAndDevices();
@@ -454,18 +450,27 @@ class NetworkTopology extends HTMLElement {
         return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
-    initLayout(){
+    regroup(){
+        this.devices.forEach(dev => { dev.offsetX = undefined; dev.offsetY = undefined; });
+        this._hasAnimatedInitial = true;
+        this.initLayout(true);
+        this.updateDeviceInfo();
+        if(this.devices.length) this.showBottomInfo(this.selectedIndex);
+    }
+
+    initLayout(forceRegroup=false){
         // Responsive compact layout:
         // - Place groups evenly around a small circle centered on the viewport
         // - Scale the circle radius to keep groups compact but avoid overlap with edges
-        const width = Math.max(400, window.innerWidth);
-        const height = Math.max(300, window.innerHeight - 60);
+        const topologyBox = this.querySelector('#topology');
+        const width = Math.max(400, topologyBox?.clientWidth || window.innerWidth);
+        const height = Math.max(300, topologyBox?.clientHeight || window.innerHeight - 60);
         const centerX = width / 2;
         const centerY = height / 2;
 
         // Base radius for group placement: smaller for small viewports, larger for wide screens
         const base = Math.min(width, height);
-        const groupRadius = Math.max(100, Math.min(base * 0.35, 300));
+        const groupRadius = Math.max(120, Math.min(base * 0.32, 280));
 
         const n = this.groups.length || 1;
         // Prepare arrays of target positions so we can optionally animate from center
@@ -478,7 +483,7 @@ class NetworkTopology extends HTMLElement {
             const gH = group.offsetHeight || 50;
 
             // angle for this group (start at -90deg to put first group top-center)
-            const angle = (2 * Math.PI * idx / n) - Math.PI / 2;
+            const angle = (2 * Math.PI * idx / n) - Math.PI / 2 + (forceRegroup ? Math.PI / 6 : 0);
 
             // compute candidate position and then clamp to viewport padding
             let gLeft = centerX + groupRadius * Math.cos(angle) - gW / 2;
@@ -493,7 +498,7 @@ class NetworkTopology extends HTMLElement {
             // layout devices around the group in a compact circle scaled to number of devices
             const children = this.devices.filter(d => d.dataset.group === group.dataset.group);
             // device radius depends on number of children; keep compact but non-overlapping
-            const devRadius = Math.min(220, Math.max(70, 50 + children.length * 18));
+            const devRadius = Math.min(190, Math.max(76, 46 + children.length * 14));
 
             children.forEach((dev, i) => {
                 if (dev.offsetX === undefined || dev.offsetY === undefined) {
