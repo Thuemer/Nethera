@@ -83,7 +83,7 @@ function renderTable() {
     if (!state.filteredDevices.length) {
         const row = document.createElement('tr');
         row.className = 'empty-row';
-        row.innerHTML = '<td colspan="5">Keine Geräte für die aktuelle Filterung gefunden.</td>';
+        row.innerHTML = '<td colspan="5">Keine Clients für die aktuelle Filterung gefunden.</td>';
         body.appendChild(row);
         return;
     }
@@ -128,11 +128,11 @@ function applyFilters() {
     state.filteredDevices = filtered.sort((a, b) => bySort(sortBy, a, b));
     renderTable();
 
-    setMessage(`${state.filteredDevices.length} von ${state.devices.length} Geräten angezeigt.`);
+    setMessage(`${state.filteredDevices.length} von ${state.devices.length} Clients angezeigt.`);
 }
 
 async function loadDevices() {
-    setMessage('Lade Gerätedaten aus der Datenbank ...');
+    setMessage('Lade aktuelle Client-Daten ...');
 
     try {
         const response = await fetch(ROUTER_API_URL, {
@@ -162,14 +162,14 @@ async function loadDevices() {
         applyFilters();
 
         const routerLabel = router?.name ? ` auf ${router.name}` : '';
-        setMessage(`${state.devices.length} Geräte${routerLabel} geladen.`);
+        setMessage(`${state.devices.length} Clients${routerLabel} geladen.`);
     } catch (error) {
         state.devices = [];
         state.filteredDevices = [];
         updateStats();
         renderTable();
 
-        setMessage(`Gerätedaten konnten nicht geladen werden: ${error.message}`, true);
+        setMessage(`Clientdaten konnten nicht geladen werden: ${error.message}`, true);
         console.error('loadDevices:', error);
     }
 }

@@ -25,57 +25,77 @@ body {
     overflow: auto;
 }
 
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(280px, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+@media (max-width: 1080px) {
+    .dashboard {
+        grid-template-columns: repeat(2, minmax(280px, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
 .router-box {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem 1rem;
     align-items: center;
-    margin-top: 1vw;
+    margin-top: 0.75rem;
 }
 
-.router-right > div {
-    margin-top: 1vw;
+.router-row {
+    display: contents;
 }
 
-.router-right > div:first-child {
-    margin-top: 0;
+.router-label {
+    color: var(--text-soft);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    white-space: normal;
 }
 
-.under {
-    margin-top: 2.25vw;
-}
-
-.router-right {
+.router-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     text-align: right;
-    transform: translateY(-1vw);;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.router-status {
+    align-items: flex-end;
+}
+
+.router-count {
+    font-size: 1.65rem;
+    font-weight: 700;
 }
 
 .online {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.5rem;
     color: #7be1cf;
-    font-weight: 500;
-    position: relative;
-    transform: translateY(-0.5vw);
+    font-weight: 600;
 }
 
 .online-last-seen {
-    position: absolute;
-    top: calc(100% - 0.15vw);
-    font-size: 0.68rem;
-    line-height: 1;
-    right: 0vw;
+    font-size: 0.9rem;
     color: var(--text-soft);
-    white-space: nowrap;
-    pointer-events: none;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 100%;
 }
-
-
-.firmware_element {
-    transform: translateY(0.5vw);
-    margin-top: 1vw;
-}
-
 
 .dot {
     width: 8px;
@@ -87,7 +107,6 @@ body {
 .count {
     font-size: 22px;
     font-weight: bold;
-    margin-top: 3vw;
 }
 
 /* DASHBOARD POOL */
@@ -97,21 +116,26 @@ body {
     background: linear-gradient(155deg, var(--bg-card), var(--bg-card-2));
     border: 1px solid var(--line);
     border-radius: 14px;
-    padding: 15px;
+    padding: 18px;
     box-shadow: 0 10px 28px rgba(0,0,0,.35);
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    min-width: 120px;  
-    min-height: 80px;   
-    transition: all 0.5s ease; 
+    min-height: 140px;
+    transition: all 0.35s ease;
     opacity: 1;
+    overflow: hidden;
+}
+
+.card > * + * {
+    margin-top: 1rem;
 }
 
 .card.hidden {
     opacity: 0;
     transform: scale(0.8);
     pointer-events: none;
+    display: none;
 }
 
 /* CARD HEADER */
@@ -119,12 +143,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5vh;
+    margin-bottom: 1rem;
 }
 
 .card-header h2 {
     margin: 0;
     letter-spacing: 0.015em;
+    font-size: 1.1rem;
 }
 
 .icon {
@@ -137,15 +162,15 @@ body {
     list-style: none;
     padding: 0;
     margin: 0;
-    margin-top: -3vh;
-    font-size: 1.25rem;
+    margin-top: 0.75rem;
+    font-size: 1rem;
 }
 
 .feature-list li {
-    padding-left: 2vw;
-    margin: 1vw 0;
+    padding-left: 1.2rem;
+    margin: 0.75rem 0;
     position: relative;
-    transform: translateY();
+    transform: none;
 }
 
 .feature-list li::before {
@@ -169,11 +194,47 @@ body {
     font-size: 1rem;
     padding: 10px 14px;
     border-radius: 10px;
-    margin-bottom: 2vh;
+    margin-bottom: 1rem;
+    display: grid;
+    grid-template-columns: minmax(130px, auto) 1fr;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.activity-time {
+    color: var(--text-soft);
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.activity-copy {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .allAcitivities {
-    margin-top: -1.75vw;
+    margin-top: 0;
+    display: grid;
+    gap: 0.75rem;
+    overflow: hidden;
+}
+
+.more-toggle {
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-main);
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s ease, transform 0.2s ease;
+    align-self: start;
+    width: fit-content;
+}
+
+.more-toggle:hover {
+    background: rgba(255,255,255,0.08);
 }
 
 .activity.ok {
@@ -188,7 +249,7 @@ body {
 
 /* DNS */
 .dns_all {
-    margin-top: -2vw;
+    margin-top: 0;
 }
 .dns div {
     display: flex;
@@ -197,26 +258,29 @@ body {
 }
 
 .dnstext {
-    font-size: 1.25rem;
+    font-size: 1rem;
 }
 
 .speedChart {
     width: 100%;
-    height: 220px;
+    max-width: 100%;
     display: block;
     position: relative;
-    margin-top: -5vh;
+    aspect-ratio: 16 / 9;
+    max-height: 280px;
 }
 
 .legend {
-    position: absolute;
-    top: 15px;
-    left: 70%;
-    transform: translateX(-50%);
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
     display: flex;
-    justify-content: center;
-    gap: 2rem;
-    font-size: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 1rem;
+    margin-top: 1rem;
+    font-size: 0.85rem;
 }
 
 .upload {
@@ -244,7 +308,7 @@ body {
     display: flex;
     justify-content: space-around;
     padding: 10px 0;
-    margin-top: 3.5rem;
+    margin-top: 2rem;
 }
 
 .bottom-nav button {
@@ -432,7 +496,7 @@ body.edit-mode .control-btn.edit {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
-    min-height: calc(100vh - 320px);
+    min-height: calc(100vh - 240px);
     overflow: visible;
 }
 

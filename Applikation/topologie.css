@@ -24,9 +24,41 @@ body {
     var(--bg-main);
 }
 
+.topology-page {
+  display: grid;
+  gap: 18px;
+}
+
+.hero {
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.control-btn {
+  border: 0;
+  padding: 12px 18px;
+  border-radius: 12px;
+  color: white;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.control-btn:hover {
+  transform: translateY(-1px);
+}
+
+.control-btn:active {
+  transform: translateY(1px);
+}
+
 network-topology {
   display: block;
-  height: calc(100vh - 40px);
+  height: calc(100vh - 160px);
   position: relative;
 }
 

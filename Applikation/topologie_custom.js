@@ -175,6 +175,15 @@ class NetworkTopology extends HTMLElement {
         // Recalculate layout on window resize for a responsive, compact arrangement
         window.addEventListener('resize', () => { this.initLayout(); this.drawLines(); });
 
+        const regroupButton = document.getElementById('regroupButton');
+        if (regroupButton) {
+            regroupButton.addEventListener('click', () => {
+                this._hasAnimatedInitial = false;
+                this.initLayout();
+                this.drawLines();
+            });
+        }
+
         this.querySelector('#prev-device').addEventListener('click', ()=>{
             if(!this.devices.length) return;
             this.selectedIndex=(this.selectedIndex-1+this.devices.length)%this.devices.length;
@@ -233,7 +242,7 @@ class NetworkTopology extends HTMLElement {
             const normalizedType = this.normalizeConnectionType(deviceData.connectionType);
             const groupLabel = this.toGroupLabel(normalizedType);
             this.addDevice(
-                deviceData.hostname || deviceData.ipAddress || deviceData.macAddress || `Gerät ${deviceData.id}`,
+                deviceData.hostname || deviceData.ipAddress || deviceData.macAddress || `Client ${deviceData.id}`,
                 groupLabel,
                 0,
                 {

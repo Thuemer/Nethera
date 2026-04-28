@@ -121,21 +121,22 @@ class RouterCard extends HTMLElement {
             </div>
 
             <div class="router-box">
-                <div id="router-left">
-                    <div>Status</div>
-                    <div class="under">Verbundene Geräte</div>
-                    <div class="under">Firmware</div>
+                <div class="router-row">
+                    <span class="router-label">Status</span>
+                    <span class="router-value router-status">
+                        <span class="online"><span class="dot"></span>${status}</span>
+                        <span class="online-last-seen">Online seit: ${lastSeen}</span>
+                    </span>
                 </div>
 
-                <div class="router-right">
-                    <div class="online">
-                        <span class="dot"></span> ${status}
-                        <span class="online-last-seen">Online seit: ${lastSeen}</span>
-                    </div>
+                <div class="router-row">
+                    <span class="router-label">Verbundene Clients</span>
+                    <span class="router-value router-count">${devices}</span>
+                </div>
 
-                    <div class="count">${devices}</div>
-
-                    <div class="firmware_element">${firmware}</div>
+                <div class="router-row">
+                    <span class="router-label">Firmware</span>
+                    <span class="router-value">${firmware}</span>
                 </div>
             </div>
         `;
@@ -199,10 +200,10 @@ class SpeedCard extends HTMLElement {
         this.download = [];
         this.labels = [];
         this.padding = {
-            left: 50,
+            left: 60,
             right: 20,
             top: 40,
-            bottom: 40
+            bottom: 60
         };
     }
 
@@ -247,92 +248,131 @@ class SpeedCard extends HTMLElement {
         const canvas = this.querySelector('.speedChart');
         if (!canvas) return;
 
+        const width = canvas.parentElement?.clientWidth || 400;
+        const height = 250;
+        const dpr = window.devicePixelRatio || 1;
+
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+
         if (this.upload.length === 0 || this.download.length === 0 || this.labels.length === 0) {
             this.upload = [0];
             this.download = [0];
             this.labels = ['--:--'];
         }
-        
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const maxY = Math.max(...this.upload, ...this.download) * 1.1;
+        const rawMax = Math.max(...this.upload, ...this.download, 1);
+        const steps = 4;
+        const stepSize = Math.max(1, Math.ceil(rawMax / steps));
+        const maxY = stepSize * steps;
 
-        this.drawAxes(ctx, canvas, maxY);
-        this.drawLine(ctx, canvas, this.upload, '#3b82f6', maxY);
-        this.drawLine(ctx, canvas, this.download, '#6ee7c8', maxY);
+        this.drawAxes(ctx, width, height, maxY, steps, stepSize);
+        this.drawLine(ctx, width, height, this.upload, '#3b82f6', maxY);
+        this.drawLine(ctx, width, height, this.download, '#6ee7c8', maxY);
     }
 
-    drawAxes(ctx, canvas, maxY) {
+    drawAxes(ctx, width, height, maxY, steps, stepSize) {
         ctx.strokeStyle = "#aaa";
         ctx.lineWidth = 1;
 
         // Y-Achse
         ctx.beginPath();
         ctx.moveTo(this.padding.left, this.padding.top);
-        ctx.lineTo(this.padding.left, canvas.height - this.padding.bottom);
+        ctx.lineTo(this.padding.left, height - this.padding.bottom);
         ctx.stroke();
 
         // X-Achse
         ctx.beginPath();
-        ctx.moveTo(this.padding.left, canvas.height - this.padding.bottom);
-        ctx.lineTo(canvas.width - this.padding.right, canvas.height - this.padding.bottom);
+        ctx.moveTo(this.padding.left, height - this.padding.bottom);
+        ctx.lineTo(width - this.padding.right, height - this.padding.bottom);
         ctx.stroke();
 
         // Y Labels
         ctx.fillStyle = "#aaa";
-        ctx.font = "12px system-ui";
-        const steps = 4;
+        ctx.font = "13px system-ui";
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const plotHeight = height - this.padding.top - this.padding.bottom;
+        const yTicks = Array.from({ length: steps + 1 }, (_, i) => maxY - stepSize * i);
 
-        for (let i = 0; i <= steps; i++) {
-            const val = Math.round((maxY / steps) * i);
-            const y =
-                canvas.height -
-                this.padding.bottom -
-                (i / steps) *
-                    (canvas.height - this.padding.top - this.padding.bottom);
+        yTicks.forEach((val, i) => {
+            const y = this.padding.top + (i / steps) * plotHeight;
 
-            ctx.fillText(`${val} Mbit/s`, 5, y + 4);
+            ctx.fillText(`${val} Mbit/s`, this.padding.left - 10, y);
 
             ctx.strokeStyle = "#333";
             ctx.beginPath();
             ctx.moveTo(this.padding.left, y);
-            ctx.lineTo(canvas.width - this.padding.right, y);
+            ctx.lineTo(width - this.padding.right, y);
             ctx.stroke();
-        }
+        });
 
         // X Labels
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const labelCount = Math.min(4, this.labels.length);
+        const labelStep = Math.max(1, Math.floor((this.labels.length - 1) / (labelCount - 1)));
         this.labels.forEach((label, i) => {
+            if (i % labelStep !== 0 && i !== this.labels.length - 1) return;
             const x =
                 this.padding.left +
                 ((this.labels.length === 1 ? 0 : i / (this.labels.length - 1))) *
-                    (canvas.width - this.padding.left - this.padding.right);
+                    (width - this.padding.left - this.padding.right);
 
-            ctx.fillText(label, x - 12, canvas.height - 10);
+            ctx.fillText(label, x, height - this.padding.bottom + 6);
         });
     }
 
-    drawLine(ctx, canvas, data, color, maxY) {
+    drawLine(ctx, width, height, data, color, maxY) {
         ctx.beginPath();
         ctx.strokeStyle = color;
+        ctx.fillStyle = color;
         ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
 
         data.forEach((val, i) => {
             const x =
                 this.padding.left +
                 ((data.length === 1 ? 0 : i / (data.length - 1))) *
-                    (canvas.width - this.padding.left - this.padding.right);
+                    (width - this.padding.left - this.padding.right);
 
             const y =
-                canvas.height -
+                height -
                 this.padding.bottom -
                 (val / maxY) *
-                    (canvas.height - this.padding.top - this.padding.bottom);
+                    (height - this.padding.top - this.padding.bottom);
 
-            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
         });
 
         ctx.stroke();
+
+        data.forEach((val, i) => {
+            const x =
+                this.padding.left +
+                ((data.length === 1 ? 0 : i / (data.length - 1))) *
+                    (width - this.padding.left - this.padding.right);
+            const y =
+                height -
+                this.padding.bottom -
+                (val / maxY) *
+                    (height - this.padding.top - this.padding.bottom);
+
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
     }
 }
 
@@ -379,11 +419,12 @@ class ActivityCard extends HTMLElement {
     render() {
         const visibleLogs = this.logs.slice(0, 3);
 
-        const logHtml = visibleLogs.length
+        const logHtml = this.logs.length
             ? visibleLogs
                 .map(log => `
                     <div class="activity ${this.getTypeClass(log.eventType)}">
-                        ${this.getTypeIcon(log.eventType)} ${log.details} (${formatTime(log.timestamp)})
+                        <span class="activity-time">${formatDateTime(log.timestamp)}</span>
+                        <span class="activity-copy">${this.getTypeIcon(log.eventType)} ${log.details}</span>
                     </div>
                 `)
                 .join('')
@@ -603,48 +644,21 @@ class DashboardContainer extends HTMLElement {
 
         const dashboard = this.querySelector('.dashboard') || this;
         const visibleCards = this.cards.filter(c => !c.classList.contains('hidden'));
-        const gap = 20;
-
         const vw = dashboard.clientWidth;
-        const vh = dashboard.clientHeight;
+        const minCardWidth = 280;
+        let cols = Math.max(1, Math.floor(vw / (minCardWidth + 20)));
+        cols = Math.min(cols, visibleCards.length);
 
-        const count = visibleCards.length;
-        if (!count) return;
+        dashboard.style.display = 'grid';
+        dashboard.style.gridTemplateColumns = `repeat(${cols}, minmax(${minCardWidth}px, 1fr))`;
+        dashboard.style.gap = '20px';
 
-        let cols;
-
-        if (count === 3) cols = 2;
-        else if (count === 5) cols = 3;
-        else cols = Math.ceil(Math.sqrt(count));
-
-        const rows = Math.ceil(count / cols);
-
-        const cardWidth = Math.min((vw - gap * (cols - 1)) / cols, 420);
-        const cardHeight = Math.min((vh - gap * (rows - 1)) / rows, 260);
-
-        const totalGridWidth = cols * cardWidth + gap * (cols - 1);
-        const startX = (vw - totalGridWidth) / 2;
-
-        visibleCards.forEach((card, i) => {
-            const row = Math.floor(i / cols);
-            const col = i % cols;
-
-            const isLastRow = row === rows - 1;
-            const itemsInLastRow = count % cols === 0 ? cols : count % cols;
-
-            let x = startX + col * (cardWidth + gap);
-
-            if (isLastRow && itemsInLastRow < cols) {
-                const rowWidth = itemsInLastRow * cardWidth + (itemsInLastRow - 1) * gap;
-                const offset = (totalGridWidth - rowWidth) / 2;
-                x = startX + offset + col * (cardWidth + gap);
-            }
-
-            card.style.position = 'absolute';
-            card.style.width = `${cardWidth}px`;
-            card.style.height = `${cardHeight}px`;
-            card.style.left = `${x}px`;
-            card.style.top = `${row * (cardHeight + gap)}px`;
+        visibleCards.forEach(card => {
+            card.style.position = '';
+            card.style.left = '';
+            card.style.top = '';
+            card.style.width = '';
+            card.style.height = '';
         });
     }
 

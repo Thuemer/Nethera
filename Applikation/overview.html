@@ -18,8 +18,8 @@
     <section class="hero card">
         <div>
             <p class="eyebrow">Nethera Dashboard</p>
-            <h1>Übersicht</h1>
-            <p class="subline">Status und Aktivität deines Netzwerks auf einen Blick.</p>
+            <h1>Dashboard</h1>
+            <p class="subline">Alle aktuellen Netzwerkdaten und Statusinformationen auf einen Blick.</p>
         </div>
         <layout-controls></layout-controls>
     </section>
@@ -46,6 +46,10 @@
 <!-- Bottom Navigation -->
 <dashboard-nav></dashboard-nav>
 
-<script src="overview.js?v=20260302"></script>
+<script>
+    const script = document.createElement('script');
+    script.src = `overview.js?v=${Date.now()}`;
+    document.body.appendChild(script);
+</script>
 </body>
 </html>

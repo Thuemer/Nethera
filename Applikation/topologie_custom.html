@@ -2,15 +2,21 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Netzwerk-Topologie</title>
-<link rel="stylesheet" href="topologie.css">
-	<!-- Inline SVG favicon to avoid browser requesting /favicon.ico -->
-	<link rel="icon" href="nethera_logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topologie</title>
+    <link rel="stylesheet" href="topologie.css">
+    <link rel="icon" href="nethera_logo.png">
 </head>
 <body>
+    <main class="topology-page">
+        <section class="hero card">
+            <div>
+                <p class="eyebrow">Nethera Dashboard</p>
+                <h1>Topologie</h1>
+                <p class="subline">Netzwerkvisualisierung mit schneller Neuanordnung.</p>
+            </div>
+            <button id="regroupButton" class="control-btn" type="button">Neu anordnen</button>
+        </section>
+    </main>
 
-<!-- `network-topology` wird per Script erzeugt, nachdem die Custom Elements definiert sind -->
-
-<script src="topologie_custom.js"></script>
-</body>
-</html>
+    <script src="topologie_custom.js"></script>
