@@ -177,13 +177,11 @@ class FeaturesCard extends HTMLElement {
         this.innerHTML = `
             <div class="card-header">
                 <h2>Allgemein</h2>
-                <span class="icon">🛠</span>
             </div>
             <ul class="feature-list content-list">
-                <li class="ok"><span class="feature-line"><span class="feature-name">Router</span><span class="feature-value">${routerName}</span></span></li>
-                <li class="ok"><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
-                <li class="ok"><span class="feature-line"><span class="feature-name">Blockierte DNS</span><span class="feature-value">${blocked}</span></span></li>
-                <li class="ok"><span class="feature-line"><span class="feature-name">Download</span><span class="feature-value">${download}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">Router</span><span class="feature-value">${routerName}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">122.168.1.1</span></span></li>
             </ul>
         `;
     }
@@ -218,14 +216,18 @@ class SpeedCard extends HTMLElement {
                 <div class="card-kpi"><span class="card-kpi-label">Upload</span><span class="card-kpi-value" id="uploadValue">—</span></div>
                 <div class="card-kpi align-right"><span class="card-kpi-label">Download</span><span class="card-kpi-value" id="downloadValue">—</span></div>
             </div>
-            <canvas class="speedChart" width="620" height="260"></canvas>
-            <div class="legend">
-                <span class="upload">● Upload</span>
-                <span class="download">● Download</span>
+            <div class="speed-card-body">
+                <canvas class="speedChart" width="620" height="260"></canvas>
+                <div class="chart-tooltip" id="speedTooltip"></div>
+                <div class="legend">
+                    <span class="upload">● Upload</span>
+                    <span class="download">● Download</span>
+                </div>
             </div>
         `;
 
         this.loadSpeedData();
+        this.setupChartHover();
     }
 
     async loadSpeedData() {
@@ -252,6 +254,30 @@ class SpeedCard extends HTMLElement {
         requestAnimationFrame(() => this.drawChart());
     }
 
+
+    setupChartHover() {
+        const canvas = this.querySelector('.speedChart');
+        const tooltip = this.querySelector('#speedTooltip');
+        if (!canvas || !tooltip) return;
+
+        const updateTooltip = (event) => {
+            if (!this.labels.length) return;
+            const rect = canvas.getBoundingClientRect();
+            const width = this._chartSize?.width || rect.width;
+            const plotWidth = width - this.padding.left - this.padding.right;
+            const relX = Math.min(Math.max(event.clientX - rect.left, this.padding.left), width - this.padding.right);
+            const index = this.labels.length === 1 ? 0 : Math.round(((relX - this.padding.left) / plotWidth) * (this.labels.length - 1));
+            const safeIndex = Math.min(Math.max(index, 0), this.labels.length - 1);
+            tooltip.innerHTML = `${this.labels[safeIndex]} · ↓ ${Number(this.download[safeIndex] || 0).toFixed(1)} Mbit/s · ↑ ${Number(this.upload[safeIndex] || 0).toFixed(1)} Mbit/s`;
+            tooltip.style.left = `${event.clientX - rect.left}px`;
+            tooltip.style.top = `${event.clientY - rect.top}px`;
+            tooltip.classList.add('visible');
+        };
+
+        canvas.addEventListener('mousemove', updateTooltip);
+        canvas.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+    }
+
     drawChart() {
         const canvas = this.querySelector('.speedChart');
         if (!canvas) return;
@@ -262,14 +288,28 @@ class SpeedCard extends HTMLElement {
             this.labels = ['--:--'];
         }
         
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.max(320, Math.round(rect.width || 620));
+        const height = Math.max(180, Math.round(rect.height || 240));
+        if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+        }
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
 
-        const maxY = Math.max(...this.upload, ...this.download) * 1.1;
+        this._chartSize = { width, height };
+        this.padding.left = width < 430 ? 82 : 108;
+        this.padding.right = width < 430 ? 18 : 32;
+        this.padding.top = width < 430 ? 38 : 46;
+        this.padding.bottom = 42;
+        const maxY = Math.max(1, Math.max(...this.upload, ...this.download) * 1.1);
 
-        this.drawAxes(ctx, canvas, maxY);
-        this.drawLine(ctx, canvas, this.upload, '#3b82f6', maxY);
-        this.drawLine(ctx, canvas, this.download, '#6ee7c8', maxY);
+        this.drawAxes(ctx, this._chartSize, maxY);
+        this.drawLine(ctx, this._chartSize, this.upload, '#3b82f6', maxY);
+        this.drawLine(ctx, this._chartSize, this.download, '#6ee7c8', maxY);
     }
 
     drawAxes(ctx, canvas, maxY) {
@@ -312,10 +352,12 @@ class SpeedCard extends HTMLElement {
             ctx.stroke();
         }
 
-        // X Labels
+        // X Labels - keep sparse so labels never collide with the chart.
         ctx.textAlign = "center";
         ctx.textBaseline = "alphabetic";
+        const labelStep = Math.max(1, Math.ceil(this.labels.length / 4));
         this.labels.forEach((label, i) => {
+            if (i % labelStep !== 0 && i !== this.labels.length - 1) return;
             const x =
                 this.padding.left +
                 ((this.labels.length === 1 ? 0 : i / (this.labels.length - 1))) *
@@ -420,7 +462,6 @@ class ActivityCard extends HTMLElement {
         this.innerHTML = `
             <div class="card-header">
                 <h2>Aktivität</h2>
-                <span class="icon">📶</span>
             </div>
             <div class="allAcitivities">
                 ${logHtml}
@@ -475,7 +516,6 @@ class DnsCard extends HTMLElement {
         this.innerHTML = `
             <div class="card-header">
                 <h2>DNS Heute</h2>
-                <span class="icon">🛡</span>
             </div>
             <div class="dns_all">
                 <div class="dns dns-list">
@@ -643,14 +683,16 @@ class DashboardContainer extends HTMLElement {
 
         let cols;
 
-        if (count === 3) cols = 2;
+        if (vw < 560) cols = 1;
+        else if (vw < 900) cols = Math.min(2, count);
+        else if (count === 3) cols = 2;
         else if (count === 5) cols = 3;
         else cols = Math.ceil(Math.sqrt(count));
 
         const rows = Math.ceil(count / cols);
 
         const cardWidth = Math.min((vw - gap * (cols - 1)) / cols, 430);
-        const cardHeight = Math.min((vh - gap * (rows - 1)) / rows, 270);
+        const cardHeight = Math.max(190, Math.min((vh - gap * (rows - 1)) / rows, 270));
 
         const totalGridWidth = cols * cardWidth + gap * (cols - 1);
         const startX = (vw - totalGridWidth) / 2;
@@ -700,10 +742,15 @@ class DashboardContainer extends HTMLElement {
 
             document.addEventListener('mousemove', e => {
                 if (!dragging) return;
-                const nextLeft = this.snap(e.clientX - offsetX);
-                const nextTop = this.snap(e.clientY - offsetY);
-                card.style.left = `${nextLeft}px`;
-                card.style.top = `${nextTop}px`;
+                const dashboard = this.querySelector('.dashboard') || this;
+                const maxLeft = Math.max(0, dashboard.clientWidth - card.offsetWidth);
+                const maxTop = Math.max(0, dashboard.clientHeight - card.offsetHeight);
+                const nextLeft = Math.min(Math.max(0, e.clientX - offsetX), maxLeft);
+                const nextTop = Math.min(Math.max(0, e.clientY - offsetY), maxTop);
+                requestAnimationFrame(() => {
+                    card.style.left = `${nextLeft}px`;
+                    card.style.top = `${nextTop}px`;
+                });
             });
 
             document.addEventListener('mouseup', () => {
@@ -748,10 +795,15 @@ class DashboardContainer extends HTMLElement {
 
             document.addEventListener('mousemove', e => {
                 if (!resizing) return;
-                const nextWidth = Math.max(MIN_WIDTH, this.snap(e.clientX - card.offsetLeft));
-                const nextHeight = Math.max(MIN_HEIGHT, this.snap(e.clientY - card.offsetTop));
-                card.style.width = `${nextWidth}px`;
-                card.style.height = `${nextHeight}px`;
+                const dashboard = this.querySelector('.dashboard') || this;
+                const maxWidth = Math.max(MIN_WIDTH, dashboard.clientWidth - card.offsetLeft);
+                const maxHeight = Math.max(MIN_HEIGHT, dashboard.clientHeight - card.offsetTop);
+                const nextWidth = Math.min(maxWidth, Math.max(MIN_WIDTH, e.clientX - card.offsetLeft));
+                const nextHeight = Math.min(maxHeight, Math.max(MIN_HEIGHT, e.clientY - card.offsetTop));
+                requestAnimationFrame(() => {
+                    card.style.width = `${nextWidth}px`;
+                    card.style.height = `${nextHeight}px`;
+                });
             });
 
             document.addEventListener('mouseup', () => {
@@ -785,6 +837,16 @@ class DashboardContainer extends HTMLElement {
     showLayoutFeedback(message) {
         const hint = document.querySelector('#layoutHint');
         if (hint) hint.textContent = message;
+        let toast = document.querySelector('.layout-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'layout-toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => toast.classList.remove('show'), 1500);
     }
 
     saveLayout() {

@@ -19,11 +19,10 @@ body {
     min-height: 100vh;
     padding: 28px;
     color: var(--text-main);
-    background:
-        radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%),
-        radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%),
-        var(--bg-main);
+    background: radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%), var(--bg-main);
     font-family: "Avenir Next", "Segoe UI", sans-serif;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .traffic-page {
@@ -36,6 +35,8 @@ body {
     border: 1px solid var(--line);
     border-radius: 14px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .hero {
@@ -168,16 +169,98 @@ th {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 11px;
+    min-width: 0;
 }
 
 td {
     padding: 14px 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     color: var(--text-main);
+    min-width: 0;
 }
 
 tbody tr:hover {
     background: rgba(47, 176, 154, 0.08);
+}
+
+html {
+    max-width: 100%;
+}
+
+*::before {
+    box-sizing: border-box;
+}
+
+*::after {
+    box-sizing: border-box;
+}
+
+img {
+    max-width: 100%;
+}
+
+canvas {
+    max-width: 100%;
+}
+
+svg {
+    max-width: 100%;
+}
+
+section {
+    min-width: 0;
+}
+
+main {
+    min-width: 0;
+}
+
+article {
+    min-width: 0;
+}
+
+div {
+    min-width: 0;
+}
+
+li {
+    min-width: 0;
+}
+
+p {
+    min-width: 0;
+}
+
+span {
+    min-width: 0;
+}
+
+strong {
+    min-width: 0;
+}
+
+button {
+    min-width: 0;
+}
+
+input {
+    min-width: 0;
+}
+
+select {
+    min-width: 0;
+}
+
+.box {
+    overflow-wrap: anywhere;
+}
+
+.panel {
+    overflow-wrap: anywhere;
+}
+
+.container {
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 768px) {
@@ -198,7 +281,60 @@ tbody tr:hover {
         font-size: 12px;
     }
 
-    th, td {
+    th {
         padding: 10px 6px;
+    }
+
+    td {
+        padding: 10px 6px;
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+    }
+
+    .card {
+        max-width: 100%;
+    }
+
+    .box {
+        max-width: 100%;
+    }
+
+    .panel {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 560px) {
+    h1 {
+        font-size: clamp(24px, 8vw, 34px);
+    }
+
+    h2 {
+        font-size: clamp(18px, 6vw, 24px);
+    }
+
+    p {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    li {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    button {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    input {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    select {
+        font-size: clamp(13px, 4vw, 16px);
     }
 }

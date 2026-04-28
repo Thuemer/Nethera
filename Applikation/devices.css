@@ -19,11 +19,10 @@ body {
     min-height: 100vh;
     padding: 28px;
     color: var(--text-main);
-    background:
-        radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%),
-        radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%),
-        var(--bg-main);
+    background: radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%), var(--bg-main);
     font-family: "Avenir Next", "Segoe UI", sans-serif;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .devices-page {
@@ -34,8 +33,10 @@ body {
 .card {
     background: linear-gradient(155deg, var(--bg-card), var(--bg-card-2));
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: 16px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .hero {
@@ -96,12 +97,13 @@ h1 {
 .stat p {
     margin: 0;
     color: var(--text-soft);
+    font-size: 14px;
 }
 
 .stat strong {
     margin-top: 6px;
     display: block;
-    font-size: clamp(20px, 2.4vw, 30px);
+    font-size: clamp(22px, 2.4vw, 30px);
 }
 
 .controls {
@@ -114,11 +116,21 @@ h1 {
 label {
     display: grid;
     gap: 6px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-soft);
 }
 
-input,
+input {
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #111614;
+    color: var(--text-main);
+    padding: 0 12px;
+    outline: none;
+    min-width: 0;
+}
+
 select {
     height: 40px;
     border-radius: 10px;
@@ -127,9 +139,14 @@ select {
     color: var(--text-main);
     padding: 0 12px;
     outline: none;
+    min-width: 0;
 }
 
-input:focus,
+input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(47, 176, 154, 0.2);
+}
+
 select:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(47, 176, 154, 0.2);
@@ -153,23 +170,34 @@ select:focus {
     overflow: auto;
     border: 1px solid var(--line);
     border-radius: 12px;
+    border-left: 0;
+    border-right: 0;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     min-width: 760px;
+    font-size: 14px;
 }
 
 thead {
     background: #121816;
 }
 
-th,
+th {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,.045);
+    font-size: 12px;
+    min-width: 0;
+}
+
 td {
     text-align: left;
     padding: 12px 14px;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid rgba(255,255,255,.045);
+    min-width: 0;
 }
 
 tbody tr:hover {
@@ -206,6 +234,78 @@ tbody tr:hover {
     color: var(--text-soft);
 }
 
+html {
+    max-width: 100%;
+}
+
+*::before {
+    box-sizing: border-box;
+}
+
+*::after {
+    box-sizing: border-box;
+}
+
+img {
+    max-width: 100%;
+}
+
+canvas {
+    max-width: 100%;
+}
+
+svg {
+    max-width: 100%;
+}
+
+section {
+    min-width: 0;
+}
+
+main {
+    min-width: 0;
+}
+
+article {
+    min-width: 0;
+}
+
+div {
+    min-width: 0;
+}
+
+li {
+    min-width: 0;
+}
+
+p {
+    min-width: 0;
+}
+
+span {
+    min-width: 0;
+}
+
+strong {
+    min-width: 0;
+}
+
+button {
+    min-width: 0;
+}
+
+.box {
+    overflow-wrap: anywhere;
+}
+
+.panel {
+    overflow-wrap: anywhere;
+}
+
+.container {
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 960px) {
     body {
         padding: 16px;
@@ -220,11 +320,51 @@ tbody tr:hover {
     }
 }
 
-/* Lehrer-Feedback: Clients, ruhigere Tabellenränder, einheitliche Schriftgrößen */
-.card { border-radius: 16px; }
-th, td { border-bottom: 1px solid rgba(255,255,255,.045); }
-th { font-size: 12px; }
-table { font-size: 14px; }
-.table-wrap { border-left: 0; border-right: 0; }
-.stat p, label { font-size: 14px; }
-.stat strong { font-size: clamp(22px, 2.4vw, 30px); }
+@media (max-width: 900px) {
+    body {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+    }
+
+    .card {
+        max-width: 100%;
+    }
+
+    .box {
+        max-width: 100%;
+    }
+
+    .panel {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 560px) {
+    h1 {
+        font-size: clamp(24px, 8vw, 34px);
+    }
+
+    h2 {
+        font-size: clamp(18px, 6vw, 24px);
+    }
+
+    p {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    li {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    button {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    input {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+
+    select {
+        font-size: clamp(13px, 4vw, 16px);
+    }
+}

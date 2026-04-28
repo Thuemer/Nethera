@@ -78,12 +78,34 @@ class NetworkDevice extends HTMLElement {
             const box = document.createElement('div');
             box.classList.add('device-info');
             this.infoBox = box;
-            topology.appendChild(box);
+            topology.querySelector('#topology')?.appendChild(box);
         }
+        const topologyBox = topology.querySelector('#topology');
+        const topologyRect = topologyBox?.getBoundingClientRect();
         const rect=this.getBoundingClientRect();
-        this.infoBox.style.left = (rect.right + 5)+'px';
-        this.infoBox.style.top = rect.top+'px';
-        this.infoBox.innerHTML = `<b>${this.dataset.name}</b><br>Zuletzt gesehen: ${time}<br>IP: ${this.dataset.ipAddress || '-'}<br>Gruppe: ${this.dataset.group}`;
+        const group = topology.groups.find(g=>g.dataset.group===this.dataset.group);
+        const groupRect = group?.getBoundingClientRect();
+        if(!topologyRect) return;
+
+        const devCx = rect.left - topologyRect.left + rect.width / 2;
+        const devCy = rect.top - topologyRect.top + rect.height / 2;
+        const groupCx = groupRect ? groupRect.left - topologyRect.left + groupRect.width / 2 : topologyRect.width / 2;
+        const groupCy = groupRect ? groupRect.top - topologyRect.top + groupRect.height / 2 : topologyRect.height / 2;
+        const dx = devCx - groupCx;
+        const dy = devCy - groupCy;
+
+        this.infoBox.innerHTML = `<b>${this.dataset.name}</b><span class="meta">${this.dataset.group} · ${this.dataset.ipAddress || '-'} · ${time}</span>`;
+
+        const boxW = this.infoBox.offsetWidth || 180;
+        const boxH = this.infoBox.offsetHeight || 44;
+        const gap = 10;
+        let left = devCx + (dx >= 0 ? rect.width / 2 + gap : -rect.width / 2 - gap - boxW);
+        let top = devCy + (Math.abs(dy) > Math.abs(dx) ? (dy >= 0 ? rect.height / 2 + gap : -rect.height / 2 - gap - boxH) : -boxH / 2);
+        const pad = 8;
+        left = Math.max(pad, Math.min(left, topologyRect.width - boxW - pad));
+        top = Math.max(pad, Math.min(top, topologyRect.height - boxH - pad));
+        this.infoBox.style.left = left+'px';
+        this.infoBox.style.top = top+'px';
     }
 }
 
@@ -174,7 +196,7 @@ class NetworkTopology extends HTMLElement {
         }
 
         // Recalculate layout on window resize for a responsive, compact arrangement
-        window.addEventListener('resize', () => { this.initLayout(); this.drawLines(); });
+        window.addEventListener('resize', () => { clearTimeout(this._resizeTimer); this._resizeTimer = setTimeout(() => { this.initLayout(); this.drawLines(); this.updateDeviceInfo(); }, 120); });
 
         this.querySelector('#prev-device').addEventListener('click', ()=>{
             if(!this.devices.length) return;
@@ -470,7 +492,7 @@ class NetworkTopology extends HTMLElement {
 
         // Base radius for group placement: smaller for small viewports, larger for wide screens
         const base = Math.min(width, height);
-        const groupRadius = Math.max(120, Math.min(base * 0.32, 280));
+        const groupRadius = Math.max(95, Math.min(base * 0.30, 260));
 
         const n = this.groups.length || 1;
         // Prepare arrays of target positions so we can optionally animate from center
@@ -498,7 +520,7 @@ class NetworkTopology extends HTMLElement {
             // layout devices around the group in a compact circle scaled to number of devices
             const children = this.devices.filter(d => d.dataset.group === group.dataset.group);
             // device radius depends on number of children; keep compact but non-overlapping
-            const devRadius = Math.min(190, Math.max(76, 46 + children.length * 14));
+            const devRadius = Math.min(base < 650 ? 118 : 170, Math.max(base < 650 ? 54 : 72, 42 + children.length * (base < 650 ? 9 : 12)));
 
             children.forEach((dev, i) => {
                 if (dev.offsetX === undefined || dev.offsetY === undefined) {
@@ -613,7 +635,7 @@ class NetworkTopology extends HTMLElement {
             this.devices.forEach(dev=>dev.classList && dev.classList.remove('selected'));
             d.classList && d.classList.add('selected');
             const timeLabel = d.dataset.timeLabel || this.formatLastSeen(d.dataset.lastSeen);
-            if(this.bottomDetail) this.bottomDetail.innerHTML=`<b>${d.dataset.name}</b> | Gruppe: ${d.dataset.group} | IP: ${d.dataset.ipAddress || '-'} | MAC: ${d.dataset.macAddress || '-'} | Zuletzt gesehen: ${timeLabel}`;
+            if(this.bottomDetail) this.bottomDetail.innerHTML=`<b>${d.dataset.name}</b> · Gruppe: ${d.dataset.group} · IP: ${d.dataset.ipAddress || '-'} · zuletzt: ${timeLabel}`;
         }catch(e){ }
     }
 }
