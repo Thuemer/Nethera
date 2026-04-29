@@ -54,3 +54,19 @@ INSERT INTO dns_stat (timestamp, total_queries, blocked_queries, trackers_detect
     ('2026-04-26 10:03:00', 1810, 175, 60, 1),
     ('2026-04-26 10:04:00', 1940, 220, 72, 1),
     ('2026-04-26 10:05:00', 2010, 240, 77, 1);
+
+-- Account
+INSERT INTO Account (name, email, password_hash, rolle, security, traffic, weekly) VALUES
+                                                                                       ('Admin Alpha', 'admin@network.local', '$2a$10$abc...', 'ADMIN', true, true, true),
+                                                                                       ('User Beta', 'beta@home.de', '$2a$10$def...', 'USER', false, true, false),
+                                                                                       ('Support Gamma', 'support@isp.com', '$2a$10$ghi...', 'MAINTAINER', true, false, true);
+-- Config
+INSERT INTO Config (router_name, mode, updates, dns_blocking, lan_ip, gateway_ip, guest_network, profiling) VALUES
+                                                                                                                ('Edge-Router-01', 'GATEWAY', true, true, '192.168.1.1', '10.0.0.1', true, true),
+                                                                                                                ('Home-Box-V2', 'REPEATER', true, false, '192.168.1.2', '192.168.1.1', false, false),
+                                                                                                                ('Lab-Router', 'BRIDGE', false, false, '10.0.5.1', '10.0.5.254', false, true);
+-- Connection
+INSERT INTO Connection (client, ip, protocol, download, upload) VALUES
+                                                                    ('Quarkus-Server-Node', '10.0.0.1', 'OpenVPN', 1250.5, 450.2),
+                                                                    ('Admin-Workstation', '10.0.0.5', 'WireGuard', 85.0, 12.5),
+                                                                    ('IoT-Gateway', '10.0.0.40', 'TCP', 0.5, 0.1);
