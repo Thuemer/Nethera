@@ -27,8 +27,12 @@
       </app-card>
     </section>
 
+    <app-card title="Gespeicherte Router-Konfigurationen">
+      <div id="configList" class="data-card-list" aria-live="polite"></div>
+    </app-card>
+
     <app-card title="Hinweis" >
-      <p class="muted">Diese Seite speichert aktuell nur Demo-Einstellungen im Browser. Für echte Änderungen brauchst du später Backend-Endpunkte wie PATCH /api/routers/{id}/config.</p>
+      <p class="muted">Die Demo lädt Konfigurationsdaten aus der Datenbank, falls der Backend-Endpunkt vorhanden ist. Sonst werden passende Demo-Daten angezeigt.</p>
     </app-card>
 
     <data-status id="statusBox" text="Noch nichts gespeichert."></data-status>

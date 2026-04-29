@@ -1,96 +1,147 @@
 // Datenverkehr Seite - JavaScript
 const ROUTER_API_URL = 'http://localhost:8080/api/routers/list';
+const CONNECTION_API_URL = 'http://localhost:8080/api/connections/list';
+
+const DEMO_CONNECTIONS = [
+    { client: 'Quarkus-Server-Node', ip: '10.0.0.1', protocol: 'OpenVPN', download: 1250.5, upload: 450.2 },
+    { client: 'Admin-Workstation', ip: '10.0.0.5', protocol: 'WireGuard', download: 85.0, upload: 12.5 },
+    { client: 'IoT-Gateway', ip: '10.0.0.40', protocol: 'TCP', download: 0.5, upload: 0.1 }
+];
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+async function fetchJson(url) {
+    const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+    });
+
+    if (!response.ok) {
+        throw new Error(`API-Fehler ${response.status}`);
+    }
+
+    return response.json();
+}
 
 async function loadTrafficData() {
+    let router = null;
+    let connections = DEMO_CONNECTIONS;
+
     try {
-        const response = await fetch(ROUTER_API_URL, {
-            headers: { 
-                Accept: 'application/json'
-            },
-            cache: 'no-store'
-        });
-
-        if (!response.ok) {
-            throw new Error(`API-Fehler ${response.status}`);
-        }
-
-        const routers = await response.json();
-        const router = Array.isArray(routers) ? routers[0] : null;
-
-        if (!router) {
-            throw new Error('Keine Routerdaten gefunden');
-        }
-
-        updateStatsDisplay(router);
-        updateTrafficTable(router);
-        console.log('Datenverkehr aktualisiert');
+        const routers = await fetchJson(ROUTER_API_URL);
+        router = Array.isArray(routers) ? routers[0] : null;
     } catch (error) {
-        console.error('Fehler beim Laden der Datenverkehrsdaten:', error);
-        updateStatsDisplay(null);
-        updateTrafficTable(null);
+        console.warn('Routerdaten nicht verfügbar, nutze Demo-Werte:', error);
     }
+
+    try {
+        const data = await fetchJson(CONNECTION_API_URL);
+        if (Array.isArray(data) && data.length) {
+            connections = data;
+        }
+    } catch (error) {
+        console.warn('Connection-Daten nicht verfügbar, nutze Demo-Werte:', error);
+    }
+
+    updateStatsDisplay(router, connections);
+    updateTrafficTable(connections);
+    updateTrafficChart(connections);
 }
 
-function updateStatsDisplay(router) {
-    if (!router) {
-        document.getElementById('statDownload').textContent = '-- Mb/s';
-        document.getElementById('statUpload').textContent = '-- Mb/s';
-        document.getElementById('statConnections').textContent = '0';
-        document.getElementById('statVolume').textContent = '-- GB';
-        return;
-    }
+function formatMbit(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '-- Mb/s';
+    return `${number.toFixed(number >= 100 ? 0 : 1)} Mb/s`;
+}
 
-    // Aktuelle Speed-Werte aus den letzten Daten
-    const speedStats = Array.isArray(router.speedStats) ? router.speedStats : [];
+function updateStatsDisplay(router, connections = []) {
+    const speedStats = Array.isArray(router?.speedStats) ? router.speedStats : [];
     const latestSpeed = speedStats.length > 0 ? speedStats[speedStats.length - 1] : null;
 
-    const download = latestSpeed?.downloadSpeed != null ? latestSpeed.downloadSpeed.toFixed(1) : '--';
-    const upload = latestSpeed?.uploadSpeed != null ? latestSpeed.uploadSpeed.toFixed(1) : '--';
-    const connections = Array.isArray(router.devices) ? router.devices.length : 0;
+    const fallbackDownload = connections.reduce((sum, c) => sum + Number(c.download || 0), 0);
+    const fallbackUpload = connections.reduce((sum, c) => sum + Number(c.upload || 0), 0);
 
-    document.getElementById('statDownload').textContent = download + ' Mb/s';
-    document.getElementById('statUpload').textContent = upload + ' Mb/s';
-    document.getElementById('statConnections').textContent = String(connections);
-    document.getElementById('statVolume').textContent = '-- GB'; // Wird von der API nicht bereitgestellt
+    const download = latestSpeed?.downloadSpeed ?? fallbackDownload;
+    const upload = latestSpeed?.uploadSpeed ?? fallbackUpload;
+
+    document.getElementById('statDownload').textContent = formatMbit(download);
+    document.getElementById('statUpload').textContent = formatMbit(upload);
+    document.getElementById('statConnections').textContent = String(connections.length);
+    document.getElementById('statVolume').textContent = `${((fallbackDownload + fallbackUpload) / 1024).toFixed(2)} GB`;
 }
 
-function updateTrafficTable(router) {
+function normalizeConnection(connection) {
+    return {
+        client: connection.client ?? connection.hostname ?? '-',
+        ip: connection.ip ?? connection.ipAddress ?? '-',
+        protocol: connection.protocol ?? connection.connectionType ?? '-',
+        download: Number(connection.download ?? connection.downloadSpeed ?? 0),
+        upload: Number(connection.upload ?? connection.uploadSpeed ?? 0)
+    };
+}
+
+function updateTrafficTable(connections = []) {
     const tableBody = document.getElementById('traffic-table-body');
     if (!tableBody) return;
 
-    const devices = Array.isArray(router?.devices) ? router.devices.slice(0, 5) : [];
+    const rows = connections.map(normalizeConnection)
+        .sort((a, b) => (b.download + b.upload) - (a.download + a.upload));
 
-    if (devices.length === 0) {
+    if (rows.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="5">Keine Verbindungen verfügbar</td></tr>';
         return;
     }
 
-    tableBody.innerHTML = devices.map(device => `
+    tableBody.innerHTML = rows.map(connection => `
         <tr>
-            <td>${device.hostname || '-'}</td>
-            <td>${device.ipAddress || '-'}</td>
-            <td>${device.connectionType === 'wifi' ? 'WiFi' : device.connectionType === 'lan' ? 'LAN' : 'Sonstige'}</td>
-            <td>-- Mb/s</td>
-            <td>-- Mb/s</td>
+            <td><strong>${escapeHtml(connection.client)}</strong></td>
+            <td>${escapeHtml(connection.ip)}</td>
+            <td><span class="protocol-pill">${escapeHtml(connection.protocol)}</span></td>
+            <td>${formatMbit(connection.download)}</td>
+            <td>${formatMbit(connection.upload)}</td>
         </tr>
     `).join('');
 }
 
+function updateTrafficChart(connections = []) {
+    const chart = document.getElementById('connectionBars');
+    if (!chart) return;
+
+    const rows = connections.map(normalizeConnection);
+    const max = Math.max(1, ...rows.map(c => Math.max(c.download, c.upload)));
+
+    chart.innerHTML = rows.map(connection => {
+        const downloadWidth = Math.max(4, (connection.download / max) * 100);
+        const uploadWidth = Math.max(4, (connection.upload / max) * 100);
+
+        return `
+            <div class="connection-bar-row">
+                <div class="connection-bar-label">
+                    <strong>${escapeHtml(connection.client)}</strong>
+                    <span>${escapeHtml(connection.protocol)}</span>
+                </div>
+                <div class="connection-bars">
+                    <div class="bar-line"><span class="bar download-bar" style="width:${downloadWidth}%"></span><em>${formatMbit(connection.download)}</em></div>
+                    <div class="bar-line"><span class="bar upload-bar" style="width:${uploadWidth}%"></span><em>${formatMbit(connection.upload)}</em></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function setupEvents() {
-    console.log('setupEvents: Suche nach refreshButton');
     const btn = document.getElementById('refreshButton');
-    console.log('refreshButton gefunden:', btn);
     if (btn) {
-        btn.addEventListener('click', () => {
-            console.log('Button geklickt, starte loadTrafficData');
-            loadTrafficData();
-        });
-    } else {
-        console.error('refreshButton nicht gefunden!');
+        btn.addEventListener('click', loadTrafficData);
     }
 }
 
-// Sofort ausführen da das Script am Ende der HTML geladen wird
-console.log('traffic.js geladen');
 setupEvents();
 loadTrafficData();
