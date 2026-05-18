@@ -1,6 +1,8 @@
 // Datenverkehr Seite - JavaScript
-const ROUTER_API_URL = 'http://localhost:8080/api/routers/list';
-const CONNECTION_API_URL = 'http://localhost:8080/api/connections/list';
+const appConfig = window.NETHERA_CONFIG || {};
+const API_ENABLED = appConfig.API_ENABLED === true;
+const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
+const CONNECTION_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/connections/list`;
 
 const DEMO_CONNECTIONS = [
     { client: 'Quarkus-Server-Node', ip: '10.0.0.1', protocol: 'OpenVPN', download: 1250.5, upload: 450.2 },
@@ -18,6 +20,7 @@ function escapeHtml(value) {
 }
 
 async function fetchJson(url) {
+    if (!API_ENABLED) throw new Error('Backend-API deaktiviert');
     const response = await fetch(url, {
         headers: { Accept: 'application/json' },
         cache: 'no-store'
@@ -38,7 +41,7 @@ async function loadTrafficData() {
         const routers = await fetchJson(ROUTER_API_URL);
         router = Array.isArray(routers) ? routers[0] : null;
     } catch (error) {
-        console.warn('Routerdaten nicht verfügbar, nutze Demo-Werte:', error);
+        
     }
 
     try {
@@ -47,7 +50,7 @@ async function loadTrafficData() {
             connections = data;
         }
     } catch (error) {
-        console.warn('Connection-Daten nicht verfügbar, nutze Demo-Werte:', error);
+        
     }
 
     updateStatsDisplay(router, connections);

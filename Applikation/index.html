@@ -26,8 +26,11 @@
     .icon { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 22px; }
     .label { white-space: nowrap; font-weight: 650; font-size: 14px; }
     .spacer { height: 10px; }
-    #screen { flex: 1; min-height: 100%; }
+    #screen { flex: 1; min-height: 100%; position: relative; overflow: hidden; }
     iframe { width: 100%; height: 100%; border: 0; display: block; }
+    #account-root { width: 100%; height: 100%; display: none; }
+    #screen.account-active iframe { display: none; }
+    #screen.account-active #account-root { display: block; }
     @media (max-width: 760px) {
       #home { flex-direction: column; }
       #nav-bar, #nav-bar.collapsed { width: 100%; height: auto; padding: 8px; display: grid; grid-template-columns: auto 1fr; gap: 8px; }
@@ -65,31 +68,66 @@
 
     <main id="screen">
       <iframe id="screen-frame" src="overview.html" title="Nethera Dashboard"></iframe>
+      <div id="account-root" aria-live="polite"></div>
     </main>
   </div>
 
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
+  <script src="account.js"></script>
   <script>
     const nav = document.getElementById('nav-bar');
     const items = document.querySelectorAll('.nav-item');
+    const screen = document.getElementById('screen');
     const frame = document.getElementById('screen-frame');
+    const accountRoot = document.getElementById('account-root');
     const toggle = document.getElementById('nav-toggle');
 
     if (localStorage.getItem('nav-collapsed') === '1') nav.classList.add('collapsed');
 
+    function setActive(item) {
+      items.forEach(i => i.classList.remove('active'));
+      item?.classList.add('active');
+    }
+
+    async function openScreen(src, item, updateUrl = true) {
+      if (!src) return;
+      setActive(item);
+
+      if (src === 'account.html') {
+        screen.classList.add('account-active');
+        await window.NetheraAccount?.render(accountRoot);
+        if (updateUrl) history.replaceState(null, '', 'index.html?screen=account');
+        return;
+      }
+
+      screen.classList.remove('account-active');
+      accountRoot.innerHTML = '';
+      if (frame.getAttribute('src') !== src) frame.src = src;
+      if (updateUrl) history.replaceState(null, '', 'index.html');
+    }
+
     items.forEach(item => {
-      item.addEventListener('click', () => {
-        const url = item.dataset.src;
-        if (!url) return;
-        frame.src = url;
-        items.forEach(i => i.classList.remove('active'));
-        item.classList.add('active');
-      });
+      item.addEventListener('click', () => openScreen(item.dataset.src, item));
     });
 
-    items[0].classList.add('active');
     toggle.addEventListener('click', () => {
       const collapsed = nav.classList.toggle('collapsed');
       localStorage.setItem('nav-collapsed', collapsed ? '1' : '0');
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await window.NetheraAccount?.init();
+      } catch (error) {
+        // Keycloak kann offline sein; die App bleibt trotzdem nutzbar.
+        console.warn('Keycloak Initialisierung nicht verfügbar:', error);
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const requested = params.get('screen') === 'account' ? 'account.html' : 'overview.html';
+      const item = [...items].find(i => i.dataset.src === requested) || items[0];
+      await openScreen(requested, item, false);
     });
   </script>
 </body>

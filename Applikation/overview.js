@@ -1,5 +1,17 @@
 // Basis Card-Komponente
-const ROUTER_API_URL = 'http://localhost:8080/api/routers/list';
+const appConfig = window.NETHERA_CONFIG || {};
+const API_ENABLED = appConfig.API_ENABLED === true;
+const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
+const DEMO_ROUTER = {
+    name: 'Nethera Router', model: 'CT-Router NG LAN', firmware: '1.08.03', isOnline: true, lastSeen: new Date().toISOString(),
+    devices: [{ hostname: 'NAS-Storage', connectionType: 'lan' }, { hostname: 'Gaming-PC', connectionType: 'lan' }, { hostname: 'iPhone', connectionType: 'wifi' }, { hostname: 'Smart-TV', connectionType: 'wifi' }, { hostname: 'Printer', connectionType: 'lan' }, { hostname: 'Tablet', connectionType: 'wifi' }, { hostname: 'Laptop', connectionType: 'wifi' }, { hostname: 'IoT-Hub', connectionType: 'wifi' }],
+    speedStats: Array.from({ length: 8 }, (_, i) => ({ timestamp: new Date(Date.now() - (7 - i) * 60000).toISOString(), uploadSpeed: 10 + i * 0.6, downloadSpeed: 40 + i * 2.4 })),
+    dnsStats: [{ timestamp: new Date().toISOString(), blockedQueries: 1627, trackersDetected: 567, totalQueries: 17910 }],
+    activityLogs: [
+      { timestamp: new Date(Date.now() - 90000).toISOString(), eventType: 'CONNECTED', details: 'NAS-Storage connected via LAN' },
+      { timestamp: new Date(Date.now() - 220000).toISOString(), eventType: 'CONNECTED', details: 'Gaming-PC connected via LAN' }
+    ]
+};
 let primaryRouterPromise = null;
 
 function formatDateTime(value) {
@@ -34,6 +46,7 @@ function sortByTimestamp(items) {
 }
 
 async function getPrimaryRouter() {
+    if (!API_ENABLED) return DEMO_ROUTER;
     if (!primaryRouterPromise) {
         primaryRouterPromise = fetch(ROUTER_API_URL, {
             headers: {
@@ -103,7 +116,7 @@ class RouterCard extends HTMLElement {
             this.router = await getPrimaryRouter();
         } catch (error) {
             this.router = null;
-            console.error('RouterCard:', error);
+            
         }
 
         this.render();
@@ -160,7 +173,7 @@ class FeaturesCard extends HTMLElement {
             this.router = await getPrimaryRouter();
         } catch (error) {
             this.router = null;
-            console.error('FeaturesCard:', error);
+            
         }
 
         this.render();
@@ -248,7 +261,7 @@ class SpeedCard extends HTMLElement {
             this.upload = [];
             this.download = [];
             this.labels = [];
-            console.error('SpeedCard:', error);
+            
         }
 
         requestAnimationFrame(() => this.drawChart());
@@ -412,7 +425,7 @@ class ActivityCard extends HTMLElement {
             this.logs = sortByTimestamp(router?.activityLogs).reverse();
         } catch (error) {
             this.logs = [];
-            console.error('ActivityCard:', error);
+            
         }
 
         this.render();
@@ -491,7 +504,7 @@ class DnsCard extends HTMLElement {
             this.dnsStats = sortByTimestamp(router?.dnsStats || []);
         } catch (error) {
             this.dnsStats = [];
-            console.error('DnsCard:', error);
+            
         }
 
         this.render();

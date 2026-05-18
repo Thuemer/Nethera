@@ -1,4 +1,12 @@
-const ROUTER_API_URL = 'http://localhost:8080/api/routers/list';
+const appConfig = window.NETHERA_CONFIG || {};
+const API_ENABLED = appConfig.API_ENABLED === true;
+const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
+const DEMO_DEVICES = [
+  { id: 1, hostname: 'NAS-Storage', ipAddress: '192.168.1.21', macAddress: 'AA:BB:CC:00:01:01', connectionType: 'lan', lastSeen: new Date().toISOString() },
+  { id: 2, hostname: 'Gaming-PC', ipAddress: '192.168.1.42', macAddress: 'AA:BB:CC:00:01:02', connectionType: 'lan', lastSeen: new Date().toISOString() },
+  { id: 3, hostname: 'Deniz-iPhone', ipAddress: '192.168.1.83', macAddress: 'AA:BB:CC:00:01:03', connectionType: 'wifi', lastSeen: new Date().toISOString() },
+  { id: 4, hostname: 'Smart-TV', ipAddress: '192.168.1.91', macAddress: 'AA:BB:CC:00:01:04', connectionType: 'wifi', lastSeen: new Date().toISOString() }
+];
 
 const state = {
     devices: [],
@@ -135,16 +143,21 @@ async function loadDevices() {
     setMessage('Lade Clients ...');
 
     try {
-        const response = await fetch(ROUTER_API_URL, {
-            headers: { Accept: 'application/json' }
-        });
+        let router = { name: 'Demo Router', devices: DEMO_DEVICES };
 
-        if (!response.ok) {
-            throw new Error(`API-Fehler ${response.status}`);
+        if (API_ENABLED) {
+            const response = await fetch(ROUTER_API_URL, {
+                headers: { Accept: 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API-Fehler ${response.status}`);
+            }
+
+            const routers = await response.json();
+            router = Array.isArray(routers) ? routers[0] : router;
         }
 
-        const routers = await response.json();
-        const router = Array.isArray(routers) ? routers[0] : null;
         const rawDevices = Array.isArray(router?.devices) ? router.devices : [];
 
         state.devices = rawDevices.map(device => ({
@@ -164,13 +177,11 @@ async function loadDevices() {
         const routerLabel = router?.name ? ` auf ${router.name}` : '';
         setMessage(`${state.devices.length} Clients${routerLabel} geladen.`);
     } catch (error) {
-        state.devices = [];
-        state.filteredDevices = [];
+        state.devices = DEMO_DEVICES.map(device => ({ ...device, connectionType: normalizeConnectionType(device.connectionType) }));
+        state.filteredDevices = [...state.devices];
         updateStats();
-        renderTable();
-
-        setMessage(`Clients konnten nicht geladen werden: ${error.message}`, true);
-        console.error('loadDevices:', error);
+        applyFilters();
+        setMessage('Backend nicht verfügbar. Demo-Clients werden angezeigt.');
     }
 }
 

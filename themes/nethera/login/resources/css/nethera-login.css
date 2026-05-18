@@ -1,0 +1,33 @@
+:root {
+  --pf-v5-global--primary-color--100: #2fb09a;
+  --pf-v5-global--primary-color--200: #238a79;
+}
+.login-pf body {
+  background: radial-gradient(900px 500px at 10% 0%, rgba(47,176,154,.22), transparent 55%), #121818 !important;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+}
+#kc-header-wrapper {
+  color: #fff;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.login-pf-page .card-pf {
+  background: linear-gradient(155deg, #1c1f1e, #232826);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.45);
+}
+#kc-page-title { color: #fff; font-weight: 850; }
+.pf-v5-c-form__label-text, .pf-c-form__label-text { color: #d8e0dd; }
+.pf-v5-c-form-control, .pf-c-form-control {
+  background: rgba(255,255,255,.06) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,.16) !important;
+  border-radius: 12px !important;
+}
+.pf-v5-c-button.pf-m-primary, .pf-c-button.pf-m-primary {
+  background: linear-gradient(135deg, #144659, #2fb09a) !important;
+  border-radius: 12px !important;
+  font-weight: 800;
+}

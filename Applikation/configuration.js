@@ -1,4 +1,6 @@
-const CONFIG_API_URL = 'http://localhost:8080/api/configs/list';
+const appConfig = window.NETHERA_CONFIG || {};
+const API_ENABLED = appConfig.API_ENABLED === true;
+const CONFIG_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/configs/list`;
 
 const DEMO_CONFIGS = [
   { routerName: 'Edge-Router-01', mode: 'GATEWAY', updates: true, dnsBlocking: true, lanIp: '192.168.1.1', gatewayIp: '10.0.0.1', guestNetwork: true, profiling: true },
@@ -49,6 +51,10 @@ function renderConfigs(configs) {
 }
 
 async function loadConfigs() {
+  if (!API_ENABLED) {
+    renderConfigs(DEMO_CONFIGS);
+    return;
+  }
   try {
     const response = await fetch(CONFIG_API_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
     if (!response.ok) throw new Error(`API ${response.status}`);

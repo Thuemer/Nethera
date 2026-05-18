@@ -4,43 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Account</title>
-  <link rel="icon" href="nethera_logo.png">
-  <link rel="stylesheet" href="app.css">
+  <script>
+    // Account wird professionell innerhalb der originalen Nethera-App-Shell angezeigt.
+    // Direkter Aufruf dieser Datei führt daher zurück in die App mit aktivem Account-Tab.
+    window.location.replace('index.html?screen=account');
+  </script>
 </head>
-<body>
-  <main class="page">
-    <app-hero title="Account" text="Profil, Rechte und Benachrichtigungen für den aktuellen Nutzer." button="Speichern"></app-hero>
-
-    <section class="grid two-grid">
-      <app-card title="Profil">
-        <div class="account-box">
-          <div class="avatar">NB</div>
-          <div>
-            <h2>Nethera Benutzer</h2>
-            <p class="muted">Lokaler Administrator</p>
-          </div>
-        </div>
-        <text-field id="displayName" label="Anzeigename" value="Nethera Benutzer"></text-field>
-        <text-field id="email" label="E-Mail" value="benutzer@example.com"></text-field>
-      </app-card>
-
-      <app-card title="Benachrichtigungen">
-        <config-row title="Security Warnungen" text="Bei geblockten Domains und neuen Clients informieren" checked></config-row>
-        <config-row title="Traffic Warnungen" text="Bei ungewöhnlich hohem Datenverkehr informieren" checked></config-row>
-        <config-row title="Wöchentlicher Bericht" text="Kurze Zusammenfassung am Wochenende"></config-row>
-      </app-card>
-    </section>
-
-    <app-card title="Accounts aus der Datenbank">
-      <div id="accountList" class="data-card-list" aria-live="polite"></div>
-    </app-card>
-
-    <data-status id="statusBox" text="Bereit."></data-status>
-  </main>
-
-  <script src="config.js"></script>
-  <script src="api.js"></script>
-  <script src="components.js"></script>
-  <script src="account.js"></script>
-</body>
+<body></body>
 </html>
