@@ -730,7 +730,7 @@ select {
     }
 }
 
-/* Demo-Datenkarten für Account und Konfiguration */
+/* Datenkarten für Account und Konfiguration */
 .data-card-list {
     display: grid;
     gap: 12px;

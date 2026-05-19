@@ -8,14 +8,7 @@
 */
 
 const appConfig = window.NETHERA_CONFIG || {};
-const API_ENABLED = appConfig.API_ENABLED === true;
 const ROUTERS_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
-const DEMO_TOPOLOGY_ROUTER = { name: 'Nethera Router', devices: [
-  { id: 1, hostname: 'NAS-Storage', ipAddress: '192.168.1.21', macAddress: 'AA:BB:CC:00:01:01', connectionType: 'lan', lastSeen: new Date().toISOString() },
-  { id: 2, hostname: 'Gaming-PC', ipAddress: '192.168.1.42', macAddress: 'AA:BB:CC:00:01:02', connectionType: 'lan', lastSeen: new Date().toISOString() },
-  { id: 3, hostname: 'Deniz-iPhone', ipAddress: '192.168.1.83', macAddress: 'AA:BB:CC:00:01:03', connectionType: 'wifi', lastSeen: new Date().toISOString() },
-  { id: 4, hostname: 'Smart-TV', ipAddress: '192.168.1.91', macAddress: 'AA:BB:CC:00:01:04', connectionType: 'wifi', lastSeen: new Date().toISOString() }
-]};
 
 // NetworkDevice: visual device node. Supports dragging and showing a small info box.
 class NetworkDevice extends HTMLElement {
@@ -243,9 +236,6 @@ class NetworkTopology extends HTMLElement {
     }
 
     async fetchRouters(){
-        if (!API_ENABLED) {
-            return [DEMO_TOPOLOGY_ROUTER];
-        }
         const response = await fetch(ROUTERS_API_URL, {
             method: 'GET',
             headers: { Accept: 'application/json' }

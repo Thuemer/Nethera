@@ -48,7 +48,10 @@ network-topology {
     transform: translate(-50%,-50%);
     z-index: 10;
     opacity: 0.93;
-    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+    filter:
+        drop-shadow(0 12px 22px rgba(0, 0, 0, 0.48))
+        drop-shadow(0 0 24px rgba(47, 176, 154, 0.42))
+        drop-shadow(0 0 44px rgba(99, 229, 197, 0.22));
     pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;

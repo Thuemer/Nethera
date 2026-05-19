@@ -8,15 +8,8 @@
   };
 
   const API_BASE_URL = config.API_BASE_URL || 'http://localhost:8080';
-  const API_ENABLED = config.API_ENABLED === true;
   const ACCOUNT_API_URL = `${API_BASE_URL}/api/accounts/list`;
   const ME_API_URL = `${API_BASE_URL}/api/accounts/me`;
-
-  const DEMO_ACCOUNTS = [
-    { name: 'Admin Alpha', email: 'admin@network.local', rolle: 'ADMIN', security: true, traffic: true, weekly: true },
-    { name: 'User Beta', email: 'beta@home.de', rolle: 'USER', security: false, traffic: true, weekly: false },
-    { name: 'Support Gamma', email: 'support@isp.com', rolle: 'MAINTAINER', security: true, traffic: false, weekly: true }
-  ];
 
   let keycloak = null;
   let initPromise = null;
@@ -145,13 +138,7 @@
     return { Authorization: `Bearer ${keycloak.token}` };
   }
 
-  async function authFetch(url, options = {}) {
-    if (!API_ENABLED) {
-      throw new Error('Backend-API ist in config.js deaktiviert. Demo-Daten werden verwendet.');
-    }
-    if (!keycloak?.authenticated) {
-      throw new Error('Nicht angemeldet');
-    }
+  async function apiFetch(url, options = {}) {
     const authHeader = await getAuthHeader();
     return fetch(url, {
       ...options,
@@ -164,8 +151,15 @@
     });
   }
 
+  async function authFetch(url, options = {}) {
+    if (!keycloak?.authenticated) {
+      throw new Error('Nicht angemeldet');
+    }
+    return apiFetch(url, options);
+  }
+
   async function loadCurrentBackendUser() {
-    if (!API_ENABLED || !keycloak?.authenticated) return null;
+    if (!keycloak?.authenticated) return null;
     const response = await authFetch(ME_API_URL);
     if (!response.ok) throw new Error(`API ${response.status}`);
     lastBackendUser = await response.json();
@@ -173,11 +167,10 @@
   }
 
   async function loadAccounts() {
-    if (!API_ENABLED || !keycloak?.authenticated) return DEMO_ACCOUNTS;
-    const response = await authFetch(ACCOUNT_API_URL);
+    const response = await apiFetch(ACCOUNT_API_URL);
     if (!response.ok) throw new Error(`API ${response.status}`);
     const data = await response.json();
-    return Array.isArray(data) ? data : DEMO_ACCOUNTS;
+    return Array.isArray(data) ? data : [];
   }
 
   function renderAccounts(list, accounts) {
@@ -219,7 +212,7 @@
           <section class="account-card account-hero">
             <div>
               <p class="account-eyebrow">Nethera Account</p>
-              <h1>Account</h1>
+              <h1>Mein Account</h1>
               <p class="account-subline">Anmelden, Rechte prüfen und Benutzerprofil verwalten.</p>
             </div>
             <div class="account-actions">
@@ -262,8 +255,8 @@
 
           <section class="account-card account-panel">
             <div class="account-card-header">
-              <h2>Accounts aus Backend / Demo</h2>
-              <span class="account-badge">${API_ENABLED ? 'Backend aktiv' : 'Demo-Modus'}</span>
+              <h2>Angelegte User</h2>
+              <span class="account-badge">Backend aktiv</span>
             </div>
             <div id="accountList" class="account-data-list" aria-live="polite"></div>
             <p class="account-dev-note">
@@ -288,15 +281,15 @@
   async function refreshAccountData() {
     const list = document.getElementById('accountList');
     try {
-      if (keycloak?.authenticated && API_ENABLED) {
+      if (keycloak?.authenticated) {
         await loadCurrentBackendUser();
       }
       const accounts = await loadAccounts();
       renderAccounts(list, accounts);
-      setStatus(keycloak?.authenticated ? 'Login aktiv. JWT ist für Backend-Requests verfügbar.' : 'Gastmodus aktiv. Demo-Daten werden angezeigt.', keycloak?.authenticated ? 'success' : 'info');
+      setStatus(keycloak?.authenticated ? 'Login aktiv. JWT ist für Backend-Requests verfügbar.' : 'Nicht angemeldet. Angelegte User werden aus dem Backend geladen.', keycloak?.authenticated ? 'success' : 'info');
     } catch (error) {
-      renderAccounts(list, DEMO_ACCOUNTS);
-      setStatus(`Backend nicht verfügbar: ${error.message}. Demo-Daten werden angezeigt.`, 'warning');
+      renderAccounts(list, []);
+      setStatus(`Backend nicht verfügbar: ${error.message}.`, 'warning');
     }
   }
 

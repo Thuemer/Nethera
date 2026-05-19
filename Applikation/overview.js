@@ -1,17 +1,6 @@
 // Basis Card-Komponente
 const appConfig = window.NETHERA_CONFIG || {};
-const API_ENABLED = appConfig.API_ENABLED === true;
 const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
-const DEMO_ROUTER = {
-    name: 'Nethera Router', model: 'CT-Router NG LAN', firmware: '1.08.03', isOnline: true, lastSeen: new Date().toISOString(),
-    devices: [{ hostname: 'NAS-Storage', connectionType: 'lan' }, { hostname: 'Gaming-PC', connectionType: 'lan' }, { hostname: 'iPhone', connectionType: 'wifi' }, { hostname: 'Smart-TV', connectionType: 'wifi' }, { hostname: 'Printer', connectionType: 'lan' }, { hostname: 'Tablet', connectionType: 'wifi' }, { hostname: 'Laptop', connectionType: 'wifi' }, { hostname: 'IoT-Hub', connectionType: 'wifi' }],
-    speedStats: Array.from({ length: 8 }, (_, i) => ({ timestamp: new Date(Date.now() - (7 - i) * 60000).toISOString(), uploadSpeed: 10 + i * 0.6, downloadSpeed: 40 + i * 2.4 })),
-    dnsStats: [{ timestamp: new Date().toISOString(), blockedQueries: 1627, trackersDetected: 567, totalQueries: 17910 }],
-    activityLogs: [
-      { timestamp: new Date(Date.now() - 90000).toISOString(), eventType: 'CONNECTED', details: 'NAS-Storage connected via LAN' },
-      { timestamp: new Date(Date.now() - 220000).toISOString(), eventType: 'CONNECTED', details: 'Gaming-PC connected via LAN' }
-    ]
-};
 let primaryRouterPromise = null;
 
 function formatDateTime(value) {
@@ -32,6 +21,9 @@ function formatDateTime(value) {
 function formatTime(value) {
     if (!value) return '--:--';
 
+    const localTime = String(value).match(/T(\d{2}:\d{2})/);
+    if (localTime) return localTime[1];
+
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
 
@@ -45,8 +37,13 @@ function sortByTimestamp(items) {
     return [...(items || [])].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
 
+function formatSpeed(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '—';
+    return `${number.toFixed(1)} Mb/s`;
+}
+
 async function getPrimaryRouter() {
-    if (!API_ENABLED) return DEMO_ROUTER;
     if (!primaryRouterPromise) {
         primaryRouterPromise = fetch(ROUTER_API_URL, {
             headers: {
@@ -180,19 +177,15 @@ class FeaturesCard extends HTMLElement {
     }
 
     render() {
-        const latestDns = sortByTimestamp(this.router?.dnsStats).at(-1);
-        const latestSpeed = sortByTimestamp(this.router?.speedStats).at(-1);
         const routerName = this.router?.name || '—';
         const model = this.router?.model || '—';
-        const blocked = latestDns?.blockedQueries ?? '—';
-        const download = latestSpeed?.downloadSpeed != null ? `${latestSpeed.downloadSpeed.toFixed(1)} Mbit/s` : '—';
 
         this.innerHTML = `
             <div class="card-header">
                 <h2>Allgemein</h2>
             </div>
             <ul class="feature-list content-list">
-                <li><span class="feature-line"><span class="feature-name">Router</span><span class="feature-value">${routerName}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">Router-Name</span><span class="feature-value">${routerName}</span></span></li>
                 <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
                 <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">122.168.1.1</span></span></li>
             </ul>
@@ -232,9 +225,9 @@ class SpeedCard extends HTMLElement {
             <div class="speed-card-body">
                 <canvas class="speedChart" width="620" height="260"></canvas>
                 <div class="chart-tooltip" id="speedTooltip"></div>
-                <div class="legend">
-                    <span class="upload">● Upload</span>
-                    <span class="download">● Download</span>
+                <div class="legend" aria-label="Diagramm-Legende">
+                    <span class="upload"><i></i>Upload</span>
+                    <span class="download"><i></i>Download</span>
                 </div>
             </div>
         `;
@@ -255,8 +248,8 @@ class SpeedCard extends HTMLElement {
             const latestSpeed = sortedSpeedStats.at(-1);
             const uploadValue = this.querySelector('#uploadValue');
             const downloadValue = this.querySelector('#downloadValue');
-            if (uploadValue) uploadValue.textContent = latestSpeed?.uploadSpeed != null ? `${Number(latestSpeed.uploadSpeed).toFixed(1)} Mbit/s` : '—';
-            if (downloadValue) downloadValue.textContent = latestSpeed?.downloadSpeed != null ? `${Number(latestSpeed.downloadSpeed).toFixed(1)} Mbit/s` : '—';
+            if (uploadValue) uploadValue.textContent = formatSpeed(latestSpeed?.uploadSpeed);
+            if (downloadValue) downloadValue.textContent = formatSpeed(latestSpeed?.downloadSpeed);
         } catch (error) {
             this.upload = [];
             this.download = [];
@@ -281,7 +274,7 @@ class SpeedCard extends HTMLElement {
             const relX = Math.min(Math.max(event.clientX - rect.left, this.padding.left), width - this.padding.right);
             const index = this.labels.length === 1 ? 0 : Math.round(((relX - this.padding.left) / plotWidth) * (this.labels.length - 1));
             const safeIndex = Math.min(Math.max(index, 0), this.labels.length - 1);
-            tooltip.innerHTML = `${this.labels[safeIndex]} · ↓ ${Number(this.download[safeIndex] || 0).toFixed(1)} Mbit/s · ↑ ${Number(this.upload[safeIndex] || 0).toFixed(1)} Mbit/s`;
+            tooltip.innerHTML = `${this.labels[safeIndex]} · ↓ ${formatSpeed(this.download[safeIndex])} · ↑ ${formatSpeed(this.upload[safeIndex])}`;
             tooltip.style.left = `${event.clientX - rect.left}px`;
             tooltip.style.top = `${event.clientY - rect.top}px`;
             tooltip.classList.add('visible');
@@ -303,8 +296,8 @@ class SpeedCard extends HTMLElement {
         
         const rect = canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        const width = Math.max(320, Math.round(rect.width || 620));
-        const height = Math.max(180, Math.round(rect.height || 240));
+        const width = Math.max(1, Math.round(rect.width || 620));
+        const height = Math.max(1, Math.round(rect.height || 150));
         if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
             canvas.width = Math.round(width * dpr);
             canvas.height = Math.round(height * dpr);
@@ -314,10 +307,10 @@ class SpeedCard extends HTMLElement {
         ctx.clearRect(0, 0, width, height);
 
         this._chartSize = { width, height };
-        this.padding.left = width < 430 ? 82 : 108;
-        this.padding.right = width < 430 ? 18 : 32;
-        this.padding.top = width < 430 ? 38 : 46;
-        this.padding.bottom = 42;
+        this.padding.left = width < 430 ? 64 : 78;
+        this.padding.right = width < 430 ? 18 : 26;
+        this.padding.top = 20;
+        this.padding.bottom = 34;
         const maxY = Math.max(1, Math.max(...this.upload, ...this.download) * 1.1);
 
         this.drawAxes(ctx, this._chartSize, maxY);
@@ -326,7 +319,7 @@ class SpeedCard extends HTMLElement {
     }
 
     drawAxes(ctx, canvas, maxY) {
-        ctx.strokeStyle = "#aaa";
+        ctx.strokeStyle = "rgba(255,255,255,.28)";
         ctx.lineWidth = 1;
 
         // Y-Achse
@@ -342,8 +335,8 @@ class SpeedCard extends HTMLElement {
         ctx.stroke();
 
         // Y Labels
-        ctx.fillStyle = "#aaa";
-        ctx.font = "13px Avenir Next, Segoe UI, sans-serif";
+        ctx.fillStyle = "rgba(232,244,240,.72)";
+        ctx.font = "600 12px Avenir Next, Segoe UI, sans-serif";
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
         const steps = 4;
@@ -356,21 +349,29 @@ class SpeedCard extends HTMLElement {
                 (i / steps) *
                     (canvas.height - this.padding.top - this.padding.bottom);
 
-            ctx.fillText(`${val} Mbit/s`, this.padding.left - 14, y);
+            ctx.fillText(`${val}`, this.padding.left - 12, y);
 
-            ctx.strokeStyle = "#333";
+            ctx.strokeStyle = "rgba(255,255,255,.07)";
             ctx.beginPath();
             ctx.moveTo(this.padding.left, y);
             ctx.lineTo(canvas.width - this.padding.right, y);
             ctx.stroke();
         }
 
-        // X Labels - keep sparse so labels never collide with the chart.
+        ctx.fillStyle = "rgba(232,244,240,.70)";
         ctx.textAlign = "center";
         ctx.textBaseline = "alphabetic";
-        const labelStep = Math.max(1, Math.ceil(this.labels.length / 4));
+        ctx.font = "600 12px Avenir Next, Segoe UI, sans-serif";
+        const labelIndexes = new Set();
+        if (this.labels.length === 1) {
+            labelIndexes.add(0);
+        } else {
+            labelIndexes.add(0);
+            labelIndexes.add(Math.round((this.labels.length - 1) / 2));
+            labelIndexes.add(this.labels.length - 1);
+        }
         this.labels.forEach((label, i) => {
-            if (i % labelStep !== 0 && i !== this.labels.length - 1) return;
+            if (!labelIndexes.has(i)) return;
             const x =
                 this.padding.left +
                 ((this.labels.length === 1 ? 0 : i / (this.labels.length - 1))) *
@@ -384,6 +385,8 @@ class SpeedCard extends HTMLElement {
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
         data.forEach((val, i) => {
             const x =
@@ -401,6 +404,24 @@ class SpeedCard extends HTMLElement {
         });
 
         ctx.stroke();
+
+        data.forEach((val, i) => {
+            const x =
+                this.padding.left +
+                ((data.length === 1 ? 0 : i / (data.length - 1))) *
+                    (canvas.width - this.padding.left - this.padding.right);
+
+            const y =
+                canvas.height -
+                this.padding.bottom -
+                (val / maxY) *
+                    (canvas.height - this.padding.top - this.padding.bottom);
+
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+        });
     }
 }
 
@@ -542,6 +563,68 @@ class DnsCard extends HTMLElement {
     }
 }
 
+// Clients Komponente
+class ClientsCard extends HTMLElement {
+    constructor() {
+        super();
+        this.devices = [];
+    }
+
+    connectedCallback() {
+        this.classList.add('card');
+        this.setAttribute('data-section', 'clients');
+
+        this.render();
+        this.loadClientData();
+    }
+
+    async loadClientData() {
+        try {
+            const router = await getPrimaryRouter();
+            this.devices = router?.devices || [];
+        } catch (error) {
+            this.devices = [];
+        }
+
+        this.render();
+    }
+
+    render() {
+        const total = this.devices.length;
+        const wifi = this.devices.filter(device => String(device.connectionType || '').toLowerCase() === 'wifi').length;
+        const lan = this.devices.filter(device => String(device.connectionType || '').toLowerCase() === 'lan').length;
+        const latest = this.devices.slice(0, 3);
+
+        const deviceList = latest.length
+            ? latest.map(device => `
+                <div class="client-row">
+                    <span class="client-name">${device.hostname || 'Unbekannter Client'}</span>
+                    <strong class="client-type">${String(device.connectionType || '—').toUpperCase()}</strong>
+                </div>
+            `).join('')
+            : '<div class="client-row"><span class="client-name">Keine Clients gefunden</span><strong class="client-type">—</strong></div>';
+
+        this.innerHTML = `
+            <div class="card-header">
+                <h2>Clients</h2>
+            </div>
+            <div class="card-content-stack">
+                <div class="card-kpi-row">
+                    <div class="card-kpi">
+                        <span class="card-kpi-label">Gesamt</span>
+                        <span class="card-kpi-value">${total || '—'}</span>
+                    </div>
+                    <div class="card-kpi align-right">
+                        <span class="card-kpi-label">LAN / WLAN</span>
+                        <span class="card-kpi-value">${lan} / ${wifi}</span>
+                    </div>
+                </div>
+                <div class="client-list">${deviceList}</div>
+            </div>
+        `;
+    }
+}
+
 // Bottom Navigation Komponente
 class DashboardNav extends HTMLElement {
     constructor() {
@@ -557,6 +640,7 @@ class DashboardNav extends HTMLElement {
             <button data-filter="speed">⏱<span>Speed</span></button>
             <button data-filter="status">🔔<span>STATUS</span></button>
             <button data-filter="features">🛠<span>CONFIG</span></button>
+            <button data-filter="clients">▣<span>Clients</span></button>
         `;
         
         this.setupListeners();
@@ -673,7 +757,7 @@ class DashboardContainer extends HTMLElement {
         
         const controls = document.querySelector('layout-controls');
         controls?.updateEditMode(this.editMode);
-        this.showLayoutFeedback(this.editMode ? 'Bearbeiten aktiv: Boxen verschieben oder unten rechts skalieren.' : 'Layout gespeichert.');
+        this.showLayoutFeedback(this.editMode ? 'Bearbeiten aktiv: Boxen verschieben.' : 'Layout gespeichert.');
         
         if (!this.editMode) {
             this.snapAllCards();
@@ -705,7 +789,7 @@ class DashboardContainer extends HTMLElement {
         const rows = Math.ceil(count / cols);
 
         const cardWidth = Math.min((vw - gap * (cols - 1)) / cols, 430);
-        const cardHeight = Math.max(190, Math.min((vh - gap * (rows - 1)) / rows, 270));
+        const cardHeight = Math.max(230, Math.min((vh - gap * (rows - 1)) / rows, 300));
 
         const totalGridWidth = cols * cardWidth + gap * (cols - 1);
         const startX = (vw - totalGridWidth) / 2;
@@ -736,15 +820,10 @@ class DashboardContainer extends HTMLElement {
     setupCardDragAndDrop() {
         this.cards.forEach(card => {
             let offsetX, offsetY, dragging = false;
-            let resizing = false;
-
-            const MIN_WIDTH = 220;
-            const MIN_HEIGHT = 140;
-
             // Drag
             card.addEventListener('mousedown', e => {
                 if (!this.editMode) return;
-                if (resizing) return;
+                if (e.target.closest('button, a, input, select, textarea')) return;
                 dragging = true;
                 offsetX = e.clientX - card.offsetLeft;
                 offsetY = e.clientY - card.offsetTop;
@@ -775,59 +854,6 @@ class DashboardContainer extends HTMLElement {
                 card.classList.remove('is-moving');
                 card.style.zIndex = '';
             });
-
-            // Resize
-            const attachResizeHandle = () => {
-                let handle = card.querySelector(':scope > .resize-handle');
-                if (handle) return;
-
-                handle = document.createElement('div');
-                handle.className = 'resize-handle';
-                card.appendChild(handle);
-
-                handle.addEventListener('mousedown', e => {
-                    if (!this.editMode) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dragging = false;
-                    resizing = true;
-                    card.style.zIndex = 1000;
-                    card.classList.add('is-moving');
-                    this.showLayoutFeedback('Größe anpassen – Raster rastet automatisch ein.');
-                });
-            };
-
-            attachResizeHandle();
-
-            // Some cards re-render with innerHTML after API updates and drop the handle.
-            // Watch for child changes and re-attach it so every card stays resizable.
-            const observer = new MutationObserver(() => {
-                attachResizeHandle();
-            });
-            observer.observe(card, { childList: true });
-
-            document.addEventListener('mousemove', e => {
-                if (!resizing) return;
-                const dashboard = this.querySelector('.dashboard') || this;
-                const maxWidth = Math.max(MIN_WIDTH, dashboard.clientWidth - card.offsetLeft);
-                const maxHeight = Math.max(MIN_HEIGHT, dashboard.clientHeight - card.offsetTop);
-                const nextWidth = Math.min(maxWidth, Math.max(MIN_WIDTH, e.clientX - card.offsetLeft));
-                const nextHeight = Math.min(maxHeight, Math.max(MIN_HEIGHT, e.clientY - card.offsetTop));
-                requestAnimationFrame(() => {
-                    card.style.width = `${nextWidth}px`;
-                    card.style.height = `${nextHeight}px`;
-                });
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (resizing) {
-                    this.snapCard(card);
-                    this.showLayoutFeedback('Größe eingerastet.');
-                }
-                resizing = false;
-                card.classList.remove('is-moving');
-                card.style.zIndex = '';
-            });
         });
     }
 
@@ -839,8 +865,6 @@ class DashboardContainer extends HTMLElement {
     snapCard(card) {
         card.style.left = `${this.snap(card.offsetLeft)}px`;
         card.style.top = `${this.snap(card.offsetTop)}px`;
-        card.style.width = `${Math.max(220, this.snap(card.offsetWidth))}px`;
-        card.style.height = `${Math.max(140, this.snap(card.offsetHeight))}px`;
     }
 
     snapAllCards() {
@@ -867,9 +891,7 @@ class DashboardContainer extends HTMLElement {
         this.cards.forEach(card => {
             layout[card.dataset.section] = {
                 left: card.style.left,
-                top: card.style.top,
-                width: card.style.width,
-                height: card.style.height
+                top: card.style.top
             };
         });
         localStorage.setItem('dashboardLayout', JSON.stringify(layout));
@@ -884,7 +906,8 @@ class DashboardContainer extends HTMLElement {
             const l = layout[card.dataset.section];
             if (!l) return;
 
-            Object.assign(card.style, l);
+            card.style.left = l.left || card.style.left;
+            card.style.top = l.top || card.style.top;
             card.style.position = 'absolute';
         });
     }
@@ -918,6 +941,7 @@ customElements.define('features-card', FeaturesCard);
 customElements.define('speed-card', SpeedCard);
 customElements.define('activity-card', ActivityCard);
 customElements.define('dns-card', DnsCard);
+customElements.define('clients-card', ClientsCard);
 customElements.define('dashboard-nav', DashboardNav);
 customElements.define('layout-controls', LayoutControls);
 customElements.define('dashboard-container', DashboardContainer);

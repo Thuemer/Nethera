@@ -353,6 +353,12 @@ select {
     min-width: 0;
 }
 
+.connection-empty {
+    color: var(--text-soft);
+    padding: 16px 0;
+    font-size: 14px;
+}
+
 .connection-bar-label {
     display: grid;
     gap: 4px;

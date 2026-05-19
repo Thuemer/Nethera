@@ -1,14 +1,7 @@
 // Datenverkehr Seite - JavaScript
 const appConfig = window.NETHERA_CONFIG || {};
-const API_ENABLED = appConfig.API_ENABLED === true;
 const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
 const CONNECTION_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/connections/list`;
-
-const DEMO_CONNECTIONS = [
-    { client: 'Quarkus-Server-Node', ip: '10.0.0.1', protocol: 'OpenVPN', download: 1250.5, upload: 450.2 },
-    { client: 'Admin-Workstation', ip: '10.0.0.5', protocol: 'WireGuard', download: 85.0, upload: 12.5 },
-    { client: 'IoT-Gateway', ip: '10.0.0.40', protocol: 'TCP', download: 0.5, upload: 0.1 }
-];
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -20,7 +13,6 @@ function escapeHtml(value) {
 }
 
 async function fetchJson(url) {
-    if (!API_ENABLED) throw new Error('Backend-API deaktiviert');
     const response = await fetch(url, {
         headers: { Accept: 'application/json' },
         cache: 'no-store'
@@ -35,22 +27,20 @@ async function fetchJson(url) {
 
 async function loadTrafficData() {
     let router = null;
-    let connections = DEMO_CONNECTIONS;
+    let connections = [];
 
     try {
         const routers = await fetchJson(ROUTER_API_URL);
         router = Array.isArray(routers) ? routers[0] : null;
     } catch (error) {
-        
+        router = null;
     }
 
     try {
         const data = await fetchJson(CONNECTION_API_URL);
-        if (Array.isArray(data) && data.length) {
-            connections = data;
-        }
+        connections = Array.isArray(data) ? data : [];
     } catch (error) {
-        
+        connections = [];
     }
 
     updateStatsDisplay(router, connections);
@@ -59,25 +49,26 @@ async function loadTrafficData() {
 }
 
 function formatMbit(value) {
+    if (value == null || value === '') return '-- Mb/s';
     const number = Number(value);
     if (!Number.isFinite(number)) return '-- Mb/s';
     return `${number.toFixed(number >= 100 ? 0 : 1)} Mb/s`;
 }
 
+function sortByTimestamp(items = []) {
+    return [...items].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+}
+
 function updateStatsDisplay(router, connections = []) {
-    const speedStats = Array.isArray(router?.speedStats) ? router.speedStats : [];
+    const speedStats = sortByTimestamp(Array.isArray(router?.speedStats) ? router.speedStats : []);
     const latestSpeed = speedStats.length > 0 ? speedStats[speedStats.length - 1] : null;
+    const connectionDownload = connections.reduce((sum, c) => sum + Number(c.download || 0), 0);
+    const connectionUpload = connections.reduce((sum, c) => sum + Number(c.upload || 0), 0);
 
-    const fallbackDownload = connections.reduce((sum, c) => sum + Number(c.download || 0), 0);
-    const fallbackUpload = connections.reduce((sum, c) => sum + Number(c.upload || 0), 0);
-
-    const download = latestSpeed?.downloadSpeed ?? fallbackDownload;
-    const upload = latestSpeed?.uploadSpeed ?? fallbackUpload;
-
-    document.getElementById('statDownload').textContent = formatMbit(download);
-    document.getElementById('statUpload').textContent = formatMbit(upload);
+    document.getElementById('statDownload').textContent = formatMbit(latestSpeed?.downloadSpeed ?? connectionDownload);
+    document.getElementById('statUpload').textContent = formatMbit(latestSpeed?.uploadSpeed ?? connectionUpload);
     document.getElementById('statConnections').textContent = String(connections.length);
-    document.getElementById('statVolume').textContent = `${((fallbackDownload + fallbackUpload) / 1024).toFixed(2)} GB`;
+    document.getElementById('statVolume').textContent = `${((connectionDownload + connectionUpload) / 1024).toFixed(2)} GB`;
 }
 
 function normalizeConnection(connection) {
@@ -118,6 +109,12 @@ function updateTrafficChart(connections = []) {
     if (!chart) return;
 
     const rows = connections.map(normalizeConnection);
+
+    if (rows.length === 0) {
+        chart.innerHTML = '<div class="connection-empty">Keine Verbindungen vom Backend verfügbar.</div>';
+        return;
+    }
+
     const max = Math.max(1, ...rows.map(c => Math.max(c.download, c.upload)));
 
     chart.innerHTML = rows.map(connection => {
