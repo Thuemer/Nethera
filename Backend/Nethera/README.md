@@ -4,6 +4,36 @@ This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
 
+## Development
+
+### Prerequisites
+
+Start the docker-compose stack (Keycloak + PostgreSQL) before running the application:
+
+```shell script
+docker compose up -d
+```
+
+### Authentication
+
+All API endpoints require a valid Bearer token issued by the `nethera` Keycloak realm.
+
+**Obtain a token (dev user):**
+
+```shell script
+TOKEN=$(curl -s -X POST http://localhost:8180/realms/nethera/protocol/openid-connect/token \
+  -d "client_id=nethera-frontend&grant_type=password&username=dev&password=dev" \
+  | jq -r .access_token)
+```
+
+**Call an endpoint with the token:**
+
+```shell script
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/routers/list
+```
+
+> **Note**: Import `keycloak/nethera-realm-export.json` into Keycloak if the `nethera` realm does not exist yet (admin console: <http://localhost:8180>). After importing, create the `dev` user manually — the export does not include users. Keycloak 26 requires users to have an email address set for Direct Access Grants to work (e.g. `dev@nethera.local`).
+
 ## Running the application in dev mode
 
 You can run your application in dev mode that enables live coding using:

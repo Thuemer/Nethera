@@ -3,12 +3,14 @@ package at.htlleonding.boundary;
 import at.htlleonding.dto.*;
 import at.htlleonding.model.Router;
 import at.htlleonding.repository.RoutersRepository;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
 
+@Authenticated
 @Path("api/routers")
 public class RoutersResource {
 
