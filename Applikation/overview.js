@@ -1,5 +1,74 @@
-
 // Basis Card-Komponente
+const appConfig = window.NETHERA_CONFIG || {};
+const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
+let primaryRouterPromise = null;
+
+function formatDateTime(value) {
+    if (!value) return '—';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleString('de-DE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function formatTime(value) {
+    if (!value) return '--:--';
+
+    const localTime = String(value).match(/T(\d{2}:\d{2})/);
+    if (localTime) return localTime[1];
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleTimeString('de-DE', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function sortByTimestamp(items) {
+    return [...(items || [])].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+}
+
+function formatSpeed(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '—';
+    return `${number.toFixed(1)} Mb/s`;
+}
+
+async function getPrimaryRouter() {
+    if (!primaryRouterPromise) {
+        primaryRouterPromise = fetch(ROUTER_API_URL, {
+            headers: {
+                Accept: 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`API Fehler: ${response.status}`);
+                }
+
+                return response.json();
+            })
+            .then(routers => {
+                if (!Array.isArray(routers) || routers.length === 0) {
+                    throw new Error('Keine Routerdaten gefunden');
+                }
+
+                return routers[0];
+            });
+    }
+
+    return primaryRouterPromise;
+}
+
 class DashboardCard extends HTMLElement {
     constructor() {
         super();
@@ -28,30 +97,54 @@ class DashboardCard extends HTMLElement {
 class RouterCard extends HTMLElement {
     constructor() {
         super();
+        this.router = null;
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'status');
-        
-        const devices = this.getAttribute('devices') || '11';
-        const status = this.getAttribute('status') || 'Online';
-        
+
+        this.render();
+        this.loadRouterData();
+    }
+
+    async loadRouterData() {
+        try {
+            this.router = await getPrimaryRouter();
+        } catch (error) {
+            this.router = null;
+            
+        }
+
+        this.render();
+    }
+
+    render() {
+        const devices = this.router?.devices?.length ?? 0;
+        const status = this.router?.isOnline ? 'Online' : 'Offline';
+        const lastSeen = formatDateTime(this.router?.lastSeen);
+        const firmware = this.router?.firmware || '—';
+
+        const isOnline = this.router?.isOnline;
+
         this.innerHTML = `
             <div class="card-header">
                 <h2>Router</h2>
             </div>
-            <div class="router-box">
-                <div>
-                    <div>Status</div>
-                    <div class="under">Verbundene Geräte</div>
-                </div>
-                <div class="router-right">
-                    <div class="online">
-                        <span class="dot"></span> ${status}
+
+            <div class="card-content-stack">
+                <div class="card-kpi-row">
+                    <div class="card-kpi">
+                        <span class="card-kpi-label">Status</span>
+                        <span class="card-kpi-value"><span class="status-pill ${isOnline ? '' : 'offline'}"><span class="dot"></span>${status}</span></span>
                     </div>
-                    <div class="count">${devices}</div>
+                    <div class="card-kpi align-right">
+                        <span class="card-kpi-label">Clients</span>
+                        <span class="card-kpi-value">${devices}</span>
+                    </div>
                 </div>
+                <div class="card-detail-row"><span class="card-detail-label">Zuletzt gesehen</span><span class="card-detail-value">${lastSeen}</span></div>
+                <div class="card-detail-row"><span class="card-detail-label">Firmware</span><span class="card-detail-value">${firmware}</span></div>
             </div>
         `;
     }
@@ -61,22 +154,40 @@ class RouterCard extends HTMLElement {
 class FeaturesCard extends HTMLElement {
     constructor() {
         super();
+        this.router = null;
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'features');
-        
+
+        this.render();
+        this.loadRouterData();
+    }
+
+    async loadRouterData() {
+        try {
+            this.router = await getPrimaryRouter();
+        } catch (error) {
+            this.router = null;
+            
+        }
+
+        this.render();
+    }
+
+    render() {
+        const routerName = this.router?.name || '—';
+        const model = this.router?.model || '—';
+
         this.innerHTML = `
             <div class="card-header">
-                <h2>Features</h2>
-                <span class="icon">🛠</span>
+                <h2>Allgemein</h2>
             </div>
-            <ul class="feature-list">
-                <li class="ok">Werbung Blockieren</li>
-                <li class="bad">Blockiere Liste: Streaming Dienste</li>
-                <li class="bad">Blockiere Liste: Gast</li>
-                <li class="ok">Priorisiere: Figma</li>
+            <ul class="feature-list content-list">
+                <li><span class="feature-line"><span class="feature-name">Router-Name</span><span class="feature-value">${routerName}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">122.168.1.1</span></span></li>
             </ul>
         `;
     }
@@ -86,14 +197,15 @@ class FeaturesCard extends HTMLElement {
 class SpeedCard extends HTMLElement {
     constructor() {
         super();
-        this.upload = [30, 220, 300, 250];
-        this.download = [220, 250, 190, 300];
-        this.labels = ["12:00", "12:05", "12:10", "12:15"];
+        this.upload = [];
+        this.download = [];
+        this.labels = [];
         this.padding = {
-            left: 50,
-            right: 20,
-            top: 20,
-            bottom: 40
+            // Mehr Platz links, damit die Y-Achsen-Werte sauber links von der Achse stehen.
+            left: 108,
+            right: 32,
+            top: 46,
+            bottom: 44
         };
     }
 
@@ -106,34 +218,108 @@ class SpeedCard extends HTMLElement {
                 <h2>Speed</h2>
                 <span class="icon">⏱</span>
             </div>
-            <canvas class="speedChart" width="400" height="200"></canvas>
-            <div class="legend">
-                <span class="upload">● Upload</span>
-                <span class="download">● Download</span>
+            <div class="speed-summary">
+                <div class="card-kpi"><span class="card-kpi-label">Upload</span><span class="card-kpi-value" id="uploadValue">—</span></div>
+                <div class="card-kpi align-right"><span class="card-kpi-label">Download</span><span class="card-kpi-value" id="downloadValue">—</span></div>
+            </div>
+            <div class="speed-card-body">
+                <canvas class="speedChart" width="620" height="260"></canvas>
+                <div class="chart-tooltip" id="speedTooltip"></div>
+                <div class="legend" aria-label="Diagramm-Legende">
+                    <span class="upload"><i></i>Upload</span>
+                    <span class="download"><i></i>Download</span>
+                </div>
             </div>
         `;
-        
-        // Warte, bis DOM vollständig gerendert ist
-        this.addEventListener('DOMContentLoaded', () => this.drawChart(), { once: true });
+
+        this.loadSpeedData();
+        this.setupChartHover();
+    }
+
+    async loadSpeedData() {
+        try {
+            const router = await getPrimaryRouter();
+            const sortedSpeedStats = sortByTimestamp(router?.speedStats);
+
+            this.upload = sortedSpeedStats.map(entry => Number(entry.uploadSpeed) || 0);
+            this.download = sortedSpeedStats.map(entry => Number(entry.downloadSpeed) || 0);
+            this.labels = sortedSpeedStats.map(entry => formatTime(entry.timestamp));
+
+            const latestSpeed = sortedSpeedStats.at(-1);
+            const uploadValue = this.querySelector('#uploadValue');
+            const downloadValue = this.querySelector('#downloadValue');
+            if (uploadValue) uploadValue.textContent = formatSpeed(latestSpeed?.uploadSpeed);
+            if (downloadValue) downloadValue.textContent = formatSpeed(latestSpeed?.downloadSpeed);
+        } catch (error) {
+            this.upload = [];
+            this.download = [];
+            this.labels = [];
+            
+        }
+
         requestAnimationFrame(() => this.drawChart());
+    }
+
+
+    setupChartHover() {
+        const canvas = this.querySelector('.speedChart');
+        const tooltip = this.querySelector('#speedTooltip');
+        if (!canvas || !tooltip) return;
+
+        const updateTooltip = (event) => {
+            if (!this.labels.length) return;
+            const rect = canvas.getBoundingClientRect();
+            const width = this._chartSize?.width || rect.width;
+            const plotWidth = width - this.padding.left - this.padding.right;
+            const relX = Math.min(Math.max(event.clientX - rect.left, this.padding.left), width - this.padding.right);
+            const index = this.labels.length === 1 ? 0 : Math.round(((relX - this.padding.left) / plotWidth) * (this.labels.length - 1));
+            const safeIndex = Math.min(Math.max(index, 0), this.labels.length - 1);
+            tooltip.innerHTML = `${this.labels[safeIndex]} · ↓ ${formatSpeed(this.download[safeIndex])} · ↑ ${formatSpeed(this.upload[safeIndex])}`;
+            tooltip.style.left = `${event.clientX - rect.left}px`;
+            tooltip.style.top = `${event.clientY - rect.top}px`;
+            tooltip.classList.add('visible');
+        };
+
+        canvas.addEventListener('mousemove', updateTooltip);
+        canvas.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
     }
 
     drawChart() {
         const canvas = this.querySelector('.speedChart');
         if (!canvas) return;
+
+        if (this.upload.length === 0 || this.download.length === 0 || this.labels.length === 0) {
+            this.upload = [0];
+            this.download = [0];
+            this.labels = ['--:--'];
+        }
         
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.max(1, Math.round(rect.width || 620));
+        const height = Math.max(1, Math.round(rect.height || 150));
+        if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+        }
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, width, height);
 
-        const maxY = Math.max(...this.upload, ...this.download) * 1.1;
+        this._chartSize = { width, height };
+        this.padding.left = width < 430 ? 64 : 78;
+        this.padding.right = width < 430 ? 18 : 26;
+        this.padding.top = 20;
+        this.padding.bottom = 34;
+        const maxY = Math.max(1, Math.max(...this.upload, ...this.download) * 1.1);
 
-        this.drawAxes(ctx, canvas, maxY);
-        this.drawLine(ctx, canvas, this.upload, '#3b82f6', maxY);
-        this.drawLine(ctx, canvas, this.download, '#6ee7c8', maxY);
+        this.drawAxes(ctx, this._chartSize, maxY);
+        this.drawLine(ctx, this._chartSize, this.upload, '#3b82f6', maxY);
+        this.drawLine(ctx, this._chartSize, this.download, '#6ee7c8', maxY);
     }
 
     drawAxes(ctx, canvas, maxY) {
-        ctx.strokeStyle = "#aaa";
+        ctx.strokeStyle = "rgba(255,255,255,.28)";
         ctx.lineWidth = 1;
 
         // Y-Achse
@@ -149,8 +335,10 @@ class SpeedCard extends HTMLElement {
         ctx.stroke();
 
         // Y Labels
-        ctx.fillStyle = "#aaa";
-        ctx.font = "12px system-ui";
+        ctx.fillStyle = "rgba(232,244,240,.72)";
+        ctx.font = "600 12px Avenir Next, Segoe UI, sans-serif";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
         const steps = 4;
 
         for (let i = 0; i <= steps; i++) {
@@ -161,23 +349,35 @@ class SpeedCard extends HTMLElement {
                 (i / steps) *
                     (canvas.height - this.padding.top - this.padding.bottom);
 
-            ctx.fillText(`${val} MB/s`, 5, y + 4);
+            ctx.fillText(`${val}`, this.padding.left - 12, y);
 
-            ctx.strokeStyle = "#333";
+            ctx.strokeStyle = "rgba(255,255,255,.07)";
             ctx.beginPath();
             ctx.moveTo(this.padding.left, y);
             ctx.lineTo(canvas.width - this.padding.right, y);
             ctx.stroke();
         }
 
-        // X Labels
+        ctx.fillStyle = "rgba(232,244,240,.70)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "alphabetic";
+        ctx.font = "600 12px Avenir Next, Segoe UI, sans-serif";
+        const labelIndexes = new Set();
+        if (this.labels.length === 1) {
+            labelIndexes.add(0);
+        } else {
+            labelIndexes.add(0);
+            labelIndexes.add(Math.round((this.labels.length - 1) / 2));
+            labelIndexes.add(this.labels.length - 1);
+        }
         this.labels.forEach((label, i) => {
+            if (!labelIndexes.has(i)) return;
             const x =
                 this.padding.left +
-                (i / (this.labels.length - 1)) *
+                ((this.labels.length === 1 ? 0 : i / (this.labels.length - 1))) *
                     (canvas.width - this.padding.left - this.padding.right);
 
-            ctx.fillText(label, x - 12, canvas.height - 10);
+            ctx.fillText(label, x, canvas.height - 10);
         });
     }
 
@@ -185,11 +385,13 @@ class SpeedCard extends HTMLElement {
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
         data.forEach((val, i) => {
             const x =
                 this.padding.left +
-                (i / (data.length - 1)) *
+                ((data.length === 1 ? 0 : i / (data.length - 1))) *
                     (canvas.width - this.padding.left - this.padding.right);
 
             const y =
@@ -202,6 +404,24 @@ class SpeedCard extends HTMLElement {
         });
 
         ctx.stroke();
+
+        data.forEach((val, i) => {
+            const x =
+                this.padding.left +
+                ((data.length === 1 ? 0 : i / (data.length - 1))) *
+                    (canvas.width - this.padding.left - this.padding.right);
+
+            const y =
+                canvas.height -
+                this.padding.bottom -
+                (val / maxY) *
+                    (canvas.height - this.padding.top - this.padding.bottom);
+
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+        });
     }
 }
 
@@ -209,22 +429,76 @@ class SpeedCard extends HTMLElement {
 class ActivityCard extends HTMLElement {
     constructor() {
         super();
+        this.logs = [];
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'activity');
-        
+
+        this.render();
+        this.loadActivityData();
+    }
+
+    async loadActivityData() {
+        try {
+            const router = await getPrimaryRouter();
+            this.logs = sortByTimestamp(router?.activityLogs).reverse();
+        } catch (error) {
+            this.logs = [];
+            
+        }
+
+        this.render();
+    }
+
+    getTypeClass(eventType) {
+        if (eventType === 'CONNECTED') return 'ok';
+        if (eventType === 'DISCONNECTED') return 'offline';
+        if (eventType === 'BLOCKED_URL') return 'warn';
+        return '';
+    }
+
+    getTypeIcon(eventType) {
+        if (eventType === 'CONNECTED') return '📶';
+        if (eventType === 'DISCONNECTED') return '❌';
+        if (eventType === 'BLOCKED_URL') return '⚠️';
+        return '•';
+    }
+
+    getTypeLabel(eventType) {
+        if (eventType === 'CONNECTED') return 'Verbunden';
+        if (eventType === 'DISCONNECTED') return 'Getrennt';
+        if (eventType === 'BLOCKED_URL') return 'Blockiert';
+        return 'Ereignis';
+    }
+
+    render() {
+        const visibleLogs = this.logs.slice(0, 2);
+
+        const logHtml = visibleLogs.length
+            ? visibleLogs
+                .map(log => `
+                    <div class="activity ${this.getTypeClass(log.eventType)}">
+                        <div class="activity-top">
+                            <span class="activity-badge">${this.getTypeLabel(log.eventType)}</span>
+                            <span class="activity-time">${formatDateTime(log.timestamp)}</span>
+                        </div>
+                        <div class="activity-text">
+                            <span class="activity-event-icon">${this.getTypeIcon(log.eventType)}</span>
+                            <span class="activity-message">${log.details || 'Keine Details vorhanden'}</span>
+                        </div>
+                    </div>
+                `)
+                .join('')
+            : '<div class="activity activity-empty">Keine Aktivitäten vorhanden</div>';
+
         this.innerHTML = `
             <div class="card-header">
                 <h2>Aktivität</h2>
-                <span class="icon">📶</span>
             </div>
             <div class="allAcitivities">
-                <div class="activity ok">📶 iPhone von Helmut verbunden</div>
-                <div class="activity ok">📶 Jakob verbunden</div>
-                <div class="activity">❌ Lex 4587 verlassen</div>
-                <div class="activity warn">⚠️ gesperrte Website angefragt</div>
+                ${logHtml}
             </div>
         `;
     }
@@ -234,27 +508,118 @@ class ActivityCard extends HTMLElement {
 class DnsCard extends HTMLElement {
     constructor() {
         super();
+        this.dnsStats = [];
     }
 
     connectedCallback() {
         this.classList.add('card');
         this.setAttribute('data-section', 'dns');
-        
-        const blocked = this.getAttribute('blocked') || '238';
-        const prevented = this.getAttribute('prevented') || '27';
-        const failed = this.getAttribute('failed') || '2';
-        
+
+        this.render();
+        this.loadDnsData();
+    }
+
+    async loadDnsData() {
+        try {
+            const router = await getPrimaryRouter();
+            this.dnsStats = sortByTimestamp(router?.dnsStats || []);
+        } catch (error) {
+            this.dnsStats = [];
+            
+        }
+
+        this.render();
+    }
+
+    render() {
+        const totals = this.dnsStats.reduce(
+            (acc, entry) => ({
+                blocked: acc.blocked + (Number(entry.blockedQueries) || 0),
+                trackers: acc.trackers + (Number(entry.trackersDetected) || 0),
+                total: acc.total + (Number(entry.totalQueries) || 0)
+            }),
+            { blocked: 0, trackers: 0, total: 0 }
+        );
+
+        const latestEntry = this.dnsStats.at(-1) || null;
+        const blocked = this.dnsStats.length ? totals.blocked : '—';
+        const trackers = this.dnsStats.length ? totals.trackers : '—';
+        const total = this.dnsStats.length ? totals.total : '—';
+        const timestamp = formatDateTime(latestEntry?.timestamp);
+
         this.innerHTML = `
             <div class="card-header">
-                <h2>DNS Übersicht (Heute)</h2>
-                <span class="icon">🛡</span>
+                <h2>DNS Heute</h2>
             </div>
             <div class="dns_all">
-                <div class="dns">
-                    <div><span class="dnstext">Werbungen Blockiert:</span><strong>${blocked}</strong></div>
-                    <div><span class="dnstext">Tracker Verhindert:</span><strong>${prevented}</strong></div>
-                    <div><span class="dnstext">Fehlgeschlagene Anfragen:</span><strong>${failed}</strong></div>
+                <div class="dns dns-list">
+                    <div class="dns-row"><span class="dns-label">Werbung blockiert</span><strong class="dns-value">${blocked}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Tracker verhindert</span><strong class="dns-value">${trackers}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Anfragen gesamt</span><strong class="dns-value">${total}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Letztes Update</span><strong class="dns-value">${timestamp}</strong></div>
                 </div>
+            </div>
+        `;
+    }
+}
+
+// Clients Komponente
+class ClientsCard extends HTMLElement {
+    constructor() {
+        super();
+        this.devices = [];
+    }
+
+    connectedCallback() {
+        this.classList.add('card');
+        this.setAttribute('data-section', 'clients');
+
+        this.render();
+        this.loadClientData();
+    }
+
+    async loadClientData() {
+        try {
+            const router = await getPrimaryRouter();
+            this.devices = router?.devices || [];
+        } catch (error) {
+            this.devices = [];
+        }
+
+        this.render();
+    }
+
+    render() {
+        const total = this.devices.length;
+        const wifi = this.devices.filter(device => String(device.connectionType || '').toLowerCase() === 'wifi').length;
+        const lan = this.devices.filter(device => String(device.connectionType || '').toLowerCase() === 'lan').length;
+        const latest = this.devices.slice(0, 3);
+
+        const deviceList = latest.length
+            ? latest.map(device => `
+                <div class="client-row">
+                    <span class="client-name">${device.hostname || 'Unbekannter Client'}</span>
+                    <strong class="client-type">${String(device.connectionType || '—').toUpperCase()}</strong>
+                </div>
+            `).join('')
+            : '<div class="client-row"><span class="client-name">Keine Clients gefunden</span><strong class="client-type">—</strong></div>';
+
+        this.innerHTML = `
+            <div class="card-header">
+                <h2>Clients</h2>
+            </div>
+            <div class="card-content-stack">
+                <div class="card-kpi-row">
+                    <div class="card-kpi">
+                        <span class="card-kpi-label">Gesamt</span>
+                        <span class="card-kpi-value">${total || '—'}</span>
+                    </div>
+                    <div class="card-kpi align-right">
+                        <span class="card-kpi-label">LAN / WLAN</span>
+                        <span class="card-kpi-value">${lan} / ${wifi}</span>
+                    </div>
+                </div>
+                <div class="client-list">${deviceList}</div>
             </div>
         `;
     }
@@ -272,9 +637,10 @@ class DashboardNav extends HTMLElement {
         this.innerHTML = `
             <button data-filter="activity">📶<span>Aktivität</span></button>
             <button data-filter="dns">🛡<span>DNS</span></button>
-            <button data-filter="speed">⏱<span>SPEED</span></button>
+            <button data-filter="speed">⏱<span>Speed</span></button>
             <button data-filter="status">🔔<span>STATUS</span></button>
             <button data-filter="features">🛠<span>CONFIG</span></button>
+            <button data-filter="clients">▣<span>Clients</span></button>
         `;
         
         this.setupListeners();
@@ -391,8 +757,10 @@ class DashboardContainer extends HTMLElement {
         
         const controls = document.querySelector('layout-controls');
         controls?.updateEditMode(this.editMode);
+        this.showLayoutFeedback(this.editMode ? 'Bearbeiten aktiv: Boxen verschieben.' : 'Layout gespeichert.');
         
         if (!this.editMode) {
+            this.snapAllCards();
             this.saveLayout();
         }
     }
@@ -402,7 +770,7 @@ class DashboardContainer extends HTMLElement {
 
         const dashboard = this.querySelector('.dashboard') || this;
         const visibleCards = this.cards.filter(c => !c.classList.contains('hidden'));
-        const gap = 20;
+        const gap = 18;
 
         const vw = dashboard.clientWidth;
         const vh = dashboard.clientHeight;
@@ -412,14 +780,16 @@ class DashboardContainer extends HTMLElement {
 
         let cols;
 
-        if (count === 3) cols = 2;
+        if (vw < 560) cols = 1;
+        else if (vw < 900) cols = Math.min(2, count);
+        else if (count === 3) cols = 2;
         else if (count === 5) cols = 3;
         else cols = Math.ceil(Math.sqrt(count));
 
         const rows = Math.ceil(count / cols);
 
-        const cardWidth = Math.min((vw - gap * (cols - 1)) / cols, 420);
-        const cardHeight = Math.min((vh - gap * (rows - 1)) / rows, 260);
+        const cardWidth = Math.min((vw - gap * (cols - 1)) / cols, 430);
+        const cardHeight = Math.max(230, Math.min((vh - gap * (rows - 1)) / rows, 300));
 
         const totalGridWidth = cols * cardWidth + gap * (cols - 1);
         const startX = (vw - totalGridWidth) / 2;
@@ -450,50 +820,70 @@ class DashboardContainer extends HTMLElement {
     setupCardDragAndDrop() {
         this.cards.forEach(card => {
             let offsetX, offsetY, dragging = false;
-
             // Drag
             card.addEventListener('mousedown', e => {
                 if (!this.editMode) return;
+                if (e.target.closest('button, a, input, select, textarea')) return;
                 dragging = true;
                 offsetX = e.clientX - card.offsetLeft;
                 offsetY = e.clientY - card.offsetTop;
                 card.style.zIndex = 1000;
+                card.classList.add('is-moving');
+                this.showLayoutFeedback('Box verschieben – Raster rastet automatisch ein.');
             });
 
             document.addEventListener('mousemove', e => {
                 if (!dragging) return;
-                card.style.left = `${e.clientX - offsetX}px`;
-                card.style.top = `${e.clientY - offsetY}px`;
+                const dashboard = this.querySelector('.dashboard') || this;
+                const maxLeft = Math.max(0, dashboard.clientWidth - card.offsetWidth);
+                const maxTop = Math.max(0, dashboard.clientHeight - card.offsetHeight);
+                const nextLeft = Math.min(Math.max(0, e.clientX - offsetX), maxLeft);
+                const nextTop = Math.min(Math.max(0, e.clientY - offsetY), maxTop);
+                requestAnimationFrame(() => {
+                    card.style.left = `${nextLeft}px`;
+                    card.style.top = `${nextTop}px`;
+                });
             });
 
             document.addEventListener('mouseup', () => {
+                if (dragging) {
+                    this.snapCard(card);
+                    this.showLayoutFeedback('Position eingerastet.');
+                }
                 dragging = false;
+                card.classList.remove('is-moving');
                 card.style.zIndex = '';
             });
-
-            // Resize
-            const handle = document.createElement('div');
-            handle.className = 'resize-handle';
-            card.appendChild(handle);
-
-            let resizing = false;
-
-            handle.addEventListener('mousedown', e => {
-                if (!this.editMode) return;
-                e.stopPropagation();
-                resizing = true;
-            });
-
-            document.addEventListener('mousemove', e => {
-                if (!resizing) return;
-                card.style.width = `${e.clientX - card.offsetLeft}px`;
-                card.style.height = `${e.clientY - card.offsetTop}px`;
-            });
-
-            document.addEventListener('mouseup', () => {
-                resizing = false;
-            });
         });
+    }
+
+    snap(value) {
+        const grid = 16;
+        return Math.round(value / grid) * grid;
+    }
+
+    snapCard(card) {
+        card.style.left = `${this.snap(card.offsetLeft)}px`;
+        card.style.top = `${this.snap(card.offsetTop)}px`;
+    }
+
+    snapAllCards() {
+        this.cards.forEach(card => this.snapCard(card));
+    }
+
+    showLayoutFeedback(message) {
+        const hint = document.querySelector('#layoutHint');
+        if (hint) hint.textContent = message;
+        let toast = document.querySelector('.layout-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'layout-toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => toast.classList.remove('show'), 1500);
     }
 
     saveLayout() {
@@ -501,9 +891,7 @@ class DashboardContainer extends HTMLElement {
         this.cards.forEach(card => {
             layout[card.dataset.section] = {
                 left: card.style.left,
-                top: card.style.top,
-                width: card.style.width,
-                height: card.style.height
+                top: card.style.top
             };
         });
         localStorage.setItem('dashboardLayout', JSON.stringify(layout));
@@ -518,7 +906,8 @@ class DashboardContainer extends HTMLElement {
             const l = layout[card.dataset.section];
             if (!l) return;
 
-            Object.assign(card.style, l);
+            card.style.left = l.left || card.style.left;
+            card.style.top = l.top || card.style.top;
             card.style.position = 'absolute';
         });
     }
@@ -552,6 +941,7 @@ customElements.define('features-card', FeaturesCard);
 customElements.define('speed-card', SpeedCard);
 customElements.define('activity-card', ActivityCard);
 customElements.define('dns-card', DnsCard);
+customElements.define('clients-card', ClientsCard);
 customElements.define('dashboard-nav', DashboardNav);
 customElements.define('layout-controls', LayoutControls);
 customElements.define('dashboard-container', DashboardContainer);

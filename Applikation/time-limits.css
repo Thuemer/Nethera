@@ -1,0 +1,160 @@
+.time-limits-page {
+    max-width: 1400px;
+}
+
+.limit-form {
+    display: grid;
+    gap: 14px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.limit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.rule-list {
+    display: grid;
+    gap: 12px;
+}
+
+.rule-item {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.035);
+}
+
+.rule-item strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.limit-toolbar {
+    display: grid;
+    grid-template-columns: 1.4fr .8fr;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.limit-list {
+    display: grid;
+    gap: 12px;
+}
+
+.limit-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255,255,255,.035);
+}
+
+.limit-card.is-paused {
+    border-color: rgba(245,158,11,.35);
+}
+
+.limit-card.is-blocked {
+    border-color: rgba(239,68,68,.38);
+    background: rgba(239,68,68,.08);
+}
+
+.limit-main {
+    display: grid;
+    gap: 10px;
+}
+
+.limit-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.limit-title-row h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.limit-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
+.limit-budget {
+    display: grid;
+    gap: 8px;
+}
+
+.budget-text {
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
+.budget-bar {
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+}
+
+.budget-bar span {
+    display: block;
+    height: 100%;
+    width: var(--budget, 0%);
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+}
+
+.limit-side {
+    display: grid;
+    justify-items: end;
+    align-content: start;
+    gap: 8px;
+    min-width: 150px;
+}
+
+.limit-side .small-btn {
+    width: 100%;
+}
+
+.helper-text {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
+.badge.warn {
+    color: #fde68a;
+    background: rgba(245,158,11,.14);
+}
+
+.badge.paused {
+    color: #fde68a;
+    background: rgba(245,158,11,.14);
+}
+
+@media (max-width: 760px) {
+    .form-row,
+    .limit-toolbar,
+    .limit-card {
+        grid-template-columns: 1fr;
+    }
+
+    .limit-side {
+        justify-items: stretch;
+        min-width: 0;
+    }
+}
