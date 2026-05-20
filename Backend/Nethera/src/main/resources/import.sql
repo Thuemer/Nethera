@@ -26,6 +26,18 @@ INSERT INTO activity_log (timestamp, event_type, details, router_id, device_id) 
                                                                                     ('2026-04-26 10:03:12', 'BLOCKED_URL', 'Blocked access to ads.example.net', 1, NULL),
                                                                                     ('2026-04-26 10:04:33', 'CONNECTED', 'Gaming-PC connected via LAN', 1, 5),
                                                                                     ('2026-04-26 10:05:40', 'CONNECTED', 'NAS-Storage connected via LAN', 1, 8);
+=======
+-- Daten für Device (ConnectedDevice) einfügen
+-- INSERT INTO device (mac_address, ip_address, hostname, connection_type, router_id, last_seen) VALUES
+--                                                                                                   ('AA:BB:CC:DD:EE:01', '192.168.0.10', 'Helmut-iPhone', 'wifi', 1, '2026-02-02 10:02:00'),
+--                                                                                                   ('AA:BB:CC:DD:EE:02', '192.168.0.11', 'Jakobs-Laptop', 'wifi', 1, '2026-02-02 10:01:30'),
+--                                                                                                   ('AA:BB:CC:DD:EE:03', '192.168.0.12', 'SmartTV', 'lan', 1, '2026-02-02 09:59:45');
+
+-- Daten für ActivityLog einfügen
+-- INSERT INTO activity_log (timestamp, event_type, details, router_id, device_id) VALUES
+--                                                                                     ('2026-02-02 10:00:10', 'CONNECTED', 'Helmut-iPhone connected to network', 1, 1),
+--                                                                                     ('2026-02-02 10:01:15', 'DISCONNECTED', 'Jakobs-Laptop left the network', 1, 2),
+--                                                                                     ('2026-02-02 10:02:20', 'BLOCKED_URL', 'Blocked access to example.com', 1, NULL);
 
 -- SpeedStat
 INSERT INTO speed_stat (timestamp, download_speed, upload_speed, router_id) VALUES
