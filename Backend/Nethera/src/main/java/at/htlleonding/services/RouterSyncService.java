@@ -33,18 +33,15 @@ public class RouterSyncService {
     @Transactional
     public void syncDhcpLeases(Router router) {
         try (SSHClient ssh = new SSHClient()) {
-            // Im Testnetz akzeptieren wir den Hostkey dynamisch
             ssh.addHostKeyVerifier(new PromiscuousVerifier());
             ssh.connect(routerIp); // Später durch router.getIpAddress() ersetzen, sobald die DB gefüllt ist
 
-            // Authentifizierung über deinen ED25519-Key
             ssh.authPublickey("root", sshKeyPath);
 
             try (Session session = ssh.startSession()) {
                 Session.Command cmd = session.exec("cat /tmp/dhcp.leases");
                 cmd.join(5, TimeUnit.SECONDS);
 
-                // Sauberer Java-Standard ab Java 9, ohne Abhängigkeit von externen IOUtils!
                 String rawOutput = new String(cmd.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
 
                 parseAndSaveLeases(router, rawOutput);
