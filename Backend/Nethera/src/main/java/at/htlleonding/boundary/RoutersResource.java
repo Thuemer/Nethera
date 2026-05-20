@@ -34,44 +34,4 @@ public class RoutersResource {
                 .toList();
         return routerDtos;
     }
-
-    /*
-    public List<TeamSummaryDto> getAllTeams() {
-        List<Team> teams = this.teamsRepository.getAllTeams();
-        List<TeamSummaryDto> teamSummaryDtoList = teams.stream()
-                .map(team -> new TeamSummaryDto(team.getId(), team.getName())).toList();
-        return teamSummaryDtoList;
-    }
-    */
 }
-
-/*
-@Path("api/players")
-public class PlayersResource {
-    @Inject
-    PlayersRepository playersRepository;
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("{teamId}/{jerseyNumber}")
-    public PlayerDetailDto getPlayerById(@PathParam("teamId") String teamId, @PathParam("jerseyNumber") int jerseyNumber) {
-        Player player = this.playersRepository.getPlayerById(teamId, jerseyNumber);
-
-        if (player == null) {
-            throw new NotFoundException();
-        }
-
-        Team team = player.getTeam();
-        TeamSummaryDto teamDto = (team == null) ? null : new TeamSummaryDto(team.getId(), team.getName());
-
-        PlayerDetailDto playerDetailDto = new PlayerDetailDto(
-                player.getPlayerId().getTeamId(),
-                player.getPlayerId().getJerseyNumber(),
-                player.getName(),
-                teamDto
-        );
-        return playerDetailDto;
-    }
-}
-
- */
