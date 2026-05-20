@@ -7,6 +7,9 @@
  Debug logs and in-page error overlay have been removed for a clean production build.
 */
 
+const appConfig = window.NETHERA_CONFIG || {};
+const ROUTERS_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
+
 // NetworkDevice: visual device node. Supports dragging and showing a small info box.
 class NetworkDevice extends HTMLElement {
     constructor() {
@@ -76,12 +79,34 @@ class NetworkDevice extends HTMLElement {
             const box = document.createElement('div');
             box.classList.add('device-info');
             this.infoBox = box;
-            topology.appendChild(box);
+            topology.querySelector('#topology')?.appendChild(box);
         }
+        const topologyBox = topology.querySelector('#topology');
+        const topologyRect = topologyBox?.getBoundingClientRect();
         const rect=this.getBoundingClientRect();
-        this.infoBox.style.left = (rect.right + 5)+'px';
-        this.infoBox.style.top = rect.top+'px';
-        this.infoBox.innerHTML = `<b>${this.dataset.name}</b><br>Im Netzwerk seit: ${time}<br>Gruppe: ${this.dataset.group}`;
+        const group = topology.groups.find(g=>g.dataset.group===this.dataset.group);
+        const groupRect = group?.getBoundingClientRect();
+        if(!topologyRect) return;
+
+        const devCx = rect.left - topologyRect.left + rect.width / 2;
+        const devCy = rect.top - topologyRect.top + rect.height / 2;
+        const groupCx = groupRect ? groupRect.left - topologyRect.left + groupRect.width / 2 : topologyRect.width / 2;
+        const groupCy = groupRect ? groupRect.top - topologyRect.top + groupRect.height / 2 : topologyRect.height / 2;
+        const dx = devCx - groupCx;
+        const dy = devCy - groupCy;
+
+        this.infoBox.innerHTML = `<b>${this.dataset.name}</b><span class="meta">${this.dataset.group} · ${this.dataset.ipAddress || '-'} · ${time}</span>`;
+
+        const boxW = this.infoBox.offsetWidth || 180;
+        const boxH = this.infoBox.offsetHeight || 44;
+        const gap = 10;
+        let left = devCx + (dx >= 0 ? rect.width / 2 + gap : -rect.width / 2 - gap - boxW);
+        let top = devCy + (Math.abs(dy) > Math.abs(dx) ? (dy >= 0 ? rect.height / 2 + gap : -rect.height / 2 - gap - boxH) : -boxH / 2);
+        const pad = 8;
+        left = Math.max(pad, Math.min(left, topologyRect.width - boxW - pad));
+        top = Math.max(pad, Math.min(top, topologyRect.height - boxH - pad));
+        this.infoBox.style.left = left+'px';
+        this.infoBox.style.top = top+'px';
     }
 }
 
@@ -144,6 +169,8 @@ class NetworkTopology extends HTMLElement {
     constructor(){
         super();
         this.groups=[]; this.devices=[]; this.selectedIndex=0;
+        this.routerData = null;
+        this.infoUpdateInterval = null;
     }
 
     connectedCallback(){
@@ -151,6 +178,7 @@ class NetworkTopology extends HTMLElement {
         this.innerHTML=`
         <div id="topology">
             <img src="router.png" id="router" draggable="false" tabindex="-1" aria-hidden="true">
+            <button id="regroup-topology" type="button">Neu anordnen</button>
             <svg id="lines"></svg>
         </div>
         <div id="bottom-info">
@@ -163,16 +191,27 @@ class NetworkTopology extends HTMLElement {
         this.svg=this.querySelector('#lines');
         this.bottomDetail=this.querySelector('#device-detail');
 
+        // Ensure first line render is correct after router image dimensions are available.
+        if(this.router && !this.router.complete){
+            this.router.addEventListener('load', ()=> this.drawLines(), { once: true });
+        }
+
         // Recalculate layout on window resize for a responsive, compact arrangement
-        window.addEventListener('resize', () => { this.initLayout(); this.drawLines(); });
+        window.addEventListener('resize', () => { clearTimeout(this._resizeTimer); this._resizeTimer = setTimeout(() => { this.initLayout(); this.drawLines(); this.updateDeviceInfo(); }, 120); });
 
         this.querySelector('#prev-device').addEventListener('click', ()=>{
+            if(!this.devices.length) return;
             this.selectedIndex=(this.selectedIndex-1+this.devices.length)%this.devices.length;
             this.showBottomInfo(this.selectedIndex);
         });
         this.querySelector('#next-device').addEventListener('click', ()=>{
+            if(!this.devices.length) return;
             this.selectedIndex=(this.selectedIndex+1)%this.devices.length;
             this.showBottomInfo(this.selectedIndex);
+        });
+
+        this.querySelector('#regroup-topology')?.addEventListener('click', ()=>{
+            this.regroup();
         });
 
         this.addGroupsAndDevices();
@@ -181,29 +220,133 @@ class NetworkTopology extends HTMLElement {
         }
     }
 
-    addGroupsAndDevices(){
-        // Gruppen
-        const groupNames=["Kinder","Eltern","Alle"];
-        groupNames.forEach(name=>this.addGroup(name));
+    async addGroupsAndDevices(){
+        try{
+            const routers = await this.fetchRouters();
+            if(!Array.isArray(routers) || routers.length===0){
+                this.showEmptyState('Keine Routerdaten von der API erhalten.');
+                return;
+            }
 
-        // Geräte
-        this.addDevice("Manu's iPhone","Kinder",600);
-        this.addDevice("PC Wohnzimmer","Kinder",3320);
-        this.addDevice("PS5","Kinder",3912);
-        this.addDevice("Lena's Laptop","Eltern",1260);
-        this.addDevice("Tablet Küche","Eltern",612);
-        this.addDevice("Smart TV","Alle",12300);
-        this.addDevice("NAS","Alle",18000);
+            this.routerData = routers[0];
+            this.populateTopologyFromApi(this.routerData);
+        }catch(e){
+            this.showEmptyState('Routerdaten konnten nicht geladen werden.');
+        }
+    }
 
-        // Wait one frame so the browser can apply styles/layout to the newly appended elements
+    async fetchRouters(){
+        const response = await fetch(ROUTERS_API_URL, {
+            method: 'GET',
+            headers: { Accept: 'application/json' }
+        });
+        if(!response.ok){
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+        return response.json();
+    }
+
+    populateTopologyFromApi(router){
+        this.clearTopology();
+
+        const devices = Array.isArray(router.devices) ? router.devices : [];
+        const groupOrder = ['wifi','lan','other'];
+        const groups = [...new Set(devices.map(d => this.normalizeConnectionType(d.connectionType)))];
+
+        groups
+            .sort((a,b)=>groupOrder.indexOf(a)-groupOrder.indexOf(b))
+            .forEach(group=>this.addGroup(this.toGroupLabel(group)));
+
+        devices.forEach(deviceData=>{
+            const normalizedType = this.normalizeConnectionType(deviceData.connectionType);
+            const groupLabel = this.toGroupLabel(normalizedType);
+            this.addDevice(
+                deviceData.hostname || deviceData.ipAddress || deviceData.macAddress || `Client ${deviceData.id}`,
+                groupLabel,
+                0,
+                {
+                    id: deviceData.id,
+                    ipAddress: deviceData.ipAddress,
+                    macAddress: deviceData.macAddress,
+                    hostname: deviceData.hostname,
+                    connectionType: normalizedType,
+                    lastSeen: deviceData.lastSeen
+                }
+            );
+        });
+
         setTimeout(()=>{
             this.initLayout();
             this.drawLines();
             this.updateDeviceInfo();
-            this.showBottomInfo(this.selectedIndex);
-
-            setInterval(()=>{ this.updateDeviceInfo(); this.showBottomInfo(this.selectedIndex); },1000);
+            if(this.devices.length){
+                this.selectedIndex = 0;
+                this.showBottomInfo(this.selectedIndex);
+            }
+            this.startInfoUpdates();
         }, 50);
+    }
+
+    clearTopology(){
+        this.groups.forEach(group => group.remove());
+        this.devices.forEach(device => {
+            if(device.infoBox) device.infoBox.remove();
+            device.remove();
+        });
+        this.groups = [];
+        this.devices = [];
+        this.selectedIndex = 0;
+        this.stopInfoUpdates();
+    }
+
+    showEmptyState(message){
+        this.clearTopology();
+        if(this.bottomDetail){
+            this.bottomDetail.textContent = message;
+        }
+        this.drawLines();
+    }
+
+    startInfoUpdates(){
+        this.stopInfoUpdates();
+        this.infoUpdateInterval = setInterval(()=>{
+            this.updateDeviceInfo();
+            if(this.devices.length){
+                this.showBottomInfo(this.selectedIndex);
+            }
+        }, 1000);
+    }
+
+    stopInfoUpdates(){
+        if(this.infoUpdateInterval){
+            clearInterval(this.infoUpdateInterval);
+            this.infoUpdateInterval = null;
+        }
+    }
+
+    normalizeConnectionType(connectionType){
+        const value = (connectionType || '').toString().trim().toLowerCase();
+        if(value === 'wifi') return 'wifi';
+        if(value === 'lan') return 'lan';
+        return 'other';
+    }
+
+    toGroupLabel(connectionType){
+        if(connectionType === 'wifi') return 'WLAN';
+        if(connectionType === 'lan') return 'LAN';
+        return 'Sonstige';
+    }
+
+    formatLastSeen(lastSeenRaw){
+        if(!lastSeenRaw) return 'unbekannt';
+        const lastSeenDate = new Date(lastSeenRaw);
+        if(Number.isNaN(lastSeenDate.getTime())) return 'unbekannt';
+
+        const diffSeconds = Math.max(0, Math.floor((Date.now() - lastSeenDate.getTime()) / 1000));
+        if(diffSeconds < 60) return `vor ${diffSeconds}s`;
+        if(diffSeconds < 3600) return `vor ${Math.floor(diffSeconds/60)}min`;
+        if(diffSeconds < 86400) return `vor ${Math.floor(diffSeconds/3600)}h`;
+        return `vor ${Math.floor(diffSeconds/86400)}d`;
     }
 
     addGroup(name){
@@ -236,7 +379,7 @@ class NetworkTopology extends HTMLElement {
         return group;
     }
 
-    addDevice(name, groupName, time){
+    addDevice(name, groupName, time, meta={}){
         let device;
         try{
             device = document.createElement('network-device');
@@ -251,6 +394,12 @@ class NetworkTopology extends HTMLElement {
             }
         }
         device.dataset.name=name; device.dataset.group=groupName; device.dataset.time=time;
+        if(meta.id!=null) device.dataset.deviceId = String(meta.id);
+        if(meta.hostname) device.dataset.hostname = meta.hostname;
+        if(meta.ipAddress) device.dataset.ipAddress = meta.ipAddress;
+        if(meta.macAddress) device.dataset.macAddress = meta.macAddress;
+        if(meta.connectionType) device.dataset.connectionType = meta.connectionType;
+        if(meta.lastSeen) device.dataset.lastSeen = meta.lastSeen;
         // Accessibility: make devices focusable and provide aria-label/role
         try{ device.setAttribute('tabindex','0'); device.setAttribute('role','button'); device.setAttribute('aria-label', `${name}, Gruppe ${groupName}`); }catch(e){ }
         // assign original class so topologie.css applies
@@ -271,25 +420,37 @@ class NetworkTopology extends HTMLElement {
         if(!this.svg) return;
         if(!this.router) return;
         this.svg.innerHTML='';
-        // Prefer cached center positions (_cx/_cy) where available to avoid
-        // forcing layout reflow via getBoundingClientRect on every frame.
-        const rRect=this.router.getBoundingClientRect();
-        const rX=this.router._cx ?? (rRect.left + rRect.width/2);
-        const rY=this.router._cy ?? (rRect.top + rRect.height/2);
+        const topologyRect = this.querySelector('#topology')?.getBoundingClientRect();
+        if(!topologyRect) return;
+        const routerCenter = this.getLocalCenter(this.router, topologyRect);
+        const rX = routerCenter.x;
+        const rY = routerCenter.y;
 
         this.groups.forEach(group=>{
-            // use cached center if available
-            const gX = group._cx ?? (group.getBoundingClientRect().left + group.getBoundingClientRect().width/2);
-            const gY = group._cy ?? (group.getBoundingClientRect().top + group.getBoundingClientRect().height/2);
+            const groupCenter = this.getLocalCenter(group, topologyRect);
+            const gX = groupCenter.x;
+            const gY = groupCenter.y;
             this.createLine(rX,rY,gX,gY);
 
             this.devices.filter(d=>d.dataset.group===group.dataset.group)
                 .forEach(dev=>{
-                    const dX = dev._cx ?? (dev.getBoundingClientRect().left + dev.getBoundingClientRect().width/2);
-                    const dY = dev._cy ?? (dev.getBoundingClientRect().top + dev.getBoundingClientRect().height/2);
+                    const devCenter = this.getLocalCenter(dev, topologyRect);
+                    const dX = devCenter.x;
+                    const dY = devCenter.y;
                     this.createLine(gX,gY,dX,dY);
                 });
         });
+    }
+
+    getLocalCenter(el, topologyRect){
+        if(el._cx != null && el._cy != null){
+            return { x: el._cx, y: el._cy };
+        }
+        const rect = el.getBoundingClientRect();
+        return {
+            x: rect.left - topologyRect.left + rect.width / 2,
+            y: rect.top - topologyRect.top + rect.height / 2
+        };
     }
 
     // Schedule a draw on the next animation frame (throttles multiple calls).
@@ -312,18 +473,27 @@ class NetworkTopology extends HTMLElement {
         return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
-    initLayout(){
+    regroup(){
+        this.devices.forEach(dev => { dev.offsetX = undefined; dev.offsetY = undefined; });
+        this._hasAnimatedInitial = true;
+        this.initLayout(true);
+        this.updateDeviceInfo();
+        if(this.devices.length) this.showBottomInfo(this.selectedIndex);
+    }
+
+    initLayout(forceRegroup=false){
         // Responsive compact layout:
         // - Place groups evenly around a small circle centered on the viewport
         // - Scale the circle radius to keep groups compact but avoid overlap with edges
-        const width = Math.max(400, window.innerWidth);
-        const height = Math.max(300, window.innerHeight - 60);
+        const topologyBox = this.querySelector('#topology');
+        const width = Math.max(400, topologyBox?.clientWidth || window.innerWidth);
+        const height = Math.max(300, topologyBox?.clientHeight || window.innerHeight - 60);
         const centerX = width / 2;
         const centerY = height / 2;
 
         // Base radius for group placement: smaller for small viewports, larger for wide screens
         const base = Math.min(width, height);
-        const groupRadius = Math.max(100, Math.min(base * 0.35, 300));
+        const groupRadius = Math.max(95, Math.min(base * 0.30, 260));
 
         const n = this.groups.length || 1;
         // Prepare arrays of target positions so we can optionally animate from center
@@ -336,7 +506,7 @@ class NetworkTopology extends HTMLElement {
             const gH = group.offsetHeight || 50;
 
             // angle for this group (start at -90deg to put first group top-center)
-            const angle = (2 * Math.PI * idx / n) - Math.PI / 2;
+            const angle = (2 * Math.PI * idx / n) - Math.PI / 2 + (forceRegroup ? Math.PI / 6 : 0);
 
             // compute candidate position and then clamp to viewport padding
             let gLeft = centerX + groupRadius * Math.cos(angle) - gW / 2;
@@ -351,7 +521,7 @@ class NetworkTopology extends HTMLElement {
             // layout devices around the group in a compact circle scaled to number of devices
             const children = this.devices.filter(d => d.dataset.group === group.dataset.group);
             // device radius depends on number of children; keep compact but non-overlapping
-            const devRadius = Math.min(220, Math.max(70, 50 + children.length * 18));
+            const devRadius = Math.min(base < 650 ? 118 : 170, Math.max(base < 650 ? 54 : 72, 42 + children.length * (base < 650 ? 9 : 12)));
 
             children.forEach((dev, i) => {
                 if (dev.offsetX === undefined || dev.offsetY === undefined) {
@@ -445,8 +615,15 @@ class NetworkTopology extends HTMLElement {
         if(!this.devices || !this.devices.length) return;
         this.devices.forEach(dev=>{
             try{
-                dev.dataset.time=parseInt(dev.dataset.time)+1;
-                if(typeof dev.updateInfoBox==='function') dev.updateInfoBox(this.formatTime(dev.dataset.time),this);
+                let displayTime = 'unbekannt';
+                if(dev.dataset.lastSeen){
+                    displayTime = this.formatLastSeen(dev.dataset.lastSeen);
+                }else{
+                    dev.dataset.time = String((parseInt(dev.dataset.time,10)||0)+1);
+                    displayTime = this.formatTime(parseInt(dev.dataset.time,10)||0);
+                }
+                dev.dataset.timeLabel = displayTime;
+                if(typeof dev.updateInfoBox==='function') dev.updateInfoBox(displayTime,this);
             }catch(e){ }
         });
     }
@@ -458,7 +635,8 @@ class NetworkTopology extends HTMLElement {
         try{
             this.devices.forEach(dev=>dev.classList && dev.classList.remove('selected'));
             d.classList && d.classList.add('selected');
-            if(this.bottomDetail) this.bottomDetail.innerHTML=`<b>${d.dataset.name}</b> | Gruppe: ${d.dataset.group} | Netzwerkzeit: ${this.formatTime(d.dataset.time)}`;
+            const timeLabel = d.dataset.timeLabel || this.formatLastSeen(d.dataset.lastSeen);
+            if(this.bottomDetail) this.bottomDetail.innerHTML=`<b>${d.dataset.name}</b> · Gruppe: ${d.dataset.group} · IP: ${d.dataset.ipAddress || '-'} · zuletzt: ${timeLabel}`;
         }catch(e){ }
     }
 }
