@@ -16,6 +16,12 @@ INSERT INTO device (mac_address, ip_address, hostname, connection_type, router_i
     ('AA:BB:CC:DD:EE:07', '192.168.0.22', 'Drucker-Buero', 'wifi', 1, '2026-04-26 09:44:00'),
     ('AA:BB:CC:DD:EE:08', '192.168.0.30', 'NAS-Storage', 'lan', 1, '2026-04-26 10:05:00');
 
+-- Zeitlimits fuer WLAN-Geraete
+INSERT INTO device_time_limit (device_id, daily_limit_minutes, used_minutes_today, blocked_from, blocked_until, status, note) VALUES
+    (1, 120, 35, '21:00', '07:00', 'active', 'Handy: nachts gesperrt'),
+    (2, 180, 95, '22:00', '06:30', 'active', 'Laptop: nachts gesperrt'),
+    (4, 60, 10, '20:00', '08:00', 'paused', 'Tablet-Sperre ist gerade pausiert');
+
 -- ActivityLog
 INSERT INTO activity_log (timestamp, event_type, details, router_id, device_id) VALUES
     ('2026-04-26 09:58:10', 'CONNECTED', 'Helmut-iPhone connected to network', 1, 1),

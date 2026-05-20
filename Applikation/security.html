@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schutz</title>
+  <link rel="icon" href="nethera_logo.png">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="security.css">
+</head>
+<body>
+  <main class="page security-page">
+    <app-hero title="Schutz" text="Blocklisten, Werbeschutz, Presets und WLAN-Analyse verwalten." button="Demo-Scan"></app-hero>
+
+    <section class="grid stats-grid" aria-label="Schutz Kennzahlen">
+      <stat-card id="statPackages" label="Aktive Pakete" value="0" detail="vorgefertigte Listen"></stat-card>
+      <stat-card id="statManual" label="Domains" value="0" detail="manuell blockiert"></stat-card>
+      <stat-card id="statAds" label="Werbung" value="0" detail="zuletzt blockiert"></stat-card>
+      <stat-card id="statPresets" label="Presets" value="0" detail="gespeicherte Profile"></stat-card>
+    </section>
+
+    <section class="security-tabs" aria-label="Schutz Bereiche">
+      <button type="button" data-tab="groups">Geräte & Gruppen</button>
+      <button class="active" type="button" data-tab="blocklists">Blocklisten</button>
+      <button type="button" data-tab="ads">Werbung</button>
+      <button type="button" data-tab="presets">Presets</button>
+      <button type="button" data-tab="wifi">WLAN-Analyse</button>
+    </section>
+
+    <section class="tab-panel" id="tab-groups">
+      <section class="grid two-grid">
+        <app-card title="Gruppe erstellen">
+          <form id="groupForm" class="stack-form">
+            <label class="field">
+              <span>Gruppenname</span>
+              <input id="groupNameInput" type="text" placeholder="z. B. Kinderzimmer">
+            </label>
+            <button class="refresh-btn" type="submit">Gruppe hinzufügen</button>
+          </form>
+        </app-card>
+
+        <app-card title="Gruppen-Blocklist">
+          <form id="groupBlocklistForm" class="stack-form">
+            <label class="field">
+              <span>Gruppe</span>
+              <select id="groupBlocklistSelect"></select>
+            </label>
+            <div class="package-list compact">
+              <label class="security-toggle">
+                <span><strong>Glücksspiele</strong><small>Nur für diese Gruppe sperren</small></span>
+                <input id="groupPkgGambling" type="checkbox">
+              </label>
+              <label class="security-toggle">
+                <span><strong>18+ Inhalte</strong><small>Nur für diese Gruppe sperren</small></span>
+                <input id="groupPkgAdult" type="checkbox">
+              </label>
+              <label class="security-toggle">
+                <span><strong>Social Media</strong><small>Nur für diese Gruppe sperren</small></span>
+                <input id="groupPkgSocial" type="checkbox">
+              </label>
+            </div>
+            <label class="field">
+              <span>Domain für Gruppe</span>
+              <input id="groupDomainInput" type="text" placeholder="minecraft.net">
+            </label>
+            <button class="refresh-btn" type="submit">Gruppen-Regel speichern</button>
+          </form>
+        </app-card>
+      </section>
+
+      <app-card title="Geräte Gruppen zuweisen">
+        <div id="groupDeviceList" class="device-group-list"></div>
+      </app-card>
+    </section>
+
+    <section class="tab-panel active" id="tab-blocklists">
+      <section class="grid two-grid">
+        <app-card title="Vorgefertigte Listen">
+          <div class="package-list">
+            <label class="security-toggle">
+              <span><strong>Glücksspiele</strong><small>Betting- und Casino-Domains sperren</small></span>
+              <input id="pkgGambling" type="checkbox">
+            </label>
+            <label class="security-toggle">
+              <span><strong>18+ Inhalte</strong><small>Erwachsenen-Inhalte blockieren</small></span>
+              <input id="pkgAdult" type="checkbox">
+            </label>
+            <label class="security-toggle">
+              <span><strong>Social Media</strong><small>TikTok, Instagram, Facebook und ähnliche Dienste sperren</small></span>
+              <input id="pkgSocial" type="checkbox">
+            </label>
+          </div>
+        </app-card>
+
+        <app-card title="Manuelle Domain">
+          <form id="manualDomainForm" class="stack-form">
+            <label class="field">
+              <span>Domain blockieren</span>
+              <input id="manualDomainInput" type="text" placeholder="example.com">
+            </label>
+            <button class="refresh-btn" type="submit">Domain hinzufügen</button>
+            <p class="helper-text">Ohne https:// eingeben. Du kannst Einträge danach wieder entfernen.</p>
+          </form>
+        </app-card>
+      </section>
+
+      <app-card title="Manuell blockierte Domains">
+        <div id="manualDomainsList" class="rule-list"></div>
+      </app-card>
+    </section>
+
+    <section class="tab-panel" id="tab-ads">
+      <section class="grid two-grid">
+        <app-card title="Werbeschutz">
+          <div class="ad-summary">
+            <strong id="adPercent">0%</strong>
+            <span>der Demo-Werbeanfragen blockiert</span>
+          </div>
+          <form id="adDomainForm" class="stack-form">
+            <label class="field">
+              <span>Werbe-Domain blockieren</span>
+              <input id="adDomainInput" type="text" placeholder="ads.example.com">
+            </label>
+            <button class="refresh-btn" type="submit">Blockieren</button>
+          </form>
+        </app-card>
+
+        <app-card title="Zuletzt blockiert">
+          <div id="adDomainsList" class="rule-list"></div>
+        </app-card>
+      </section>
+    </section>
+
+    <section class="tab-panel" id="tab-presets">
+      <section class="grid two-grid">
+        <app-card title="Preset erstellen">
+          <form id="presetForm" class="stack-form">
+            <label class="field">
+              <span>Name</span>
+              <input id="presetName" type="text" placeholder="z. B. Schultag">
+            </label>
+            <label class="field">
+              <span>Gerät</span>
+              <select id="presetDevice"></select>
+            </label>
+            <label class="security-toggle">
+              <span><strong>Kinderschutz</strong><small>Blocklisten übernehmen</small></span>
+              <input id="presetParental" type="checkbox" checked>
+            </label>
+            <label class="security-toggle">
+              <span><strong>Priorisieren</strong><small>Geräte dieses Presets bevorzugen</small></span>
+              <input id="presetPriority" type="checkbox">
+            </label>
+            <label class="security-toggle">
+              <span><strong>Zeitlimit nutzen</strong><small>Mit der Zeitlimits-Seite kombinieren</small></span>
+              <input id="presetTimeLimit" type="checkbox" checked>
+            </label>
+            <button class="refresh-btn" type="submit">Preset speichern</button>
+          </form>
+        </app-card>
+
+        <app-card title="Gespeicherte Presets">
+          <div id="presetList" class="preset-list"></div>
+        </app-card>
+      </section>
+    </section>
+
+    <section class="tab-panel" id="tab-wifi">
+      <app-card title="WLAN-Analyzer">
+        <div class="wifi-toolbar">
+          <label class="field">
+            <span>Suche</span>
+            <input id="wifiSearch" type="search" placeholder="SSID oder BSSID">
+          </label>
+          <label class="field">
+            <span>Filter</span>
+            <select id="wifiFilter">
+              <option value="all">Alle</option>
+              <option value="router">Router</option>
+              <option value="accessPoint">Access Points</option>
+              <option value="strong">Bestes Signal</option>
+            </select>
+          </label>
+        </div>
+        <div id="bestWifiBox" class="best-wifi"></div>
+        <div id="wifiList" class="wifi-list"></div>
+      </app-card>
+    </section>
+
+    <data-status id="statusBox" text="Schutzmodule bereit."></data-status>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="components.js"></script>
+  <script src="security.js"></script>
+</body>
+</html>
