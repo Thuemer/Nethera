@@ -1,39 +1,23 @@
 package at.htlleonding.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "account")
-@NamedQuery(name = Account.QUERY_FIND_ALL, query = "SELECT a FROM Account a")
+@NamedQuery(name = Account.QUERY_FIND_BY_SUB, query = "SELECT a FROM Account a WHERE a.keycloakSub = :sub")
 public class Account {
 
-    public static final String QUERY_FIND_ALL = "Account.findAll";
+    public static final String QUERY_FIND_BY_SUB = "Account.findBySub";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "keycloak_sub", unique = true, nullable = false)
+    private String keycloakSub;
 
-    @Column(name = "email")
+    @Column(name = "email", nullable = false)
     private String email;
-
-    @Column(name = "password_hash")
-    private String passwordHash;
-
-    @Column(name = "rolle")
-    private String rolle;
-
-    @Column(name = "security")
-    private Boolean security;
-
-    @Column(name = "traffic")
-    private Boolean traffic;
-
-    @Column(name = "weekly")
-    private Boolean weekly;
 
     public Long getId() {
         return id;
@@ -43,12 +27,12 @@ public class Account {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getKeycloakSub() {
+        return keycloakSub;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setKeycloakSub(String keycloakSub) {
+        this.keycloakSub = keycloakSub;
     }
 
     public String getEmail() {
@@ -57,46 +41,5 @@ public class Account {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    @JsonIgnore
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public String getRolle() {
-        return rolle;
-    }
-
-    public void setRolle(String rolle) {
-        this.rolle = rolle;
-    }
-
-    public Boolean getSecurity() {
-        return security;
-    }
-
-    public void setSecurity(Boolean security) {
-        this.security = security;
-    }
-
-    public Boolean getTraffic() {
-        return traffic;
-    }
-
-    public void setTraffic(Boolean traffic) {
-        this.traffic = traffic;
-    }
-
-    public Boolean getWeekly() {
-        return weekly;
-    }
-
-    public void setWeekly(Boolean weekly) {
-        this.weekly = weekly;
     }
 }

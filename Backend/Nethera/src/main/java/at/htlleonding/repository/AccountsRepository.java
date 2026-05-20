@@ -4,8 +4,8 @@ import at.htlleonding.model.Account;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -14,11 +14,19 @@ public class AccountsRepository {
     @Inject
     EntityManager entityManager;
 
-    public List<Account> getAllAccounts() {
-        return this.entityManager.createNamedQuery(Account.QUERY_FIND_ALL, Account.class).getResultList();
+    public Optional<Account> findBySub(String sub) {
+        return entityManager.createNamedQuery(Account.QUERY_FIND_BY_SUB, Account.class)
+                .setParameter("sub", sub)
+                .getResultStream()
+                .findFirst();
     }
 
-    public Optional<Account> getFirstAccount() {
-        return getAllAccounts().stream().findFirst();
+    @Transactional
+    public Account provision(String sub, String email) {
+        Account account = new Account();
+        account.setKeycloakSub(sub);
+        account.setEmail(email);
+        entityManager.persist(account);
+        return account;
     }
 }
