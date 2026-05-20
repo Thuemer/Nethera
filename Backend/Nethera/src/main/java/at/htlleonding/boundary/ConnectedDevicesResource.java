@@ -31,6 +31,13 @@ public class ConnectedDevicesResource {
 
     @GET
     public List<RouterConnectedDevicesDto> getAll() {
+
+        //Static Router-ID: 1
+        Router router = entityManager.getReference(Router.class, 1);
+
+        // SSH-Befehl ausführen und DB aktualisieren
+        syncService.syncDhcpLeases(router);
+
         // Mappen der DB-Entities auf dein DTO
         return repository.getAllConnectedDevices().stream()
                 .map(d -> new RouterConnectedDevicesDto(
@@ -44,16 +51,5 @@ public class ConnectedDevicesResource {
                 .collect(Collectors.toList());
     }
 
-    @POST
-    @Path("/sync/{routerId}")
-    @Transactional
-    public Response triggerSync(@PathParam("routerId") Long routerId) {
-        // Router aus der Datenbank laden (wirft Exception, falls nicht gefunden)
-        Router router = entityManager.getReference(Router.class, routerId);
 
-        // SSH-Befehl ausführen und DB aktualisieren
-        syncService.syncDhcpLeases(router);
-
-        return Response.ok().entity("Sync erfolgreich abgeschlossen").build();
-    }
 }
