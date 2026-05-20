@@ -97,7 +97,6 @@ public class RouterSyncService {
                     String ip = parts[2];
                     String hostname = parts[3].equals("*") ? "Unbekannt" : parts[3];
 
-                    // Hier ist die Magie: Wir prüfen, ob die MAC-Adresse in der Echtzeit-ARP-Tabelle steht
                     boolean isOnline = activeMacs.contains(mac);
 
                     deviceRepository.syncDevice(router, mac, ip, hostname, isOnline);
