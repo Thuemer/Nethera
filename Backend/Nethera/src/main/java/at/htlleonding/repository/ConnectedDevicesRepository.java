@@ -21,30 +21,33 @@ public class ConnectedDevicesRepository {
     }
 
     @Transactional
-    public void syncDevice(Router router, String mac, String ip, String hostname, LocalDateTime lastSeen) {
+    public void syncDevice(Router router, String mac, String ip, String hostname, boolean isOnline) {
         try {
-            // Prüfen, ob das Gerät an diesem Router schon bekannt ist
             ConnectedDevice device = entityManager.createQuery(
                             "SELECT d FROM ConnectedDevice d WHERE d.macAddress = :mac AND d.router = :router", ConnectedDevice.class)
                     .setParameter("mac", mac)
                     .setParameter("router", router)
                     .getSingleResult();
 
-            // Existiert bereits -> Update
             device.setIpAddress(ip);
             device.setHostname(hostname);
-            device.setLastSeen(lastSeen);
-            // JPA speichert die Änderungen automatisch am Ende der Transaktion (Dirty Checking)
+
+            // lastSeen wird nur überschrieben, wenn das Gerät GERADE JETZT im Netz ist
+            if (isOnline) {
+                device.setLastSeen(LocalDateTime.now());
+            }
 
         } catch (NoResultException e) {
-            // Existiert noch nicht -> Insert
             ConnectedDevice newDevice = new ConnectedDevice();
             newDevice.setMacAddress(mac);
             newDevice.setIpAddress(ip);
             newDevice.setHostname(hostname);
-            newDevice.setConnectionType("DHCP"); // Standardwert für unsere dnsmasq-Leases
+            newDevice.setConnectionType("DHCP");
             newDevice.setRouter(router);
-            newDevice.setLastSeen(lastSeen);
+
+            if (isOnline) {
+                newDevice.setLastSeen(LocalDateTime.now());
+            }
 
             entityManager.persist(newDevice);
         }
