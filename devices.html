@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients</title>
+    <link rel="icon" href="nethera_logo.png">
+    <link rel="stylesheet" href="devices.css">
+</head>
+<body>
+    <main class="devices-page">
+        <section class="hero card">
+            <div>
+                <p class="eyebrow">Nethera Dashboard</p>
+                <h1>Clients</h1>
+                <p class="subline">Alle aktuellen Clients im Netzwerk.</p>
+            </div>
+            <button id="refreshButton" class="refresh-btn" type="button">Neu laden</button>
+        </section>
+
+        <section class="stats-grid" aria-label="Client Kennzahlen">
+            <article class="card stat">
+                <p>Gesamt</p>
+                <strong id="statTotal">0</strong>
+            </article>
+            <article class="card stat">
+                <p>WiFi</p>
+                <strong id="statWifi">0</strong>
+            </article>
+            <article class="card stat">
+                <p>LAN</p>
+                <strong id="statLan">0</strong>
+            </article>
+            <article class="card stat">
+                <p>Letztes Update</p>
+                <strong id="statUpdated">-</strong>
+            </article>
+        </section>
+
+        <section class="card controls" aria-label="Client Filter">
+            <label>
+                Suche
+                <input id="searchInput" type="search" placeholder="Hostname, IP oder MAC">
+            </label>
+
+            <label>
+                Verbindung
+                <select id="connectionFilter">
+                    <option value="all">Alle</option>
+                    <option value="wifi">WiFi</option>
+                    <option value="lan">LAN</option>
+                    <option value="other">Sonstige</option>
+                </select>
+            </label>
+
+            <label>
+                Sortierung
+                <select id="sortBy">
+                    <option value="lastSeen">Zuletzt gesehen</option>
+                    <option value="hostname">Hostname</option>
+                    <option value="ip">IP-Adresse</option>
+                </select>
+            </label>
+        </section>
+
+        <section class="card table-card" aria-label="Client Liste">
+            <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>IP-Adresse</th>
+                            <th>MAC-Adresse</th>
+                            <th>Verbindung</th>
+                            <th>Zuletzt gesehen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deviceTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="config.js"></script>
+<script src="devices.js"></script>
+</body>
+</html>

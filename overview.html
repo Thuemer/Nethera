@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="icon" href="nethera_logo.png">
+    <link rel="stylesheet" href="overview.css" id="overview-stylesheet">
+    <script>
+        const styleLink = document.getElementById('overview-stylesheet');
+        if (styleLink) {
+            styleLink.href = `overview.css?v=${Date.now()}`;
+        }
+    </script>
+</head>
+<body>
+
+    <section class="hero card">
+        <div>
+            <p class="eyebrow">Nethera Dashboard</p>
+            <h1>Dashboard</h1>
+            <p class="subline">Status, Speed und aktuelle Ereignisse deines Netzwerks.</p>
+        </div>
+        <layout-controls></layout-controls>
+    </section>
+
+    <dashboard-container>
+        <div class="dashboard">
+        <!-- Router Status -->
+        <router-card></router-card>
+
+        <!-- Features -->
+        <features-card></features-card>
+
+        <!-- Speed Chart -->
+        <speed-card></speed-card>
+
+        <!-- Activity -->
+        <activity-card></activity-card>
+
+        <!-- DNS Overview -->
+        <dns-card></dns-card>
+
+        <!-- Clients Overview -->
+        <clients-card></clients-card>
+    </div>
+</dashboard-container>
+
+<!-- Bottom Navigation -->
+<dashboard-nav></dashboard-nav>
+
+<script src="config.js"></script>
+<script src="overview.js?v=20260302"></script>
+</body>
+</html>

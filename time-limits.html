@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zeitlimits</title>
+  <link rel="icon" href="nethera_logo.png">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="time-limits.css">
+</head>
+<body>
+  <main class="page time-limits-page">
+    <app-hero title="Zeitlimits" text="Zeitbeschränkung verbundener Geräte im WLAN verwalten." button="Neu laden"></app-hero>
+
+    <section class="grid stats-grid" aria-label="Zeitlimit Kennzahlen">
+      <stat-card id="statDevices" label="WLAN-Geräte" value="0" detail="geladene Clients"></stat-card>
+      <stat-card id="statLimited" label="Aktive Limits" value="0" detail="mit Zeitbeschränkung"></stat-card>
+      <stat-card id="statBlockedSoon" label="Heute begrenzt" value="0" detail="mit Tageslimit"></stat-card>
+      <stat-card id="statAverage" label="Ø Zeitbudget" value="0 h" detail="pro limitiertem Gerät"></stat-card>
+    </section>
+
+    <section class="grid two-grid">
+      <app-card title="Limit festlegen">
+        <form id="limitForm" class="limit-form">
+          <label class="field">
+            <span>Gerät</span>
+            <select id="deviceSelect" required></select>
+          </label>
+
+          <div class="form-row">
+            <label class="field">
+              <span>Tageslimit</span>
+              <select id="dailyLimit">
+                <option value="30">30 Minuten</option>
+                <option value="60">1 Stunde</option>
+                <option value="120" selected>2 Stunden</option>
+                <option value="180">3 Stunden</option>
+                <option value="240">4 Stunden</option>
+                <option value="0">Kein Tageslimit</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Status</span>
+              <select id="limitStatus">
+                <option value="active" selected>Aktiv - Limit gilt</option>
+                <option value="paused">Pausiert - Limit ignorieren</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Heute schon genutzt</span>
+            <input id="usedMinutesToday" type="number" min="0" max="1440" step="5" value="0" placeholder="Minuten">
+          </label>
+
+          <div class="form-row">
+            <label class="field">
+              <span>Verboten ab</span>
+              <input id="blockedFrom" type="time" value="21:00">
+            </label>
+
+            <label class="field">
+              <span>Verboten bis</span>
+              <input id="blockedUntil" type="time" value="07:00">
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Notiz</span>
+            <input id="limitNote" type="text" placeholder="z. B. Schultag, Gastgerät, Konsole">
+          </label>
+
+          <div class="limit-actions">
+            <button class="refresh-btn" type="submit">Limit speichern</button>
+            <button id="clearLimitButton" class="small-btn ghost" type="button">Limit entfernen</button>
+          </div>
+        </form>
+      </app-card>
+
+      <app-card title="Regeln">
+        <div class="rule-list">
+          <div class="rule-item">
+            <strong>Tageslimit</strong>
+            <p class="muted">Begrenzt, wie lange ein Gerät pro Tag im WLAN bleiben darf.</p>
+          </div>
+          <div class="rule-item">
+            <strong>Sperrzeitraum</strong>
+            <p class="muted">In diesem Zeitraum ist das WLAN für das Gerät verboten, zum Beispiel von 21:00 bis 07:00.</p>
+          </div>
+          <div class="rule-item">
+            <strong>Speicherung</strong>
+            <p class="muted">Die Limits werden im Backend gespeichert. Falls das Backend offline ist, nutzt die Seite eine lokale Notfall-Speicherung.</p>
+          </div>
+        </div>
+      </app-card>
+    </section>
+
+    <app-card title="Verbundene WLAN-Geräte">
+      <div class="limit-toolbar">
+        <label class="field">
+          <span>Suche</span>
+          <input id="searchInput" type="search" placeholder="Hostname, IP oder MAC">
+        </label>
+        <label class="field">
+          <span>Ansicht</span>
+          <select id="statusFilter">
+            <option value="all">Alle WLAN-Geräte</option>
+            <option value="limited">Nur mit Limit</option>
+            <option value="unlimited">Ohne Limit</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="limitsList" class="limit-list" aria-live="polite"></div>
+    </app-card>
+
+    <data-status id="statusBox" text="Lade WLAN-Geräte ..."></data-status>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="components.js"></script>
+  <script src="time-limits.js"></script>
+</body>
+</html>

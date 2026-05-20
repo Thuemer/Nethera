@@ -1,0 +1,218 @@
+.security-page {
+    max-width: 1400px;
+}
+
+.security-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255,255,255,.04);
+}
+
+.security-tabs button {
+    border: 0;
+    color: var(--text-soft);
+    background: transparent;
+    padding: 10px 13px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.security-tabs button.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: grid;
+    gap: 18px;
+}
+
+.stack-form {
+    display: grid;
+    gap: 12px;
+}
+
+.helper-text {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
+.package-list,
+.rule-list,
+.preset-list,
+.wifi-list,
+.device-group-list {
+    display: grid;
+    gap: 12px;
+}
+
+.package-list.compact {
+    gap: 8px;
+}
+
+.security-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.035);
+}
+
+.security-toggle small {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-soft);
+}
+
+.security-toggle input {
+    width: 19px;
+    height: 19px;
+    accent-color: var(--accent);
+    flex: 0 0 auto;
+}
+
+.rule-item,
+.preset-item,
+.wifi-item,
+.device-group-item,
+.best-wifi {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.035);
+}
+
+.rule-main,
+.preset-main,
+.wifi-main,
+.device-group-main {
+    display: grid;
+    gap: 5px;
+}
+
+.rule-main span,
+.preset-main span,
+.wifi-main span,
+.device-group-main span {
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
+.rule-actions,
+.preset-actions,
+.device-group-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.device-group-actions select {
+    min-width: 150px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    color: var(--text-main);
+    background: rgba(255,255,255,.05);
+}
+
+.ad-summary {
+    min-height: 150px;
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    text-align: center;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(47,176,154,.08);
+}
+
+.ad-summary strong {
+    display: block;
+    color: var(--accent);
+    font-size: clamp(42px, 7vw, 78px);
+    line-height: 1;
+}
+
+.ad-summary span {
+    color: var(--text-soft);
+    font-weight: 700;
+}
+
+.wifi-toolbar {
+    display: grid;
+    grid-template-columns: 1.4fr .7fr;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.signal-meter {
+    width: min(180px, 28vw);
+    height: 9px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255,255,255,.08);
+}
+
+.signal-meter span {
+    display: block;
+    height: 100%;
+    width: var(--signal, 0%);
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+}
+
+.wifi-side {
+    display: grid;
+    justify-items: end;
+    gap: 7px;
+}
+
+@media (max-width: 760px) {
+    .wifi-toolbar,
+    .rule-item,
+    .preset-item,
+    .wifi-item,
+    .device-group-item,
+    .best-wifi {
+        grid-template-columns: 1fr;
+    }
+
+    .rule-item,
+    .preset-item,
+    .wifi-item,
+    .device-group-item,
+    .best-wifi {
+        display: grid;
+        align-items: start;
+    }
+
+    .rule-actions,
+    .preset-actions,
+    .device-group-actions,
+    .wifi-side {
+        justify-content: start;
+        justify-items: start;
+    }
+
+    .signal-meter {
+        width: 100%;
+    }
+}
