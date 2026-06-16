@@ -632,17 +632,6 @@ class DashboardNav extends HTMLElement {
     }
 
     connectedCallback() {
-        this.classList.add('bottom-nav');
-        
-        this.innerHTML = `
-            <button data-filter="activity">📶<span>Aktivität</span></button>
-            <button data-filter="dns">🛡<span>DNS</span></button>
-            <button data-filter="speed">⏱<span>Speed</span></button>
-            <button data-filter="status">🔔<span>STATUS</span></button>
-            <button data-filter="features">🛠<span>CONFIG</span></button>
-            <button data-filter="clients">▣<span>Clients</span></button>
-        `;
-        
         this.setupListeners();
     }
 
@@ -673,17 +662,6 @@ class LayoutControls extends HTMLElement {
     }
 
     connectedCallback() {
-        this.classList.add('layout-controls');
-        
-        this.innerHTML = `
-            <button id="editToggle" class="control-btn edit">
-                ✏️ <span>Layout bearbeiten</span>
-            </button>
-            <button id="resetLayout" class="control-btn reset">
-                ♻️ <span>Zurücksetzen</span>
-            </button>
-        `;
-        
         this.setupListeners();
     }
 
@@ -770,10 +748,11 @@ class DashboardContainer extends HTMLElement {
 
         const dashboard = this.querySelector('.dashboard') || this;
         const visibleCards = this.cards.filter(c => !c.classList.contains('hidden'));
-        const gap = 18;
+        const gap = 14;
 
         const vw = dashboard.clientWidth;
-        const vh = dashboard.clientHeight;
+        const dashboardTop = dashboard.getBoundingClientRect().top;
+        const vh = Math.max(360, window.innerHeight - dashboardTop - 12);
 
         const count = visibleCards.length;
         if (!count) return;
@@ -789,7 +768,8 @@ class DashboardContainer extends HTMLElement {
         const rows = Math.ceil(count / cols);
 
         const cardWidth = Math.min((vw - gap * (cols - 1)) / cols, 430);
-        const cardHeight = Math.max(230, Math.min((vh - gap * (rows - 1)) / rows, 300));
+        const cardHeight = Math.max(210, Math.min((vh - gap * (rows - 1)) / rows, 430));
+        dashboard.style.height = `${rows * cardHeight + gap * (rows - 1)}px`;
 
         const totalGridWidth = cols * cardWidth + gap * (cols - 1);
         const startX = (vw - totalGridWidth) / 2;

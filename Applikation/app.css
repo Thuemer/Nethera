@@ -249,6 +249,34 @@ h3 {
     gap: 14px;
 }
 
+.choice-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+}
+
+.choice-row button {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 9px 12px;
+    color: var(--text-soft);
+    background: transparent;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.choice-row button.active {
+    color: #fff;
+    border-color: rgba(47,176,154,.34);
+    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    box-shadow: 0 8px 18px rgba(0,0,0,.24);
+}
+
 .field {
     display: grid;
     gap: 7px;
@@ -267,14 +295,43 @@ h3 {
     background: rgba(255,255,255,.05);
 }
 
-.field select {
+.field select,
+select {
     width: 100%;
-    padding: 12px;
+    min-height: 44px;
+    padding: 10px 42px 10px 13px;
     border-radius: 12px;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(255,255,255,.12);
     outline: 0;
     color: var(--text-main);
-    background: rgba(255,255,255,.05);
+    background:
+        linear-gradient(45deg, transparent 50%, #7be1cf 50%) calc(100% - 22px) 18px / 7px 7px no-repeat,
+        linear-gradient(135deg, #7be1cf 50%, transparent 50%) calc(100% - 17px) 18px / 7px 7px no-repeat,
+        linear-gradient(155deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.field select:hover,
+select:hover {
+    border-color: rgba(47,176,154,.38);
+    background-color: rgba(47,176,154,.08);
+}
+
+select option {
+    color: #111827;
+    background: #f8fafc;
+}
+
+.field input:focus,
+.field select:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid rgba(47,176,154,.35);
+    outline-offset: 2px;
 }
 
 textarea {
@@ -529,6 +586,30 @@ tr:hover td {
     accent-color: var(--accent);
 }
 
+.settings-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px;
+}
+
+.settings-summary article {
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 12px;
+    background: rgba(255,255,255,.035);
+}
+
+.settings-summary strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.settings-summary span {
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
 .account-box {
     display: flex;
     gap: 16px;
@@ -647,6 +728,10 @@ select {
     }
 
     .controls {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-summary {
         grid-template-columns: 1fr;
     }
 

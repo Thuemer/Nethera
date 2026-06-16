@@ -6,29 +6,46 @@
   <title>Schutz</title>
   <link rel="icon" href="nethera_logo.png">
   <link rel="stylesheet" href="app.css">
-  <link rel="stylesheet" href="security.css">
+  <link rel="stylesheet" href="nethera-select.css">
+  <link rel="stylesheet" href="security.css?v=20260616-dropdowns">
 </head>
 <body>
   <main class="page security-page">
-    <app-hero title="Schutz" text="Blocklisten, Werbeschutz, Presets und WLAN-Analyse verwalten." button="Demo-Scan"></app-hero>
+    <app-hero title="Schutz" text="Geräte, Gruppen, Blocklisten und Presets zentral verwalten." button="WLAN prüfen"></app-hero>
 
     <section class="grid stats-grid" aria-label="Schutz Kennzahlen">
       <stat-card id="statPackages" label="Aktive Pakete" value="0" detail="vorgefertigte Listen"></stat-card>
       <stat-card id="statManual" label="Domains" value="0" detail="manuell blockiert"></stat-card>
       <stat-card id="statAds" label="Werbung" value="0" detail="zuletzt blockiert"></stat-card>
-      <stat-card id="statPresets" label="Presets" value="0" detail="gespeicherte Profile"></stat-card>
+      <stat-card id="statPresets" label="Presets" value="0" detail="aktive Geräte-Presets"></stat-card>
     </section>
 
     <section class="security-tabs" aria-label="Schutz Bereiche">
-      <button type="button" data-tab="groups">Geräte & Gruppen</button>
-      <button class="active" type="button" data-tab="blocklists">Blocklisten</button>
+      <button class="active" type="button" data-tab="groups">Geräte & Gruppen</button>
+      <button type="button" data-tab="blocklists">Blocklisten</button>
       <button type="button" data-tab="ads">Werbung</button>
       <button type="button" data-tab="presets">Presets</button>
       <button type="button" data-tab="wifi">WLAN-Analyse</button>
     </section>
 
-    <section class="tab-panel" id="tab-groups">
-      <section class="grid two-grid">
+    <section class="tab-panel active" id="tab-groups">
+      <app-card title="Geräte & aktive Presets">
+        <p class="helper-text">Hier wird festgelegt, welche Gruppe und welches Preset auf welchem Gerät aktiv ist. Jede Änderung wird sofort gespeichert.</p>
+        <div id="groupDeviceList" class="device-group-list"></div>
+      </app-card>
+
+      <app-card title="Gruppenübersicht">
+        <p class="helper-text">Gruppennamen ändern, Blocklist auf eine Gruppe anwenden und sehen, welche Geräte dazugehören.</p>
+        <div id="groupOverviewList" class="group-overview-list"></div>
+      </app-card>
+
+      <section class="guide-strip" aria-label="Ablauf">
+        <article><strong>1</strong><span>Gerät auswählen</span><small>Beim Gerät Gruppe und Preset setzen.</small></article>
+        <article><strong>2</strong><span>Regeln pflegen</span><small>Kategorien oder Domains pro Gruppe sperren.</small></article>
+        <article><strong>3</strong><span>Preset nutzen</span><small>Ein Preset ist ein Profil für genau ausgewählte Geräte.</small></article>
+      </section>
+
+      <section class="grid group-tools-grid">
         <app-card title="Gruppe erstellen">
           <form id="groupForm" class="stack-form">
             <label class="field">
@@ -67,13 +84,9 @@
           </form>
         </app-card>
       </section>
-
-      <app-card title="Geräte Gruppen zuweisen">
-        <div id="groupDeviceList" class="device-group-list"></div>
-      </app-card>
     </section>
 
-    <section class="tab-panel active" id="tab-blocklists">
+    <section class="tab-panel" id="tab-blocklists">
       <section class="grid two-grid">
         <app-card title="Vorgefertigte Listen">
           <div class="package-list">
@@ -132,16 +145,35 @@
     </section>
 
     <section class="tab-panel" id="tab-presets">
+      <app-card title="Vorhandenes Preset anwenden">
+        <form id="applyPresetForm" class="apply-preset-form">
+          <label class="field">
+            <span>Welches Preset?</span>
+            <select id="applyPresetSelect"></select>
+          </label>
+          <label class="field">
+            <span>Auf welches Gerät?</span>
+            <select id="applyPresetDevice"></select>
+          </label>
+          <button class="refresh-btn" type="submit">Preset auf Gerät anwenden</button>
+        </form>
+      </app-card>
+
       <section class="grid two-grid">
-        <app-card title="Preset erstellen">
+        <app-card title="Preset erstellen und anwenden">
+          <p class="helper-text">Das Preset wird direkt auf das unten ausgewählte Gerät angewendet. Danach siehst du es sofort bei „Geräte & Gruppen“.</p>
           <form id="presetForm" class="stack-form">
             <label class="field">
-              <span>Name</span>
+              <span>Preset-Name</span>
               <input id="presetName" type="text" placeholder="z. B. Schultag">
             </label>
             <label class="field">
-              <span>Gerät</span>
+              <span>Auf dieses Gerät anwenden</span>
               <select id="presetDevice"></select>
+            </label>
+            <label class="field">
+              <span>Blockliste</span>
+              <select id="presetBlocklist"></select>
             </label>
             <label class="security-toggle">
               <span><strong>Kinderschutz</strong><small>Blocklisten übernehmen</small></span>
@@ -155,11 +187,12 @@
               <span><strong>Zeitlimit nutzen</strong><small>Mit der Zeitlimits-Seite kombinieren</small></span>
               <input id="presetTimeLimit" type="checkbox" checked>
             </label>
-            <button class="refresh-btn" type="submit">Preset speichern</button>
+            <button class="refresh-btn" type="submit">Preset erstellen und auf Gerät anwenden</button>
           </form>
         </app-card>
 
-        <app-card title="Gespeicherte Presets">
+        <app-card title="Presets und Geräte">
+          <p class="helper-text">Hier siehst du, auf welchen Geräten ein Preset gerade aktiv ist.</p>
           <div id="presetList" class="preset-list"></div>
         </app-card>
       </section>
@@ -193,6 +226,7 @@
   <script src="config.js"></script>
   <script src="api.js"></script>
   <script src="components.js"></script>
-  <script src="security.js"></script>
+  <script src="nethera-select.js"></script>
+  <script src="security.js?v=20260616-dropdowns"></script>
 </body>
 </html>

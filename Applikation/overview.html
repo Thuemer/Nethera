@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,7 +21,32 @@
             <h1>Dashboard</h1>
             <p class="subline">Status, Speed und aktuelle Ereignisse deines Netzwerks.</p>
         </div>
-        <layout-controls></layout-controls>
+        <layout-controls class="layout-controls">
+            <button id="editToggle" class="control-btn" type="button"><span aria-hidden="true">✎</span><span>Layout bearbeiten</span></button>
+            <button id="resetLayout" class="control-btn danger" type="button"><span aria-hidden="true">↺</span><span>Zurücksetzen</span></button>
+            <p id="layoutHint" class="layout-hint">Boxen auswählen oder Layout anpassen.</p>
+        </layout-controls>
+    </section>
+
+    <section class="dashboard-toolbar card" aria-label="Dashboard Anzeige">
+        <div class="toolbar-copy">
+            <strong>Angezeigte Bereiche</strong>
+            <span>Boxen ein- und ausblenden.</span>
+        </div>
+        <dashboard-nav class="bottom-nav">
+            <div class="nav-group">
+                <span class="nav-group-label">Basis</span>
+                <button class="active" type="button" data-filter="status"><span aria-hidden="true">●</span><span>Status</span></button>
+                <button class="active" type="button" data-filter="features"><span aria-hidden="true">⚙</span><span>Allgemein</span></button>
+                <button class="active" type="button" data-filter="clients"><span aria-hidden="true">▣</span><span>Clients</span></button>
+            </div>
+            <div class="nav-group">
+                <span class="nav-group-label">Monitoring</span>
+                <button class="active" type="button" data-filter="activity"><span aria-hidden="true">▥</span><span>Aktivität</span></button>
+                <button class="active" type="button" data-filter="dns"><span aria-hidden="true">◈</span><span>DNS</span></button>
+                <button class="active" type="button" data-filter="speed"><span aria-hidden="true">◴</span><span>Speed</span></button>
+            </div>
+        </dashboard-nav>
     </section>
 
     <dashboard-container>
@@ -46,10 +71,7 @@
     </div>
 </dashboard-container>
 
-<!-- Bottom Navigation -->
-<dashboard-nav></dashboard-nav>
-
 <script src="config.js"></script>
-<script src="overview.js?v=20260302"></script>
+<script src="overview.js?v=20260616-dashboard-fill"></script>
 </body>
 </html>

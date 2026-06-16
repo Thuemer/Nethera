@@ -265,17 +265,7 @@ class DashboardNav extends HTMLElement {
     }
 
     connectedCallback() {
-        this.classList.add('bottom-nav');
-        
-        this.innerHTML = `
-            <button data-filter="activity">📶<span>Aktivität</span></button>
-            <button data-filter="dns">🛡<span>DNS</span></button>
-            <button data-filter="speed">⏱<span>Speed</span></button>
-            <button data-filter="status">🔔<span>STATUS</span></button>
-            <button data-filter="features">🛠<span>CONFIG</span></button>
-        `;
-        
-        this.setupListeners();
+        this.remove();
     }
 
     setupListeners() {
@@ -305,19 +295,7 @@ class LayoutControls extends HTMLElement {
     }
 
     connectedCallback() {
-        this.classList.add('layout-controls');
-        
-        this.innerHTML = `
-            <button id="editToggle" class="control-btn edit">
-                ✏️ <span>Layout bearbeiten</span>
-            </button>
-            <p class="layout-hint" id="layoutHint">Layout bearbeiten aktivieren, dann Boxen verschieben oder unten rechts skalieren.</p>
-            <button id="resetLayout" class="control-btn reset">
-                ♻️ <span>Zurücksetzen</span>
-            </button>
-        `;
-        
-        this.setupListeners();
+        this.remove();
     }
 
     setupListeners() {

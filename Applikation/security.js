@@ -1,27 +1,15 @@
-const SECURITY_KEY = 'nethera-security-center';
-const FALLBACK_GROUP = 'Ungruppiert';
+const appConfig = window.NETHERA_CONFIG || {};
+const API_BASE_URL = appConfig.API_BASE_URL || 'http://localhost:8083';
+const SECURITY_API = `${API_BASE_URL}/api/security`;
 
-const defaultState = {
-  packages: { gambling: true, adult: true, social: true },
-  manualDomains: ['win2day.at', 'edufs.edu.htl-leonding.at', 'figma.com'],
-  groups: ['Kinder', 'Gäste', 'Gaming', FALLBACK_GROUP],
-  deviceGroups: {},
-  groupBlocklists: {
-    Kinder: {
-      gambling: true,
-      adult: true,
-      social: false,
-      manualDomains: ['tiktok.com']
-    }
-  },
-  devicePresets: {},
-  adDomains: [
-    { name: 'googleads.g.doubleclick.net', time: '2 min' },
-    { name: 'connect.facebook.com', time: '4 min' },
-    { name: 'stats.g.doubleclick.net', time: '17 min' },
-    { name: 'adservice.google.com', time: '29 min' }
-  ],
+const state = {
+  devices: [],
+  groups: [],
+  members: [],
+  blocklists: [],
   presets: [],
+  assignments: [],
+  timeLimits: [],
   wifiNetworks: [
     { ssid: 'Nethera', bssid: 'A4:20:11:8C:90:01', type: 'router', signal: -48, channel: 6, frequency: '2.4 GHz', encryption: 'WPA3', known: true },
     { ssid: 'Nethera-5G', bssid: 'A4:20:11:8C:90:02', type: 'accessPoint', signal: -56, channel: 44, frequency: '5 GHz', encryption: 'WPA3', known: true },
@@ -29,51 +17,6 @@ const defaultState = {
     { ssid: 'Nachbar-WLAN', bssid: '74:83:C2:13:AA:90', type: 'router', signal: -78, channel: 1, frequency: '2.4 GHz', encryption: 'WPA2', known: false }
   ]
 };
-
-const runtime = {
-  devices: []
-};
-
-const state = normalizeState(loadState());
-
-function loadState() {
-  try {
-    return JSON.parse(localStorage.getItem(SECURITY_KEY) || 'null') || structuredClone(defaultState);
-  } catch {
-    return structuredClone(defaultState);
-  }
-}
-
-function normalizeState(input) {
-  const merged = {
-    ...structuredClone(defaultState),
-    ...input,
-    packages: { ...defaultState.packages, ...(input?.packages || {}) },
-    groupBlocklists: { ...defaultState.groupBlocklists, ...(input?.groupBlocklists || {}) },
-    deviceGroups: { ...(input?.deviceGroups || {}) },
-    devicePresets: { ...(input?.devicePresets || {}) }
-  };
-
-  if (!merged.groups.includes(FALLBACK_GROUP)) merged.groups.push(FALLBACK_GROUP);
-  if (!Array.isArray(merged.presets) || merged.presets.length === 0) {
-    merged.presets = [{
-      id: crypto.randomUUID(),
-      name: 'Schultag iPad',
-      deviceId: '',
-      parental: true,
-      priority: false,
-      timeLimit: true,
-      enabled: true,
-      packages: { gambling: true, adult: true, social: false },
-      manualDomains: ['youtube.com']
-    }];
-  }
-  return merged;
-}
-
-function saveState() {
-  localStorage.setItem(SECURITY_KEY, JSON.stringify(state));
-}
 
 function escapeText(value) {
   return String(value ?? '')
@@ -88,172 +31,197 @@ function sanitizeDomain(value) {
   return String(value || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
 }
 
-function deviceKey(device) {
-  return String(device.id || device.macAddress || device.hostname);
-}
-
 function setStatus(text, tone = 'info') {
   const status = document.getElementById('statusBox');
   status?.setAttribute('text', text);
   status?.setAttribute('state', tone);
 }
 
-function packageCount(profile = state.packages) {
-  return ['gambling', 'adult', 'social'].filter(key => profile?.[key]).length;
-}
-
-function groupForDevice(device) {
-  return state.deviceGroups[deviceKey(device)] || FALLBACK_GROUP;
-}
-
-function profileForGroup(group) {
-  return {
-    gambling: false,
-    adult: false,
-    social: false,
-    manualDomains: [],
-    ...(state.groupBlocklists[group] || {})
-  };
-}
-
-function presetForDevice(device) {
-  const id = state.devicePresets[deviceKey(device)];
-  return state.presets.find(preset => preset.id === id) || null;
-}
-
-function effectiveRulesForDevice(device) {
-  const groupProfile = profileForGroup(groupForDevice(device));
-  const preset = presetForDevice(device);
-  const packages = {
-    gambling: Boolean(state.packages.gambling || groupProfile.gambling || preset?.packages?.gambling),
-    adult: Boolean(state.packages.adult || groupProfile.adult || preset?.packages?.adult),
-    social: Boolean(state.packages.social || groupProfile.social || preset?.packages?.social)
-  };
-  const manualDomains = [...new Set([
-    ...state.manualDomains,
-    ...(groupProfile.manualDomains || []),
-    ...(preset?.manualDomains || [])
-  ])];
-
-  return { packages, manualDomains, preset };
-}
-
-function demoDevices() {
-  return [
-    { id: 1, hostname: 'Helmut-iPhone', ipAddress: '192.168.0.10', macAddress: 'AA:BB:CC:DD:EE:01', connectionType: 'wifi' },
-    { id: 2, hostname: 'Jakobs-Laptop', ipAddress: '192.168.0.11', macAddress: 'AA:BB:CC:DD:EE:02', connectionType: 'wifi' },
-    { id: 4, hostname: 'Nethera-Tablet', ipAddress: '192.168.0.13', macAddress: 'AA:BB:CC:DD:EE:04', connectionType: 'wifi' }
-  ];
-}
-
-async function loadDevices() {
-  try {
-    const router = await NetheraApi.getPrimaryRouter();
-    runtime.devices = (router.devices || [])
-      .filter(device => String(device.connectionType || '').toLowerCase() === 'wifi')
-      .map(device => ({
-        id: device.id,
-        hostname: device.hostname,
-        ipAddress: device.ipAddress,
-        macAddress: device.macAddress,
-        connectionType: device.connectionType
-      }));
-    setStatus(`${runtime.devices.length} WLAN-Geräte aus dem Backend geladen.`, 'success');
-  } catch {
-    runtime.devices = demoDevices();
-    setStatus('Backend offline: Demo-Geräte geladen, Gruppenlogik bleibt nutzbar.', 'error');
-  }
-
-  assignInitialGroups();
-  renderAll();
-}
-
-function assignInitialGroups() {
-  runtime.devices.forEach((device, index) => {
-    const key = deviceKey(device);
-    if (!state.deviceGroups[key]) {
-      state.deviceGroups[key] = index === 0 ? 'Kinder' : index === 1 ? 'Gaming' : FALLBACK_GROUP;
-    }
+async function apiJson(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: 'application/json',
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.headers || {})
+    },
+    cache: 'no-store'
   });
+  if (!response.ok) throw new Error(`API ${response.status}`);
+  if (response.status === 204) return null;
+  return response.json();
+}
 
-  const firstPreset = state.presets[0];
-  if (firstPreset && !firstPreset.deviceId && runtime.devices[0]) {
-    firstPreset.deviceId = deviceKey(runtime.devices[0]);
-    state.devicePresets[firstPreset.deviceId] = firstPreset.id;
+async function loadSecurityState() {
+  try {
+    const data = await apiJson(`${SECURITY_API}/state`);
+    Object.assign(state, {
+      devices: data.devices || [],
+      groups: data.groups || [],
+      members: data.members || [],
+      blocklists: data.blocklists || [],
+      presets: data.presets || [],
+      assignments: data.assignments || [],
+      timeLimits: data.timeLimits || []
+    });
+    renderAll();
+    setStatus('Daten aus der Datenbank geladen.', 'success');
+  } catch (error) {
+    renderAll();
+    setStatus('Backend nicht erreichbar. Starte Docker und lade neu.', 'error');
   }
-  saveState();
+}
+
+function blocklistDomains(blocklist) {
+  return String(blocklist?.urlPattern || '').split('|').map(item => item.trim()).filter(Boolean);
+}
+
+function packageNames(blocklist) {
+  const text = String(blocklist?.urlPattern || '').toLowerCase();
+  return [
+    text.includes('gambling') ? 'Glücksspiel' : '',
+    text.includes('adult') ? '18+' : '',
+    text.includes('social') || text.includes('instagram') || text.includes('tiktok') ? 'Social' : '',
+    text.includes('ads') || text.includes('tracker') ? 'Werbung' : ''
+  ].filter(Boolean);
+}
+
+function groupForDevice(deviceId) {
+  const member = state.members.find(item => Number(item.deviceId) === Number(deviceId));
+  return state.groups.find(group => Number(group.id) === Number(member?.groupId)) || null;
+}
+
+function assignmentForDevice(deviceId) {
+  return state.assignments.find(item => Number(item.deviceId) === Number(deviceId)) || null;
+}
+
+function presetForDevice(deviceId) {
+  const assignment = assignmentForDevice(deviceId);
+  return state.presets.find(preset => Number(preset.id) === Number(assignment?.presetId)) || null;
+}
+
+function groupOptions(selectedId = '') {
+  return [
+    '<option value="">Keine Gruppe</option>',
+    ...state.groups.map(group => `<option value="${group.id}" ${Number(group.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(group.name)}</option>`)
+  ].join('');
+}
+
+function presetOptions(selectedId = '') {
+  return [
+    '<option value="">Kein Preset</option>',
+    ...state.presets.map(preset => `<option value="${preset.id}" ${Number(preset.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(preset.name)}</option>`)
+  ].join('');
+}
+
+function blocklistOptions(selectedId = '') {
+  return [
+    '<option value="">Keine Blockliste</option>',
+    ...state.blocklists.map(blocklist => `<option value="${blocklist.id}" ${Number(blocklist.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(blocklist.name)}</option>`)
+  ].join('');
 }
 
 function renderStats() {
-  document.getElementById('statPackages')?.setAttribute('value', String(packageCount()));
-  document.getElementById('statManual')?.setAttribute('value', String(state.manualDomains.length));
-  document.getElementById('statAds')?.setAttribute('value', String(state.adDomains.length));
-  document.getElementById('statPresets')?.setAttribute('value', String(state.presets.length));
-  document.getElementById('adPercent').textContent = `${Math.min(99, 72 + state.adDomains.length * 4)}%`;
-}
-
-function renderPackages() {
-  document.getElementById('pkgGambling').checked = Boolean(state.packages.gambling);
-  document.getElementById('pkgAdult').checked = Boolean(state.packages.adult);
-  document.getElementById('pkgSocial').checked = Boolean(state.packages.social);
-}
-
-function groupOptions(selected = '') {
-  return state.groups.map(group => `<option value="${escapeText(group)}" ${group === selected ? 'selected' : ''}>${escapeText(group)}</option>`).join('');
+  const assignedPresets = state.assignments.filter(item => item.status === 'active').length;
+  const domainCount = state.blocklists.reduce((sum, blocklist) => sum + blocklistDomains(blocklist).length, 0);
+  document.getElementById('statPackages')?.setAttribute('value', String(state.blocklists.length));
+  document.getElementById('statManual')?.setAttribute('value', String(domainCount));
+  document.getElementById('statAds')?.setAttribute('value', String(blocklistDomains(state.blocklists.find(item => item.sourceType === 'DNS')).length));
+  document.getElementById('statPresets')?.setAttribute('value', String(assignedPresets));
+  const adPercent = document.getElementById('adPercent');
+  if (adPercent) adPercent.textContent = `${Math.min(98, 64 + domainCount * 2)}%`;
 }
 
 function renderGroupControls() {
   const select = document.getElementById('groupBlocklistSelect');
   if (select) {
-    const previous = select.value || state.groups[0] || FALLBACK_GROUP;
-    select.innerHTML = groupOptions(state.groups.includes(previous) ? previous : state.groups[0]);
+    select.innerHTML = state.groups.map(group => `<option value="${group.id}">${escapeText(group.name)}</option>`).join('');
   }
   renderGroupBlocklistForm();
 }
 
 function renderGroupBlocklistForm() {
-  const group = document.getElementById('groupBlocklistSelect')?.value || state.groups[0] || FALLBACK_GROUP;
-  const profile = profileForGroup(group);
-  document.getElementById('groupPkgGambling').checked = Boolean(profile.gambling);
-  document.getElementById('groupPkgAdult').checked = Boolean(profile.adult);
-  document.getElementById('groupPkgSocial').checked = Boolean(profile.social);
-}
-
-function renderPresetDeviceOptions() {
-  const select = document.getElementById('presetDevice');
-  if (!select) return;
-  select.innerHTML = runtime.devices.map(device => {
-    const key = deviceKey(device);
-    return `<option value="${escapeText(key)}">${escapeText(device.hostname || 'Unbekanntes Gerät')} (${escapeText(groupForDevice(device))})</option>`;
-  }).join('');
+  const groupId = Number(document.getElementById('groupBlocklistSelect')?.value || state.groups[0]?.id || 0);
+  const group = state.groups.find(item => Number(item.id) === groupId);
+  const blocklist = state.blocklists.find(item => Number(item.id) === Number(group?.blocklistId));
+  const packages = packageNames(blocklist);
+  document.getElementById('groupPkgGambling').checked = packages.includes('Glücksspiel');
+  document.getElementById('groupPkgAdult').checked = packages.includes('18+');
+  document.getElementById('groupPkgSocial').checked = packages.includes('Social');
 }
 
 function renderGroupDevices() {
   const list = document.getElementById('groupDeviceList');
   if (!list) return;
-
-  if (!runtime.devices.length) {
-    list.innerHTML = '<empty-state title="Keine Geräte" text="Es wurden keine WLAN-Geräte gefunden."></empty-state>';
+  if (!state.devices.length) {
+    list.innerHTML = '<empty-state title="Keine Geräte" text="Keine Geräte in der Datenbank gefunden."></empty-state>';
     return;
   }
 
-  list.innerHTML = runtime.devices.map(device => {
-    const key = deviceKey(device);
-    const group = groupForDevice(device);
-    const rules = effectiveRulesForDevice(device);
-    const packageText = packageCount(rules.packages) ? `${packageCount(rules.packages)} Pakete aktiv` : 'Keine Pakete';
-    const presetText = rules.preset ? `Preset: ${rules.preset.name}` : 'Kein Geräte-Preset';
-
+  list.innerHTML = state.devices.map(device => {
+    const group = groupForDevice(device.id);
+    const preset = presetForDevice(device.id);
+    const assignment = assignmentForDevice(device.id);
+    const groupBlocklist = state.blocklists.find(item => Number(item.id) === Number(group?.blocklistId));
+    const presetBlocklist = state.blocklists.find(item => Number(item.id) === Number(preset?.blocklistId));
+    const ruleCount = blocklistDomains(groupBlocklist).length + blocklistDomains(presetBlocklist).length;
+    const presetState = preset ? (assignment?.status === 'paused' ? 'Pausiert' : 'Aktiv') : 'Kein Preset';
+    const presetClass = preset ? (assignment?.status === 'paused' ? 'warn' : 'ok') : '';
     return `
       <article class="device-group-item">
         <div class="device-group-main">
-          <strong>${escapeText(device.hostname || 'Unbekanntes Gerät')}</strong>
-          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(group)} · ${escapeText(packageText)} · ${rules.manualDomains.length} Domains</span>
-          <span>${escapeText(presetText)}</span>
+          <div class="device-title-row">
+            <strong>${escapeText(device.hostname || 'Unbekanntes Gerät')}</strong>
+            <span class="badge ${presetClass}">${escapeText(presetState)}</span>
+          </div>
+          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(device.connectionType || 'unbekannt')} · Gruppe: ${escapeText(group?.name || 'Keine')}</span>
+          <span class="preset-line">Aktives Preset: <b>${escapeText(preset?.name || 'Keines')}</b> · ${ruleCount} Regeln</span>
         </div>
         <div class="device-group-actions">
-          <select data-device-group="${escapeText(key)}">${groupOptions(group)}</select>
-          <button class="small-btn ghost" type="button" data-clear-device-preset="${escapeText(key)}">Preset lösen</button>
+          <label><span>Gruppe</span><select aria-label="Gruppe wählen" data-device-group="${device.id}">${groupOptions(group?.id)}</select></label>
+          <label><span>Preset</span><select aria-label="Preset wählen" data-device-preset="${device.id}">${presetOptions(preset?.id)}</select></label>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+function devicesForGroup(groupId) {
+  const deviceIds = state.members
+    .filter(member => Number(member.groupId) === Number(groupId))
+    .map(member => Number(member.deviceId));
+  return state.devices.filter(device => deviceIds.includes(Number(device.id)));
+}
+
+function renderGroupOverview() {
+  const list = document.getElementById('groupOverviewList');
+  if (!list) return;
+  if (!state.groups.length) {
+    list.innerHTML = '<empty-state title="Keine Gruppen" text="Lege zuerst eine Gruppe an."></empty-state>';
+    return;
+  }
+
+  list.innerHTML = state.groups.map(group => {
+    const blocklist = state.blocklists.find(item => Number(item.id) === Number(group.blocklistId));
+    const devices = devicesForGroup(group.id);
+    const rules = blocklistDomains(blocklist);
+    return `
+      <article class="group-overview-item">
+        <div class="group-overview-fields">
+          <label class="field compact-field">
+            <span>Gruppenname</span>
+            <input type="text" value="${escapeText(group.name)}" data-group-name="${group.id}">
+          </label>
+          <label class="field compact-field">
+            <span>Blocklist für Gruppe</span>
+            <select data-group-blocklist="${group.id}">${blocklistOptions(group.blocklistId)}</select>
+          </label>
+          <button class="small-btn" type="button" data-save-group="${group.id}">Name speichern</button>
+        </div>
+        <div class="group-summary-line">
+          <span class="badge ok">${devices.length} Geräte</span>
+          <span class="badge">${rules.length} Regeln</span>
+          <span class="muted">${escapeText(devices.map(device => device.hostname).filter(Boolean).join(', ') || 'Noch keine Geräte')}</span>
         </div>
       </article>
     `;
@@ -263,68 +231,91 @@ function renderGroupDevices() {
 function renderManualDomains() {
   const list = document.getElementById('manualDomainsList');
   if (!list) return;
-
-  if (!state.manualDomains.length) {
-    list.innerHTML = '<empty-state title="Keine Domains" text="Füge links eine Domain hinzu, um sie global zu blockieren."></empty-state>';
+  if (!state.blocklists.length) {
+    list.innerHTML = '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um sie in der Datenbank zu speichern."></empty-state>';
     return;
   }
 
-  list.innerHTML = state.manualDomains.map(domain => `
-    <article class="rule-item">
-      <div class="rule-main">
-        <strong>${escapeText(domain)}</strong>
-        <span>Globale Sperre für alle Geräte</span>
-      </div>
-      <div class="rule-actions">
-        <button class="small-btn danger" type="button" data-remove-domain="${escapeText(domain)}">Entfernen</button>
-      </div>
-    </article>
-  `).join('');
+  list.innerHTML = state.blocklists.map(blocklist => {
+    const domains = blocklistDomains(blocklist);
+    const tags = packageNames(blocklist);
+    return `
+      <article class="rule-item">
+        <div class="rule-main">
+          <strong>${escapeText(blocklist.name)}</strong>
+          <span>${escapeText(blocklist.sourceType || 'CUSTOM')} · ${domains.length} Domains${tags.length ? ` · ${escapeText(tags.join(', '))}` : ''}</span>
+          <span>${escapeText(domains.slice(0, 5).join(', ') || 'Noch keine Domains')}</span>
+        </div>
+        <span class="badge">${escapeText(blocklist.sourceType || 'CUSTOM')}</span>
+      </article>
+    `;
+  }).join('');
 }
 
 function renderAdDomains() {
   const list = document.getElementById('adDomainsList');
   if (!list) return;
-  list.innerHTML = state.adDomains.map(domain => `
+  const dns = state.blocklists.find(item => item.sourceType === 'DNS') || state.blocklists[0];
+  const domains = blocklistDomains(dns);
+  list.innerHTML = domains.map((domain, index) => `
     <article class="rule-item">
       <div class="rule-main">
-        <strong>${escapeText(domain.name)}</strong>
-        <span>Blockiert vor ${escapeText(domain.time)}</span>
+        <strong>${escapeText(domain)}</strong>
+        <span>Blockiert vor ${index * 7 + 2} min</span>
       </div>
       <span class="badge danger">Adblock</span>
     </article>
-  `).join('');
+  `).join('') || '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>';
+}
+
+function renderPresetDeviceOptions() {
+  const select = document.getElementById('presetDevice');
+  const blocklistSelect = document.getElementById('presetBlocklist');
+  const applyPresetSelect = document.getElementById('applyPresetSelect');
+  const applyPresetDevice = document.getElementById('applyPresetDevice');
+  if (select) {
+    select.innerHTML = state.devices.map(device => `<option value="${device.id}">${escapeText(device.hostname || 'Unbekanntes Gerät')}</option>`).join('');
+  }
+  if (applyPresetDevice) {
+    applyPresetDevice.innerHTML = state.devices.map(device => `<option value="${device.id}">${escapeText(device.hostname || 'Unbekanntes Gerät')}</option>`).join('');
+  }
+  if (applyPresetSelect) {
+    applyPresetSelect.innerHTML = state.presets.map(preset => `<option value="${preset.id}">${escapeText(preset.name)}</option>`).join('') || '<option value="">Noch kein Preset vorhanden</option>';
+  }
+  if (blocklistSelect) {
+    blocklistSelect.innerHTML = blocklistOptions();
+  }
 }
 
 function renderPresets() {
   const list = document.getElementById('presetList');
   if (!list) return;
-
   if (!state.presets.length) {
-    list.innerHTML = '<empty-state title="Keine Presets" text="Erstelle links dein erstes Geräte-Profil."></empty-state>';
+    list.innerHTML = '<empty-state title="Keine Presets" text="Erstelle links ein Preset und weise es einem Gerät zu."></empty-state>';
     return;
   }
 
   list.innerHTML = state.presets.map(preset => {
-    const device = runtime.devices.find(item => deviceKey(item) === preset.deviceId);
-    const active = preset.deviceId && state.devicePresets[preset.deviceId] === preset.id;
+    const blocklist = state.blocklists.find(item => Number(item.id) === Number(preset.blocklistId));
+    const devices = state.assignments
+      .filter(assignment => Number(assignment.presetId) === Number(preset.id))
+      .map(assignment => state.devices.find(device => Number(device.id) === Number(assignment.deviceId))?.hostname)
+      .filter(Boolean);
     const tags = [
-      preset.parental ? 'Kinderschutz' : '',
-      preset.priority ? 'Priorität' : '',
-      preset.timeLimit ? 'Zeitlimit' : '',
-      packageCount(preset.packages) ? `${packageCount(preset.packages)} Blocklisten` : ''
-    ].filter(Boolean).join(' · ') || 'Keine Extras';
+      preset.parentalMode ? 'Kinderschutz' : '',
+      preset.priorityMode ? 'Priorität' : '',
+      preset.timeLimitMinutes ? `${preset.timeLimitMinutes} min` : '',
+      preset.blockedFrom && preset.blockedUntil ? `${preset.blockedFrom}-${preset.blockedUntil}` : ''
+    ].filter(Boolean).join(' · ') || 'Basis';
 
     return `
       <article class="preset-item">
         <div class="preset-main">
-          <strong>${escapeText(preset.name)} ${active ? '<span class="badge ok">Aktiv</span>' : ''}</strong>
-          <span>${escapeText(device?.hostname || 'Kein Gerät')} · ${escapeText(tags)}</span>
+          <strong>${escapeText(preset.name)}</strong>
+          <span>${escapeText(tags)} · Blockliste: ${escapeText(blocklist?.name || 'Keine')}</span>
+          <span>Aktiv auf: ${escapeText(devices.join(', ') || 'keinem Gerät')}</span>
         </div>
-        <div class="preset-actions">
-          <button class="small-btn" type="button" data-apply-preset="${escapeText(preset.id)}">Auf Gerät anwenden</button>
-          <button class="small-btn danger" type="button" data-delete-preset="${escapeText(preset.id)}">Löschen</button>
-        </div>
+        <span class="badge ok">${devices.length} Geräte</span>
       </article>
     `;
   }).join('');
@@ -383,96 +374,158 @@ function renderWifi() {
 
 function renderAll() {
   renderStats();
-  renderPackages();
   renderGroupControls();
-  renderPresetDeviceOptions();
   renderGroupDevices();
+  renderGroupOverview();
   renderManualDomains();
   renderAdDomains();
+  renderPresetDeviceOptions();
   renderPresets();
   renderWifi();
 }
 
-function addManualDomain(event) {
-  event.preventDefault();
-  const input = document.getElementById('manualDomainInput');
-  const domain = sanitizeDomain(input.value);
-  if (!domain) return setStatus('Bitte eine Domain eingeben.', 'error');
-  if (!state.manualDomains.includes(domain)) state.manualDomains.unshift(domain);
-  input.value = '';
-  saveState();
-  renderAll();
-  setStatus(`${domain} wurde global blockiert.`, 'success');
-}
-
-function addAdDomain(event) {
-  event.preventDefault();
-  const input = document.getElementById('adDomainInput');
-  const domain = sanitizeDomain(input.value);
-  if (!domain) return setStatus('Bitte eine Werbe-Domain eingeben.', 'error');
-  if (!state.adDomains.some(entry => entry.name === domain)) state.adDomains.unshift({ name: domain, time: 'jetzt' });
-  input.value = '';
-  saveState();
-  renderAll();
-  setStatus(`${domain} wird im Werbeschutz angezeigt.`, 'success');
-}
-
-function addGroup(event) {
+async function addGroup(event) {
   event.preventDefault();
   const input = document.getElementById('groupNameInput');
   const name = input.value.trim();
-  if (!name) return setStatus('Bitte einen Gruppennamen eingeben.', 'error');
-  if (!state.groups.includes(name)) state.groups.unshift(name);
+  if (!name) return setStatus('Bitte Gruppennamen eingeben.', 'error');
+  await apiJson(`${SECURITY_API}/groups`, {
+    method: 'POST',
+    body: JSON.stringify({ name, description: 'Manuell angelegt', color: '#2fb09a' })
+  });
   input.value = '';
-  saveState();
-  renderAll();
-  setStatus(`Gruppe "${name}" angelegt.`, 'success');
+  await loadSecurityState();
+  setStatus(`Gruppe "${name}" gespeichert.`, 'success');
 }
 
-function saveGroupBlocklist(event) {
+async function saveGroupBlocklist(event) {
   event.preventDefault();
-  const group = document.getElementById('groupBlocklistSelect').value;
+  const groupId = Number(document.getElementById('groupBlocklistSelect').value);
+  const group = state.groups.find(item => Number(item.id) === groupId);
+  if (!group) return setStatus('Bitte Gruppe wählen.', 'error');
+
   const domain = sanitizeDomain(document.getElementById('groupDomainInput').value);
-  const current = profileForGroup(group);
-  const domains = [...current.manualDomains];
-  if (domain && !domains.includes(domain)) domains.unshift(domain);
-  state.groupBlocklists[group] = {
-    gambling: document.getElementById('groupPkgGambling').checked,
-    adult: document.getElementById('groupPkgAdult').checked,
-    social: document.getElementById('groupPkgSocial').checked,
-    manualDomains: domains
-  };
+  const parts = [
+    document.getElementById('groupPkgGambling').checked ? 'gambling' : '',
+    document.getElementById('groupPkgAdult').checked ? 'adult' : '',
+    document.getElementById('groupPkgSocial').checked ? 'social' : '',
+    domain
+  ].filter(Boolean);
+
+  const blocklist = await apiJson(`${SECURITY_API}/blocklists`, {
+    method: 'POST',
+    body: JSON.stringify({
+      id: group.blocklistId,
+      routerId: 1,
+      name: `${group.name} Blockliste`,
+      sourceType: 'GROUP',
+      urlPattern: parts.join('|')
+    })
+  });
+
+  await apiJson(`${SECURITY_API}/groups`, {
+    method: 'POST',
+    body: JSON.stringify({ ...group, blocklistId: blocklist.id })
+  });
+
   document.getElementById('groupDomainInput').value = '';
-  saveState();
-  renderAll();
-  setStatus(`Blocklist für "${group}" gespeichert.`, 'success');
+  await loadSecurityState();
+  setStatus(`Regeln für "${group.name}" gespeichert.`, 'success');
 }
 
-function createPreset(event) {
-  event.preventDefault();
-  const nameInput = document.getElementById('presetName');
-  const name = nameInput.value.trim();
-  const deviceId = document.getElementById('presetDevice').value;
-  if (!name) return setStatus('Bitte einen Preset-Namen eingeben.', 'error');
-  if (!deviceId) return setStatus('Bitte ein Gerät auswählen.', 'error');
+async function saveGroupName(groupId) {
+  const group = state.groups.find(item => Number(item.id) === Number(groupId));
+  const input = document.querySelector(`[data-group-name="${groupId}"]`);
+  if (!group || !input) return;
+  const name = input.value.trim();
+  if (!name) return setStatus('Bitte Gruppennamen eingeben.', 'error');
+  await apiJson(`${SECURITY_API}/groups`, {
+    method: 'POST',
+    body: JSON.stringify({ ...group, name })
+  });
+  await loadSecurityState();
+  setStatus(`Gruppe "${name}" gespeichert.`, 'success');
+}
 
-  const preset = {
-    id: crypto.randomUUID(),
-    name,
-    deviceId,
-    parental: document.getElementById('presetParental').checked,
-    priority: document.getElementById('presetPriority').checked,
-    timeLimit: document.getElementById('presetTimeLimit').checked,
-    enabled: true,
-    packages: { ...state.packages },
-    manualDomains: []
-  };
-  state.presets.unshift(preset);
-  state.devicePresets[deviceId] = preset.id;
-  nameInput.value = '';
-  saveState();
-  renderAll();
-  setStatus(`Preset "${name}" gespeichert und dem Gerät zugewiesen.`, 'success');
+async function saveGroupBlocklistSelection(groupId, blocklistId) {
+  const group = state.groups.find(item => Number(item.id) === Number(groupId));
+  if (!group) return;
+  await apiJson(`${SECURITY_API}/groups`, {
+    method: 'POST',
+    body: JSON.stringify({ ...group, blocklistId: Number(blocklistId) || null })
+  });
+  await loadSecurityState();
+  setStatus(`Blocklist für "${group.name}" gespeichert.`, 'success');
+}
+
+async function addManualDomain(event) {
+  event.preventDefault();
+  const input = document.getElementById('manualDomainInput');
+  const domain = sanitizeDomain(input.value);
+  if (!domain) return setStatus('Bitte Domain eingeben.', 'error');
+  await apiJson(`${SECURITY_API}/blocklists`, {
+    method: 'POST',
+    body: JSON.stringify({ routerId: 1, name: `Domain: ${domain}`, sourceType: 'CUSTOM', urlPattern: domain })
+  });
+  input.value = '';
+  await loadSecurityState();
+  setStatus(`${domain} in der Datenbank gespeichert.`, 'success');
+}
+
+async function addAdDomain(event) {
+  event.preventDefault();
+  const input = document.getElementById('adDomainInput');
+  const domain = sanitizeDomain(input.value);
+  if (!domain) return setStatus('Bitte Werbe-Domain eingeben.', 'error');
+  const dns = state.blocklists.find(item => item.sourceType === 'DNS');
+  const domains = [...new Set([...blocklistDomains(dns), domain])];
+  await apiJson(`${SECURITY_API}/blocklists`, {
+    method: 'POST',
+    body: JSON.stringify({ id: dns?.id, routerId: 1, name: dns?.name || 'Werbung & Tracker', sourceType: 'DNS', urlPattern: domains.join('|') })
+  });
+  input.value = '';
+  await loadSecurityState();
+  setStatus(`${domain} zum Werbeschutz hinzugefügt.`, 'success');
+}
+
+async function createPreset(event) {
+  event.preventDefault();
+  const name = document.getElementById('presetName').value.trim();
+  const deviceId = Number(document.getElementById('presetDevice').value);
+  if (!name) return setStatus('Bitte Preset-Namen eingeben.', 'error');
+  if (!deviceId) return setStatus('Bitte Gerät wählen.', 'error');
+
+  const preset = await apiJson(`${SECURITY_API}/presets`, {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      description: 'Manuell erstellt',
+      blocklistId: Number(document.getElementById('presetBlocklist')?.value || 0) || null,
+      timeLimitMinutes: document.getElementById('presetTimeLimit').checked ? 120 : null,
+      blockedFrom: document.getElementById('presetTimeLimit').checked ? '21:00' : null,
+      blockedUntil: document.getElementById('presetTimeLimit').checked ? '07:00' : null,
+      parentalMode: document.getElementById('presetParental').checked,
+      priorityMode: document.getElementById('presetPriority').checked
+    })
+  });
+  await apiJson(`${SECURITY_API}/devices/${deviceId}/preset/${preset.id}`, { method: 'PUT' });
+  document.getElementById('presetName').value = '';
+  await loadSecurityState();
+  setStatus(`Preset "${name}" gespeichert und zugewiesen.`, 'success');
+}
+
+async function applyExistingPreset(event) {
+  event.preventDefault();
+  const presetId = Number(document.getElementById('applyPresetSelect')?.value);
+  const deviceId = Number(document.getElementById('applyPresetDevice')?.value);
+  const preset = state.presets.find(item => Number(item.id) === presetId);
+  const device = state.devices.find(item => Number(item.id) === deviceId);
+  if (!presetId || !preset) return setStatus('Bitte zuerst ein Preset auswählen.', 'error');
+  if (!deviceId || !device) return setStatus('Bitte ein Gerät auswählen.', 'error');
+
+  await apiJson(`${SECURITY_API}/devices/${deviceId}/preset/${presetId}`, { method: 'PUT' });
+  await loadSecurityState();
+  setStatus(`"${preset.name}" ist jetzt auf "${device.hostname || 'Gerät'}" aktiv.`, 'success');
 }
 
 function simulateWifiScan() {
@@ -480,9 +533,8 @@ function simulateWifiScan() {
     ...network,
     signal: Math.min(-38, Math.max(-88, network.signal + Math.round(Math.random() * 12 - 6)))
   }));
-  saveState();
   renderWifi();
-  setStatus('WLAN-Demo-Scan aktualisiert.', 'success');
+  setStatus('WLAN-Scan aktualisiert.', 'success');
 }
 
 function setupTabs() {
@@ -505,68 +557,51 @@ function setupEvents() {
   document.getElementById('manualDomainForm')?.addEventListener('submit', addManualDomain);
   document.getElementById('adDomainForm')?.addEventListener('submit', addAdDomain);
   document.getElementById('presetForm')?.addEventListener('submit', createPreset);
+  document.getElementById('applyPresetForm')?.addEventListener('submit', applyExistingPreset);
   document.getElementById('wifiSearch')?.addEventListener('input', renderWifi);
   document.getElementById('wifiFilter')?.addEventListener('change', renderWifi);
 
-  [['pkgGambling', 'gambling'], ['pkgAdult', 'adult'], ['pkgSocial', 'social']].forEach(([id, key]) => {
-    document.getElementById(id)?.addEventListener('change', event => {
-      state.packages[key] = event.target.checked;
-      saveState();
-      renderAll();
-      setStatus('Globale Blockliste aktualisiert.', 'success');
-    });
-  });
+  document.addEventListener('change', async event => {
+    const groupBlocklistSelect = event.target.closest('[data-group-blocklist]');
+    if (groupBlocklistSelect) {
+      await saveGroupBlocklistSelection(Number(groupBlocklistSelect.dataset.groupBlocklist), Number(groupBlocklistSelect.value));
+      return;
+    }
 
-  document.addEventListener('change', event => {
-    const select = event.target.closest('[data-device-group]');
-    if (!select) return;
-    state.deviceGroups[select.dataset.deviceGroup] = select.value;
-    saveState();
-    renderAll();
-    setStatus('Gerät wurde einer Gruppe zugewiesen.', 'success');
+    const groupSelect = event.target.closest('[data-device-group]');
+    if (groupSelect) {
+      const deviceId = Number(groupSelect.dataset.deviceGroup);
+      const groupId = Number(groupSelect.value);
+      const oldGroup = groupForDevice(deviceId);
+      if (oldGroup) await apiJson(`${SECURITY_API}/groups/${oldGroup.id}/members/${deviceId}`, { method: 'DELETE' });
+      if (groupId) await apiJson(`${SECURITY_API}/groups/${groupId}/members/${deviceId}`, { method: 'PUT' });
+      await loadSecurityState();
+      return setStatus('Gerätegruppe gespeichert.', 'success');
+    }
+
+    const presetSelect = event.target.closest('[data-device-preset]');
+    if (presetSelect) {
+      const deviceId = Number(presetSelect.dataset.devicePreset);
+      const presetId = Number(presetSelect.value);
+      if (presetId) {
+        await apiJson(`${SECURITY_API}/devices/${deviceId}/preset/${presetId}`, { method: 'PUT' });
+      } else {
+        await apiJson(`${SECURITY_API}/devices/${deviceId}/preset`, { method: 'DELETE' });
+      }
+      await loadSecurityState();
+      return setStatus('Geräte-Preset gespeichert.', 'success');
+    }
   });
 
   document.addEventListener('click', event => {
-    const removeDomain = event.target.closest('[data-remove-domain]')?.dataset.removeDomain;
-    if (removeDomain) {
-      state.manualDomains = state.manualDomains.filter(domain => domain !== removeDomain);
-      saveState();
-      renderAll();
-      return setStatus(`${removeDomain} entfernt.`, 'success');
-    }
-
-    const clearDevicePreset = event.target.closest('[data-clear-device-preset]')?.dataset.clearDevicePreset;
-    if (clearDevicePreset) {
-      delete state.devicePresets[clearDevicePreset];
-      saveState();
-      renderAll();
-      return setStatus('Preset vom Gerät gelöst.', 'success');
-    }
-
-    const deletePreset = event.target.closest('[data-delete-preset]')?.dataset.deletePreset;
-    if (deletePreset) {
-      state.presets = state.presets.filter(preset => preset.id !== deletePreset);
-      Object.keys(state.devicePresets).forEach(key => {
-        if (state.devicePresets[key] === deletePreset) delete state.devicePresets[key];
-      });
-      saveState();
-      renderAll();
-      return setStatus('Preset gelöscht.', 'success');
-    }
-
-    const applyPreset = event.target.closest('[data-apply-preset]')?.dataset.applyPreset;
-    if (applyPreset) {
-      const preset = state.presets.find(item => item.id === applyPreset);
-      if (!preset?.deviceId) return setStatus('Dieses Preset hat kein Gerät.', 'error');
-      state.devicePresets[preset.deviceId] = preset.id;
-      saveState();
-      renderAll();
-      return setStatus(`Preset "${preset.name}" auf Gerät angewendet.`, 'success');
+    const saveButton = event.target.closest('[data-save-group]');
+    if (saveButton) {
+      saveGroupName(Number(saveButton.dataset.saveGroup)).catch(error => setStatus(`Gruppe konnte nicht gespeichert werden: ${error.message}`, 'error'));
     }
   });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   setupEvents();
-  loadDevices();
+  loadSecurityState();
 });

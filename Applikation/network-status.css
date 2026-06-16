@@ -1,0 +1,31 @@
+.network-status-page {
+    max-width: 1400px;
+}
+
+.status-stack {
+    display: grid;
+    gap: 12px;
+}
+
+.status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.035);
+}
+
+.status-row span {
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .status-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

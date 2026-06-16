@@ -1,0 +1,101 @@
+.nethera-select {
+    position: relative;
+    width: 100%;
+}
+
+.nethera-select select {
+    position: absolute !important;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.nethera-select-button {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 13px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    color: var(--text-main, #fff);
+    background: linear-gradient(155deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    font: inherit;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nethera-select-button:hover,
+.nethera-select.open .nethera-select-button {
+    border-color: rgba(47,176,154,.48);
+    background: linear-gradient(155deg, rgba(47,176,154,.16), rgba(255,255,255,.045));
+}
+
+.nethera-select-button::after {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid #7be1cf;
+    border-bottom: 2px solid #7be1cf;
+    transform: rotate(45deg) translateY(-2px);
+    flex: 0 0 auto;
+}
+
+.nethera-select.open .nethera-select-button::after {
+    transform: rotate(225deg) translate(-2px, -1px);
+}
+
+.nethera-select-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 120;
+    display: none;
+    max-height: 260px;
+    overflow: auto;
+    padding: 6px;
+    border: 1px solid rgba(47,176,154,.28);
+    border-radius: 14px;
+    background: linear-gradient(155deg, rgba(20,24,22,.98), rgba(33,39,36,.98));
+    box-shadow: 0 20px 40px rgba(0,0,0,.44);
+}
+
+.nethera-select.open .nethera-select-menu {
+    display: grid;
+    gap: 4px;
+}
+
+.nethera-select-option {
+    border: 0;
+    border-radius: 10px;
+    padding: 11px 12px;
+    color: var(--text-soft, #b8c0bd);
+    background: transparent;
+    font: inherit;
+    font-weight: 750;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nethera-select-option:hover,
+.nethera-select-option.focused {
+    color: #fff;
+    background: rgba(47,176,154,.12);
+}
+
+.nethera-select-option.selected {
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-2, #144659), var(--accent, #2fb09a));
+}
+
+.nethera-select-option[disabled] {
+    opacity: .55;
+    cursor: not-allowed;
+}
