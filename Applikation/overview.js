@@ -180,7 +180,7 @@ class FeaturesCard extends HTMLElement {
             <ul class="feature-list content-list">
                 <li><span class="feature-line"><span class="feature-name">Router-Name</span><span class="feature-value">${routerName}</span></span></li>
                 <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
-                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">122.168.1.1</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">${appConfig.ROUTER_IP || '192.168.1.1'}</span></span></li>
             </ul>
         `;
     }

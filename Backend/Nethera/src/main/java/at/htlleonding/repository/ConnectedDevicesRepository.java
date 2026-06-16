@@ -21,7 +21,7 @@ public class ConnectedDevicesRepository {
     }
 
     @Transactional
-    public ConnectedDevice syncDevice(Router router, String mac, String ip, String hostname, boolean isOnline) {
+    public ConnectedDevice syncDevice(Router router, String mac, String ip, String hostname, boolean isOnline, String connectionType) {
         try {
             ConnectedDevice device = entityManager.createQuery(
                             "SELECT d FROM ConnectedDevice d WHERE d.macAddress = :mac AND d.router = :router", ConnectedDevice.class)
@@ -32,6 +32,7 @@ public class ConnectedDevicesRepository {
             device.setIpAddress(ip);
             device.setHostname(hostname);
             device.setOnline(isOnline);
+            device.setConnectionType(connectionType);
 
             if (isOnline) {
                 device.setLastSeen(LocalDateTime.now());
@@ -44,7 +45,7 @@ public class ConnectedDevicesRepository {
             newDevice.setMacAddress(mac);
             newDevice.setIpAddress(ip);
             newDevice.setHostname(hostname);
-            newDevice.setConnectionType("DHCP");
+            newDevice.setConnectionType(connectionType);
             newDevice.setRouter(router);
             newDevice.setOnline(isOnline);
 

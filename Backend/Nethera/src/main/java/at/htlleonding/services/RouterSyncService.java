@@ -44,6 +44,7 @@ public class RouterSyncService {
 
             String arpOutput;
             String dhcpOutput;
+            String wifiOutput;
 
             try (Session session = ssh.startSession()) {
                 String cmdString = "for ip in $(awk '{print $3}' /tmp/dhcp.leases); do ping -c 1 -W 1 $ip > /dev/null 2>&1 & done; sleep 2; cat /proc/net/arp";
@@ -58,8 +59,17 @@ public class RouterSyncService {
                 dhcpOutput = new String(cmd.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             }
 
+            try (Session session = ssh.startSession()) {
+                // Collect station MACs from all wireless interfaces
+                String cmd = "for i in $(iw dev 2>/dev/null | awk '/Interface/{print $2}'); do iw dev \"$i\" station dump 2>/dev/null | grep -i '^Station' | awk '{print tolower($2)}'; done";
+                Session.Command command = session.exec(cmd);
+                command.join(5, TimeUnit.SECONDS);
+                wifiOutput = new String(command.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            }
+
             Set<String> activeMacs = parseActiveMacs(arpOutput);
-            parseAndSaveLeases(router, dhcpOutput, activeMacs);
+            Set<String> wifiMacs = parseWifiMacs(wifiOutput);
+            parseAndSaveLeases(router, dhcpOutput, activeMacs, wifiMacs);
 
         } catch (Exception e) {
             throw new RuntimeException("SSH-Sync mit Router fehlgeschlagen", e);
@@ -87,7 +97,18 @@ public class RouterSyncService {
         return activeMacs;
     }
 
-    private void parseAndSaveLeases(Router router, String dhcpOutput, Set<String> activeMacs) throws Exception {
+    private Set<String> parseWifiMacs(String wifiOutput) {
+        Set<String> wifiMacs = new HashSet<>();
+        for (String line : wifiOutput.split("\n")) {
+            String mac = line.strip().toLowerCase();
+            if (mac.matches("([0-9a-f]{2}:){5}[0-9a-f]{2}")) {
+                wifiMacs.add(mac);
+            }
+        }
+        return wifiMacs;
+    }
+
+    private void parseAndSaveLeases(Router router, String dhcpOutput, Set<String> activeMacs, Set<String> wifiMacs) throws Exception {
         try (BufferedReader reader = new BufferedReader(new StringReader(dhcpOutput))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -99,16 +120,14 @@ public class RouterSyncService {
                     String ip = parts[2];
                     String hostname = parts[3].equals("*") ? "Unbekannt" : parts[3];
                     boolean isOnline = activeMacs.contains(mac);
+                    String connectionType = wifiMacs.contains(mac) ? "WIFI" : "LAN";
 
-                    // Task 5.1: Query existing device state before upsert
                     ConnectedDevice existing = findExistingDevice(router, mac);
                     boolean wasNew = existing == null;
                     boolean wasOnline = existing != null && Boolean.TRUE.equals(existing.getOnline());
 
-                    // Task 5.2/5.3: Upsert device (Task 5.4: shared @Transactional scope via scheduler's outer tx)
-                    ConnectedDevice device = deviceRepository.syncDevice(router, mac, ip, hostname, isOnline);
+                    ConnectedDevice device = deviceRepository.syncDevice(router, mac, ip, hostname, isOnline, connectionType);
 
-                    // Emit activity log on state change
                     if (wasNew && isOnline) {
                         emitActivityLog(router, device, "CONNECTED", hostname + " connected");
                     } else if (!wasNew && !wasOnline && isOnline) {

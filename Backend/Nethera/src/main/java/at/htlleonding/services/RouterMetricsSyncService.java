@@ -114,12 +114,6 @@ public class RouterMetricsSyncService {
 
             long forwarded = parsed[0];
             long answeredLocally = parsed[1];
-            long statsUnixTime = parsed[2];
-
-            if (Math.abs(statsUnixTime - System.currentTimeMillis() / 1000L) > 5) {
-                LOG.warn("DNS sync: stats block timestamp too old, skipping");
-                return;
-            }
 
             if (prevForwarded == -1) {
                 prevForwarded = forwarded;
@@ -152,39 +146,24 @@ public class RouterMetricsSyncService {
         }
     }
 
-    // Returns [forwarded, answeredLocally, unixTimestamp] from the most recent dnsmasq stats block, or null
+    // Returns [forwarded, answeredLocally] from the most recent dnsmasq stats block, or null
     private long[] parseDnsmasqStats(String output) {
         String[] lines = output.split("\n");
-        long forwarded = -1;
-        long answeredLocally = -1;
-        long timestamp = -1;
 
         for (int i = lines.length - 1; i >= 0; i--) {
             String line = lines[i];
-
-            if (forwarded == -1 && line.contains("queries forwarded") && line.contains("queries answered locally")) {
+            if (line.contains("queries forwarded") && line.contains("queries answered locally")) {
                 try {
                     int fwdIdx = line.indexOf("queries forwarded ") + "queries forwarded ".length();
                     int localIdx = line.indexOf("queries answered locally ") + "queries answered locally ".length();
-                    forwarded = Long.parseLong(line.substring(fwdIdx).split("[,\\s]")[0].trim());
-                    answeredLocally = Long.parseLong(line.substring(localIdx).split("[,\\s]")[0].trim());
+                    long forwarded = Long.parseLong(line.substring(fwdIdx).split("[,\\s]")[0].trim());
+                    long answeredLocally = Long.parseLong(line.substring(localIdx).split("[,\\s]")[0].trim());
+                    return new long[]{forwarded, answeredLocally};
                 } catch (NumberFormatException ignored) {
                 }
             }
-
-            if (timestamp == -1 && line.contains("dnsmasq") && line.contains(": time ")) {
-                try {
-                    int idx = line.indexOf(": time ") + ": time ".length();
-                    timestamp = Long.parseLong(line.substring(idx).trim().split("\\s")[0]);
-                } catch (NumberFormatException ignored) {
-                }
-            }
-
-            if (forwarded >= 0 && timestamp >= 0) break;
         }
-
-        if (forwarded < 0 || answeredLocally < 0 || timestamp < 0) return null;
-        return new long[]{forwarded, answeredLocally, timestamp};
+        return null;
     }
 
     @Transactional
