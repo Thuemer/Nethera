@@ -21,7 +21,7 @@ public class ConnectedDevicesRepository {
     }
 
     @Transactional
-    public void syncDevice(Router router, String mac, String ip, String hostname, boolean isOnline) {
+    public ConnectedDevice syncDevice(Router router, String mac, String ip, String hostname, boolean isOnline) {
         try {
             ConnectedDevice device = entityManager.createQuery(
                             "SELECT d FROM ConnectedDevice d WHERE d.macAddress = :mac AND d.router = :router", ConnectedDevice.class)
@@ -31,11 +31,13 @@ public class ConnectedDevicesRepository {
 
             device.setIpAddress(ip);
             device.setHostname(hostname);
+            device.setOnline(isOnline);
 
-            // lastSeen wird nur überschrieben, wenn das Gerät GERADE JETZT im Netz ist
             if (isOnline) {
                 device.setLastSeen(LocalDateTime.now());
             }
+
+            return device;
 
         } catch (NoResultException e) {
             ConnectedDevice newDevice = new ConnectedDevice();
@@ -44,12 +46,14 @@ public class ConnectedDevicesRepository {
             newDevice.setHostname(hostname);
             newDevice.setConnectionType("DHCP");
             newDevice.setRouter(router);
+            newDevice.setOnline(isOnline);
 
             if (isOnline) {
                 newDevice.setLastSeen(LocalDateTime.now());
             }
 
             entityManager.persist(newDevice);
+            return newDevice;
         }
     }
 }

@@ -32,6 +32,9 @@ public class ConnectedDevice {
     @Column(name = "last_seen")
     private LocalDateTime lastSeen;
 
+    @Column(name = "is_online")
+    private Boolean isOnline;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "router_id")
     private Router router;
@@ -90,6 +93,9 @@ public class ConnectedDevice {
     public void setRouter(Router router) {
         this.router = router;
     }
+
+    public Boolean getOnline() { return isOnline; }
+    public void setOnline(Boolean online) { isOnline = online; }
 
     public Set<ActivityLog> getActivityLogs() {
         return activityLogs;
