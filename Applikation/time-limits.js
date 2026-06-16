@@ -1,10 +1,13 @@
 const STORAGE_KEY = 'nethera-device-time-limits';
 const appConfig = window.NETHERA_CONFIG || {};
 const TIME_LIMITS_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/device-time-limits`;
+const SECURITY_STATE_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/security/state`;
 
 const state = {
   devices: [],
   limits: loadLimits(),
+  presets: [],
+  assignments: [],
   filteredDevices: [],
   storageMode: 'local'
 };
@@ -93,6 +96,14 @@ async function deleteBackendLimit(deviceId) {
   }
 }
 
+async function loadSecurityState() {
+  const response = await fetch(SECURITY_STATE_API_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+  if (!response.ok) throw new Error(`Security-API ${response.status}`);
+  const data = await response.json();
+  state.presets = data.presets || [];
+  state.assignments = data.assignments || [];
+}
+
 function escapeText(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -143,6 +154,11 @@ function usedPercent(limit) {
   return Math.min(100, Math.max(0, Math.round((used / budget) * 100)));
 }
 
+function presetForDevice(deviceId) {
+  const assignment = state.assignments.find(item => Number(item.deviceId) === Number(deviceId));
+  return state.presets.find(item => Number(item.id) === Number(assignment?.presetId)) || null;
+}
+
 function setStatus(text, tone = 'info') {
   const status = document.getElementById('statusBox');
   status?.setAttribute('text', text);
@@ -176,7 +192,8 @@ function renderDeviceOptions() {
   select.disabled = false;
   select.innerHTML = state.devices.map(device => {
     const key = deviceKey(device);
-    const label = `${device.hostname || 'Unbekanntes Gerät'} (${device.ipAddress || device.macAddress || 'ohne Adresse'})`;
+    const preset = presetForDevice(device.id);
+    const label = `${device.hostname || 'Unbekanntes Gerät'} (${device.ipAddress || device.macAddress || 'ohne Adresse'}) · Preset: ${preset?.name || 'Keines'}`;
     return `<option value="${escapeText(key)}">${escapeText(label)}</option>`;
   }).join('');
 
@@ -187,8 +204,12 @@ function loadSelectedLimit() {
   const key = document.getElementById('deviceSelect')?.value;
   const limit = state.limits[key] || {};
 
-  document.getElementById('dailyLimit').value = String(limit.dailyLimit ?? 120);
-  document.getElementById('limitStatus').value = limit.status || 'active';
+  const dailyLimit = document.getElementById('dailyLimit');
+  const limitStatus = document.getElementById('limitStatus');
+  dailyLimit.value = String(limit.dailyLimit ?? 120);
+  limitStatus.value = limit.status || 'active';
+  dailyLimit.dispatchEvent(new Event('change', { bubbles: true }));
+  limitStatus.dispatchEvent(new Event('change', { bubbles: true }));
   document.getElementById('usedMinutesToday').value = String(limit.usedMinutesToday ?? 0);
   document.getElementById('blockedFrom').value = limit.from || '21:00';
   document.getElementById('blockedUntil').value = limit.until || '07:00';
@@ -210,6 +231,7 @@ function renderList() {
     const blocked = isBlockedNow(limit);
     const paused = limit?.status === 'paused';
     const percent = limit ? usedPercent(limit) : 0;
+    const preset = presetForDevice(device.id);
     const budgetText = limit
       ? `${formatMinutes(limit.usedMinutesToday || 0)} von ${formatMinutes(limit.dailyLimit)} genutzt`
       : 'Noch kein Limit gesetzt';
@@ -234,6 +256,7 @@ function renderList() {
           <div class="limit-meta">
             <span>${escapeText(device.ipAddress || 'Keine IP')}</span>
             <span>${escapeText(device.macAddress || 'Keine MAC')}</span>
+            <span>Preset: <b>${escapeText(preset?.name || 'Keines')}</b></span>
             ${note}
           </div>
           <div class="limit-budget">
@@ -277,6 +300,7 @@ async function loadDevices() {
     const router = await NetheraApi.getPrimaryRouter();
     try {
       await loadBackendLimits();
+      await loadSecurityState();
     } catch {
       state.limits = loadLimits();
       state.storageMode = 'local';
@@ -369,7 +393,10 @@ async function handleListClick(event) {
 
   const key = button.dataset.key;
   const select = document.getElementById('deviceSelect');
-  if (select) select.value = key;
+  if (select) {
+    select.value = key;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
 
   if (button.dataset.action === 'edit') {
     loadSelectedLimit();

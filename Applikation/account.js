@@ -8,8 +8,8 @@
   };
 
   const API_BASE_URL = config.API_BASE_URL || 'http://localhost:8080';
-  const ACCOUNT_API_URL = `${API_BASE_URL}/api/accounts/list`;
   const ME_API_URL = `${API_BASE_URL}/api/accounts/me`;
+  const SETTINGS_API_URL = `${API_BASE_URL}/api/settings`;
 
   let keycloak = null;
   let initPromise = null;
@@ -44,31 +44,28 @@
       .account-avatar { width: 62px; height: 62px; border-radius: 18px; background: linear-gradient(135deg, #144659, #2fb09a); display: grid; place-items: center; font-size: 26px; font-weight: 900; flex: 0 0 62px; }
       .account-field { display: grid; gap: 7px; color: #b8c0bd; font-size: 13px; font-weight: 650; }
       .account-field input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); outline: 0; color: #fff; background: rgba(255,255,255,.05); font-family: inherit; }
+      .account-field select { width: 100%; padding: 12px 34px 12px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); outline: 0; color: #fff; background: rgba(255,255,255,.05); font-family: inherit; font-weight: 750; appearance: none; }
+      .account-field .nethera-select-button { min-height: 44px; font-size: 14px; }
       .account-field input[readonly] { opacity: .88; }
       .account-config-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: rgba(255,255,255,.035); }
       .account-config-row small { display: block; color: #b8c0bd; margin-top: 4px; }
       .account-config-row input { width: 18px; height: 18px; accent-color: #2fb09a; }
+      .account-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .account-data-list { display: grid; gap: 12px; }
       .account-data-card { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: rgba(255,255,255,.035); }
       .account-mini-avatar { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 13px; display: grid; place-items: center; font-weight: 850; background: linear-gradient(135deg, #144659, #2fb09a); }
       .account-data-main { display: grid; gap: 8px; min-width: 0; width: 100%; }
-      .account-data-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
       .account-one-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .account-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 750; background: rgba(255,255,255,.07); color: #fff; }
       .account-badge.admin { color: #bbf7d0; background: rgba(34,197,94,.12); }
       .account-badge.user { color: #dbeafe; background: rgba(96,165,250,.14); }
       .account-badge.maintainer { color: #fde68a; background: rgba(245,158,11,.14); }
-      .account-kpi-row { display: flex; flex-wrap: wrap; gap: 8px; }
-      .account-kpi-row span { padding: 6px 8px; border-radius: 10px; color: #b8c0bd; background: rgba(255,255,255,.045); font-size: 12px; }
-      .account-kpi-row b { color: #fff; }
       .account-status { padding: 12px 14px; border-radius: 12px; color: #b8c0bd; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
       .account-status.success { color: #bbf7d0; background: rgba(34,197,94,.10); border-color: rgba(34,197,94,.2); }
       .account-status.error { color: #fecaca; background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.25); }
       .account-status.warning { color: #fde68a; background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.25); }
-      .account-dev-note { color: #b8c0bd; font-size: 13px; line-height: 1.45; }
-      .account-dev-note code { color: #bbf7d0; }
-      @media (max-width: 900px) { .account-view { padding: 16px; } .account-hero { flex-direction: column; align-items: flex-start; } .account-two-grid { grid-template-columns: 1fr; } }
-      @media (max-width: 560px) { .account-view { padding: 12px; } .account-data-card { align-items: flex-start; } .account-data-title-row { align-items: flex-start; flex-direction: column; gap: 7px; } .account-one-line { white-space: normal; } }
+      @media (max-width: 900px) { .account-view { padding: 16px; } .account-hero { flex-direction: column; align-items: flex-start; } .account-two-grid, .account-settings-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 560px) { .account-view { padding: 12px; } .account-data-card { align-items: flex-start; } .account-one-line { white-space: normal; } }
     `;
     document.head.appendChild(style);
   }
@@ -89,18 +86,6 @@
       .slice(0, 2)
       .map(part => part[0]?.toUpperCase() || '')
       .join('') || '?';
-  }
-
-  function roleLabel(role) {
-    const value = String(role || '').toUpperCase();
-    if (value === 'ADMIN') return 'Admin';
-    if (value === 'MAINTAINER') return 'Maintainer';
-    if (value === 'USER') return 'User';
-    return role || 'Unbekannt';
-  }
-
-  function boolLabel(value) {
-    return value ? 'Aktiv' : 'Aus';
   }
 
   function getTokenUser() {
@@ -166,37 +151,21 @@
     return lastBackendUser;
   }
 
-  async function loadAccounts() {
-    const response = await apiFetch(ACCOUNT_API_URL);
-    if (!response.ok) throw new Error(`API ${response.status}`);
+  async function loadSettings() {
+    const response = await apiFetch(SETTINGS_API_URL);
+    if (!response.ok) throw new Error(`Settings API ${response.status}`);
     const data = await response.json();
-    return Array.isArray(data) ? data : [];
+    return Object.fromEntries((Array.isArray(data) ? data : []).map(item => [item.key, item.value]));
   }
 
-  function renderAccounts(list, accounts) {
-    if (!list) return;
-    if (!accounts.length) {
-      list.innerHTML = '<div class="account-status">Es wurden keine Account-Daten gefunden.</div>';
-      return;
-    }
-
-    list.innerHTML = accounts.map(account => `
-      <article class="account-data-card">
-        <div class="account-mini-avatar">${escapeHtml(initials(account.name))}</div>
-        <div class="account-data-main">
-          <div class="account-data-title-row">
-            <strong class="account-one-line">${escapeHtml(account.name || 'Unbekannter Account')}</strong>
-            <span class="account-badge ${escapeHtml(String(account.rolle || '').toLowerCase())}">${escapeHtml(roleLabel(account.rolle))}</span>
-          </div>
-          <p class="account-muted account-one-line">${escapeHtml(account.email || 'Keine E-Mail')}</p>
-          <div class="account-kpi-row">
-            <span>Security: <b>${boolLabel(account.security)}</b></span>
-            <span>Traffic: <b>${boolLabel(account.traffic)}</b></span>
-            <span>Weekly: <b>${boolLabel(account.weekly)}</b></span>
-          </div>
-        </div>
-      </article>
-    `).join('');
+  async function saveSetting(key, value) {
+    const response = await apiFetch(`${SETTINGS_API_URL}/${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, value: String(value) })
+    });
+    if (!response.ok) throw new Error(`Settings API ${response.status}`);
+    return response.json();
   }
 
   function accountMarkup() {
@@ -246,23 +215,16 @@
             </section>
 
             <section class="account-card account-panel">
-              <div class="account-card-header"><h2>Benachrichtigungen</h2></div>
-              <label class="account-config-row"><span><strong>Security Warnungen</strong><small>Bei geblockten Domains und neuen Clients informieren</small></span><input type="checkbox" checked></label>
-              <label class="account-config-row"><span><strong>Traffic Warnungen</strong><small>Bei ungewöhnlich hohem Datenverkehr informieren</small></span><input type="checkbox" checked></label>
-              <label class="account-config-row"><span><strong>Wöchentlicher Bericht</strong><small>Kurze Zusammenfassung am Wochenende</small></span><input type="checkbox"></label>
+              <div class="account-card-header"><h2>App-Einstellungen</h2></div>
+              <div class="account-settings-grid">
+                <label class="account-field"><span>Standardseite</span><select data-setting="account.defaultPage"><option>Dashboard</option><option>Clients</option><option>Zeitlimits</option><option>Schutz</option></select></label>
+                <label class="account-field"><span>Router-Sync</span><select data-setting="account.routerSync"><option value="manual">Manuell</option><option value="startup">Beim Start</option><option value="interval">Regelmäßig</option></select></label>
+                <label class="account-field"><span>Design</span><select data-setting="account.theme"><option value="dark">Dunkel</option><option value="contrast">Kontrast</option></select></label>
+                <label class="account-field"><span>Sprache</span><select data-setting="account.language"><option value="de">Deutsch</option><option value="en">English</option></select></label>
+              </div>
+              <label class="account-config-row"><span><strong>Kompakter Modus</strong><small>Dichtere Listen für kleinere Bildschirme</small></span><input data-setting="account.compactMode" type="checkbox"></label>
+              <label class="account-config-row"><span><strong>Erweiterte Hinweise</strong><small>Kurze Hilfetexte in Formularen anzeigen</small></span><input data-setting="account.showHelp" type="checkbox" checked></label>
             </section>
-          </section>
-
-          <section class="account-card account-panel">
-            <div class="account-card-header">
-              <h2>Angelegte User</h2>
-              <span class="account-badge">Backend aktiv</span>
-            </div>
-            <div id="accountList" class="account-data-list" aria-live="polite"></div>
-            <p class="account-dev-note">
-              Für das Backend-Team: Das Frontend sendet bei aktivierter API den Header
-              <code>Authorization: Bearer &lt;JWT&gt;</code> an <code>/api/accounts/me</code> und <code>/api/accounts/list</code>.
-            </p>
           </section>
 
           <div id="accountStatus" class="account-status">Bereit.</div>
@@ -279,16 +241,19 @@
   }
 
   async function refreshAccountData() {
-    const list = document.getElementById('accountList');
     try {
       if (keycloak?.authenticated) {
         await loadCurrentBackendUser();
       }
-      const accounts = await loadAccounts();
-      renderAccounts(list, accounts);
-      setStatus(keycloak?.authenticated ? 'Login aktiv. JWT ist für Backend-Requests verfügbar.' : 'Nicht angemeldet. Angelegte User werden aus dem Backend geladen.', keycloak?.authenticated ? 'success' : 'info');
+      const settings = await loadSettings();
+      document.querySelectorAll('[data-setting]').forEach(control => {
+        const value = settings[control.dataset.setting];
+        if (control.type === 'checkbox') control.checked = value === 'true';
+        else if (value != null) control.value = value;
+      });
+      window.NetheraSelect?.refreshAll(document);
+      setStatus(keycloak?.authenticated ? 'Login aktiv. Einstellungen wurden aus der DB geladen.' : 'Gastmodus. Einstellungen wurden aus der DB geladen.', keycloak?.authenticated ? 'success' : 'info');
     } catch (error) {
-      renderAccounts(list, []);
       setStatus(`Backend nicht verfügbar: ${error.message}.`, 'warning');
     }
   }
@@ -306,6 +271,18 @@
       if (!keycloak) return;
       keycloak.logout({ redirectUri: `${window.location.origin}${window.location.pathname}?screen=account` });
     });
+
+    document.querySelectorAll('[data-setting]').forEach(control => {
+      control.addEventListener('change', async () => {
+        const value = control.type === 'checkbox' ? control.checked : control.value;
+        try {
+          await saveSetting(control.dataset.setting, value);
+          setStatus('Einstellung gespeichert.', 'success');
+        } catch (error) {
+          setStatus(`Einstellung konnte nicht gespeichert werden: ${error.message}`, 'error');
+        }
+      });
+    });
   }
 
   async function render(container) {
@@ -319,6 +296,7 @@
     }
 
     container.innerHTML = accountMarkup();
+    window.NetheraSelect?.enhanceAll(container);
     bindAccountActions();
     await refreshAccountData();
   }

@@ -6,41 +6,43 @@
   <title>Konfiguration</title>
   <link rel="icon" href="nethera_logo.png">
   <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="nethera-select.css">
 </head>
 <body>
   <main class="page">
-    <app-hero title="Konfiguration" text="Router, Schutz und Anzeige verwalten." button="Speichern"></app-hero>
+    <app-hero title="Konfiguration" text="Router, Netzwerk und Verhalten verständlich einstellen." button="Speichern"></app-hero>
+
+    <section class="settings-summary card">
+      <article><strong>Router</strong><span>Name und Betriebsmodus.</span></article>
+      <article><strong>Schutz</strong><span>Updates, DNS-Blocking und Gastnetz.</span></article>
+      <article><strong>Datenbank</strong><span>Speichern schreibt direkt ins Backend.</span></article>
+    </section>
 
     <section class="grid two-grid">
       <app-card title="Router" >
-        <text-field id="routerName" label="Routername" value="Nethera Router"></text-field>
-        <select-field id="securityMode" label="Sicherheitsmodus" options="Normal,Streng,Locker"></select-field>
-        <config-row title="Automatische Updates" text="Firmware-Updates im Hintergrund erlauben" checked></config-row>
-        <config-row title="DNS Blocking" text="Tracker und bekannte Werbedomains blockieren" checked></config-row>
+        <p class="muted">Das sind die Basiswerte, die später auch der Router-Service lesen kann.</p>
+        <label class="field"><span>Routername</span><input id="routerName" type="text" value="Nethera Router"></label>
+        <label class="field"><span>Betriebsmodus</span><select id="securityMode"><option value="GATEWAY">Gateway - normaler Router</option><option value="REPEATER">Repeater - WLAN erweitern</option><option value="BRIDGE">Bridge - nur Netzwerkbrücke</option></select></label>
+        <label class="config-row"><span><strong>Automatische Updates</strong><small>Firmware-Updates im Hintergrund erlauben</small></span><input id="updates" type="checkbox" checked></label>
+        <label class="config-row"><span><strong>DNS Blocking</strong><small>Tracker und bekannte Werbedomains blockieren</small></span><input id="dnsBlocking" type="checkbox" checked></label>
       </app-card>
 
       <app-card title="Netzwerk" >
-        <text-field label="LAN Netzwerk" value="192.168.0.0/24"></text-field>
-        <text-field label="Gateway" value="192.168.0.1"></text-field>
-        <config-row title="Gastnetzwerk" text="Separates WLAN für Gäste aktivieren"></config-row>
-        <config-row title="Profi-Metriken" text="Zusätzliche technische Werte anzeigen" checked></config-row>
+        <p class="muted">Für einen einfachen Heimrouter sind LAN-IP und Gateway meistens gleich.</p>
+        <label class="field"><span>LAN-IP</span><input id="lanIp" type="text" value="192.168.0.1"></label>
+        <label class="field"><span>Gateway</span><input id="gatewayIp" type="text" value="192.168.0.1"></label>
+        <label class="config-row"><span><strong>Gastnetzwerk</strong><small>Separates WLAN für Gäste aktivieren</small></span><input id="guestNetwork" type="checkbox"></label>
+        <label class="config-row"><span><strong>Profi-Metriken</strong><small>Zusätzliche technische Werte anzeigen</small></span><input id="profiling" type="checkbox" checked></label>
       </app-card>
     </section>
 
-    <app-card title="Gespeicherte Router-Konfigurationen">
-      <div id="configList" class="data-card-list" aria-live="polite"></div>
-    </app-card>
-
-    <app-card title="Hinweis" >
-      <p class="muted">Konfigurationsdaten werden aus dem lokalen Backend geladen.</p>
-    </app-card>
-
-    <data-status id="statusBox" text="Noch nichts gespeichert."></data-status>
+    <data-status id="statusBox" text="Konfiguration wird aus der Datenbank geladen."></data-status>
   </main>
 
   <script src="config.js"></script>
   <script src="api.js"></script>
   <script src="components.js"></script>
-  <script src="configuration.js"></script>
+  <script src="nethera-select.js"></script>
+  <script src="configuration.js?v=20260616-dropdowns"></script>
 </body>
 </html>

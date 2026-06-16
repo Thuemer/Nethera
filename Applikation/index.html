@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nethera</title>
   <link rel="icon" href="nethera_logo.png">
+  <link rel="stylesheet" href="nethera-select.css">
   <style>
     html, body { height: 100%; }
     body { margin: 0; background: #121212; font-family: "Avenir Next", "Segoe UI", sans-serif; overflow: hidden; }
@@ -57,6 +58,7 @@
         <li><a class="nav-item" data-src="devices.html"><span class="icon">▣</span><span class="label">Clients</span></a></li>
         <li><a class="nav-item" data-src="time-limits.html"><span class="icon">◷</span><span class="label">Zeitlimits</span></a></li>
         <li><a class="nav-item" data-src="security.html"><span class="icon">◇</span><span class="label">Schutz</span></a></li>
+        <li><a class="nav-item" data-src="network-status.html"><span class="icon">◉</span><span class="label">Status</span></a></li>
         <li><a class="nav-item" data-src="topologie_custom.html"><span class="icon">⌘</span><span class="label">Topologie</span></a></li>
       </ul>
 
@@ -69,15 +71,17 @@
     </nav>
 
     <main id="screen">
-      <iframe id="screen-frame" src="overview.html" title="Nethera Dashboard"></iframe>
+      <iframe id="screen-frame" src="overview.html?v=20260616-dashboard-fill" title="Nethera Dashboard"></iframe>
       <div id="account-root" aria-live="polite"></div>
     </main>
   </div>
 
   <script src="config.js"></script>
+  <script src="nethera-select.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
-  <script src="account.js"></script>
+  <script src="account.js?v=20260616-dropdowns"></script>
   <script>
+    const APP_VERSION = '20260616-dashboard-fill';
     const nav = document.getElementById('nav-bar');
     const items = document.querySelectorAll('.nav-item');
     const screen = document.getElementById('screen');
@@ -92,6 +96,16 @@
       item?.classList.add('active');
     }
 
+    function versionedSrc(src) {
+      if (!src || src === 'account.html') return src;
+      const separator = src.includes('?') ? '&' : '?';
+      return `${src}${separator}v=${APP_VERSION}`;
+    }
+
+    function baseSrc(src) {
+      return String(src || '').split('?')[0];
+    }
+
     async function openScreen(src, item, updateUrl = true) {
       if (!src) return;
       setActive(item);
@@ -99,13 +113,14 @@
       if (src === 'account.html') {
         screen.classList.add('account-active');
         await window.NetheraAccount?.render(accountRoot);
+        window.NetheraSelect?.enhanceAll(accountRoot);
         if (updateUrl) history.replaceState(null, '', 'index.html?screen=account');
         return;
       }
 
       screen.classList.remove('account-active');
       accountRoot.innerHTML = '';
-      if (frame.getAttribute('src') !== src) frame.src = src;
+      if (baseSrc(frame.getAttribute('src')) !== src) frame.src = versionedSrc(src);
       if (updateUrl) history.replaceState(null, '', 'index.html');
     }
 

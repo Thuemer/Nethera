@@ -1,8 +1,11 @@
 const appConfig = window.NETHERA_CONFIG || {};
-const CONFIG_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/configs/list`;
+const API_BASE_URL = appConfig.API_BASE_URL || 'http://localhost:8080';
+const CONFIG_API_URL = `${API_BASE_URL}/api/configs/list`;
+let activeConfigId = null;
 
 function normalizeConfig(config) {
   return {
+    id: config.id,
     routerName: config.routerName ?? config.router_name ?? 'Unbenannter Router',
     mode: config.mode ?? '—',
     updates: Boolean(config.updates),
@@ -14,38 +17,23 @@ function normalizeConfig(config) {
   };
 }
 
-function statusBadge(label, active) {
-  return `<span class="badge ${active ? 'ok' : 'danger'}">${label}: ${active ? 'An' : 'Aus'}</span>`;
+function setStatus(text, tone = 'info') {
+  document.getElementById('statusBox')?.setAttribute('text', text);
+  document.getElementById('statusBox')?.setAttribute('state', tone);
 }
 
-function renderConfigs(configs) {
-  const list = document.getElementById('configList');
-  if (!list) return;
-
-  const normalized = configs.map(normalizeConfig);
-  if (!normalized.length) {
-    list.innerHTML = '<article class="data-card config-data-card"><div class="data-main">Keine Router-Konfigurationen gefunden.</div></article>';
-    return;
-  }
-
-  list.innerHTML = normalized.map(config => `
-    <article class="data-card config-data-card">
-      <div class="data-main">
-        <div class="data-title-row">
-          <strong>${escapeHtml(config.routerName)}</strong>
-          <span class="badge profi">${escapeHtml(config.mode)}</span>
-        </div>
-        <div class="kv compact"><span>LAN-IP</span><strong>${escapeHtml(config.lanIp)}</strong></div>
-        <div class="kv compact"><span>Gateway</span><strong>${escapeHtml(config.gatewayIp)}</strong></div>
-        <div class="badge-row">
-          ${statusBadge('Updates', config.updates)}
-          ${statusBadge('DNS', config.dnsBlocking)}
-          ${statusBadge('Gast', config.guestNetwork)}
-          ${statusBadge('Metriken', config.profiling)}
-        </div>
-      </div>
-    </article>
-  `).join('');
+function fillForm(config) {
+  activeConfigId = config.id;
+  document.getElementById('routerName').value = config.routerName;
+  const modeSelect = document.getElementById('securityMode');
+  modeSelect.value = config.mode;
+  modeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+  document.getElementById('updates').checked = config.updates;
+  document.getElementById('dnsBlocking').checked = config.dnsBlocking;
+  document.getElementById('lanIp').value = config.lanIp;
+  document.getElementById('gatewayIp').value = config.gatewayIp;
+  document.getElementById('guestNetwork').checked = config.guestNetwork;
+  document.getElementById('profiling').checked = config.profiling;
 }
 
 async function loadConfigs() {
@@ -53,26 +41,40 @@ async function loadConfigs() {
     const response = await fetch(CONFIG_API_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
     if (!response.ok) throw new Error(`API ${response.status}`);
     const data = await response.json();
-    renderConfigs(Array.isArray(data) ? data : []);
+    const configs = Array.isArray(data) ? data.map(normalizeConfig) : [];
+    if (configs[0]) fillForm(configs[0]);
+    setStatus(configs.length ? 'Konfiguration aus der Datenbank geladen.' : 'Keine Konfiguration gefunden.', configs.length ? 'success' : 'warning');
   } catch (error) {
-    renderConfigs([]);
+    setStatus(`Backend nicht verfügbar: ${error.message}`, 'error');
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const saved = JSON.parse(localStorage.getItem('nethera-config') || '{}');
-  if (saved.routerName) document.getElementById('routerName').value = saved.routerName;
-  if (saved.securityMode) document.getElementById('securityMode').value = saved.securityMode;
+async function saveConfig() {
+  if (!activeConfigId) return setStatus('Keine Konfiguration zum Speichern geladen.', 'error');
+  const payload = {
+    routerName: document.getElementById('routerName').value.trim() || 'Nethera Router',
+    mode: document.getElementById('securityMode').value,
+    updates: document.getElementById('updates').checked,
+    dnsBlocking: document.getElementById('dnsBlocking').checked,
+    lanIp: document.getElementById('lanIp').value.trim(),
+    gatewayIp: document.getElementById('gatewayIp').value.trim(),
+    guestNetwork: document.getElementById('guestNetwork').checked,
+    profiling: document.getElementById('profiling').checked
+  };
 
+  const response = await fetch(`${API_BASE_URL}/api/configs/${activeConfigId}`, {
+    method: 'PUT',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error(`API ${response.status}`);
+  setStatus('Konfiguration in der Datenbank gespeichert.', 'success');
+  await loadConfigs();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('app-hero').addEventListener('hero-click', () => {
-    const data = {
-      routerName: document.getElementById('routerName').value,
-      securityMode: document.getElementById('securityMode').value,
-      savedAt: new Date().toISOString()
-    };
-    localStorage.setItem('nethera-config', JSON.stringify(data));
-    document.getElementById('statusBox').setAttribute('text', 'Konfiguration lokal gespeichert.');
-    document.getElementById('statusBox').setAttribute('state', 'success');
+    saveConfig().catch(error => setStatus(`Speichern fehlgeschlagen: ${error.message}`, 'error'));
   });
 
   loadConfigs();

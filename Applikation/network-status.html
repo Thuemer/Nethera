@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status</title>
+  <link rel="icon" href="nethera_logo.png">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="network-status.css">
+</head>
+<body>
+  <main class="page network-status-page">
+    <app-hero title="Status" text="Routerzustand und Verbindung prüfen." button="Status prüfen"></app-hero>
+
+    <section class="grid stats-grid">
+      <stat-card id="routerState" label="Router" value="Prüfe ..." detail="Backend-Abfrage"></stat-card>
+      <stat-card id="connectionState" label="Verbindung" value="Online" detail="Browserstatus"></stat-card>
+      <stat-card id="deviceCount" label="WLAN-Geräte" value="0" detail="vom Router geladen"></stat-card>
+    </section>
+
+    <app-card title="Netzwerkprüfung">
+      <div id="statusDetails" class="status-stack"></div>
+    </app-card>
+
+    <data-status id="statusBox" text="Statusseite bereit."></data-status>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="components.js"></script>
+  <script src="network-status.js"></script>
+</body>
+</html>
