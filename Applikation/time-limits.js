@@ -40,8 +40,10 @@ function normalizeLimit(limit) {
 }
 
 async function loadBackendLimits() {
+  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+  const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(TIME_LIMITS_API_URL, {
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', ...authHeader },
     cache: 'no-store'
   });
 
@@ -65,11 +67,14 @@ async function loadBackendLimits() {
 }
 
 async function saveBackendLimit(deviceId, limit) {
+  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+  const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(`${TIME_LIMITS_API_URL}/${deviceId}`, {
     method: 'PUT',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...authHeader
     },
     body: JSON.stringify({
       deviceId: Number(deviceId),
@@ -90,14 +95,18 @@ async function saveBackendLimit(deviceId, limit) {
 }
 
 async function deleteBackendLimit(deviceId) {
-  const response = await fetch(`${TIME_LIMITS_API_URL}/${deviceId}`, { method: 'DELETE' });
+  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+  const authHeader = (await account?.getAuthHeader?.()) ?? {};
+  const response = await fetch(`${TIME_LIMITS_API_URL}/${deviceId}`, { method: 'DELETE', headers: { ...authHeader } });
   if (!response.ok && response.status !== 404) {
     throw new Error(`Loeschen fehlgeschlagen (${response.status})`);
   }
 }
 
 async function loadSecurityState() {
-  const response = await fetch(SECURITY_STATE_API_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+  const authHeader = (await account?.getAuthHeader?.()) ?? {};
+  const response = await fetch(SECURITY_STATE_API_URL, { headers: { Accept: 'application/json', ...authHeader }, cache: 'no-store' });
   if (!response.ok) throw new Error(`Security-API ${response.status}`);
   const data = await response.json();
   state.presets = data.presets || [];

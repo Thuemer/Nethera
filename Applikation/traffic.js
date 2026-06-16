@@ -13,8 +13,10 @@ function escapeHtml(value) {
 }
 
 async function fetchJson(url) {
+    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+    const authHeader = (await account?.getAuthHeader?.()) ?? {};
     const response = await fetch(url, {
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', ...authHeader },
         cache: 'no-store'
     });
 

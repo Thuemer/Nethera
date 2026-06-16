@@ -236,9 +236,11 @@ class NetworkTopology extends HTMLElement {
     }
 
     async fetchRouters(){
+        const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+        const authHeader = (await account?.getAuthHeader?.()) ?? {};
         const response = await fetch(ROUTERS_API_URL, {
             method: 'GET',
-            headers: { Accept: 'application/json' }
+            headers: { Accept: 'application/json', ...authHeader }
         });
         if(!response.ok){
             throw new Error(`API request failed with status ${response.status}`);

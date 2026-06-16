@@ -38,11 +38,14 @@ function setStatus(text, tone = 'info') {
 }
 
 async function apiJson(url, options = {}) {
+  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+  const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(url, {
     ...options,
     headers: {
       Accept: 'application/json',
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...authHeader,
       ...(options.headers || {})
     },
     cache: 'no-store'

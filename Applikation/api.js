@@ -6,9 +6,15 @@ const NetheraApi = (() => {
     return `${config.API_BASE_URL}${config.ROUTERS_PATH}`;
   }
 
+  async function getAuthHeader() {
+    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+    return (await account?.getAuthHeader?.()) ?? {};
+  }
+
   async function getRouters() {
+    const authHeader = await getAuthHeader();
     const response = await fetch(routerUrl(), {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...authHeader },
       cache: 'no-store'
     });
 
@@ -32,5 +38,5 @@ const NetheraApi = (() => {
     return routers[0];
   }
 
-  return { getRouters, getPrimaryRouter, routerUrl };
+  return { getRouters, getPrimaryRouter, getAuthHeader, routerUrl };
 })();

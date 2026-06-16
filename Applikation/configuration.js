@@ -38,7 +38,9 @@ function fillForm(config) {
 
 async function loadConfigs() {
   try {
-    const response = await fetch(CONFIG_API_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+    const authHeader = (await account?.getAuthHeader?.()) ?? {};
+    const response = await fetch(CONFIG_API_URL, { headers: { Accept: 'application/json', ...authHeader }, cache: 'no-store' });
     if (!response.ok) throw new Error(`API ${response.status}`);
     const data = await response.json();
     const configs = Array.isArray(data) ? data.map(normalizeConfig) : [];
@@ -62,9 +64,11 @@ async function saveConfig() {
     profiling: document.getElementById('profiling').checked
   };
 
+  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+  const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(`${API_BASE_URL}/api/configs/${activeConfigId}`, {
     method: 'PUT',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...authHeader },
     body: JSON.stringify(payload)
   });
   if (!response.ok) throw new Error(`API ${response.status}`);

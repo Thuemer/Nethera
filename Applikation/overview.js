@@ -45,25 +45,18 @@ function formatSpeed(value) {
 
 async function getPrimaryRouter() {
     if (!primaryRouterPromise) {
-        primaryRouterPromise = fetch(ROUTER_API_URL, {
-            headers: {
-                Accept: 'application/json'
-            }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`API Fehler: ${response.status}`);
-                }
-
-                return response.json();
-            })
-            .then(routers => {
-                if (!Array.isArray(routers) || routers.length === 0) {
-                    throw new Error('Keine Routerdaten gefunden');
-                }
-
-                return routers[0];
+        primaryRouterPromise = (async () => {
+            const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+            const authHeader = (await account?.getAuthHeader?.()) ?? {};
+            const response = await fetch(ROUTER_API_URL, {
+                headers: { Accept: 'application/json', ...authHeader },
+                cache: 'no-store'
             });
+            if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
+            const routers = await response.json();
+            if (!Array.isArray(routers) || routers.length === 0) throw new Error('Keine Routerdaten gefunden');
+            return routers[0];
+        })();
     }
 
     return primaryRouterPromise;

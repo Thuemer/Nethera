@@ -106,11 +106,7 @@ INSERT INTO dns_stat (timestamp, total_queries, blocked_queries, trackers_detect
     ('2026-04-26 10:04:00', 1940, 220, 72, 1),
     ('2026-04-26 10:05:00', 2010, 240, 77, 1);
 
--- Account
-INSERT INTO Account (name, email, password_hash, rolle, security, traffic, weekly) VALUES
-                                                                                       ('Admin Alpha', 'admin@network.local', '$2a$10$abc...', 'ADMIN', true, true, true),
-                                                                                       ('User Beta', 'beta@home.de', '$2a$10$def...', 'USER', false, true, false),
-                                                                                       ('Support Gamma', 'support@isp.com', '$2a$10$ghi...', 'MAINTAINER', true, false, true);
+-- Account rows are created on first login via Keycloak OIDC; no seed data needed.
 -- Config
 INSERT INTO Config (router_name, mode, updates, dns_blocking, lan_ip, gateway_ip, guest_network, profiling) VALUES
                                                                                                                 ('Edge-Router-01', 'GATEWAY', true, true, '192.168.1.1', '10.0.0.1', true, true),

@@ -107,7 +107,7 @@
 
       keycloak = new Keycloak(KEYCLOAK_CONFIG);
       await keycloak.init({
-        onLoad: 'check-sso',
+        onLoad: 'login-required',
         pkceMethod: 'S256',
         checkLoginIframe: false
       });
@@ -118,6 +118,7 @@
   }
 
   async function getAuthHeader() {
+    await initKeycloak();
     if (!keycloak?.authenticated) return {};
     await keycloak.updateToken(30);
     return { Authorization: `Bearer ${keycloak.token}` };

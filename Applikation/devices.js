@@ -136,8 +136,10 @@ async function loadDevices() {
     setMessage('Lade Clients ...');
 
     try {
+        const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+        const authHeader = (await account?.getAuthHeader?.()) ?? {};
         const response = await fetch(ROUTER_API_URL, {
-            headers: { Accept: 'application/json' }
+            headers: { Accept: 'application/json', ...authHeader }
         });
 
         if (!response.ok) {
