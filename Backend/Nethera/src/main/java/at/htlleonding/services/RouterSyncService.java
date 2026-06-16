@@ -37,21 +37,20 @@ public class RouterSyncService {
             String arpOutput;
             String dhcpOutput;
 
-            // 1. ARP Tabelle auslesen (Wer ist JETZT GERADE online?)
             try (Session session = ssh.startSession()) {
-                Session.Command cmd = session.exec("cat /proc/net/arp");
-                cmd.join(5, TimeUnit.SECONDS);
+
+                String cmdString = "for ip in $(awk '{print $3}' /tmp/dhcp.leases); do ping -c 1 -W 1 $ip > /dev/null 2>&1 & done; sleep 2; cat /proc/net/arp";
+
+                Session.Command cmd = session.exec(cmdString);
+                cmd.join(7, TimeUnit.SECONDS);
                 arpOutput = new String(cmd.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             }
 
-            // 2. DHCP Leases auslesen (Wie heißen die Geräte?)
             try (Session session = ssh.startSession()) {
                 Session.Command cmd = session.exec("cat /tmp/dhcp.leases");
                 cmd.join(5, TimeUnit.SECONDS);
                 dhcpOutput = new String(cmd.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             }
-
-            // 3. Daten verheiraten
             Set<String> activeMacs = parseActiveMacs(arpOutput);
             parseAndSaveLeases(router, dhcpOutput, activeMacs);
 
@@ -65,17 +64,13 @@ public class RouterSyncService {
         try (BufferedReader reader = new BufferedReader(new StringReader(arpOutput))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                // Header-Zeile ignorieren
                 if (line.startsWith("IP address") || line.isBlank()) continue;
 
-                // Aufbau: [IP address] [HW type] [Flags] [HW address] [Mask] [Device]
                 String[] parts = line.split("\\s+");
                 if (parts.length >= 4) {
                     String flags = parts[2];
                     String mac = parts[3].toLowerCase();
 
-                    // Flag "0x0" bedeutet: Gerät ist unerreichbar/offline.
-                    // "0x2" bedeutet: Es ist aktiv verbunden.
                     if (!flags.equals("0x0") && !mac.equals("00:00:00:00:00:00")) {
                         activeMacs.add(mac);
                     }

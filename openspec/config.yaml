@@ -1,20 +1,110 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  ## Project: Nethera
+  Cloud management platform that makes OpenWRT home-router configuration
+  accessible to non-technical users. Users control adblock, DNS content
+  filtering, device groups, time limits, and QoS from a web UI — without
+  touching the router CLI.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  ### Target users
+  - Non-technical home users who want adblock/parental controls without CLI
+  - Parents: per-device/group content filtering (categories: Gaming, Social,
+    adult content, etc.)
+  - Busy users who want quick network changes from a browser
+
+  ### In-scope features
+  - SSH-based router sync (DHCP leases, ARP table → connected devices)
+  - Device management and grouping (DeviceGroup, DeviceGroupMember)
+  - One-click adblock and DNS-based content filters (BlockList, SecurityPreset)
+  - Device time limits (DeviceTimeLimit, Schedule)
+  - QoS / bandwidth prioritization (QoSPolicy)
+  - Traffic, DNS stats, speed stats dashboards
+  - Keycloak OIDC authentication (Account tied to keycloakSub)
+  - Network topology view, firewall rules (FirewallRule)
+
+  ### Non-goals
+  - No enterprise network tooling
+  - No custom router hardware
+  - No low-level param config (IP routing tables, CIDR, etc.)
+  - No deep-packet inspection / per-packet content monitoring
+
+  ---
+
+  ## Tech stack
+
+  ### Backend — Quarkus 3.31.1 / Java 21 / Maven
+  - Package root: `at.htlleonding`
+  - REST: `quarkus-rest` + `quarkus-rest-jackson` (JAX-RS, JSON via Jackson)
+  - ORM: `quarkus-hibernate-orm` (JPA entities, `@NamedQuery` on entity classes)
+  - DB: PostgreSQL 15 (`quarkus-jdbc-postgresql`)
+  - Auth: `quarkus-oidc` → Keycloak 26.6.1; resources annotated `@Authenticated`
+  - SSH: `sshj` 0.38.0 + BouncyCastle (on-demand SSH sessions to router)
+  - DI: Quarkus Arc (`@ApplicationScoped`, `@Inject`)
+  - Tests: `quarkus-junit5` + `rest-assured`
+
+  ### Backend layer conventions
+  - `boundary/`   — JAX-RS `*Resource` classes, `@Path("api/...")`, return DTOs
+  - `model/`      — JPA `@Entity` classes, manual getters/setters (no Lombok),
+                    `@NamedQuery` constants as `static final String`
+  - `repository/` — `@ApplicationScoped` repositories injected by resources
+  - `services/`   — Business logic (e.g. `RouterSyncService` for SSH+DHCP sync)
+  - `dto/`        — Immutable data carriers for API responses (Java records or
+                    plain classes)
+  - `filter/`     — JAX-RS filters (e.g. `CORSFilter`)
+
+  ### Frontend — Vanilla HTML / CSS / JS (Applikation/)
+  **HARD RULE: No React, ever.** `package.json` lists React 18 + Redux as
+  dependencies — these are unused leftovers and must not be used. All frontend
+  work must follow the existing vanilla HTML/CSS/JS patterns. Do not introduce
+  React, JSX, a component framework, or any JS bundler-required syntax. The
+  real app is a dark-mode SPA using iframe-based navigation (index.html loads
+  sub-pages in an <iframe>).
+
+  - Entry point: `Applikation/index.html` (nav bar + iframe screen)
+  - Pages: overview, devices, time-limits, security, network-status,
+    topologie_custom, traffic, configuration, account
+  - Each page is a standalone `.html` + `.js` (+ optional `.css`) file
+  - Shared modules use IIFE pattern: `const NetheraApi = (() => { ... })();`
+  - `config.js` exports `window.NETHERA_CONFIG` (API_BASE_URL, KEYCLOAK_URL, etc.)
+  - `api.js` — `NetheraApi` helper (getRouters, getPrimaryRouter)
+  - `account.js` — `NetheraAccount` module, Keycloak JS adapter (CDN, v24.0.5)
+  - `components.js` / `nethera-select.js` — shared UI components
+  - Design: dark (#121212 bg), teal accent (#2FB09A), Avenir Next / Segoe UI,
+    German UI strings
+
+  ### Infrastructure (docker-compose.yml)
+  - `postgres:15` on :5432 — app DB (`nethera/nethera/nethera`)
+  - `keycloak-postgres:15` on :5433 — Keycloak DB
+  - `keycloak:26.6.1` on :8081 — realm imported from `Applikation/realm-export.json`
+  - `backend` (Quarkus) on :8083
+  - Custom Keycloak login theme in `themes/nethera/`
+  - Router setup shell scripts in `ShellFiles/`
+
+  ### Other directories
+  - `Website/`        — Static marketing/landing page (plain HTML/CSS/JS)
+  - `keycloak/`       — Realm export JSON
+  - `Documentation/`  — Sprint docs, meta-spec, OpenVPN/SSH setup guides
+  - `openspec/`       — OpenSpec change management (this file)
+  - `plantUML/`       — ERD and architecture diagrams
+
+  ---
+
+  ## Code conventions
+  - Java entities: standard JPA, no Lombok, manual getters/setters
+  - REST resources: class-level `@Authenticated`, method-level `@GET/@POST/@PUT/@DELETE`
+  - Config values via `@ConfigProperty(name = "nethera.*")`
+  - SSH always on-demand (open → run → close), not persistent tunnel
+  - Frontend: no build step for development (open index.html directly);
+    `vite build` produces `dist/` for static hosting
+  - Commit style: conventional commits (feat/fix/chore/…)
+
+  ---
+
+  ## Notes on scope / multi-repo structure
+  - **Mobile app** lives in a separate repository outside this codebase. It is
+    a delivered component of the Nethera product, not a missing feature. This
+    repo covers only the web app + backend. Do not treat mobile as unimplemented
+    when proposing changes.
+  - **QR-code guest WLAN** (meta-spec KANN) — planned feature, not yet
+    implemented. Treat as upcoming work, not an abandoned idea.
