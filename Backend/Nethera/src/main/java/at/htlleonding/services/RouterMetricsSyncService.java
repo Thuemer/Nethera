@@ -43,6 +43,7 @@ public class RouterMetricsSyncService {
     public void syncSpeed(Router router) {
         try (SSHClient ssh = new SSHClient()) {
             ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);
 
@@ -96,6 +97,7 @@ public class RouterMetricsSyncService {
     public void syncDnsStats(Router router) {
         try (SSHClient ssh = new SSHClient()) {
             ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);
 
@@ -168,8 +170,10 @@ public class RouterMetricsSyncService {
 
     @Transactional
     public void syncRouterMetadata(Router router) {
+        Router managed = entityManager.merge(router);
         try (SSHClient ssh = new SSHClient()) {
             ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);
 
@@ -185,14 +189,14 @@ public class RouterMetricsSyncService {
             String model = root.path("model").asText(null);
             String firmware = root.path("release").path("description").asText(null);
 
-            if (model != null) router.setModel(model);
-            if (firmware != null) router.setFirmware(firmware);
-            router.setOnline(true);
-            router.setLastSeen(LocalDateTime.now());
+            if (model != null) managed.setModel(model);
+            if (firmware != null) managed.setFirmware(firmware);
+            managed.setOnline(true);
+            managed.setLastSeen(LocalDateTime.now());
 
         } catch (Exception e) {
             LOG.warn("Router metadata sync failed: " + e.getMessage());
-            router.setOnline(false);
+            managed.setOnline(false);
         }
     }
 }

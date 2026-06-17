@@ -23,9 +23,8 @@ public class RouterSyncScheduler {
     EntityManager entityManager;
 
     @Scheduled(every = "${nethera.sync.interval}")
-    @Transactional
     public void syncAll() {
-        Router router = entityManager.find(Router.class, 1L);
+        Router router = findRouter();
         if (router == null) {
             LOG.warn("Scheduler: Router with ID 1 not found, skipping sync cycle");
             return;
@@ -54,5 +53,10 @@ public class RouterSyncScheduler {
         } catch (Exception e) {
             LOG.warn("Scheduler: syncDhcpLeases failed: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public Router findRouter() {
+        return entityManager.find(Router.class, 1L);
     }
 }

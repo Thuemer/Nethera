@@ -8,10 +8,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import jakarta.transaction.Transactional;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -23,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
 public class RouterSyncService {
+
+    private static final Logger LOG = Logger.getLogger(RouterSyncService.class);
 
     @Inject
     ConnectedDevicesRepository deviceRepository;
@@ -36,9 +40,11 @@ public class RouterSyncService {
     @ConfigProperty(name = "nethera.router.ssh-key-path")
     String sshKeyPath;
 
+    @Transactional
     public void syncDhcpLeases(Router router) {
         try (SSHClient ssh = new SSHClient()) {
             ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);
 
@@ -72,7 +78,7 @@ public class RouterSyncService {
             parseAndSaveLeases(router, dhcpOutput, activeMacs, wifiMacs);
 
         } catch (Exception e) {
-            throw new RuntimeException("SSH-Sync mit Router fehlgeschlagen", e);
+            LOG.warn("DHCP sync failed: " + e.getMessage());
         }
     }
 
