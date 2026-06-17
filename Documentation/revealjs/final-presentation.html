@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Team Wels – Abschlusspräsentation 2025/26</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── global size reduction ── */
+    .reveal .slides section { font-size: 0.9em; }
+    .reveal h1 { margin-bottom: .15em !important; }
+    .reveal h2 { margin-bottom: .2em !important; margin-top: 0 !important; }
+
+    /* ── shared image style ── */
+    .reveal .slides section img {
+      max-height: 48vh; object-fit: contain;
+      border: none; box-shadow: 0 2px 12px rgba(0,0,0,.15); border-radius: 8px;
+    }
+
+    /* ── tag chips ── */
+    .tag {
+      display: inline-block; background: #e8f4fd; color: #1f4e79;
+      border-radius: 4px; padding: .1em .5em; font-size: .68em; margin: .15em;
+    }
+
+    /* ── team grid ── */
+    .team-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: .7em; margin-top: .5em;
+    }
+    .team-card {
+      border: 1.5px solid #d0e4f7; border-radius: 10px; padding: .6em .3em;
+      text-align: center; background: #f5f9ff;
+    }
+    .team-card .avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #1f4e79; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1em; font-weight: bold; margin: 0 auto .3em;
+    }
+    .team-card .name    { font-weight: 600; font-size: .78em; }
+    .team-card .commits { font-size: .68em; color: #555; margin-top: .15em; }
+    .team-card .bar-wrap { height: 5px; background: #d0e4f7; border-radius: 3px; margin: .35em .4em 0; }
+    .team-card .bar     { height: 5px; background: #1f4e79; border-radius: 3px; }
+
+    /* ── process flow ── */
+    .flow {
+      display: flex; align-items: center; justify-content: center;
+      gap: .35em; flex-wrap: wrap; margin-top: .5em;
+    }
+    .flow-step {
+      background: #1f4e79; color: #fff; border-radius: 8px;
+      padding: .35em .7em; font-size: .73em; font-weight: 600; text-align: center;
+    }
+    .flow-arrow { color: #1f4e79; font-size: 1.2em; font-weight: bold; }
+
+    /* ── tech grid ── */
+    .tech-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: .6em; margin-top: .4em;
+    }
+    .tech-card {
+      border: 1.5px solid #d0e4f7; border-radius: 8px; padding: .45em .55em;
+      background: #f5f9ff; text-align: left;
+    }
+    .tech-card .tech-title { font-weight: 700; font-size: .75em; color: #1f4e79; margin-bottom: .2em; }
+    .tech-card ul { margin: 0; padding-left: 1em; font-size: .67em; line-height: 1.45; }
+
+    /* ── timeline ── */
+    .timeline { margin-top: .3em; }
+    .tl-row { display: flex; align-items: flex-start; margin-bottom: .3em; }
+    .tl-month {
+      min-width: 4.5em; font-size: .67em; font-weight: 700;
+      color: #1f4e79; padding-top: .15em; text-align: right; padding-right: .5em;
+    }
+    .tl-bar-wrap { flex: 1; }
+    .tl-bar {
+      height: 17px; background: #1f4e79; border-radius: 4px;
+      display: flex; align-items: center; padding-left: .35em;
+      color: #fff; font-size: .58em; font-weight: 600; white-space: nowrap; overflow: hidden;
+    }
+    .tl-label { font-size: .63em; color: #555; margin-top: .08em; }
+
+    /* ── challenge cards ── */
+    .challenge-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .6em; margin-top: .4em;
+    }
+    .challenge-card {
+      border-left: 4px solid #1f4e79; background: #f5f9ff;
+      border-radius: 0 8px 8px 0; padding: .45em .65em;
+    }
+    .challenge-card .ch-title   { font-weight: 700; font-size: .74em; color: #1f4e79; }
+    .challenge-card .ch-problem { font-size: .63em; color: #c62828; margin-top: .15em; }
+    .challenge-card .ch-solution{ font-size: .63em; color: #2e7d32; margin-top: .15em; }
+
+    /* ── stats grid ── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: .45em; margin-top: .4em;
+    }
+    .stat-card {
+      background: #1f4e79; color: #fff; border-radius: 10px;
+      padding: .5em .3em; text-align: center;
+    }
+    .stat-card .stat-num   { font-size: 1.25em; font-weight: 800; line-height: 1; }
+    .stat-card .stat-label { font-size: .55em; margin-top: .15em; opacity: .85; }
+    .stat-card.light { background: #e8f4fd; color: #1f4e79; }
+
+    /* ── learning list ── */
+    .learn-list { margin-top: .35em; list-style: none; padding: 0; }
+    .learn-list li {
+      display: flex; align-items: flex-start; gap: .45em;
+      margin-bottom: .3em; font-size: .76em;
+    }
+    .learn-list li .bullet {
+      min-width: 1.3em; height: 1.3em; border-radius: 50%;
+      background: #1f4e79; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .72em; font-weight: 700; margin-top: .05em; flex-shrink: 0;
+    }
+
+    /* ── sprint highlight cards ── */
+    .sprint-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5em; margin-top: .4em;
+    }
+    .sprint-card {
+      border: 1.5px solid #d0e4f7; border-radius: 8px; padding: .45em .55em;
+      background: #f5f9ff;
+    }
+    .sprint-card .sp-title { font-weight: 700; font-size: .74em; color: #1f4e79; margin-bottom: .25em; }
+    .sprint-card ul { margin: 0; padding-left: 1em; font-size: .63em; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ════════════════════════════════════════════
+         1. TITELFOLIE
+         ════════════════════════════════════════════ -->
+    <section>
+      <h1 style="font-size:2em; margin-bottom:.2em;">Team Wels</h1>
+      <h2 style="font-size:1.3em; color:#1f4e79; margin-bottom:.6em;">Bürgerbeteiligungsportal Wels</h2>
+      <p style="color:#555; font-size:.85em;">
+        Abschlusspräsentation · 4CHITM · HTL Leonding · Schuljahr 2025/26
+      </p>
+      <hr style="width:40%; border-color:#d0e4f7; margin:1em auto;" />
+      <p style="color:#888; font-size:.7em;">
+        Oktober 2025 – Juni 2026 &nbsp;·&nbsp; 728 Commits &nbsp;·&nbsp; 4 Teammitglieder
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         2. DAS TEAM
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Das Team</h2>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="avatar">JP</div>
+          <div class="name">Jakob Peneder</div>
+          <div class="commits">~221 Commits</div>
+          <div class="bar-wrap"><div class="bar" style="width:100%;"></div></div>
+        </div>
+        <div class="team-card">
+          <div class="avatar">SD</div>
+          <div class="name">Simon Dokter</div>
+          <div class="commits">~189 Commits</div>
+          <div class="bar-wrap"><div class="bar" style="width:86%;"></div></div>
+        </div>
+        <div class="team-card">
+          <div class="avatar">BL</div>
+          <div class="name">Benedikt Lehner</div>
+          <div class="commits">~200 Commits</div>
+          <div class="bar-wrap"><div class="bar" style="width:91%;"></div></div>
+        </div>
+        <div class="team-card">
+          <div class="avatar">FN</div>
+          <div class="name">Fabio Neundlinger</div>
+          <div class="commits">~106 Commits</div>
+          <div class="bar-wrap"><div class="bar" style="width:48%;"></div></div>
+        </div>
+      </div>
+      <p style="font-size:.6em; color:#888; margin-top:.6em;">
+        Commit-Verteilung basierend auf <code>git shortlog -sn</code> · Stand: Juni 2026
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         3. WAS IST DAS PROJEKT?
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Was ist das Projekt?</h2>
+      <p style="font-size:.8em; color:#333; margin-bottom:.6em;">
+        Eine digitale Plattform, über die Bürger der Stadt Wels Anliegen melden können –
+        und Mitarbeiter diese bearbeiten und veröffentlichen.
+      </p>
+      <div class="flow">
+        <div class="flow-step">🏙️ Bürger meldet<br/>Anliegen</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">📬 OTP-Auth<br/>(E-Mail / SMS)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">🗂️ Mitarbeiter<br/>bearbeitet</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">🔔 Bürger erhält<br/>Status-Updates</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">📰 Öffentlicher<br/>Feed</div>
+      </div>
+      <div style="margin-top:.8em; display:flex; gap:.4em; justify-content:center; flex-wrap:wrap;">
+        <span class="tag">Web-App (Browser)</span>
+        <span class="tag">iOS-App (Swift)</span>
+        <span class="tag">REST-API</span>
+        <span class="tag">Echtzeit-Benachrichtigungen</span>
+        <span class="tag">Keycloak Auth</span>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         4. TECH-STACK
+         ════════════════════════════════════════════ -->
+         
+         <!--
+    <section>
+      <h2>Tech-Stack</h2>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-title">⚙️ Backend</div>
+          <ul>
+            <li>Quarkus 3 (Jakarta EE)</li>
+            <li>Hibernate Panache ORM</li>
+            <li>PostgreSQL 15</li>
+            <li>REST-Ressourcen (JAX-RS)</li>
+            <li>Jakarta Mail + Twilio SMS</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-title">🖥️ Frontend</div>
+          <ul>
+            <li>Vanilla TypeScript</li>
+            <li>Kein Framework (kein React)</li>
+            <li>Shadow DOM Komponenten</li>
+            <li>Eigenes Routing</li>
+            <li>Responsive (Mobile-first)</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-title">📱 Mobile</div>
+          <ul>
+            <li>iOS (Swift / SwiftUI)</li>
+            <li>Native Push-Notifications</li>
+            <li>OTP-Login</li>
+            <li>Feedback-Feed</li>
+            <li>Standort-Auswahl</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-title">🔐 Auth</div>
+          <ul>
+            <li>Keycloak (OIDC / PKCE)</li>
+            <li>→ Mitarbeiter-Login</li>
+            <li>Custom JWT (6-stelliger OTP)</li>
+            <li>→ Bürger-Login (E-Mail/SMS)</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-title">🚀 Deployment</div>
+          <ul>
+            <li>Docker Compose</li>
+            <li>Nginx Reverse Proxy</li>
+            <li>GitHub Actions CI/CD</li>
+            <li>Debian VM (SSH Deploy)</li>
+          </ul>
+        </div>
+        <div class="tech-card">
+          <div class="tech-title">🛠️ Tools</div>
+          <ul>
+            <li>Git · GitHub</li>
+            <li>Clockify (Zeiterfassung)</li>
+            <li>OpenSpec (Spec-driven Dev)</li>
+            <li>IntelliJ IDEA</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  -->
+    <!-- ════════════════════════════════════════════
+         5. PROJEKTANTRAG
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Projektantrag &amp; Prozessablauf</h2>
+      <div style="display:flex; gap:1em; align-items:flex-start; justify-content:center;">
+        <div style="text-align:center;">
+          <img src="Img/ProjektAntrag.png" alt="Projektantrag" style="max-height:40vh;" />
+          <p style="font-size:.62em; color:#888; margin-top:.25em;">Genehmigter Projektantrag (Okt 2025)</p>
+        </div>
+        <div style="text-align:center;">
+          <img src="Img/Prozessablauf.png" alt="Prozessablauf" style="max-height:40vh;" />
+          <p style="font-size:.62em; color:#888; margin-top:.25em;">Definierter Prozessablauf</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         6. SPRINT-ZEITLINIE
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Projektverlauf</h2>
+      <p style="font-size:.67em; color:#555; margin-bottom:.3em;">Oktober 2025 – Juni 2026 · Commits pro Monat</p>
+      <div class="timeline">
+        <div class="tl-row">
+          <div class="tl-month">Okt '25</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:14%; background:#4a7db5;">33</div>
+            <div class="tl-label">Sprint 1 · Kickoff, Grundstruktur, DB-Schema</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Nov '25</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:39%; background:#2e6da4;">94</div>
+            <div class="tl-label">Sprint 2–3 · Auth, Feedback-CRUD, Frontend-Basis</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Dez '25</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:8%; background:#4a7db5;">20</div>
+            <div class="tl-label">Sprint 4 · Weihnachtsferien, Reviews, Bugfixes</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Jan '26</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:59%; background:#1f4e79;">144</div>
+            <div class="tl-label">Sprint 5 · iOS-App, Keycloak-Login, Notifications</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Feb '26</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:25%; background:#2e6da4;">61</div>
+            <div class="tl-label">Sprint 6–7 · Export, Filter, Feed-Voting, iOS UX</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Mär '26</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:33%; background:#2e6da4;">81</div>
+            <div class="tl-label">Sprint 8 · Redesigns, Activity Log, Öffentliche ID</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Apr '26</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:19%; background:#4a7db5;">47</div>
+            <div class="tl-label">Sprint 9 · Neuigkeiten-Seite, Dashboard Redesign</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Mai '26</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:100%; background:#c62828;">244 🔥</div>
+            <div class="tl-label">Sprint 10 · Final Sprint – Deployment, Mobile Nav, QA</div>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-month">Jun '26</div>
+          <div class="tl-bar-wrap">
+            <div class="tl-bar" style="width:2%; background:#4a7db5; min-width:2em;">4</div>
+            <div class="tl-label">Abschlusspräsentation</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         7. SPRINT-HIGHLIGHTS PHASE 1
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Phase 1: Grundinfrastruktur <small style="font-size:.55em; color:#888;">(Sprint 1–3 · Okt–Nov 2025)</small></h2>
+      <div class="sprint-grid">
+        <div class="sprint-card">
+          <div class="sp-title">🗄️ Datenbankschema</div>
+          <ul>
+            <li>PostgreSQL mit Docker</li>
+            <li>FeedbackEntity, AppUserEntity</li>
+            <li>Hibernate Panache ORM</li>
+            <li>import.sql Testdaten</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <div class="sp-title">🔐 Bürger-Authentifizierung</div>
+          <ul>
+            <li>6-stelliger OTP per E-Mail &amp; SMS</li>
+            <li>Custom JWT-Token</li>
+            <li>Twilio SMS-Integration</li>
+            <li>Jakarta Mail (E-Mail)</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <div class="sp-title">🖥️ Frontend-Basis</div>
+          <ul>
+            <li>Vanilla TypeScript Setup</li>
+            <li>Feedback-Einreichungsformular</li>
+            <li>Foto-Upload (≤5 Bilder)</li>
+            <li>Eigenes Client-Routing</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:.6em; text-align:center;">
+        <img src="Img/Sprint1/frontend.png" alt="Sprint 1 Frontend" style="max-height:22vh; margin-right:.5em;" />
+        <img src="Img/Sprint3/backend.png" alt="Sprint 3 Backend" style="max-height:22vh;" />
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         8. SPRINT-HIGHLIGHTS PHASE 2
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Phase 2: Kernfunktionen <small style="font-size:.55em; color:#888;">(Sprint 4–7 · Jan–Feb 2026)</small></h2>
+      <div class="sprint-grid">
+        <div class="sprint-card">
+          <div class="sp-title">📱 iOS-App</div>
+          <ul>
+            <li>SwiftUI-basiert</li>
+            <li>OTP-Login native</li>
+            <li>Push-Notifications</li>
+            <li>Feedback-Feed mit Voting</li>
+            <li>Standort-Auswahl</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <div class="sp-title">🔑 Keycloak PKCE</div>
+          <ul>
+            <li>Mitarbeiter-Login via OIDC</li>
+            <li>SecurityIdentityAugmentor</li>
+            <li>Rollen-Simulation</li>
+            <li>Token-Refresh-Flow</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <div class="sp-title">📊 Export &amp; Feed</div>
+          <ul>
+            <li>XLSX-Export (Apache POI)</li>
+            <li>Öffentlicher Bürger-Feed</li>
+            <li>Redaktioneller Inhalt</li>
+            <li>Like/Dislike-System</li>
+            <li>Lightbox Bildvorschau</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:.6em; text-align:center;">
+        <img src="Img/Sprint5/Progress.png" alt="Sprint 5 Progress" style="max-height:22vh; margin-right:.5em;" />
+        <img src="Img/Sprint7/progress.png" alt="Sprint 7 Progress" style="max-height:22vh;" />
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         9. SPRINT-HIGHLIGHTS PHASE 3
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Phase 3: Finalisierung <small style="font-size:.55em; color:#888;">(Sprint 8–10 · Mär–Jun 2026)</small></h2>
+      <div class="sprint-grid">
+        <div class="sprint-card">
+          <div class="sp-title">🎨 UI-Redesigns</div>
+          <ul>
+            <li>Citizen-Homepage Redesign</li>
+            <li>Employee Dashboard Redesign</li>
+            <li>Civic Vitality 2.0 Design</li>
+            <li>Responsive Mobile-Nav</li>
+            <li>Einheitlicher Footer</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <div class="sp-title">📋 Activity Log &amp; ID</div>
+          <ul>
+            <li>Öffentliche Feedback-ID</li>
+            <li>Format: YYYYMMDD-NNNN</li>
+            <li>Activity Log Seite</li>
+            <li>Audit-Events (Publish, Delete)</li>
+            <li>Akteur-bewusste Logs</li>
+          </ul>
+        </div>
+        <div class="sprint-card">
+          <div class="sp-title">🚀 Deployment</div>
+          <ul>
+            <li>Docker Compose Stack</li>
+            <li>GitHub Actions Pipeline</li>
+            <li>SSH auf Debian VM</li>
+            <li>Nginx Reverse Proxy</li>
+            <li>Neuigkeiten-Seite live</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:.6em; text-align:center;">
+        <img src="Img/Sprint8/Review1.png" alt="Sprint 8 Review" style="max-height:22vh; margin-right:.5em;" />
+        <img src="Img/Sprint9/Review1.png" alt="Sprint 9 Review" style="max-height:22vh;" />
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         10. GRÖSSTE HERAUSFORDERUNGEN
+         ════════════════════════════════════════════ -->
+         <!--
+    <section>
+      <h2>Größte Herausforderungen</h2>
+      <div class="challenge-grid">
+        <div class="challenge-card">
+          <div class="ch-title">🔑 Keycloak PKCE-Integration</div>
+          <div class="ch-problem">❌ Zwei parallele Auth-Systeme (Keycloak OIDC für Mitarbeiter + Custom JWT OTP für Bürger) mit unterschiedlichen Token-Lifecycles mussten nahtlos koexistieren.</div>
+          <div class="ch-solution">✅ SecurityIdentityAugmentor für Rollenabbildung, getrenntes Token-Handling im Frontend, saubere API-Guard-Trennung.</div>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-title">🧩 Shadow DOM CSS-Isolation</div>
+          <div class="ch-problem">❌ Web-Komponenten nutzten Shadow DOM – externes CSS hatte keinen Zugriff auf Popup-Inhalte.</div>
+          <div class="ch-solution">✅ Alle Styles in den <code>&lt;style&gt;</code>-Block innerhalb von <code>render()</code> verschoben. Konvention dokumentiert und durchgesetzt.</div>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-title">🚀 GitHub Actions CI/CD</div>
+          <div class="ch-problem">❌ Automatisches Deployment via SSH auf Debian VM – Docker Compose, Nginx-Konfiguration und SSH-Key-Verwaltung mussten koordiniert werden.</div>
+          <div class="ch-solution">✅ Secrets in GitHub Actions, robuste Deploy-Pipeline mit Health-Checks, Rollback-Strategie via Docker Compose.</div>
+        </div>
+        <div class="challenge-card">
+          <div class="ch-title">📱 Web + iOS Synchronität</div>
+          <div class="ch-problem">❌ iOS-App und Web-Frontend mussten zeitgleich mit Backend-API-Änderungen (neue Endpoints, Datenmodell-Migrationen) Schritt halten.</div>
+          <div class="ch-solution">✅ Klare REST-API-Struktur, import.sql für konsistente Testdaten, Spec-driven Development mit OpenSpec.</div>
+        </div>
+      </div>
+    </section>
+
+    -->
+    <!-- ════════════════════════════════════════════
+         11. ZAHLEN & FAKTEN
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Zahlen &amp; Fakten</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num">728</div>
+          <div class="stat-label">Commits</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">~54 561</div>
+          <div class="stat-label">Zeilen Code hinzugefügt</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">647</div>
+          <div class="stat-label">Geänderte Dateien</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">8</div>
+          <div class="stat-label">Monate Entwicklung</div>
+        </div>
+        <div class="stat-card light">
+          <div class="stat-num">36</div>
+          <div class="stat-label">Branches</div>
+        </div>
+        <div class="stat-card light">
+          <div class="stat-num">90</div>
+          <div class="stat-label">Merge-Commits</div>
+        </div>
+        <div class="stat-card light">
+          <div class="stat-num">46</div>
+          <div class="stat-label">Feature-Commits</div>
+        </div>
+        <div class="stat-card light">
+          <div class="stat-num">122</div>
+          <div class="stat-label">Bug-Fixes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">10</div>
+          <div class="stat-label">Sprints</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">4</div>
+          <div class="stat-label">Teammitglieder</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">244</div>
+          <div class="stat-label">Commits im Mai 2026 🔥</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">3</div>
+          <div class="stat-label">Plattformen (Web, iOS, API)</div>
+        </div>
+      </div>
+      <p style="font-size:.55em; color:#888; margin-top:.4em;">
+        Quellen: <code>git log</code> · <code>git shortlog</code> · <code>git diff --stat</code> · Stand: Juni 2026
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         12. WAS HABEN WIR GELERNT?
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Was haben wir gelernt?</h2>
+      <ul class="learn-list">
+        <li>
+          <div class="bullet">1</div>
+          <div>
+            <strong>Agile Sprints in der Praxis</strong><br />
+            <span style="font-size:.88em; color:#555;">Zweiwöchige Sprints mit Reviews und Retrospektiven strukturieren echte Softwareentwicklung – Scope-Creep ist eine reale Gefahr.</span>
+          </div>
+        </li>
+        <li>
+          <div class="bullet">2</div>
+          <div>
+            <strong>Auth-Komplexität wird unterschätzt</strong><br />
+            <span style="font-size:.88em; color:#555;">Keycloak OIDC + Custom JWT OTP parallel zu betreiben war deutlich aufwändiger als geplant – Sicherheit erfordert durchgängiges Denken auf allen Ebenen.</span>
+          </div>
+        </li>
+        <li>
+          <div class="bullet">3</div>
+          <div>
+            <strong>Spec-driven Development</strong><br />
+            <span style="font-size:.88em; color:#555;">Schriftlich festgelegte Anforderungen vor der Implementierung (Proposal → Design → Spec → Tasks) reduzierten Missverständnisse im Team erheblich.</span>
+          </div>
+        </li>
+        <li>
+          <div class="bullet">4</div>
+          <div>
+            <strong>Git-Disziplin zahlt sich aus</strong><br />
+            <span style="font-size:.88em; color:#555;">Conventional Commits, Feature-Branches und Pull Requests machten die Zusammenarbeit zu viert erst möglich.</span>
+          </div>
+        </li>
+        <li>
+          <div class="bullet">5</div>
+          <div>
+            <strong>Deployment ist kein Afterthought</strong><br />
+            <span style="font-size:.88em; color:#555;">GitHub Actions + Docker Compose auf einer echten Debian VM hat uns gezwungen, Konfiguration und Infrastruktur von Anfang an ernst zu nehmen.</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         13. CLOCKIFY / ZEITAUFZEICHNUNG
+         ════════════════════════════════════════════ -->
+    <section>
+      <h2>Zeitaufzeichnung</h2>
+      <div style="text-align:center; margin-top:.5em;">
+        <img src="Img/FinalSprint/clockify.png" alt="Clockify Gesamtübersicht"
+          style="max-height:58vh; border-radius:8px; box-shadow:0 2px 16px rgba(0,0,0,.2);" />
+      </div>
+      <p style="font-size:.6em; color:#888; margin-top:.4em; text-align:center;">
+        Clockify-Gesamtübersicht · Oktober 2025 – Juni 2026
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════
+         14. DANKE & FRAGEN
+         ════════════════════════════════════════════ -->
+    <section>
+      <h1 style="font-size:1.8em; margin-bottom:.3em;">Danke fürs Zuhören!</h1>
+      <h2 style="color:#1f4e79; font-size:1.1em; margin-bottom:.8em;">Fragen?</h2>
+      <hr style="width:40%; border-color:#d0e4f7; margin:.7em auto;" />
+      <div style="display:flex; gap:2em; justify-content:center; font-size:.75em; color:#555; flex-wrap:wrap;">
+        <div>👥 <strong>Team:</strong> Benedikt · Simon · Jakob · Fabio</div>
+        <div>🏫 <strong>Klasse:</strong> 4CHITM · HTL Leonding</div>
+        <div>📅 <strong>Zeitraum:</strong> Okt 2025 – Jun 2026</div>
+      </div>
+      <div style="margin-top:1em; display:flex; gap:.4em; justify-content:center; flex-wrap:wrap;">
+        <span class="tag">728 Commits</span>
+        <span class="tag">~54 000 Zeilen</span>
+        <span class="tag">10 Sprints</span>
+        <span class="tag">Web + iOS + API</span>
+        <span class="tag">Deployed auf VM</span>
+      </div>
+      <p style="font-size:.6em; color:#bbb; margin-top:1.2em;">
+        Bürgerbeteiligungsportal Wels · Schuljahr 2025/26
+      </p>
+    </section>
+
+  </div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    controls: true,
+    progress: true,
+    center: true,
+    width: 1100,
+    height: 750,
+    margin: 0.04,
+  });
+</script>
+</body>
+</html>
