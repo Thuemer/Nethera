@@ -2,877 +2,551 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nethera – Abschlusspräsentation 2025/26</title>
-
-  <!-- Reveal.js 5.2.1 via CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reset.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css" />
-
+  
   <style>
-    /* ── Dark Theme Override ── */
+    /* ── Global Theme Override (Dark UI, Edge-Safe Layout) ── */
     :root {
       --bg:      #121212;
       --teal:    #2FB09A;
       --teal-lt: #63E5C5;
       --text:    #e6e6e6;
-      --surface: #1e1e1e;
       --card:    #252525;
       --border:  #333;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     .reveal,
     .reveal .slides,
     .slide-background { background: var(--bg) !important; }
 
+    /* Die Folien nutzen jetzt die volle Breite von Reveal.js (1280px) aus */
     .reveal .slides section {
       background: var(--bg);
       color: var(--text);
       font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
-      font-size: 0.88em;
+      font-size: 0.68em;
       text-align: left;
+      padding: 25px 35px !important; /* Harmonischer Abstand zu allen Seiten */
+      width: 100%;
     }
 
+    /* Überschriften zentriert laut Team-Wels-Struktur */
     .reveal h1, .reveal h2, .reveal h3 {
       color: var(--teal);
       text-transform: none;
       letter-spacing: 0;
-      text-align: left;
-      margin-bottom: 0.35em;
+      text-align: center;
+      margin-bottom: 0.3em;
     }
-    .reveal h1 { font-size: 2em; }
-    .reveal h2 { font-size: 1.35em; color: var(--teal-lt); }
-    .reveal h3 { font-size: 1.05em; color: var(--teal); margin-bottom: 0.2em; }
+    .reveal h1 { font-size: 1.7em; }
+    .reveal h2 { font-size: 1.15em; color: var(--teal-lt); margin-top: 0; }
+    .reveal h3 { font-size: 0.85em; color: var(--teal); }
 
-    .reveal p { color: var(--text); margin: 0.3em 0; }
+    .reveal p, .reveal ul { color: var(--text); line-height: 1.4; margin: 0.2em 0; }
+    .reveal ul { padding-left: 1.3em; }
+    .reveal li { margin-bottom: 0.15em; }
 
-    hr { border: none; border-top: 1px solid var(--border); margin: 0.6em 0; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 0.4em 0; }
 
-    /* ── Tag chips ── */
+    /* Layouts (minmax verhindert das Herausschieben nach rechts) */
+    .two-columns {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.2em;
+      margin-top: 0.5em;
+      width: 100%;
+    }
+    .column-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.6em 0.9em;
+      width: 100%;
+    }
+    .column-card h3 { text-align: left; margin-bottom: 0.25em; border-bottom: 1px solid var(--border); padding-bottom: 0.15em; }
+
+    /* Tag Chips */
     .tag {
       display: inline-block;
       background: #1a3530;
       color: var(--teal-lt);
       border: 1px solid var(--teal);
       border-radius: 4px;
-      padding: 0.12em 0.55em;
-      font-size: 0.68em;
-      margin: 0.12em;
+      padding: 0.15em 0.5em;
+      font-size: 0.62em;
+      margin: 0.1em;
     }
     .tag.accent { background: var(--teal); color: #0a0a0a; border-color: var(--teal); font-weight: 600; }
 
-    /* ── Team cards ── */
-    .team-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 0.7em;
-      margin-top: 0.5em;
-    }
-    .team-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.9em 0.6em;
-      text-align: center;
-    }
-    .team-card .avatar {
-      width: 52px; height: 52px;
-      border-radius: 50%;
-      background: var(--teal);
-      color: #0a0a0a;
-      font-weight: 700;
-      font-size: 1.1em;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 0.45em;
-    }
-    .team-card .name { font-size: 0.78em; font-weight: 600; color: var(--text); margin-bottom: 0.25em; }
-    .team-card .hours { font-size: 0.68em; color: var(--teal-lt); margin-bottom: 0.4em; }
-    .bar-track {
-      background: var(--border);
-      border-radius: 3px;
-      height: 6px;
-      overflow: hidden;
-    }
-    .bar-fill {
-      height: 100%;
-      background: var(--teal);
-      border-radius: 3px;
-    }
-
-    /* ── Flow ── */
-    .flow {
+    /* Diagramm / Flow Boxen */
+    .flow-container {
       display: flex;
-      align-items: center;
-      gap: 0.3em;
-      flex-wrap: wrap;
-      margin: 0.6em 0;
-    }
-    .flow-step {
-      background: var(--card);
-      border: 1px solid var(--teal);
-      border-radius: 6px;
-      padding: 0.3em 0.75em;
-      font-size: 0.78em;
-      color: var(--teal-lt);
-      white-space: nowrap;
-    }
-    .flow-arrow { color: var(--teal); font-size: 1em; }
-
-    /* ── Tech grid ── */
-    .tech-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.65em;
-      margin-top: 0.5em;
-    }
-    .tech-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.75em 0.9em;
-    }
-    .tech-card h3 { font-size: 0.9em; margin-bottom: 0.3em; }
-    .tech-card ul {
-      margin: 0; padding-left: 1.1em;
-      font-size: 0.7em;
-      color: #bbb;
-      line-height: 1.6;
-    }
-
-    /* ── Router box ── */
-    .router-flow {
-      display: flex;
+      justify-content: center;
       align-items: center;
       gap: 0.4em;
-      margin: 0.75em 0;
       flex-wrap: wrap;
+      margin: 0.6em 0;
+      width: 100%;
     }
-    .router-box {
-      background: #0d2622;
+    .flow-box {
+      background: var(--card);
       border: 1px solid var(--teal);
-      border-radius: 8px;
-      padding: 0.4em 0.9em;
-      font-size: 0.75em;
+      border-radius: 4px;
+      padding: 0.3em 0.6em;
+      font-size: 0.72em;
       color: var(--teal-lt);
       text-align: center;
     }
-    .router-box.sources {
-      display: flex; flex-direction: column; gap: 0.3em;
-      border-color: #555;
-      background: #1a1a1a;
-    }
-    .router-box.sources .src {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 0.2em 0.6em;
-      font-family: monospace;
-      font-size: 0.9em;
-      color: #aaa;
-    }
-    .router-box.result {
-      background: #0d2632;
-      border-color: #3a7bd5;
-      color: #7ec8ff;
-    }
-    .router-label {
-      font-size: 0.62em;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.2em;
-    }
+    .flow-box.router { background: #0d2632; border-color: #3a7bd5; color: #7ec8ff; }
+    .flow-arrow { color: var(--teal); font-weight: bold; font-size: 0.8em; }
 
-    /* ── Sprint timeline ── */
-    .time-bar-row {
+    /* Projektverlauf-Folie: Entzerrt, mehr Platz oben/unten und perfekt skaliert */
+    .timeline-container {
+      margin-top: 0.8em;
+      padding: 5px 0;
+    }
+    .stat-row {
       display: flex;
       align-items: center;
       gap: 0.6em;
       margin: 0.25em 0;
-      font-size: 0.75em;
+      font-size: 0.62em; 
     }
-    .time-bar-row .month-label {
-      width: 70px;
-      flex-shrink: 0;
-      color: var(--teal-lt);
-      font-weight: 600;
-    }
-    .time-bar-row .commit-track {
-      flex: 1;
-      background: var(--border);
-      border-radius: 3px;
-      height: 14px;
-      overflow: hidden;
-    }
-    .time-bar-row .commit-bar {
-      height: 100%;
-      background: var(--teal);
-      border-radius: 3px;
-    }
-    .time-bar-row .meta {
-      width: 200px;
-      flex-shrink: 0;
-      color: #999;
-      font-size: 0.9em;
-    }
-    .time-bar-row .count {
-      width: 35px;
-      flex-shrink: 0;
-      text-align: right;
-      color: #888;
-    }
+    .stat-row .label { width: 55px; color: var(--teal-lt); font-weight: 600; flex-shrink: 0; }
+    .stat-row .track { flex: 1; background: var(--border); height: 8px; border-radius: 2px; overflow: hidden; }
+    .stat-row .fill { height: 100%; background: var(--teal); }
+    .stat-row .meta { width: 260px; color: #999; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat-row .count { width: 20px; text-align: right; color: #888; flex-shrink: 0; }
 
-    /* ── Sprint review grid ── */
-    .sprint-grid {
+    /* Statistik-Kacheln */
+    .grid-stats {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1em;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.5em;
       margin-top: 0.5em;
+      width: 100%;
     }
-    .sprint-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.8em 1em;
-    }
-    .sprint-card h3 { font-size: 0.95em; margin-bottom: 0.4em; }
-    .sprint-card ul {
-      margin: 0; padding-left: 1.1em;
-      font-size: 0.72em;
-      color: #ccc;
-      line-height: 1.75;
-    }
-
-    /* ── Stats grid ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.55em;
-      margin-top: 0.5em;
-    }
-    .stat-card {
+    .stat-box {
       background: var(--card);
       border: 1px solid var(--teal);
-      border-radius: 8px;
-      padding: 0.65em 0.6em;
+      border-radius: 6px;
+      padding: 0.5em 0.2em;
       text-align: center;
     }
-    .stat-card.light {
-      border-color: var(--border);
-      background: #1a1a1a;
-    }
-    .stat-card .stat-val {
-      font-size: 1.4em;
-      font-weight: 700;
-      color: var(--teal-lt);
-      line-height: 1.1;
-    }
-    .stat-card.light .stat-val { color: #aaa; font-size: 1.1em; }
-    .stat-card .stat-lbl {
-      font-size: 0.6em;
-      color: #999;
-      margin-top: 0.2em;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
+    .stat-box .val { font-size: 1.05em; font-weight: 700; color: var(--teal-lt); }
+    .stat-box .lbl { font-size: 0.52em; color: #999; text-transform: uppercase; margin-top: 0.2em; }
 
-    /* ── Time bar (Zeitaufzeichnung) ── */
-    .time-person-row {
-      display: flex;
-      align-items: center;
-      gap: 0.7em;
-      margin: 0.35em 0;
-      font-size: 0.8em;
-    }
-    .time-person-row .pname {
-      width: 140px;
-      flex-shrink: 0;
-      color: var(--text);
-    }
-    .time-person-row .pbar-track {
-      flex: 1;
-      background: var(--border);
-      border-radius: 3px;
-      height: 18px;
-      overflow: hidden;
-    }
-    .time-person-row .pbar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--teal), var(--teal-lt));
-      border-radius: 3px;
-    }
-    .time-person-row .phours {
-      width: 55px;
-      flex-shrink: 0;
-      text-align: right;
-      color: var(--teal-lt);
-      font-weight: 600;
-    }
-
-    /* ── Learnings list ── */
-    .learning-list {
-      list-style: none;
-      padding: 0;
-      margin: 0.4em 0;
-    }
-    .learning-list li {
-      display: flex;
-      gap: 0.6em;
-      align-items: flex-start;
-      margin: 0.5em 0;
-      font-size: 0.82em;
-      color: var(--text);
-    }
-    .learning-list li .num {
-      background: var(--teal);
-      color: #0a0a0a;
-      font-weight: 700;
-      border-radius: 50%;
-      width: 1.6em; height: 1.6em;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.9em;
-    }
-    .learning-list li .text strong { color: var(--teal-lt); }
-    .learning-list li .text span { color: #aaa; font-size: 0.9em; }
-
-    /* ── Title slide ── */
-    .title-slide { text-align: center !important; }
-    .title-slide h1 { text-align: center; font-size: 2.8em; }
-    .title-slide h2 { text-align: center; font-size: 1.1em; }
-    .title-slide .subtitle { color: #aaa; font-size: 0.8em; text-align: center; margin: 0.3em 0; }
-    .title-slide .team-names { color: #777; font-size: 0.7em; text-align: center; margin-top: 0.6em; }
-
-    /* ── Thank you slide ── */
-    .thankyou { text-align: center !important; }
-    .thankyou h1 { text-align: center; font-size: 2.4em; margin-bottom: 0.1em; }
-    .thankyou h2 { text-align: center; font-size: 1.6em; color: var(--teal-lt); }
-    .thankyou .tag-row { text-align: center; margin-top: 0.8em; }
-
-    /* ── Utility ── */
-    .muted { color: #888; font-size: 0.75em; }
-    .total-display {
-      background: var(--card);
-      border: 2px solid var(--teal);
-      border-radius: 8px;
-      padding: 0.5em 1em;
-      text-align: center;
-      margin-top: 0.8em;
-      font-size: 0.9em;
-      color: var(--teal-lt);
-    }
-    .total-display strong { font-size: 1.3em; }
+    /* Title & End Slides */
+    .center-slide { text-align: center !important; }
+    .center-slide h1, .center-slide h2 { text-align: center; }
+    .center-slide p { text-align: center; color: #aaa; }
   </style>
 </head>
 <body>
+
 <div class="reveal">
   <div class="slides">
 
-    <!-- ══════════════════════════════════════════
-         Folie 1 — Titelfolie
-    ══════════════════════════════════════════ -->
-    <section class="title-slide">
-      <img src="../nethera_logo.png" alt="Nethera Logo"
-           style="max-height:100px; margin-bottom:0.4em; border:none; box-shadow:none;" />
-      <h1>Nethera</h1>
-      <h2>Netzwerk-Management für zu Hause</h2>
-      <p class="subtitle">4CHITM &nbsp;·&nbsp; HTL Leonding &nbsp;·&nbsp; Schuljahr 2025/26</p>
-      <p class="subtitle">Oktober 2025 – Juni 2026</p>
-      <hr style="border-color:#333; max-width:320px; margin:0.6em auto;" />
-      <p class="team-names">
+    <section class="center-slide">
+      <h1 style="font-size: 2.2em; margin-bottom: 0.1em;">Nethera</h1>
+      <h2 style="font-size: 1.05em; margin-bottom: 0.6em;">Intuitive Cloud-Management-Plattform für OpenWRT-Heimnetzwerke</h2>
+      <p style="font-size: 0.8em; font-weight: 600; color: var(--teal-lt);">Abschlusspräsentation 2025/26</p>
+      <p style="font-size: 0.7em;">4CHITM · HTL Leonding</p>
+      <hr style="max-width: 300px; margin: 0.8em auto;" />
+      <p style="font-size: 0.65em; color: #888;">
         Tobias Huemer &nbsp;·&nbsp; Deniz Bernecker &nbsp;·&nbsp; Nico Hofer &nbsp;·&nbsp; Manuel Freihaut &nbsp;·&nbsp; Moritz Kapeller
       </p>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 2 — Das Team
-    ══════════════════════════════════════════ -->
-    <section>
-      <h2>Das Team</h2>
-      <div class="team-grid">
-        <!-- Tobias Huemer: 146h → 146/166 = 88% -->
-        <div class="team-card">
-          <div class="avatar">TH</div>
-          <div class="name">Tobias Huemer</div>
-          <div class="hours">~146h</div>
-          <div class="bar-track"><div class="bar-fill" style="width:88%"></div></div>
-        </div>
-        <!-- Deniz Bernecker: 166h → 100% -->
-        <div class="team-card">
-          <div class="avatar">DB</div>
-          <div class="name">Deniz Bernecker</div>
-          <div class="hours">~166h</div>
-          <div class="bar-track"><div class="bar-fill" style="width:100%"></div></div>
-        </div>
-        <!-- Nico Hofer: 160h → 96% -->
-        <div class="team-card">
-          <div class="avatar">NH</div>
-          <div class="name">Nico Hofer</div>
-          <div class="hours">~160h</div>
-          <div class="bar-track"><div class="bar-fill" style="width:96%"></div></div>
-        </div>
-        <!-- Manuel Freihaut: 150h → 90% -->
-        <div class="team-card">
-          <div class="avatar">MF</div>
-          <div class="name">Manuel Freihaut</div>
-          <div class="hours">~150h</div>
-          <div class="bar-track"><div class="bar-fill" style="width:90%"></div></div>
-        </div>
-        <!-- Moritz Kapeller: 153h → 92% -->
-        <div class="team-card">
-          <div class="avatar">MK</div>
-          <div class="name">Moritz Kapeller</div>
-          <div class="hours">~153h</div>
-          <div class="bar-track"><div class="bar-fill" style="width:92%"></div></div>
-        </div>
-      </div>
-      <p class="muted" style="margin-top:0.6em;">Stunden kumuliert aus Clockify, Sprints 1–9</p>
+
+<section>
+      <h2>Letzter Sprint: Erreichte Meilensteine</h2>
+      <h3 style="font-size:0.7em; color:#888; text-align:center; margin-bottom:0.4em;">
+        Sprint 10: Letzte Implementierungsphase und Projektabschluss
+      </h3>
+      <img src="./Userstories.png" style="width: 20vw;margin-left: auto;margin-right: auto;display: block;" />
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 3 — Was ist Nethera?
-    ══════════════════════════════════════════ -->
     <section>
-      <h2>Was ist Nethera?</h2>
-      <p style="font-size:0.82em; color:#ccc; margin-bottom:0.6em;">
-        Nethera ist eine webbasierte Netzwerk-Management-App für Heimnetzwerke –
-        gebaut auf einem OpenWRT-Router und gesteuert über einen Quarkus-Backend-Server.
-        Eltern können Zeitlimits, DNS-Filter und Gerätezugänge komfortabel per Browser verwalten.
+      <h2>Das Projektteam</h2>
+      <p style="font-size: 0.72em; color: #888; text-align: center; margin-bottom: 1em;">
+        Rollenverteilung und Workload innerhalb der Projektgruppe
       </p>
-      <div class="flow">
-        <div class="flow-step">Browser</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step">Login (Keycloak)</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step">Backend (Quarkus)</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step">Datenbank (PostgreSQL)</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step">Router (OpenWRT)</div>
+
+      <div class="team-grid" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.6em; margin-bottom: 1em; width: 100%;">
+        <div class="team-card" style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.7em 0.4em; text-align: center;">
+          <div class="avatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: #0a0a0a; font-weight: 700; font-size: 1.0em; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4em; box-shadow: 0 0 10px rgba(47, 176, 154, 0.2);">TH</div>
+          <div class="name" style="font-size: 0.75em; font-weight: 600; color: var(--text); margin-bottom: 0.15em;">T. Huemer</div>
+          <div class="bar-track" style="background: var(--border); border-radius: 2px; height: 4px; overflow: hidden; max-width: 80%; margin: 0 auto;">
+            <div class="bar-fill" style="height: 100%; background: var(--teal); width: 88%;"></div>
+          </div>
+        </div>
+        <div class="team-card" style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.7em 0.4em; text-align: center;">
+          <div class="avatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: #0a0a0a; font-weight: 700; font-size: 1.0em; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4em; box-shadow: 0 0 10px rgba(47, 176, 154, 0.2);">DB</div>
+          <div class="name" style="font-size: 0.75em; font-weight: 600; color: var(--text); margin-bottom: 0.15em;">D. Bernecker</div>
+          <div class="bar-track" style="background: var(--border); border-radius: 2px; height: 4px; overflow: hidden; max-width: 80%; margin: 0 auto;">
+            <div class="bar-fill" style="height: 100%; background: var(--teal); width: 100%;"></div>
+          </div>
+        </div>
+        <div class="team-card" style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.7em 0.4em; text-align: center;">
+          <div class="avatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: #0a0a0a; font-weight: 700; font-size: 1.0em; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4em; box-shadow: 0 0 10px rgba(47, 176, 154, 0.2);">NH</div>
+          <div class="name" style="font-size: 0.75em; font-weight: 600; color: var(--text); margin-bottom: 0.15em;">N. Hofer</div>
+          <div class="bar-track" style="background: var(--border); border-radius: 2px; height: 4px; overflow: hidden; max-width: 80%; margin: 0 auto;">
+            <div class="bar-fill" style="height: 100%; background: var(--teal); width: 96%;"></div>
+          </div>
+        </div>
+        <div class="team-card" style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.7em 0.4em; text-align: center;">
+          <div class="avatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: #0a0a0a; font-weight: 700; font-size: 1.0em; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4em; box-shadow: 0 0 10px rgba(47, 176, 154, 0.2);">MF</div>
+          <div class="name" style="font-size: 0.75em; font-weight: 600; color: var(--text); margin-bottom: 0.15em;">M. Freihaut</div>
+          <div class="bar-track" style="background: var(--border); border-radius: 2px; height: 4px; overflow: hidden; max-width: 80%; margin: 0 auto;">
+            <div class="bar-fill" style="height: 100%; background: var(--teal); width: 90%;"></div>
+          </div>
+        </div>
+        <div class="team-card" style="background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.7em 0.4em; text-align: center;">
+          <div class="avatar" style="width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: #0a0a0a; font-weight: 700; font-size: 1.0em; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.4em; box-shadow: 0 0 10px rgba(47, 176, 154, 0.2);">MK</div>
+          <div class="name" style="font-size: 0.75em; font-weight: 600; color: var(--text); margin-bottom: 0.15em;">M. Kapeller</div>
+          <div class="bar-track" style="background: var(--border); border-radius: 2px; height: 4px; overflow: hidden; max-width: 80%; margin: 0 auto;">
+            <div class="bar-fill" style="height: 100%; background: var(--teal); width: 92%;"></div>
+          </div>
+        </div>
       </div>
-      <p style="font-size:0.72em; color:#888; margin:0.5em 0 0.3em;">Features</p>
-      <div>
-        <span class="tag accent">Zeitlimits</span>
-        <span class="tag accent">Gerätegruppen</span>
-        <span class="tag accent">Blocklisten</span>
-        <span class="tag accent">DNS-Filter</span>
-        <span class="tag accent">Werbedomänen-Blockierung</span>
-        <span class="tag accent">OpenWRT</span>
-        <span class="tag">Device Presets</span>
-        <span class="tag">Traffic-Statistiken</span>
-        <span class="tag">Keycloak Auth</span>
-        <span class="tag">dnsmasq</span>
+
+      <div style="text-align: center; margin-top: 0.6em;">
+        <span class="tag accent">5 Entwickler</span>
+        <span class="tag">Agiles Arbeiten (Scrum)</span>
+        <span class="tag">Effiziente Lastverteilung</span>
+        <span class="tag">HTL Leonding 2025/26</span>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 4 — Wie es funktioniert
-    ══════════════════════════════════════════ -->
     <section>
-      <h2>Wie es funktioniert</h2>
-      <div style="text-align:center; margin-top:0.4em;">
-        <img src="howitworks.jpeg" alt="How it works – Systemablauf"
-             style="max-height:55vh; border:none; box-shadow:0 2px 18px rgba(0,0,0,.5); border-radius:10px;" />
-      </div>
-      <p class="muted" style="text-align:center; margin-top:0.35em;">
-        5-Schritt-Flow: Browser → Login → Backend → Datenbank → Router
+      <h2>Projektbeschreibung</h2>
+      <p style="font-size: 0.8em; text-align: center; color: #bbb; margin-bottom: 0.4em;">
+        Nethera ist eine Softwarelösung, die die Konfiguration von Heimnetzwerk-Routern für technisch nicht affine Nutzer radikal vereinfacht.
       </p>
+      <div class="two-columns">
+        <div class="column-card">
+          <h3>📱 Das Gesamtsystem</h3>
+          <ul>
+            <li>Moderne Web-Applikation und native mobile App zur intuitiven Steuerung.</li>
+            <li>Sichere Kommunikation über ein zentrales Cloud-Backend (Quarkus).</li>
+            <li>Zielgerichtete Hardware-Umsetzung direkt auf einem OpenWRT-Router.</li>
+          </ul>
+        </div>
+        <div class="column-card">
+          <h3>🎯 Die Kerninnovation</h3>
+          <ul>
+            <li>Abstraktion komplexer Netzwerkfunktionen (Werbeblocker, Inhaltsfilter).</li>
+            <li>Bandbreiten-Priorisierung über eine verständliche Oberfläche.</li>
+            <li>Ein funktionaler Prototyp bildet die gesamte Kette bis zur Hardware ab.</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 5 — Tech-Stack
-    ══════════════════════════════════════════ -->
     <section>
-      <h2>Tech-Stack</h2>
-      <div class="tech-grid">
-        <div class="tech-card">
-          <h3>Frontend</h3>
+      <h2>Ist-Zustand &amp; Problemstellung</h2>
+      <div class="two-columns">
+        <div class="column-card" style="border-color: #833;">
+          <h3 style="color: #ff6b6b;">🔴 Die Ausgangslage heute</h3>
           <ul>
-            <li>HTML / CSS / JavaScript</li>
-            <li>Vanilla JS (kein Framework)</li>
-            <li>Iframe-SPA Architektur</li>
+            <li>Konfigurationsoberflächen (OpenWRT) sind primär für IT-Fachpersonal gestaltet.</li>
+            <li>Komplexe Menüs, technischer Jargon und unübersichtliche UIs schrecken ab.</li>
+            <li>Provider-Lösungen bieten eingeschränkte Features oder komplizierten Remote-Zugriff.</li>
           </ul>
         </div>
-        <div class="tech-card">
-          <h3>Backend</h3>
+        <div class="column-card" style="border-color: #383;">
+          <h3 style="color: #51cf66;">🟢 Das Kernproblem</h3>
           <ul>
-            <li>Quarkus 3</li>
-            <li>Java 21</li>
-            <li>JAX-RS / Jackson</li>
-            <li>@Scheduled Sync</li>
-          </ul>
-        </div>
-        <div class="tech-card">
-          <h3>Datenbank</h3>
-          <ul>
-            <li>PostgreSQL 15</li>
-            <li>JPA / Hibernate</li>
-            <li>Docker Container</li>
-          </ul>
-        </div>
-        <div class="tech-card">
-          <h3>Auth</h3>
-          <ul>
-            <li>Keycloak 26</li>
-            <li>OIDC / OpenID Connect</li>
-            <li>JWT Bearer Token</li>
-          </ul>
-        </div>
-        <div class="tech-card">
-          <h3>Router</h3>
-          <ul>
-            <li>OpenWRT</li>
-            <li>dnsmasq (DNS/DHCP)</li>
-            <li>OpenVPN</li>
-            <li>BusyBox / sh</li>
-          </ul>
-        </div>
-        <div class="tech-card">
-          <h3>Tools</h3>
-          <ul>
-            <li>SSH / sshj 0.38</li>
-            <li>Git (Conventional Commits)</li>
-            <li>OpenSpec</li>
-            <li>Clockify</li>
+            <li>Hohe Einstiegshürde und Angst vor Internet-Ausfällen durch Fehlkonfigurationen.</li>
+            <li>Es mangelt an einer einfachen Lösung, Regeln schnell auf Geräte anzuwenden.</li>
+            <li>Keine „Plug-and-Play“-Erfahrung für fortgeschrittene Heimnetz-Features.</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 6 — Router-Kommunikation
-    ══════════════════════════════════════════ -->
     <section>
-      <h2>Router-Kommunikation</h2>
-      <p class="muted">Technisches Highlight: Wie Nethera Daten vom Router holt</p>
-
-      <div class="router-flow" style="margin-top:0.8em;">
-        <div class="router-box" style="text-align:center;">
-          <div class="router-label">Quarkus</div>
-          <strong>@Scheduled</strong>
-          <div style="font-size:0.75em; color:#888;">alle 30s</div>
-        </div>
-        <span class="flow-arrow" style="font-size:1.4em;">→</span>
-        <div class="router-box" style="text-align:center;">
-          <div class="router-label">Java Library</div>
-          <strong>sshj</strong>
-          <div style="font-size:0.75em; color:#888;">net.schmizz.sshj</div>
-        </div>
-        <span class="flow-arrow" style="font-size:1.4em;">→</span>
-        <div class="router-box" style="text-align:center;">
-          <div class="router-label">Router</div>
-          <strong>OpenWRT</strong>
-          <div style="font-size:0.75em; color:#888;">SSH Key-Auth</div>
-        </div>
-        <span class="flow-arrow" style="font-size:1.4em;">→</span>
-        <div class="router-box sources">
-          <div class="router-label">Datenquellen</div>
-          <div class="src">/tmp/dhcp.leases</div>
-          <div class="src">/proc/net/arp</div>
-          <div class="src">iw station dump</div>
-        </div>
-        <span class="flow-arrow" style="font-size:1.4em;">→</span>
-        <div class="router-box result" style="text-align:center;">
-          <div class="router-label">Speicherung</div>
-          <strong>PostgreSQL</strong>
-          <div style="font-size:0.75em; color:#7ec8ff;">DB-first Ansatz</div>
-        </div>
-      </div>
-
-      <p style="font-size:0.72em; color:#888; margin:0.6em 0 0.3em;">Verwendete Technologien</p>
-      <div>
-        <span class="tag accent">sshj 0.38</span>
-        <span class="tag accent">dnsmasq</span>
-        <span class="tag accent">OpenVPN</span>
-        <span class="tag accent">BusyBox/sh</span>
-        <span class="tag accent">Key-Auth (kein Passwort)</span>
-        <span class="tag">@Scheduled (Quarkus)</span>
-        <span class="tag">DB-first statt Router-first</span>
-      </div>
-
-      <p style="font-size:0.72em; color:#666; margin-top:0.5em;">
-        Kein Router-Request bei jedem Seitenaufruf — Daten werden periodisch gecacht.
-      </p>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         Folie 7 — Projektverlauf
-    ══════════════════════════════════════════ -->
-    <section>
-      <h2>Projektverlauf</h2>
-      <p class="muted">Commits pro Monat (max = 34)</p>
-
-      <!-- Okt: 9/34 = 26.5% -->
-      <div class="time-bar-row">
-        <div class="month-label">Okt '25</div>
-        <div class="commit-track"><div class="commit-bar" style="width:26.5%"></div></div>
-        <div class="count">9</div>
-        <div class="meta">Projektstart</div>
-      </div>
-      <!-- Nov: 34/34 = 100% -->
-      <div class="time-bar-row">
-        <div class="month-label">Nov '25</div>
-        <div class="commit-track"><div class="commit-bar" style="width:100%"></div></div>
-        <div class="count">34</div>
-        <div class="meta">Frontend + Backend-Basis</div>
-      </div>
-      <!-- Dez: 11/34 = 32.4% -->
-      <div class="time-bar-row">
-        <div class="month-label">Dez '25</div>
-        <div class="commit-track"><div class="commit-bar" style="width:32.4%"></div></div>
-        <div class="count">11</div>
-        <div class="meta">Zwischenphase</div>
-      </div>
-      <!-- Jan: 25/34 = 73.5% -->
-      <div class="time-bar-row">
-        <div class="month-label">Jan '26</div>
-        <div class="commit-track"><div class="commit-bar" style="width:73.5%"></div></div>
-        <div class="count">25</div>
-        <div class="meta">Keycloak + DB-Integration</div>
-      </div>
-      <!-- Feb: 16/34 = 47.1% -->
-      <div class="time-bar-row">
-        <div class="month-label">Feb '26</div>
-        <div class="commit-track"><div class="commit-bar" style="width:47.1%"></div></div>
-        <div class="count">16</div>
-        <div class="meta">Geräteseiten</div>
-      </div>
-      <!-- Mär: 30/34 = 88.2% -->
-      <div class="time-bar-row">
-        <div class="month-label">Mär '26</div>
-        <div class="commit-track"><div class="commit-bar" style="width:88.2%"></div></div>
-        <div class="count">30</div>
-        <div class="meta">Redesigns</div>
-      </div>
-      <!-- Apr: 14/34 = 41.2% -->
-      <div class="time-bar-row">
-        <div class="month-label">Apr '26</div>
-        <div class="commit-track"><div class="commit-bar" style="width:41.2%"></div></div>
-        <div class="count">14</div>
-        <div class="meta">Neue Seiten</div>
-      </div>
-      <!-- Mai: 34/34 = 100% -->
-      <div class="time-bar-row">
-        <div class="month-label">Mai '26</div>
-        <div class="commit-track"><div class="commit-bar" style="width:100%"></div></div>
-        <div class="count">34</div>
-        <div class="meta">Router-Sync + Scheduler</div>
-      </div>
-      <!-- Jun: 8/34 = 23.5% -->
-      <div class="time-bar-row">
-        <div class="month-label">Jun '26</div>
-        <div class="commit-track"><div class="commit-bar" style="width:23.5%"></div></div>
-        <div class="count">8</div>
-        <div class="meta">Abschluss</div>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════
-         Folie 8 — Sprint 10 Review
-    ══════════════════════════════════════════ -->
-    <section>
-      <h2>Sprint 10 Review</h2>
-      <p class="muted">Letzter Sprint – abgeschlossene Features</p>
-      <div class="sprint-grid">
-        <div class="sprint-card">
-          <h3>Frontend</h3>
+      <h2>Das Soll-Konzept</h2>
+      <p style="font-size: 0.8em; text-align: center; margin-bottom: 0.4em; color: var(--teal-lt);">Die Zielsetzung für das neue System:</p>
+      <div class="two-columns">
+        <div class="column-card">
+          <h3>🛡️ Abstraktion &amp; UX</h3>
           <ul>
-            <li>Dashboard-Redesign</li>
-            <li>Zeitlimits-UI</li>
-            <li>Geräte- / Gruppen-Verwaltung</li>
-            <li>Blocklists</li>
-            <li>Werbedomänen-Blockierung</li>
-            <li>Device Presets</li>
-            <li>Neue Status-Seite</li>
-            <li>Traffic-Statistiken</li>
-            <li>Konfigurationsseite</li>
-            <li>Mein Account</li>
+            <li><strong>Der 5-Klick-Ansatz:</strong> Aktivierung zentraler Features (Inhaltsfilter, Priorisierung) in unter 5 Klicks.</li>
+            <li><strong>Verständlichkeit:</strong> Einsatz einfacher Sprache, visueller Icons und vordefinierter Presets zur Vermittlung von Sicherheit.</li>
           </ul>
         </div>
-        <div class="sprint-card">
-          <h3>Backend</h3>
+        <div class="column-card">
+          <h3>⚡ Optimierung &amp; Fernsteuerung</h3>
           <ul>
-            <li>Neue DB-Tabellen</li>
-            <li>DB-first Ansatz
-              <br/><span style="color:#777; font-size:0.9em;">(kein Router-Request bei jedem Request)</span>
-            </li>
-            <li>Quarkus @Scheduled Sync-Service</li>
+            <li><strong>Laien-Bedienung:</strong> Individuelle Netzwerkoptimierung komplett ohne Vorkenntnisse.</li>
+            <li><strong>Cloud-Management:</strong> Sichere Verwaltung von unterwegs, ohne jemals mit CLI oder Protokollen in Berührung zu kommen.</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 9 — Zahlen & Fakten
-    ══════════════════════════════════════════ -->
     <section>
-      <h2>Zahlen &amp; Fakten</h2>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-val">181</div>
-          <div class="stat-lbl">Commits</div>
+      <h2>Zielgruppen &amp; Nutzungsszenarien</h2>
+      <div class="two-columns">
+        <div class="column-card">
+          <h3>👥 Die primären Benutzer</h3>
+          <ul style="font-size:0.65em;">
+            <li><strong>Eltern:</strong> Suchen einfache Wege zur Filterung jugendgefährdender Inhalte.</li>
+            <li><strong>Technisch nicht Affine:</strong> Möchten Adblocker ohne zeitaufwändige Einarbeitung.</li>
+            <li><strong>Beschäftigte Nutzer:</strong> Bevorzugen schnelle Steuerung via Smartphone-App.</li>
+            <li><strong>Interessierte Anwender:</strong> Legen Wert auf exzellentes Design und Zeitersparnis.</li>
+          </ul>
         </div>
-        <div class="stat-card">
-          <div class="stat-val">~772h</div>
-          <div class="stat-lbl">Stunden gesamt</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">9+</div>
-          <div class="stat-lbl">Sprints</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">9</div>
-          <div class="stat-lbl">Monate</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">~96</div>
-          <div class="stat-lbl">Werktage</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">5</div>
-          <div class="stat-lbl">Teammitglieder</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">9</div>
-          <div class="stat-lbl">App-Seiten</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">~180h</div>
-          <div class="stat-lbl">Sprint 8 (längster)</div>
-        </div>
-        <div class="stat-card light">
-          <div class="stat-val">Okt '25</div>
-          <div class="stat-lbl">Start</div>
-        </div>
-        <div class="stat-card light">
-          <div class="stat-val">Jun '26</div>
-          <div class="stat-lbl">Ende</div>
-        </div>
-        <div class="stat-card light">
-          <div class="stat-val">OpenWRT</div>
-          <div class="stat-lbl">Router</div>
-        </div>
-        <div class="stat-card light">
-          <div class="stat-val">Keycloak</div>
-          <div class="stat-lbl">Auth</div>
+        <div class="column-card">
+          <h3>🎬 Szenarien aus der Praxis</h3>
+          <ul style="font-size:0.65em;">
+            <li><strong>Kindersicherung:</strong> Gruppe „Kinder“ wählen → Preset „FSK18-Filter“ aktivieren → Inhalte sofort blockiert.</li>
+            <li><strong>Werbeblocker:</strong> Menü „Sicherheit“ aufrufen → Netzwerkweiten Adblocker mit einem Schieberegler einschalten.</li>
+            <li><strong>Home-Office:</strong> Arbeits-Laptop per App „Priorität“ geben → Video-Streams bleiben trotz Downloads stabil.</li>
+          </ul>
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 10 — Zeitaufzeichnung
-    ══════════════════════════════════════════ -->
     <section>
-      <h2>Zeitaufzeichnung</h2>
-      <p class="muted">Clockify – kumulierte Stunden, Sprints 1–9 (pro Person)</p>
-
-      <!-- TODO: Sprint 10 Stunden nach Screenshot hier ergänzen -->
-
-      <!-- d.bernecker: 166h = 100% -->
-      <div class="time-person-row">
-        <div class="pname">Deniz Bernecker</div>
-        <div class="pbar-track"><div class="pbar-fill" style="width:100%"></div></div>
-        <div class="phours">~166h</div>
-      </div>
-      <!-- n.hofer: 160h = 96.4% -->
-      <div class="time-person-row">
-        <div class="pname">Nico Hofer</div>
-        <div class="pbar-track"><div class="pbar-fill" style="width:96.4%"></div></div>
-        <div class="phours">~160h</div>
-      </div>
-      <!-- m.kapeller: 153h = 92.2% -->
-      <div class="time-person-row">
-        <div class="pname">Moritz Kapeller</div>
-        <div class="pbar-track"><div class="pbar-fill" style="width:92.2%"></div></div>
-        <div class="phours">~153h</div>
-      </div>
-      <!-- m.freihaut: 150h = 90.4% -->
-      <div class="time-person-row">
-        <div class="pname">Manuel Freihaut</div>
-        <div class="pbar-track"><div class="pbar-fill" style="width:90.4%"></div></div>
-        <div class="phours">~150h</div>
-      </div>
-      <!-- t.huemer: 146h = 88% -->
-      <div class="time-person-row">
-        <div class="pname">Tobias Huemer</div>
-        <div class="pbar-track"><div class="pbar-fill" style="width:88%"></div></div>
-        <div class="phours">~146h</div>
+      <h2>Systemarchitektur &amp; Datenfluss</h2>
+      <p style="font-size: 0.75em; text-align: center; color: #999; margin-bottom: 0.3em;">Die technologische Kette vom Client bis zum Betriebssystem</p>
+      
+      <div class="flow-container">
+        <div class="flow-box">SPA Frontend / Mobile App</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Sichere Cloud-Anbindung</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Quarkus 3 Cloud-Backend</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Relational Cache (PostgreSQL)</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box router">OpenWRT Router Hardware</div>
       </div>
 
-      <div class="total-display">
-        <strong>~772h</strong> gesamt &nbsp;·&nbsp; Sprints 1–9 &nbsp;·&nbsp; ~96 Werktage &nbsp;·&nbsp; ~19 Werktage/Person
+      <div class="column-card" style="margin-top: 0.4em;">
+        <p style="margin: 0; font-size: 0.72em; line-height: 1.35;">
+          <strong>Abgrenzung (Nicht-Ziele):</strong> Nethera ist kein Ersatz für professionelle Enterprise-Tools und entwickelt keine eigene Router-Hardware. Es findet keine manuelle Low-Level-Konfiguration (IP-Routing) und aus Datenschutzgründen keine Inhaltsüberwachung (Deep Packet Inspection) statt.
+        </p>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 11 — Was haben wir gelernt?
-    ══════════════════════════════════════════ -->
     <section>
-      <h2>Was haben wir gelernt?</h2>
-      <ul class="learning-list">
-        <li>
-          <div class="num">1</div>
-          <div class="text">
-            <strong>Agiles Arbeiten in Sprints</strong><br/>
-            <span>Scope-Creep ist real – regelmäßige Sprint-Reviews helfen, Prioritäten zu setzen.</span>
-          </div>
-        </li>
-        <li>
-          <div class="num">2</div>
-          <div class="text">
-            <strong>Router-Integration ist komplex</strong><br/>
-            <span>SSH / dnsmasq / OpenWRT erfordert Geduld — Dokumentation ist dünn, Debugging ist intensiv.</span>
-          </div>
-        </li>
-        <li>
-          <div class="num">3</div>
-          <div class="text">
-            <strong>DB-first statt Router-first</strong><br/>
-            <span>Periodischer Sync verbessert Performance und Stabilität deutlich gegenüber Live-Requests.</span>
-          </div>
-        </li>
-        <li>
-          <div class="num">4</div>
-          <div class="text">
-            <strong>Git-Disziplin zahlt sich aus</strong><br/>
-            <span>Conventional Commits + Feature-Branches machen Team-Arbeit über Semester hinweg möglich.</span>
-          </div>
-        </li>
-        <li>
-          <div class="num">5</div>
-          <div class="text">
-            <strong>Teamkoordination über Semester</strong><br/>
-            <span>Klare Strukturen, OpenSpec und regelmäßige Abstimmung ermöglichen verteilte Entwicklung.</span>
-          </div>
-        </li>
-      </ul>
+      <h2>Technologien &amp; Schnittstellen</h2>
+      <p style="font-size:0.7em; color:#888; text-align:center; margin-bottom:0.3em;">Entkoppelte Entwicklung durch vertragsbasierte OpenSpec-Spezifikationen</p>
+      <div class="two-columns">
+        <div class="column-card">
+          <h3>📡 REST-API (Backend ↔ Frontend)</h3>
+          <ul>
+            <li><strong>Sicheres Benutzer-Login:</strong> Cloud-basierte Authentifizierung schützt jeden REST-Endpoint ab.</li>
+            <li><strong>Verbindungsabbruch-Sicherung:</strong> Transaktionssichere API-Abwicklung, um instabile Routerzustände zu verhindern.</li>
+          </ul>
+        </div>
+        <div class="column-card">
+          <h3>🔒 OS-Ebene (Backend ↔ OpenWRT)</h3>
+          <ul>
+            <li><strong>MUSS-Kriterium SSH:</strong> Verschlüsselte Kommando-Injektion zur direkten Steuerung von OpenWRT.</li>
+            <li><strong>Inhaltsfilterung:</strong> Externe Repositories (z.B. OISD) speisen die DNS-basierten Blocklisten des Routers.</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
-    <!-- ══════════════════════════════════════════
-         Folie 12 — Danke & Fragen
-    ══════════════════════════════════════════ -->
-    <section class="thankyou">
-      <h1>Danke fürs Zuhören!</h1>
-      <h2>Fragen?</h2>
-      <hr style="border-color:#333; max-width:400px; margin:0.6em auto;" />
-      <p style="font-size:0.72em; color:#777; text-align:center; margin-top:0.4em;">
-        Tobias Huemer &nbsp;·&nbsp; Deniz Bernecker &nbsp;·&nbsp; Nico Hofer &nbsp;·&nbsp; Manuel Freihaut &nbsp;·&nbsp; Moritz Kapeller
-      </p>
-      <div class="tag-row" style="margin-top:0.8em;">
+    <section>
+      <h2>Priorisierung der Anforderungen</h2>
+      <div class="two-columns">
+        <div class="column-card">
+          <h3>🎯 MUSS-Anforderungen</h3>
+          <ul style="font-size: 0.65em; padding-left: 1.1em;">
+            <li><strong>Hardware-Steuerung:</strong> SSH-Kommunikation zwischen Backend und OpenWRT-Router.</li>
+            <li><strong>Management-UI:</strong> Web-Interface für One-Click Adblocker und Inhaltsfilter.</li>
+            <li><strong>Geräte-Verwaltung:</strong> Zuverlässige Geräteerkennung und Gruppenzuweisung.</li>
+            <li><strong>Security:</strong> Sicheres Benutzer-Login im Cloud-Backend.</li>
+          </ul>
+        </div>
+        <div class="column-card">
+          <h3>💡 SOLL- / KANN-Ebene</h3>
+          <ul style="font-size: 0.65em; padding-left: 1.1em;">
+            <li><strong>SOLL:</strong> Native Mobile App (oder Progressive Web App) für mobile Endgeräte.</li>
+            <li><strong>SOLL:</strong> Vordefinierte Presets (z.B. „Gaming-Modus“, „Kindersicherung“).</li>
+            <li><strong>SOLL:</strong> Echtzeit-Statusanzeige verbundener Geräte.</li>
+            <li><strong>KANN:</strong> Statistiken über geblockte Tracking-Anfragen &amp; Gast-WLAN per QR-Code.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Quality &amp; Systemdaten</h2>
+      <div class="two-columns">
+        <div class="column-card">
+          <h3>🎯 Qualitäts- &amp; Usability-Vorgaben</h3>
+          <ul style="font-size:0.65em; padding-left: 1.1em;">
+            <li><strong>Einfachheit:</strong> Keine Funktion liegt tiefer als 3-4 Navigationsebenen. Begriffe wie QoS, CIDR oder DNS-Lease sind komplett ausgeblendet.</li>
+            <li><strong>Geschwindigkeit:</strong> UI-Änderungen werden innerhalb weniger Sekunden auf der Hardware aktiv.</li>
+            <li><strong>Design:</strong> Modernes "Dark Mode"-fähiges Interface mit prägnanter Ikonografie.</li>
+          </ul>
+        </div>
+        <div class="column-card">
+          <h3>📊 Verwaltete Datenobjekte</h3>
+          <ul style="font-size:0.65em; padding-left: 1.1em;">
+            <li><strong>Nutzerdaten:</strong> E-Mail, verschlüsseltes Passwort, Account-Status (DSGVO-konform).</li>
+            <li><strong>Netzwerkdaten:</strong> MAC-Adressen der Endgeräte, Gerätenamen, Gruppen-Zugehörigkeiten.</li>
+            <li><strong>Konfigurationsdaten:</strong> Status der Filterlisten, Priorisierungs-Flags.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Projektverlauf &amp; Entwicklungsdynamik</h2>
+      <p style="font-size:0.7em; color:#888; text-align:center; margin-bottom:0.3em;">Git-Commits über den Entwicklungszeitraum (Peak: 34 Commits/Monat)</p>
+
+      <div class="timeline-container">
+        <div class="stat-row">
+          <div class="label">Okt '25</div>
+          <div class="track"><div class="fill" style="width: 26.5%;"></div></div>
+          <div class="count">9</div>
+          <div class="meta">Projekt-Scoping &amp; Spezifikationen</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Nov '25</div>
+          <div class="track"><div class="fill" style="width: 100%;"></div></div>
+          <div class="count">34</div>
+          <div class="meta">UI-Prototyping &amp; Quarkus-Setup</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Dez '25</div>
+          <div class="track"><div class="fill" style="width: 32.4%;"></div></div>
+          <div class="count">11</div>
+          <div class="meta">Architektur-Review &amp; Refactoring</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Jan '26</div>
+          <div class="track"><div class="fill" style="width: 73.5%;"></div></div>
+          <div class="count">25</div>
+          <div class="meta">Keycloak OIDC Integration &amp; DB-Setup</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Feb '26</div>
+          <div class="track"><div class="fill" style="width: 47.1%;"></div></div>
+          <div class="count">16</div>
+          <div class="meta">REST Endpoints &amp; Device-Management</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Mär '26</div>
+          <div class="track"><div class="fill" style="width: 88.2%;"></div></div>
+          <div class="count">30</div>
+          <div class="meta">UX-Redesign &amp; Responsive Layouts</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Apr '26</div>
+          <div class="track"><div class="fill" style="width: 41.2%;"></div></div>
+          <div class="count">14</div>
+          <div class="meta">DNS-Blocklists &amp; Filter-Injektion</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Mai '26</div>
+          <div class="track"><div class="fill" style="width: 100%;"></div></div>
+          <div class="count">34</div>
+          <div class="meta">Router-Sync Core &amp; Integrationstest</div>
+        </div>
+        <div class="stat-row">
+          <div class="label">Jun '26</div>
+          <div class="track"><div class="fill" style="width: 23.5%;"></div></div>
+          <div class="count">8</div>
+          <div class="meta">Deployment, Dokumentation &amp; Handover</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="center-slide">
+      <h1 style="font-size: 2.2em; margin-top: 1em;">🔮 Live-Demo</h1>
+      <p style="font-size: 0.9em; color: var(--teal-lt); margin-top: 0.5em;">Präsentation des lauffähigen Systems</p>
+      <hr style="max-width: 250px; margin: 1em auto;" />
+      <p style="font-size: 0.75em; color: #888;">Einblick in das Admin-Dashboard, intuitive Gerätegruppen-Zuweisung und Live-DNS-Sperren.</p>
+    </section>
+
+    <section>
+      <h2>Projektergebnis in Zahlen</h2>
+      
+      <div class="grid-stats" style="grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, auto); gap: 0.6em;">
+        <div class="stat-box"><div class="val">181</div><div class="lbl">Git Commits</div></div>
+        <div class="stat-box"><div class="val">10</div><div class="lbl">Agile Sprints</div></div>
+        <div class="stat-box"><div class="val">5</div><div class="lbl">Entwickler</div></div>
+        
+        <div class="stat-box"><div class="val">9</div><div class="lbl">Monate Laufzeit</div></div>
+        <div class="stat-box"><div class="val">OpenWRT</div><div class="lbl">Zielplattform</div></div>
+        <div class="stat-box"><div class="val">~29 317</div><div class="lbl">Lines of Code</div></div>
+      </div>
+      
+      <div style="font-size: 0.75em; color: #bbb; text-align: center; background: var(--card); padding: 0.6em 0.8em; border-radius: 6px; border: 1px solid var(--border); width: 100%; margin-top: 0.8em;">
+        <div style="color: var(--teal-lt); font-size: 0.95em; font-weight: 600;">
+          Projektgruppe: Tobias Huemer · Deniz Bernecker · Nico Hofer · Manuel Freihaut · Moritz Kapeller
+        </div>
+        <hr style="margin: 0.4em 0; border-color: #444;" />
+        <div style="font-size: 0.85em; color: #999;">
+          Ausgezeichnete, homogene Lastverteilung und agile Zusammenarbeit über alle Sprints hinweg.
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Erfolgskriterien &amp; Sonderfälle</h2>
+      <div class="two-columns">
+        <div class="column-card">
+          <h3>✅ Erreichte Erfolgskriterien</h3>
+          <ul style="font-size:0.65em; padding-left: 1.1em;">
+            <li><strong>Usability-Erfolg:</strong> Ein fachfremder Testnutzer kann einen Filter in unter 60 Sekunden aktivieren.</li>
+            <li><strong>Stabilität:</strong> Die SSH-Kommunikation zwischen Quarkus-Backend und Router funktioniert im Dauertest stabil.</li>
+            <li><strong>Persistenz:</strong> Die vorgenommenen Einstellungen bleiben nach einem Stromausfall oder Reboot erhalten.</li>
+          </ul>
+        </div>
+        <div class="column-card">
+          <h3>⚠️ Abgesicherte Fehlerfälle</h3>
+          <ul style="font-size:0.65em; padding-left: 1.1em;">
+            <li><strong>Router Offline:</strong> Die App zeigt sofort einen verständlichen Warnhinweis im Interface.</li>
+            <li><strong>Fehlerhafte Filterliste:</strong> Bei Problemen mit einer externen Quelle fällt das System auf sichere Standardwerte zurück.</li>
+            <li><strong>Offene Fragen geklärt:</strong> Entscheidung für On-Demand SSH-Verbindungen zur Absicherung der Echtzeit-Rückmeldung.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="center-slide">
+      <h1 style="font-size:1.8em; margin-top: 0.5em; margin-bottom:.3em;">Danke fürs Zuhören!</h1>
+      <h2 style="font-size:1.1em; margin-bottom:.8em;">Fragen?</h2>
+      <hr style="width:40%; border-color: var(--border); margin:.7em auto;" />
+      
+      <div style="display:flex; gap:2em; justify-content:center; font-size:.75em; color:#aaa; flex-wrap:wrap; margin-top: 0.5em;">
+        <div>👥 <strong>Team:</strong> Tobias · Deniz · Nico · Manuel · Moritz</div>
+        <div>🏫 <strong>Klasse:</strong> 4CHITM · HTL Leonding</div>
+        <div>📅 <strong>Zeitraum:</strong> Okt 2025 – Jun 2026</div>
+      </div>
+      
+      <div style="margin-top:1em; display:flex; gap:.4em; justify-content:center; flex-wrap:wrap;">
         <span class="tag accent">181 Commits</span>
-        <span class="tag accent">~772h</span>
-        <span class="tag accent">9 Sprints</span>
-        <span class="tag accent">9 Seiten</span>
-        <span class="tag">OpenWRT</span>
-        <span class="tag">Quarkus 3</span>
-        <span class="tag">Keycloak 26</span>
-        <span class="tag">PostgreSQL 15</span>
+        <span class="tag accent">10 Sprints</span>
+        <span class="tag">OpenWRT Control</span>
+        <span class="tag">Quarkus Backend</span>
+        <span class="tag">Cloud-Native Management</span>
       </div>
+      <p style="font-size:.6em; color:#666; margin-top:1.5em;">
+        Nethera – Intelligentes Netzwerk-Management für Familien · Schuljahr 2025/26
+      </p>
     </section>
 
-  </div><!-- /slides -->
-</div><!-- /reveal -->
+  </div>
+</div>
 
 <script type="module">
   import Reveal from 'https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.esm.js';
@@ -885,8 +559,9 @@
     center: true,
     width: 1280,
     height: 720,
-    margin: 0.04,
+    margin: 0.0
   });
 </script>
+
 </body>
 </html>
