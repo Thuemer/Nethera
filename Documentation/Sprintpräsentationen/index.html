@@ -105,6 +105,22 @@
       box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
     }
 
+    .card-title {
+      font-size: 1.3em;
+      margin: 0 0 0.2rem 0;
+    }
+
+    .card-list {
+      padding-left: 1.1em;
+      margin: 0;
+    }
+
+    .card-list li {
+      font-size: 0.95em;
+      line-height: 1.4;
+      margin-bottom: 0.4rem;
+    }
+
     .image-right {
       display: flex;
       align-items: center;
@@ -590,6 +606,73 @@
         </section>
       </section>
       <!--=====End Review Section====-->
+
+      <!--=====Start Rückblick & Ausblick====-->
+      <section>
+        <section>
+          <h2 style="color:var(--blue)">Was schon funktioniert</h2>
+          <div class="columns">
+            <div class="card">
+              <h3 class="card-title">Web-App</h3>
+              <ul class="card-list">
+                <li>Dashboard mit Router-Status, Speed & DNS-Statistik</li>
+                <li>Geräteliste mit Online-Status (LAN/WLAN)</li>
+                <li>Seiten für Datenverkehr, Topologie, Schutz, Zeitlimits</li>
+                <li>Responsive Dark-Mode-Design</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Backend</h3>
+              <ul class="card-list">
+                <li>Quarkus-REST-API mit PostgreSQL</li>
+                <li>Router-Sync alle 60 s per SSH</li>
+                <li>Aktivitätsprotokoll (Gerät verbunden/getrennt)</li>
+                <li>Gruppen, Presets, Blocklisten & Zeitlimits speicherbar</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Router & Sicherheit</h3>
+              <ul class="card-list">
+                <li>OpenWRT mit dnsmasq & DHCP</li>
+                <li>Seitensperre über DNS getestet</li>
+                <li>SSH-Keys & OpenVPN eingerichtet</li>
+                <li>Login über Keycloak</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="color:var(--blue)">Was noch fehlt</h2>
+          <div class="columns">
+            <div class="card">
+              <h3 class="card-title">Features</h3>
+              <ul class="card-list">
+                <li>Regeln aus der App am Router anwenden (Adblock, Filter, Zeitlimits)</li>
+                <li>Priorisierung einzelner Geräte (QoS)</li>
+                <li>Gast-WLAN per QR-Code</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Technologien</h3>
+              <ul class="card-list">
+                <li>Mobile App bzw. PWA</li>
+                <li>Router-Anbindung über das Internet (Tunnel/VPN)</li>
+                <li>Filterlisten aus externen Quellen (z.B. OISD)</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3 class="card-title">Sicherheit & Qualität</h3>
+              <ul class="card-list">
+                <li>Alle API-Endpoints per Keycloak absichern</li>
+                <li>Userverwaltung & Registrierung</li>
+                <li>Usability-Tests mit Testnutzern</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </section>
+      <!--=====End Rückblick & Ausblick====-->
     </div>
   </div>
 
