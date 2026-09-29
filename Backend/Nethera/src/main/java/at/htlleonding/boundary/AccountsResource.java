@@ -9,6 +9,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 @Authenticated
 @Path("api/accounts")
@@ -25,8 +26,14 @@ public class AccountsResource {
     @Path("me")
     public Account getCurrentAccount() {
         String sub = identity.getPrincipal().getName();
-        String email = identity.getAttribute("email");
+        String email = identity.getPrincipal() instanceof JsonWebToken token
+                ? token.getClaim("email")
+                : identity.getAttribute("email");
+        if (email == null || email.isBlank()) {
+            email = sub + "@nethera.local";
+        }
+        String accountEmail = email;
         return accountsRepository.findBySub(sub)
-                .orElseGet(() -> accountsRepository.provision(sub, email));
+                .orElseGet(() -> accountsRepository.provision(sub, accountEmail));
     }
 }

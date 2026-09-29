@@ -8,21 +8,23 @@ If you want to learn more about Quarkus, please visit its website: <https://quar
 
 ### Prerequisites
 
-Start the docker-compose stack (Keycloak + PostgreSQL) before running the application:
+The complete application (frontend, backend, Keycloak and databases) is started from the repository root:
 
 ```shell script
-docker compose up -d
+docker compose up -d --build
 ```
+
+Open <http://localhost:5500/index.html>. On a fresh database, sign in as `demo` / `nethera-demo`. See the root README for details. Do not run the old compose file in this backend directory for the complete app.
 
 ### Authentication
 
-All API endpoints require a valid Bearer token issued by the `nethera` Keycloak realm.
+Protected API endpoints require a valid Bearer token issued by the `Nethera` Keycloak realm.
 
 **Obtain a token (dev user):**
 
 ```shell script
-TOKEN=$(curl -s -X POST http://localhost:8180/realms/nethera/protocol/openid-connect/token \
-  -d "client_id=nethera-frontend&grant_type=password&username=dev&password=dev" \
+TOKEN=$(curl -s -X POST http://localhost:8081/realms/Nethera/protocol/openid-connect/token \
+  -d "client_id=Nethera-frontend&grant_type=password&username=demo&password=nethera-demo" \
   | jq -r .access_token)
 ```
 
@@ -32,7 +34,7 @@ TOKEN=$(curl -s -X POST http://localhost:8180/realms/nethera/protocol/openid-con
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/routers/list
 ```
 
-> **Note**: Import `keycloak/nethera-realm-export.json` into Keycloak if the `nethera` realm does not exist yet (admin console: <http://localhost:8180>). After importing, create the `dev` user manually — the export does not include users. Keycloak 26 requires users to have an email address set for Direct Access Grants to work (e.g. `dev@nethera.local`).
+> **Note**: The root Compose stack imports the realm and demo user automatically into a new Keycloak database. Existing Keycloak data is kept; the import does not overwrite it.
 
 ## Running the application in dev mode
 

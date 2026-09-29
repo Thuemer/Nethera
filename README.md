@@ -20,21 +20,24 @@ Willkommen beim Nethera-Projekt. Dieses Repository enthält die Implementierung 
 
 ## Schnellstart
 
-1. Repository klonen:
+Docker Desktop starten, dann im Projekt-Hauptordner ausfuehren:
 
 ```bash
-cd Nethera
-git clone git@github.com:Thuemer/Nethera.git
+docker compose up -d --build
 ```
 
-2. Präsentation lokal anzeigen: (für die Zukunft)
+Danach [Nethera im Browser](http://localhost:5500/index.html) oeffnen. Beim ersten Start kann Keycloak etwa eine Minute brauchen. Das lokale Demo-Login lautet `demo` / `nethera-demo`. Der Keycloak-Adminbereich liegt auf [localhost:8081](http://localhost:8081), die API auf `http://localhost:8080`.
+
+Ein Compose-Befehl startet Frontend, Backend, Keycloak und zwei PostgreSQL-Datenbanken als zusammengehoerigen Stack. Die Daten liegen in Docker-Volumes und bleiben nach einem Neustart erhalten. Nur bei einer neuen Datenbank werden Beispieldaten angelegt; bestehende Daten werden nicht ueberschrieben. Die Routerwerte sind Demo-Daten, bis ein echter Router-Sync konfiguriert ist. Der Sync ist im Docker-Start deaktiviert, weil der im Projekt hinterlegte SSH-Pfad nur auf einem Entwicklerrechner existiert.
+
+Status und Logs:
 
 ```bash
-cd Projekt-Doku
-npx serve .
-# or
-npx live-server .
+docker compose ps
+docker compose logs -f backend keycloak
 ```
+
+Mit `docker compose stop` haeltst du die Dienste an; `docker compose up -d` startet sie wieder. **Nicht** `docker compose down -v` verwenden, wenn die Daten erhalten bleiben sollen. Die Standardpasswoerter und der Demo-Nutzer sind nur fuer eine lokale Vorfuehrung gedacht. Vor einem Einsatz im Netzwerk muessen sie geaendert und HTTPS eingerichtet werden.
 
 ## Farbpalette
 - \#001818

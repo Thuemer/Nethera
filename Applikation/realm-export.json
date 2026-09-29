@@ -2582,6 +2582,24 @@
   "verifiableCredentialsEnabled": false,
   "adminPermissionsEnabled": false,
   "scimApiEnabled": false,
+  "loginTheme": "nethera",
+  "users": [
+    {
+      "username": "demo",
+      "firstName": "Nethera",
+      "lastName": "Demo",
+      "email": "demo@nethera.local",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "nethera-demo",
+          "temporary": false
+        }
+      ]
+    }
+  ],
   "clientProfiles": {
     "profiles": []
   },
