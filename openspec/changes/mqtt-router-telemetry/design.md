@@ -21,7 +21,7 @@ Constraints: Quarkus 3.31 / Java 21, PostgreSQL 15, a one-command `docker compos
 - SSH keeps working and is used automatically for any stream MQTT does not currently supply.
 - Database rows are identical whichever transport delivered the data. Existing dashboards and REST endpoints are untouched.
 - The Docker stack shows live data when a router or the simulator publishes.
-- Data keys use the router ID instead of a hard-coded `1`, so a second router needs no code change.
+- MQTT data is keyed by the router ID from the topic instead of a hard-coded `1`, so a second router with an agent needs no code change.
 
 **Non-Goals:**
 - Commands from backend to router (block lists, time limits, QoS, firewall). This is a later change.
@@ -58,11 +58,11 @@ The agent publishes raw `rxBytes`/`txBytes` with its own `ts`. `SpeedIngestor` k
 Move `prevForwarded`/`prevAnsweredLocally` from fields on `RouterMetricsSyncService` into a `Map<Long, DnsBaseline>` in `DnsIngestor`. This removes the single-router assumption and makes SSH↔MQTT switches seamless, as the spec requires. The agent still triggers `SIGUSR1` and reads the syslog line. That stays the same, it just runs locally.
 
 ### D4 — Library: `quarkus-messaging-mqtt` (SmallRye Reactive Messaging)
-One `@Incoming` method per channel, configured in `application.properties`. Wildcard topics `nethera/+/telemetry/speed` etc. Router ID is read from the incoming topic (`ReceivingMqttMessageMetadata#getTopic`). Methods are `@Blocking` + `@Transactional`, because the ingestors use JPA. Each channel sets `failure-strategy=ignore` so one bad payload can't stop the stream, and the consumer catches parse/validation errors and acks after logging.
+A single channel `router-telemetry` subscribes to `nethera/#`, and `TelemetryMessageHandler` dispatches by topic (`nethera/<id>/status`, `nethera/<id>/telemetry/<stream>`). The router ID comes from `ReceivingMqttMessageMetadata#getTopic`. *Why one channel:* every SmallRye MQTT channel opens its own client connection, so five channels would need five client IDs and five persistent sessions. One subscription gives one connection and one session, which keeps queued QoS 1 messages consistent across a backend restart. The consumer is `@Blocking` and always acks. Parsing, ingestion and freshness happen in one `@Transactional` handler call, so an invalid payload rolls back and writes nothing. `failure-strategy=ignore` is set as a second safety net. `max-message-size` is raised from the 8 KB default to 64 KB for large device snapshots.
 
-*Alternative:* Eclipse Paho directly. Rejected because it means managing connection, reconnect and threading by hand, while the Quarkus extension handles that, offers health checks, and matches the rest of the stack. *Alternative:* `quarkus-messaging-mqtt` with Dev Services. Kept for `quarkus dev`, but Compose runs its own Mosquitto.
+*Alternative:* Eclipse Paho directly. Rejected because it means managing connection, reconnect and threading by hand, while the Quarkus extension handles that, offers health checks, and matches the rest of the stack.
 
-Disabling: in `ssh` mode all MQTT channels are disabled through `mp.messaging.incoming.<ch>.enabled=${nethera.telemetry.mqtt-enabled}`, a value derived from the mode, so no connection is attempted.
+Disabling: `TelemetryModeConfigInterceptor` (a SmallRye `ConfigSourceInterceptor`) returns `false` for `mp.messaging.incoming.router-telemetry.enabled` when the mode is `ssh`, so no client is created. Plain property expressions can't express that condition.
 
 ### D5 — Topic layout and QoS
 ```
@@ -72,7 +72,7 @@ nethera/<routerId>/telemetry/speed              QoS 0
 nethera/<routerId>/telemetry/dns                QoS 1
 nethera/<routerId>/telemetry/devices            QoS 1
 ```
-Speed uses QoS 0 because losing one sample only widens the next Δt. DNS and devices use QoS 1 because a lost devices snapshot could delay a DISCONNECTED event. Duplicates are harmless: device ingestion is idempotent, and a duplicate DNS message produces a zero delta. Metadata and status are retained so a freshly started backend learns router state immediately. The backend uses a fixed client ID with `clean-session=false` so QoS 1 messages queued while it restarts are delivered.
+These are the publish QoS levels. The backend subscribes with QoS 1, so each message is delivered at the level it was published with. Speed uses QoS 0 because losing one sample only widens the next Δt. DNS and devices use QoS 1 because a lost devices snapshot could delay a DISCONNECTED event. Duplicates are harmless: device ingestion is idempotent, and a duplicate DNS message produces a zero delta. Metadata and status are retained so a freshly started backend learns router state immediately. The backend uses a fixed client ID with `clean-session=false` so QoS 1 messages queued while it restarts are delivered.
 
 The router ID in the topic is the `Router` primary key. *Alternative:* the router's MAC or a serial number. More robust, but it needs a lookup column and a provisioning flow, which is out of scope. The migration path is just a mapping table later.
 
@@ -80,7 +80,7 @@ The router ID in the topic is the `Router` primary key. *Alternative:* the route
 The backend only consumes the status topic. The behavior below is what the separate agent change must implement, and the simulator mimics it. `mosquitto_pub` calls are short-lived, so a Last Will on them would never fire. The agent therefore starts one background `mosquitto_sub -t nethera/<id>/status --will-topic nethera/<id>/status --will-payload offline --will-retain -k 30`, then publishes retained `online`. If the router dies, the broker publishes `offline` after about 45 s (1.5× keepalive). This gives "router went away" detection without polling.
 
 ### D7 — Fallback: per-stream freshness, decided by the scheduler
-`TelemetryFreshness` stores `lastMqttIngest[routerId][stream]`. In `auto` mode `RouterSyncScheduler` iterates over all routers (no longer only ID 1) and calls the SSH collector for a stream only if it is stale. Default `stale-after = 180s` = 3 missed 60-second cycles. That tolerates a lost message without flapping between transports. Metadata additionally counts as stale while status is `offline`. Transitions are logged once (track the previous decision per router+stream).
+`TelemetryFreshness` stores `lastMqttIngest[routerId][stream]`. In `auto` mode `RouterSyncScheduler` calls the SSH collector for a stream only if it is stale. SSH settings (`nethera.router.ip`, key) describe exactly one router, so the scheduler syncs only the router named by `nethera.router.id` (default 1). Looping over all routers would write that one router's data into every router row. MQTT ingestion is not limited this way and handles any router ID from the topic. Default `stale-after = 180s` = 3 missed 60-second cycles. That tolerates a lost message without flapping between transports. Metadata additionally counts as stale while status is `offline`. Transitions are logged once (track the previous decision per router+stream).
 
 *Why per-stream:* an agent that publishes speed but has a broken `iw` should still get devices over SSH. *Alternative:* all-or-nothing per router. Simpler, but it hides partial agent failures.
 
