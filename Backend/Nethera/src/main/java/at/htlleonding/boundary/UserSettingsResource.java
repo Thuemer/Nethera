@@ -1,6 +1,7 @@
 package at.htlleonding.boundary;
 
 import at.htlleonding.model.UserSetting;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -17,7 +18,9 @@ public class UserSettingsResource {
     @Inject
     EntityManager entityManager;
 
+    // Readable in the account screen's guest mode; changing settings requires login
     @GET
+    @PermitAll
     public List<SettingDto> getAll() {
         return entityManager.createNamedQuery(UserSetting.QUERY_FIND_ALL, UserSetting.class)
                 .getResultList()
