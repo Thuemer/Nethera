@@ -83,7 +83,6 @@ context: |
 
   ### Other directories
   - `Website/`        — Static marketing/landing page (plain HTML/CSS/JS)
-  - `keycloak/`       — Realm export JSON
   - `Documentation/`  — Sprint docs, meta-spec, OpenVPN/SSH setup guides
   - `openspec/`       — OpenSpec change management (this file)
   - `plantUML/`       — ERD and architecture diagrams
