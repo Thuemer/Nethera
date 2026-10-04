@@ -1,6 +1,6 @@
 ## Context
 
-Nethera is a Quarkus REST backend. Keycloak authentication is already wired up via `quarkus-oidc` in `service` mode — all endpoints require a valid Bearer JWT from the `nethera` Keycloak realm. The `Account` entity currently carries `password_hash`, `name`, `rolle`, `security`, `traffic`, and `weekly` columns that predate the Keycloak integration and are now orphaned. There is no link between a Keycloak identity and a local `Account` row. The `/api/accounts/me` endpoint returns a hardcoded first row rather than the authenticated user.
+Nethera is a Quarkus REST backend. Keycloak authentication is already wired up via `quarkus-oidc` in `service` mode — all endpoints require a valid Bearer JWT from the `Nethera` Keycloak realm. The `Account` entity currently carries `password_hash`, `name`, `rolle`, `security`, `traffic`, and `weekly` columns that predate the Keycloak integration and are now orphaned. There is no link between a Keycloak identity and a local `Account` row. The `/api/accounts/me` endpoint returns a hardcoded first row rather than the authenticated user.
 
 ## Goals / Non-Goals
 
@@ -40,7 +40,7 @@ Nethera is a Quarkus REST backend. Keycloak authentication is already wired up v
 
 ### 3. Keycloak User Registration enabled in realm settings
 
-**Decision**: Enable "User Registration" in the `nethera` realm (Realm Settings → Login → User Registration ON). No backend endpoint is added for registration.
+**Decision**: Enable "User Registration" in the `Nethera` realm (Realm Settings → Login → User Registration ON). No backend endpoint is added for registration.
 
 **Rationale**: Consistent with Keycloak as source of truth. Keycloak handles the registration form, email/password validation, and optional email verification. The backend is not in the credential-management business.
 

@@ -7,7 +7,7 @@ Authentication is handled by Keycloak, but the backend has no way to identify wh
 - **BREAKING** — `Account` entity reduced to `id`, `keycloak_sub` (unique), `email`; columns `password_hash`, `name`, `rolle`, `security`, `traffic`, `weekly` are dropped
 - `GET /api/accounts/me` rewritten to extract `sub` + `email` from the Bearer JWT and auto-provision an `Account` row on first call
 - `GET /api/accounts/list` removed (no longer meaningful without extra profile data)
-- Keycloak `nethera` realm: "User Registration" enabled so users can self-register without backend involvement
+- Keycloak `Nethera` realm: "User Registration" enabled so users can self-register without backend involvement
 - `AccountsRepository` updated: find-by-keycloak-sub, upsert on first login
 
 ## Capabilities
@@ -26,5 +26,5 @@ Authentication is handled by Keycloak, but the backend has no way to identify wh
 - **`AccountsRepository.java`**: replace `getFirstAccount` / `getAllAccounts` with `findBySub` and `provision`
 - **`AccountsResource.java`**: rewrite `/me` to use `SecurityIdentity`; remove `/list`
 - **`import.sql`**: remove any account seed data
-- **Keycloak**: enable User Registration on the `nethera` realm
+- **Keycloak**: enable User Registration on the `Nethera` realm
 - **Schema**: `drop-and-create` handles the column removal automatically in dev

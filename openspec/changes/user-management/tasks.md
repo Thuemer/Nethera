@@ -20,13 +20,13 @@
 
 ## 4. Enable Keycloak User Registration
 
-- [ ] 4.1 In the Keycloak admin console (`http://localhost:8180`), go to `nethera` realm → Realm Settings → Login tab → enable "User Registration"
-- [ ] 4.2 Re-export the updated `nethera` realm JSON and overwrite `keycloak/nethera-realm-export.json` in the repository
-- [ ] 4.3 Verify the registration link appears on the Keycloak login page
+- [ ] 4.1 Set `"registrationAllowed": true` in `Applikation/realm-export.json` (the file `compose.yaml` imports into realm `Nethera`). Edit the JSON directly; don't re-export from the admin console, because a partial export omits users and would drop the `demo` user
+- [ ] 4.2 Apply it to a running Keycloak: `--import-realm` skips realms that already exist, so either enable it by hand in the admin console (`http://localhost:8081`, `admin` / `admin` → realm `Nethera` → Realm settings → Login → User registration) or recreate Keycloak's database (`docker compose rm -sf keycloak keycloak-postgres && docker volume rm nethera_keycloak-pgdata && docker compose up -d`; this deletes all Keycloak users except the imported `demo`)
+- [ ] 4.3 Verify the "Register" link appears on the Keycloak login page (frontend `http://localhost:5500` → Account → "Mit Nethera anmelden")
 
 ## 5. Verification
 
-- [ ] 5.1 Start the stack and confirm `GET /api/accounts/me` without a token returns HTTP 401
-- [ ] 5.2 Obtain a token for the existing `dev` user and confirm `GET /api/accounts/me` returns an `Account` with the correct `keycloakSub` and `email`
-- [ ] 5.3 Call `GET /api/accounts/me` a second time and confirm no duplicate row is inserted (check DB or log)
-- [ ] 5.4 Register a new user via the Keycloak registration page, obtain a token, call `/me`, and confirm a new `Account` row is provisioned
+- [ ] 5.1 Start the stack (`docker compose up -d --build`) and confirm `GET http://localhost:8080/api/accounts/me` without a token returns HTTP 401
+- [ ] 5.2 Obtain a token for the `demo` user (`demo` / `nethera-demo`, password grant on client `Nethera-frontend`, command in `Backend/Nethera/README.md`) and confirm `GET /api/accounts/me` returns an `Account` whose `keycloakSub` equals the token's `sub` and whose `email` is `demo@nethera.local`
+- [ ] 5.3 Call `GET /api/accounts/me` a second time and confirm no duplicate row is inserted (`docker compose exec postgres psql -U nethera -d nethera -c "select keycloak_sub, count(*) from account group by keycloak_sub"`)
+- [ ] 5.4 Register a new user via the Keycloak registration page, obtain a token, call `/me`, and confirm a new `account` row is provisioned
