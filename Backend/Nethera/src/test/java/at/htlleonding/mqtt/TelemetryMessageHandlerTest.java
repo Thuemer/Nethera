@@ -13,6 +13,8 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -54,6 +56,13 @@ class TelemetryMessageHandlerTest {
     }
 
     @Test
+    void validTelemetryRefreshesLastSeen() {
+        handler.handle("nethera/1/telemetry/dns", "{\"v\":1,\"ts\":100,\"forwarded\":7,\"answeredLocally\":3}");
+
+        assertNotNull(router.getLastSeen());
+    }
+
+    @Test
     void unknownRouterIsDiscarded() {
         handler.handle("nethera/99/telemetry/dns", "{\"v\":1,\"ts\":100,\"forwarded\":7,\"answeredLocally\":3}");
 
@@ -66,6 +75,7 @@ class TelemetryMessageHandlerTest {
                 () -> handler.handle("nethera/1/telemetry/dns", "{\"v\":1,\"ts\":100}"));
 
         verifyNoInteractions(handler.dnsIngestor, handler.freshness);
+        assertNull(router.getLastSeen());
     }
 
     @Test

@@ -24,7 +24,7 @@
 - [x] 3.2 Add `docker/mosquitto/acl`: backend user `read nethera/+/#`, user `router-1` `write nethera/1/#` (+ `read nethera/1/status` for the LWT subscriber)
 - [x] 3.3 Add an entrypoint step that builds the password file from `NETHERA_MQTT_BACKEND_PASSWORD` and `NETHERA_MQTT_ROUTER1_PASSWORD` (demo defaults) with `mosquitto_passwd -b`
 - [x] 3.4 Add the `mosquitto` service + `mosquitto-data` volume to `compose.yaml`, publish `1883:1883`, make `backend` depend on it, and set `NETHERA_TELEMETRY_MODE=mqtt` plus MQTT host and credentials on the backend
-- [ ] 3.5 Verify: an anonymous client is rejected, `router-1` cannot publish to `nethera/2/...`, and the backend user cannot publish
+- [x] 3.5 Verify: an anonymous client is rejected, `router-1` cannot publish to `nethera/2/...`, and the backend user cannot publish
 
 ## 4. MQTT consumers
 
@@ -34,14 +34,14 @@
 - [x] 4.4 Implement `MqttTelemetryConsumer` (`@Incoming @Blocking`, always acks) and `TelemetryMessageHandler` (`@Transactional`): read router ID from the topic, look up `Router` (unknown → warn + drop), parse to samples, call the ingestor, call `TelemetryFreshness.markIngested`
 - [x] 4.5 Implement the status handler: `online` → `isOnline=true`, `lastSeen=now`; `offline` → `isOnline=false`; update `TelemetryFreshness`
 - [x] 4.6 Catch and log malformed JSON / validation errors per message so the channel keeps running
-- [ ] 4.7 Integration test with Quarkus Dev Services (or a Testcontainers Mosquitto): publish one valid message per stream and assert rows; publish a malformed one and assert the next valid message is still processed
+- [x] 4.7 Integration test `MqttTelemetryIT` (Testcontainers Postgres + Mosquitto, runs in `mvn verify`): publish one valid message per stream and assert rows; publish a malformed one and assert the next valid message is still processed
 - [x] 4.8 Confirm `nethera.telemetry.mode=ssh` starts without a broker and makes no MQTT connection attempt
 
 ## 5. Simulator and end-to-end check
 
 - [x] 5.1 Write `scripts/mqtt-simulate-router.sh <id>` (Dockerized `mosquitto_pub` on the Compose network, rising counters, devices toggling online/offline, retained metadata + `online` status, `offline` on Ctrl+C)
-- [ ] 5.2 Run the simulator against `docker compose up` and confirm dashboard data and activity logs update within two cycles
-- [ ] 5.3 With the backend in `auto` mode: start the simulator and confirm the scheduler stops SSH per stream; stop it and confirm `isOnline` flips and SSH fallback resumes after `stale-after`
+- [x] 5.2 Run the simulator against `docker compose up` and confirm dashboard data and activity logs update within two cycles
+- [x] 5.3 With the backend in `auto` mode: start the simulator and confirm the scheduler stops SSH per stream; stop it and confirm `isOnline` flips and SSH fallback resumes after `stale-after`
 
 ## 6. Documentation
 

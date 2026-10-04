@@ -31,9 +31,10 @@ public class TelemetryFreshness {
         online.put(routerId, isOnline);
     }
 
+    // Metadata is sent rarely (retained), so it follows the Last-Will-backed status instead of message age
     public boolean isFresh(long routerId, TelemetryStream stream) {
-        if (stream == TelemetryStream.METADATA && !online.getOrDefault(routerId, false)) {
-            return false;
+        if (stream == TelemetryStream.METADATA) {
+            return online.getOrDefault(routerId, false);
         }
         Instant last = lastIngested.get(new Key(routerId, stream));
         return last != null && !Duration.between(last, clock.instant()).minus(mqttConfig.staleAfter()).isPositive();

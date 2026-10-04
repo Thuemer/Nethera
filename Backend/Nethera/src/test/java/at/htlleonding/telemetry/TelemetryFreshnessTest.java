@@ -53,7 +53,7 @@ class TelemetryFreshnessTest {
     }
 
     @Test
-    void metadataRequiresOnlineStatus() {
+    void metadataFollowsOnlineStatus() {
         freshness.markIngested(1, TelemetryStream.METADATA);
         assertFalse(freshness.isFresh(1, TelemetryStream.METADATA));
 
@@ -62,6 +62,15 @@ class TelemetryFreshnessTest {
 
         freshness.setStatus(1, false);
         assertFalse(freshness.isFresh(1, TelemetryStream.METADATA));
+    }
+
+    @Test
+    void metadataStaysFreshWhileOnlineEvenWithoutRecentMessage() {
+        freshness.markIngested(1, TelemetryStream.METADATA);
+        freshness.setStatus(1, true);
+        at(START.plusSeconds(600));
+
+        assertTrue(freshness.isFresh(1, TelemetryStream.METADATA));
     }
 
     private void at(Instant instant) {

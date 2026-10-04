@@ -49,15 +49,34 @@ The backend SHALL set `router.isOnline` from the `status` topic. The publishing 
 - **THEN** `router.isOnline` is set to `false` and `router.lastSeen` is left unchanged
 
 ### Requirement: Telemetry freshness tracking
-The backend SHALL record, per router and per stream (metadata, speed, dns, devices), the time the last valid MQTT message was ingested. A stream counts as **fresh** if that time is within `nethera.mqtt.stale-after` (default `180s`). Metadata freshness SHALL also require the router status to be `online`.
+The backend SHALL record, per router and per stream (speed, dns, devices), the time the last valid MQTT message was ingested. A stream counts as **fresh** if that time is within `nethera.mqtt.stale-after` (default `180s`). The metadata stream is published rarely and retained, so it SHALL count as fresh exactly while the router's MQTT status is `online`, whatever the age of the last metadata message.
 
 #### Scenario: Stream is fresh
 - **WHEN** a valid speed message for router 1 was ingested 30 seconds ago
 - **THEN** the speed stream of router 1 is reported as fresh
 
+#### Scenario: Metadata fresh while router is online
+- **WHEN** the last status for router 1 was `online` and the last metadata message arrived 600 seconds ago
+- **THEN** the metadata stream of router 1 is reported as fresh
+
+#### Scenario: Metadata stale after Last Will
+- **WHEN** `offline` is received on `nethera/1/status`, or no status has been received since backend start
+- **THEN** the metadata stream of router 1 is reported as stale
+
 #### Scenario: Stream goes stale
 - **WHEN** the last valid DNS message for router 1 was ingested more than 180 seconds ago, or none has been received since backend start
 - **THEN** the DNS stream of router 1 is reported as stale
+
+### Requirement: Valid telemetry refreshes router lastSeen
+Every valid telemetry message (metadata, speed, dns, devices) SHALL set `router.lastSeen` to now for the router in its topic, just as a successful SSH sync did. Invalid payloads SHALL NOT change `lastSeen`.
+
+#### Scenario: Speed message keeps lastSeen current
+- **WHEN** a valid speed message for router 1 is ingested
+- **THEN** `router.lastSeen` of router 1 is set to now
+
+#### Scenario: Invalid payload
+- **WHEN** a payload for router 1 fails validation
+- **THEN** `router.lastSeen` of router 1 is unchanged
 
 ### Requirement: MQTT ingestion can be disabled
 The backend SHALL NOT connect to the broker when `nethera.telemetry.mode = ssh`.
