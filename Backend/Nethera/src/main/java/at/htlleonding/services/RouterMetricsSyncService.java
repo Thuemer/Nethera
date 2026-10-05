@@ -1,13 +1,16 @@
 package at.htlleonding.services;
 
-import at.htlleonding.model.DnsStat;
 import at.htlleonding.model.Router;
-import at.htlleonding.model.SpeedStat;
+import at.htlleonding.telemetry.DnsIngestor;
+import at.htlleonding.telemetry.DnsSample;
+import at.htlleonding.telemetry.MetadataIngestor;
+import at.htlleonding.telemetry.MetadataSample;
+import at.htlleonding.telemetry.SpeedIngestor;
+import at.htlleonding.telemetry.SpeedSample;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
@@ -16,7 +19,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 @ApplicationScoped
@@ -25,7 +27,13 @@ public class RouterMetricsSyncService {
     private static final Logger LOG = Logger.getLogger(RouterMetricsSyncService.class);
 
     @Inject
-    EntityManager entityManager;
+    SpeedIngestor speedIngestor;
+
+    @Inject
+    DnsIngestor dnsIngestor;
+
+    @Inject
+    MetadataIngestor metadataIngestor;
 
     @ConfigProperty(name = "nethera.router.ip", defaultValue = "192.168.1.1")
     String routerIp;
@@ -35,9 +43,6 @@ public class RouterMetricsSyncService {
 
     @ConfigProperty(name = "nethera.router.wan-interface", defaultValue = "wan")
     String wanInterface;
-
-    private long prevForwarded = -1;
-    private long prevAnsweredLocally = -1;
 
     @Transactional
     public void syncSpeed(Router router) {
@@ -68,12 +73,7 @@ public class RouterMetricsSyncService {
             double downloadMbps = Math.round(((t2[0] - t1[0]) / 2.0 / 125000.0) * 10.0) / 10.0;
             double uploadMbps = Math.round(((t2[8] - t1[8]) / 2.0 / 125000.0) * 10.0) / 10.0;
 
-            SpeedStat stat = new SpeedStat();
-            stat.setDownloadSpeed(downloadMbps);
-            stat.setUploadSpeed(uploadMbps);
-            stat.setTimestamp(LocalDateTime.now());
-            stat.setRouter(router);
-            entityManager.persist(stat);
+            speedIngestor.ingestRate(router, new SpeedSample(downloadMbps, uploadMbps));
 
         } catch (Exception e) {
             LOG.warn("Speed sync failed: " + e.getMessage());
@@ -114,34 +114,7 @@ public class RouterMetricsSyncService {
                 return;
             }
 
-            long forwarded = parsed[0];
-            long answeredLocally = parsed[1];
-
-            if (prevForwarded == -1) {
-                prevForwarded = forwarded;
-                prevAnsweredLocally = answeredLocally;
-                return;
-            }
-
-            long deltaForwarded = forwarded - prevForwarded;
-            long deltaAnswered = answeredLocally - prevAnsweredLocally;
-
-            if (deltaForwarded < 0 || deltaAnswered < 0) {
-                prevForwarded = forwarded;
-                prevAnsweredLocally = answeredLocally;
-                return;
-            }
-
-            prevForwarded = forwarded;
-            prevAnsweredLocally = answeredLocally;
-
-            DnsStat stat = new DnsStat();
-            stat.setTotalQueries((int) (deltaForwarded + deltaAnswered));
-            stat.setBlockedQueries((int) deltaAnswered);
-            stat.setTrackersDetected(0);
-            stat.setTimestamp(LocalDateTime.now());
-            stat.setRouter(router);
-            entityManager.persist(stat);
+            dnsIngestor.ingest(router, new DnsSample(parsed[0], parsed[1]));
 
         } catch (Exception e) {
             LOG.warn("DNS sync failed: " + e.getMessage());
@@ -170,7 +143,6 @@ public class RouterMetricsSyncService {
 
     @Transactional
     public void syncRouterMetadata(Router router) {
-        Router managed = entityManager.merge(router);
         try (SSHClient ssh = new SSHClient()) {
             ssh.addHostKeyVerifier(new PromiscuousVerifier());
             ssh.setConnectTimeout(5000);
@@ -189,14 +161,12 @@ public class RouterMetricsSyncService {
             String model = root.path("model").asText(null);
             String firmware = root.path("release").path("description").asText(null);
 
-            if (model != null) managed.setModel(model);
-            if (firmware != null) managed.setFirmware(firmware);
-            managed.setOnline(true);
-            managed.setLastSeen(LocalDateTime.now());
+            metadataIngestor.ingest(router, new MetadataSample(model, firmware));
+            metadataIngestor.setOnline(router, true);
 
         } catch (Exception e) {
             LOG.warn("Router metadata sync failed: " + e.getMessage());
-            managed.setOnline(false);
+            metadataIngestor.setOnline(router, false);
         }
     }
 }

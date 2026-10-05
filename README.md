@@ -28,7 +28,22 @@ docker compose up -d --build
 
 Danach [Nethera im Browser](http://localhost:5500/index.html) oeffnen. Beim ersten Start kann Keycloak etwa eine Minute brauchen. Das lokale Demo-Login lautet `demo` / `nethera-demo`. Der Keycloak-Adminbereich liegt auf [localhost:8081](http://localhost:8081), die API auf `http://localhost:8080`.
 
-Ein Compose-Befehl startet Frontend, Backend, Keycloak und zwei PostgreSQL-Datenbanken als zusammengehoerigen Stack. Die Daten liegen in Docker-Volumes und bleiben nach einem Neustart erhalten. Nur bei einer neuen Datenbank werden Beispieldaten angelegt; bestehende Daten werden nicht ueberschrieben. Die Routerwerte sind Demo-Daten, bis ein echter Router-Sync konfiguriert ist. Der Sync ist im Docker-Start deaktiviert, weil der im Projekt hinterlegte SSH-Pfad nur auf einem Entwicklerrechner existiert.
+Ein Compose-Befehl startet Frontend, Backend, Keycloak, den MQTT-Broker (Mosquitto) und zwei PostgreSQL-Datenbanken als zusammengehoerigen Stack. Die Daten liegen in Docker-Volumes und bleiben nach einem Neustart erhalten. Nur bei einer neuen Datenbank werden Beispieldaten angelegt; bestehende Daten werden nicht ueberschrieben. Die Routerwerte sind Demo-Daten, bis ein Router Telemetrie per MQTT sendet. Im Docker-Start laeuft das Backend im Modus `mqtt` (kein SSH, weil der SSH-Schluessel nur auf einem Entwicklerrechner existiert).
+
+### Router-Telemetrie (MQTT)
+
+Der Broker lauscht auf Port `1883`. Dieser Port ist bewusst im ganzen LAN erreichbar, weil der Router ihn erreichen muss. Ohne Router kann man Live-Daten simulieren:
+
+```bash
+scripts/mqtt-simulate-router.sh 1
+```
+
+Neue Passwoerter (nur Demo-Standardwerte, vor echtem Einsatz aendern):
+
+- `NETHERA_MQTT_BACKEND_PASSWORD` (Standard `nethera-backend`)
+- `NETHERA_MQTT_ROUTER1_PASSWORD` (Standard `nethera-router`)
+
+Der Transport wird mit `nethera.telemetry.mode` gewaehlt: `auto` (Standard ausserhalb von Docker: MQTT, sonst Fallback auf SSH), `mqtt` oder `ssh`. Details stehen in `Backend/Nethera/README.md`.
 
 Status und Logs:
 

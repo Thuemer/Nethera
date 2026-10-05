@@ -1,13 +1,10 @@
 package at.htlleonding.services;
 
-import at.htlleonding.model.ActivityLog;
-import at.htlleonding.model.ConnectedDevice;
 import at.htlleonding.model.Router;
-import at.htlleonding.repository.ConnectedDevicesRepository;
+import at.htlleonding.telemetry.DeviceIngestor;
+import at.htlleonding.telemetry.DeviceSnapshot;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
@@ -18,8 +15,9 @@ import org.jboss.logging.Logger;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -29,10 +27,7 @@ public class RouterSyncService {
     private static final Logger LOG = Logger.getLogger(RouterSyncService.class);
 
     @Inject
-    ConnectedDevicesRepository deviceRepository;
-
-    @Inject
-    EntityManager entityManager;
+    DeviceIngestor deviceIngestor;
 
     @ConfigProperty(name = "nethera.router.ip", defaultValue = "192.168.1.1")
     String routerIp;
@@ -75,7 +70,7 @@ public class RouterSyncService {
 
             Set<String> activeMacs = parseActiveMacs(arpOutput);
             Set<String> wifiMacs = parseWifiMacs(wifiOutput);
-            parseAndSaveLeases(router, dhcpOutput, activeMacs, wifiMacs);
+            deviceIngestor.ingest(router, new DeviceSnapshot(parseLeases(dhcpOutput), activeMacs, wifiMacs));
 
         } catch (Exception e) {
             LOG.warn("DHCP sync failed: " + e.getMessage());
@@ -114,7 +109,8 @@ public class RouterSyncService {
         return wifiMacs;
     }
 
-    private void parseAndSaveLeases(Router router, String dhcpOutput, Set<String> activeMacs, Set<String> wifiMacs) throws Exception {
+    private List<DeviceSnapshot.Lease> parseLeases(String dhcpOutput) throws Exception {
+        List<DeviceSnapshot.Lease> leases = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new StringReader(dhcpOutput))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -122,50 +118,10 @@ public class RouterSyncService {
 
                 String[] parts = line.split("\\s+");
                 if (parts.length >= 4) {
-                    String mac = parts[1].toLowerCase();
-                    String ip = parts[2];
-                    String hostname = parts[3].equals("*") ? "Unbekannt" : parts[3];
-                    boolean isOnline = activeMacs.contains(mac);
-                    String connectionType = wifiMacs.contains(mac) ? "WIFI" : "LAN";
-
-                    ConnectedDevice existing = findExistingDevice(router, mac);
-                    boolean wasNew = existing == null;
-                    boolean wasOnline = existing != null && Boolean.TRUE.equals(existing.getOnline());
-
-                    ConnectedDevice device = deviceRepository.syncDevice(router, mac, ip, hostname, isOnline, connectionType);
-
-                    if (wasNew && isOnline) {
-                        emitActivityLog(router, device, "CONNECTED", hostname + " connected");
-                    } else if (!wasNew && !wasOnline && isOnline) {
-                        emitActivityLog(router, device, "CONNECTED", hostname + " connected");
-                    } else if (!wasNew && wasOnline && !isOnline) {
-                        emitActivityLog(router, device, "DISCONNECTED", hostname + " disconnected");
-                    }
+                    leases.add(new DeviceSnapshot.Lease(parts[1].toLowerCase(), parts[2], parts[3]));
                 }
             }
         }
-    }
-
-    private ConnectedDevice findExistingDevice(Router router, String mac) {
-        try {
-            return entityManager.createQuery(
-                            "SELECT d FROM ConnectedDevice d WHERE d.macAddress = :mac AND d.router = :router",
-                            ConnectedDevice.class)
-                    .setParameter("mac", mac)
-                    .setParameter("router", router)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        }
-    }
-
-    private void emitActivityLog(Router router, ConnectedDevice device, String eventType, String details) {
-        ActivityLog log = new ActivityLog();
-        log.setEventType(eventType);
-        log.setDetails(details);
-        log.setTimestamp(LocalDateTime.now());
-        log.setRouter(router);
-        log.setDevice(device);
-        entityManager.persist(log);
+        return leases;
     }
 }

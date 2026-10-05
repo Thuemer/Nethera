@@ -1,0 +1,9 @@
+# Backend only reads telemetry of all routers
+user nethera-backend
+topic read nethera/+/#
+
+# One block per router: publish into its own namespace only.
+# Read on status is needed for the long-lived Last Will connection.
+user router-1
+topic write nethera/1/#
+topic read nethera/1/status

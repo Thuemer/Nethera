@@ -49,6 +49,22 @@ services:
       keycloak-postgres:
         condition: service_healthy
 
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/docker-entrypoint-nethera.sh"]
+    environment:
+      NETHERA_MQTT_BACKEND_PASSWORD: ${NETHERA_MQTT_BACKEND_PASSWORD:-nethera-backend}
+      NETHERA_MQTT_ROUTER1_PASSWORD: ${NETHERA_MQTT_ROUTER1_PASSWORD:-nethera-router}
+    ports:
+      # Not bound to 127.0.0.1: the router on the LAN has to reach the broker
+      - "1883:1883"
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto/acl:/mosquitto/config/acl:ro
+      - ./docker/mosquitto/entrypoint.sh:/docker-entrypoint-nethera.sh:ro
+      - mosquitto-data:/mosquitto/data
+
   backend:
     build: ./Backend/Nethera
     restart: unless-stopped
@@ -63,12 +79,19 @@ services:
       QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8081/realms/Nethera
       QUARKUS_OIDC_CONNECTION_DELAY: 60S
       QUARKUS_SCHEDULER_ENABLED: "false"
+      NETHERA_TELEMETRY_MODE: mqtt
+      NETHERA_MQTT_HOST: mosquitto
+      NETHERA_MQTT_PORT: "1883"
+      NETHERA_MQTT_USERNAME: nethera-backend
+      NETHERA_MQTT_PASSWORD: ${NETHERA_MQTT_BACKEND_PASSWORD:-nethera-backend}
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
+        condition: service_started
+      mosquitto:
         condition: service_started
 
   seed:
@@ -100,3 +123,4 @@ services:
 volumes:
   pgdata:
   keycloak-pgdata:
+  mosquitto-data:
