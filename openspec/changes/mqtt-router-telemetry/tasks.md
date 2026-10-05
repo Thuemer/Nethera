@@ -47,4 +47,4 @@
 
 - [x] 6.1 Update the root `README.md` (Mosquitto in the stack, port 1883, new password env vars, simulator usage, telemetry modes)
 - [x] 6.2 Add a short MQTT section to `Backend/Nethera/README.md` (topic table, payload examples, how to switch modes)
-- [ ] 6.3 Hand the topic/payload contract to the router-side owner so they can start the `router-telemetry-agent` change
+- [x] 6.3 Hand the topic/payload contract to the router-side owner so they can start the `router-telemetry-agent` change
