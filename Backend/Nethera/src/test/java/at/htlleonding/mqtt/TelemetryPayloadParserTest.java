@@ -15,15 +15,15 @@ class TelemetryPayloadParserTest {
     @Test
     void parsesMetadata() {
         MetadataSample sample = TelemetryPayloadParser.metadata(
-                "{\"v\":1,\"ts\":1759579200,\"model\":\"GL.iNet GL-MT3000\",\"firmware\":\"OpenWrt 23.05.3\"}");
+                "{\"v\":1,\"ts\":1759579200,\"model\":\"Cudy WR3000S\",\"firmware\":\"OpenWrt 25.12.5\"}");
 
-        assertEquals(new MetadataSample("GL.iNet GL-MT3000", "OpenWrt 23.05.3"), sample);
+        assertEquals(new MetadataSample("Cudy WR3000S", "OpenWrt 25.12.5"), sample);
     }
 
     @Test
     void metadataFieldsAreOptional() {
-        assertEquals(new MetadataSample("GL.iNet GL-MT3000", null), TelemetryPayloadParser.metadata(
-                "{\"v\":1,\"ts\":1759579200,\"model\":\"GL.iNet GL-MT3000\"}"));
+        assertEquals(new MetadataSample("Cudy WR3000S", null), TelemetryPayloadParser.metadata(
+                "{\"v\":1,\"ts\":1759579200,\"model\":\"Cudy WR3000S\"}"));
         assertEquals(new MetadataSample(null, ""), TelemetryPayloadParser.metadata(
                 "{\"v\":1,\"ts\":1759579200,\"model\":null,\"firmware\":\"\"}"));
     }

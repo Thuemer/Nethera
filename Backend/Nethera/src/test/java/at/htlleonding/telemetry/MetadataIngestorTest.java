@@ -29,10 +29,10 @@ class MetadataIngestorTest {
 
     @Test
     void updatesModelFirmwareAndLastSeen() {
-        ingestor.ingest(router, new MetadataSample("GL.iNet GL-MT3000", "OpenWrt 23.05.3"));
+        ingestor.ingest(router, new MetadataSample("Cudy WR3000S", "OpenWrt 25.12.5"));
 
-        assertEquals("GL.iNet GL-MT3000", router.getModel());
-        assertEquals("OpenWrt 23.05.3", router.getFirmware());
+        assertEquals("Cudy WR3000S", router.getModel());
+        assertEquals("OpenWrt 25.12.5", router.getFirmware());
         assertNotNull(router.getLastSeen());
     }
 

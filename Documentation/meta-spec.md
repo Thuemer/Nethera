@@ -62,6 +62,7 @@ Die Hauptzielgruppe umfasst private Haushalte, insbesondere:
 
 ## 12. Regeln / Bedingungen / Einschränkungen
 * Der Router muss ein kompatibles OpenWRT-Image verwenden.
+* Referenz-Hardware: Cudy WR3000S mit OpenWrt 25.12.5.
 * SSH-Zugriff für das Backend muss konfiguriert sein.
 * Zeitliche Begrenzung durch den Rahmen der Diplomarbeit/Schuljahr.
 * Datenschutz-Konformität (DSGVO) bei der Speicherung von Benutzerdaten in der Cloud.

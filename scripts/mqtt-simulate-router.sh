@@ -44,7 +44,7 @@ while [ "$running" = 1 ]; do
 
   if [ $((cycle % 10)) = 0 ]; then
     pub -q 1 -r -t "$T/telemetry/metadata" \
-      -m "{\"v\":1,\"ts\":$now,\"model\":\"Nethera Simulator\",\"firmware\":\"OpenWrt 23.05.3 (simulated)\"}"
+      -m "{\"v\":1,\"ts\":$now,\"model\":\"Nethera Simulator\",\"firmware\":\"OpenWrt 25.12.5 (simulated)\"}"
   fi
 
   # 5-50 Mbit/s down, 1-10 Mbit/s up over the interval

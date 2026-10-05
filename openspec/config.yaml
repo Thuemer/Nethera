@@ -23,6 +23,12 @@ context: |
   - Keycloak OIDC authentication (Account tied to keycloakSub)
   - Network topology view, firewall rules (FirewallRule)
 
+  ### Target router
+  - Cudy WR3000S running OpenWrt 25.12.5 (one physical test router)
+  - Enough flash/RAM for extra OpenWrt packages (e.g. MQTT client, JSON
+    tools); not limited to busybox shell utilities
+  - OpenWrt 25.12 uses `apk` as package manager (not `opkg`)
+
   ### Non-goals
   - No enterprise network tooling
   - No custom router hardware
