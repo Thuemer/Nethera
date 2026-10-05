@@ -31,7 +31,8 @@ public class MqttTelemetryTestResource implements QuarkusTestResourceLifecycleMa
                 "quarkus.datasource.jdbc.url", "jdbc:postgresql://" + postgres.getHost() + ":" + postgres.getMappedPort(5432) + "/nethera",
                 "nethera.mqtt.host", mosquitto.getHost(),
                 "nethera.mqtt.port", String.valueOf(mosquitto.getMappedPort(1883)),
-                "nethera.telemetry.mode", "mqtt",
+                // Profile-prefixed key, otherwise %test.nethera.telemetry.mode=ssh wins
+                "%test.nethera.telemetry.mode", "mqtt",
                 "quarkus.scheduler.enabled", "false",
                 "quarkus.http.test-port", "0");
     }

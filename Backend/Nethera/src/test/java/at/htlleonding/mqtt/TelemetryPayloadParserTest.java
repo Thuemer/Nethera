@@ -21,6 +21,19 @@ class TelemetryPayloadParserTest {
     }
 
     @Test
+    void metadataFieldsAreOptional() {
+        assertEquals(new MetadataSample("GL.iNet GL-MT3000", null), TelemetryPayloadParser.metadata(
+                "{\"v\":1,\"ts\":1759579200,\"model\":\"GL.iNet GL-MT3000\"}"));
+        assertEquals(new MetadataSample(null, ""), TelemetryPayloadParser.metadata(
+                "{\"v\":1,\"ts\":1759579200,\"model\":null,\"firmware\":\"\"}"));
+    }
+
+    @Test
+    void rejectsNonStringMetadataField() {
+        assertInvalid(() -> TelemetryPayloadParser.metadata("{\"v\":1,\"ts\":1,\"model\":42}"), "model");
+    }
+
+    @Test
     void parsesSpeed() {
         CounterSample sample = TelemetryPayloadParser.speed(
                 "{\"v\":1,\"ts\":1759579200,\"iface\":\"wan\",\"rxBytes\":123456789012,\"txBytes\":42}");

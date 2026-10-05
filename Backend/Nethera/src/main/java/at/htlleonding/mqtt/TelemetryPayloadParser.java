@@ -25,7 +25,8 @@ public final class TelemetryPayloadParser {
 
     public static MetadataSample metadata(String payload) {
         JsonNode root = read(payload);
-        return new MetadataSample(requiredText(root, "model"), requiredText(root, "firmware"));
+        // Missing or empty fields keep the stored value (see MetadataIngestor)
+        return new MetadataSample(optionalText(root, "model"), optionalText(root, "firmware"));
     }
 
     public static CounterSample speed(String payload) {
@@ -84,6 +85,17 @@ public final class TelemetryPayloadParser {
         JsonNode value = node.get(field);
         if (value == null || !value.isTextual()) {
             throw new InvalidPayloadException("missing or non-string field '" + field + "'");
+        }
+        return value.asText();
+    }
+
+    private static String optionalText(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        if (!value.isTextual()) {
+            throw new InvalidPayloadException("non-string field '" + field + "'");
         }
         return value.asText();
     }

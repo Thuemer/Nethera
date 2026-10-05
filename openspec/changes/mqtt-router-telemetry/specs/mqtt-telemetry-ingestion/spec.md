@@ -22,7 +22,7 @@ The backend SHALL subscribe to these topics, where `<id>` is the numeric `Router
 ### Requirement: JSON telemetry payloads
 Every telemetry payload SHALL be a JSON object containing `v` (schema version, integer, currently `1`) and `ts` (router Unix time in seconds), plus these stream-specific fields:
 
-- metadata: `model` (string), `firmware` (string)
+- metadata: `model` (string, optional), `firmware` (string, optional; a missing or empty field keeps the stored value)
 - speed: `iface` (string), `rxBytes` (integer), `txBytes` (integer)
 - dns: `forwarded` (integer), `answeredLocally` (integer)
 - devices: `leases` (array of `{mac, ip, hostname}`), `reachable` (array of MAC strings), `wifi` (array of MAC strings)
