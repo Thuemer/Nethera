@@ -56,7 +56,7 @@ Router data (metadata, WAN speed, DNS stats, devices) arrives over two transport
 | Topic | Payload | Retained |
 |---|---|---|
 | `nethera/<id>/status` | `online` / `offline` (Last Will) | yes |
-| `nethera/<id>/telemetry/metadata` | `{"v":1,"ts":1759579200,"model":"GL.iNet GL-MT3000","firmware":"OpenWrt 23.05.3"}` | yes |
+| `nethera/<id>/telemetry/metadata` | `{"v":1,"ts":1759579200,"model":"Cudy WR3000S","firmware":"OpenWrt 25.12.5"}` | yes |
 | `nethera/<id>/telemetry/speed` | `{"v":1,"ts":1759579200,"iface":"wan","rxBytes":123456789,"txBytes":9876543}` | no |
 | `nethera/<id>/telemetry/dns` | `{"v":1,"ts":1759579200,"forwarded":1200,"answeredLocally":340}` | no |
 | `nethera/<id>/telemetry/devices` | `{"v":1,"ts":1759579200,"leases":[{"mac":"aa:bb:cc:dd:ee:ff","ip":"192.168.1.20","hostname":"laptop"}],"reachable":["aa:bb:cc:dd:ee:ff"],"wifi":[]}` | no |

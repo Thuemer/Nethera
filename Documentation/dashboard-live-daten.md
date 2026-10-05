@@ -63,8 +63,8 @@ Schlägt eine Methode fehl (z.B. Router nicht erreichbar), laufen die übrigen t
 **Klasse:** `RouterMetricsSyncService.syncRouterMetadata()`  
 **Quelle:** `ubus call system board` auf dem Router (via SSH)  
 **Felder:**
-- `model` → Gerätebezeichnung (z.B. `Comtime LAN/WAN Router Board`)
-- `firmware` → `release.description` aus dem ubus-JSON (z.B. `OpenWrt 22.03.7 based, advanced`)
+- `model` → Gerätebezeichnung (z.B. `Cudy WR3000S`)
+- `firmware` → `release.description` aus dem ubus-JSON (z.B. `OpenWrt 25.12.5`)
 - `isOnline` → `true` bei erfolgreicher SSH-Verbindung, `false` bei Fehler
 - `lastSeen` → Zeitstempel des letzten erfolgreichen Zyklus
 

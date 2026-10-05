@@ -12,7 +12,7 @@ RouterSyncScheduler (@Scheduled every nethera.sync.interval = 60s, router ID 1 h
 
 Each method opens its own `SSHClient` as `root` with `PromiscuousVerifier` and a key from `nethera.router.ssh-key-path`, which points to one developer's home directory. In each method, transport (SSH + shell command), parsing and persistence (speed math, DNS delta baseline, device upsert, activity log) are mixed together. The Docker stack sets `QUARKUS_SCHEDULER_ENABLED=false`, so the demo never shows live data.
 
-Constraints: Quarkus 3.31 / Java 21, PostgreSQL 15, a one-command `docker compose up`, a school-project team where the backend owner does not own the router side (this change is backend only), and OpenWrt routers with limited flash (no Python/Java runtime).
+Constraints: Quarkus 3.31 / Java 21, PostgreSQL 15, a one-command `docker compose up`, a school-project team where the backend owner does not own the router side (this change is backend only), and a Cudy WR3000S on OpenWrt 25.12.5 as target router (enough flash for extra packages such as an MQTT client, but no Java runtime).
 
 ## Goals / Non-Goals
 
@@ -119,6 +119,6 @@ Rollback: set `nethera.telemetry.mode=ssh`. The broker can stay running unused. 
 
 ## Open Questions
 
-- Who owns the follow-up `router-telemetry-agent` change? (Router-side questions such as flash space for `mosquitto-client-nossl` and `logread` vs `/var/log/messages` belong there.)
+- Who owns the follow-up `router-telemetry-agent` change? (Router-side questions such as the MQTT client package and `logread` vs `/var/log/messages` belong there.)
 - Is 30 s the right publish interval, or should it match the current 60 s for comparable dashboard charts?
 - Should broker TLS be added in this change, given that port 1883 is now exposed on the LAN?
