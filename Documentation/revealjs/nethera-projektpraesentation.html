@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nethera – Projektpräsentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+  <style>
+    :root { --bg:#141918; --panel:#202725; --panel2:#272f2d; --line:#394441; --text:#edf2ef; --muted:#b4c0bb; --teal:#62d3bd; --blue:#83b9f5; --amber:#f2c879; --red:#f29292; --green:#95dfb1; }
+    * { box-sizing:border-box; }
+    .reveal,.reveal .slides,.slide-background { background:var(--bg)!important; }
+    .reveal { color:var(--text); font-family:Inter,"Avenir Next","Segoe UI",system-ui,sans-serif; font-size:28px; }
+    .reveal .slides section { text-align:left; padding:24px 38px!important; height:100%; }
+    .reveal h1,.reveal h2,.reveal h3 { color:var(--text); text-transform:none; letter-spacing:0; font-weight:750; }
+    .reveal h1 { font-size:2.25em; margin:0 0 .25em; }
+    .reveal h2 { font-size:1.35em; margin:0 0 .25em; }
+    .reveal h3 { font-size:.82em; color:var(--teal); margin:0 0 .35em; }
+    .reveal p,.reveal li { color:var(--muted); line-height:1.36; }
+    .reveal p { margin:.3em 0; }
+    .reveal ul { margin:.15em 0; padding-left:1.1em; }
+    .reveal li { margin:.22em 0; }
+    .eyebrow { color:var(--teal); font-size:.52em; font-weight:700; text-transform:uppercase; letter-spacing:.12em; margin-bottom:.6em!important; }
+    .subhead { font-size:.68em; color:var(--muted); max-width:850px; }
+    .grid { display:grid; gap:14px; margin-top:16px; }
+    .two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .four { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 18px; min-width:0; }
+    .panel p,.panel li { font-size:.62em; }
+    .panel strong { color:var(--text); }
+    .panel h3 { font-size:.72em; }
+    .compact .panel { padding:12px 14px; }
+    .compact .panel p,.compact .panel li { font-size:.54em; }
+    .tag { display:inline-block; border:1px solid #48665f; background:#1d3530; color:#b6f0df; border-radius:999px; padding:4px 9px; font-size:.48em; margin:3px 4px 0 0; }
+    .tag.blue { border-color:#49658a; background:#202e40; color:#c9defa; }
+    .tag.amber { border-color:#7f6841; background:#3c3220; color:#ffe0a0; }
+    .tag.red { border-color:#795052; background:#3d292b; color:#ffc1c1; }
+    .tag.green { border-color:#42694e; background:#203629; color:#b8f1c7; }
+    .note { border-left:4px solid var(--amber); padding:9px 13px; background:#2b2922; color:#f5e5c3; font-size:.58em; margin-top:14px; }
+    .flow { display:flex; align-items:stretch; justify-content:center; gap:9px; margin:18px 0; }
+    .node { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; text-align:center; padding:14px 10px; background:var(--panel); border:1px solid var(--line); border-radius:8px; font-size:.62em; color:var(--text); }
+    .node small { display:block; color:var(--muted); font-size:.8em; margin-top:5px; }
+    .arrow { display:flex; align-items:center; color:var(--teal); font-size:1.1em; }
+    .arch { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; align-items:stretch; margin-top:14px; }
+    .arch-col { display:flex; flex-direction:column; gap:10px; }
+    .arch .node { min-height:67px; }
+    .arch .wide { grid-column:1 / -1; min-height:54px; }
+    .status { display:inline-flex; align-items:center; gap:6px; font-size:.48em; font-weight:700; border-radius:999px; padding:4px 8px; margin-bottom:8px; }
+    .status.done { color:var(--green); background:#203629; }
+    .status.demo { color:var(--blue); background:#202e40; }
+    .status.next { color:var(--amber); background:#3c3220; }
+    .status.no { color:var(--red); background:#3d292b; }
+    .table { width:100%; border-collapse:collapse; font-size:.53em; margin-top:12px; }
+    .table th,.table td { border-bottom:1px solid var(--line); padding:8px 9px; text-align:left; vertical-align:top; }
+    .table th { color:var(--teal); font-size:.95em; }
+    .table td { color:var(--muted); }
+    .table td:first-child { color:var(--text); font-weight:650; }
+    .big-number { font-size:1.5em; color:var(--teal); font-weight:800; line-height:1; }
+    .step { display:flex; gap:12px; align-items:flex-start; }
+    .step b { flex:0 0 30px; width:30px; height:30px; display:grid; place-items:center; border-radius:50%; background:#23544c; color:#c3fff0; font-size:.65em; }
+    .step p { margin:0; font-size:.57em; }
+    .footer { position:absolute; bottom:12px; left:38px; color:#80908a; font-size:.36em; }
+    .center { text-align:center!important; }
+    .center h1,.center h2,.center p { text-align:center; margin-left:auto; margin-right:auto; }
+    .reveal .progress { color:var(--teal); height:4px; }
+    .reveal .controls { color:var(--teal); }
+    .reveal .slide-number { color:#9eaaa5; background:transparent; font-size:13px; }
+    @media (max-width:800px) { .two,.three,.four,.arch { grid-template-columns:1fr 1fr; } .flow { flex-wrap:wrap; } .node { min-width:28%; } }
+  </style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+  <section class="center">
+    <p class="eyebrow">HTL Leonding · 4CHITM · Projektüberblick</p>
+    <h1>Nethera</h1>
+    <p style="font-size:.9em;color:var(--teal);font-weight:650">Heimnetzwerk verständlich verwalten</p>
+    <p class="subhead">Aufbau, aktueller Funktionsstand und die nächsten Entwicklungsschritte</p>
+    <div style="margin-top:26px"><span class="tag">Web-App</span><span class="tag">Quarkus</span><span class="tag">PostgreSQL</span><span class="tag">Keycloak</span><span class="tag">MQTT</span><span class="tag">Docker Compose</span></div>
+    <p style="font-size:.48em;margin-top:32px">Tobias Huemer · Deniz Bernecker · Nico Hofer · Manuel Freihaut · Moritz Kapeller</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">01 · Ausgangslage</p><h2>Warum Nethera?</h2>
+    <p class="subhead">Viele Router bieten Funktionen, die im Alltag nützlich wären. Ihre technische Oberfläche ist für Familien und weniger erfahrene Nutzer aber oft schwer zu bedienen.</p>
+    <div class="grid two">
+      <div class="panel"><h3>Das Problem</h3><ul><li>Geräte, Zugriffszeiten und Schutzregeln sind über verschiedene Router-Menüs verteilt.</li><li>Regeln sind schwer verständlich und Änderungen können unerwartete Folgen haben.</li><li>Es fehlt eine zentrale Übersicht: Was ist aktiv und für welches Gerät?</li></ul></div>
+      <div class="panel"><h3>Unser Ziel</h3><ul><li>Einfach verwaltbare Geräte, Gruppen und Zeitregeln.</li><li>Schutzregeln und Profile über eine klare Web-Oberfläche zuordnen.</li><li>Einstellungen nachvollziehbar speichern und später an einen Router übergeben.</li></ul></div>
+    </div>
+    <div class="note">Nethera ist aktuell ein funktionsfähiger Software-Prototyp. Die tatsächliche Durchsetzung aller Regeln auf Router-Hardware ist noch nicht Teil des Standard-Docker-Demos.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">02 · Produkt</p><h2>Was Nethera abdecken soll</h2>
+    <div class="grid three compact">
+      <div class="panel"><h3>Überblick</h3><p>Routerstatus, Geräte, Aktivität, DNS-Kennzahlen und Datenverkehr an einer Stelle.</p></div>
+      <div class="panel"><h3>Verwalten</h3><p>Clients finden, sortieren und einer Gruppe zuweisen.</p></div>
+      <div class="panel"><h3>Schützen</h3><p>Blocklisten, eigene Domains und Presets für Geräte und Gruppen festlegen.</p></div>
+      <div class="panel"><h3>Begrenzen</h3><p>Tageslimits und tägliche Sperrzeiträume pro Gerät speichern.</p></div>
+      <div class="panel"><h3>Beobachten</h3><p>Netzwerkstatus, Verlauf und Messwerte übersichtlich darstellen.</p></div>
+      <div class="panel"><h3>Erweitern</h3><p>Gespeicherte Konfiguration später kontrolliert an OpenWRT übertragen.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">03 · Architektur</p><h2>Die Bausteine im Zusammenspiel</h2>
+    <div class="arch">
+      <div class="arch-col"><div class="node">Browser<small>Person nutzt die Web-App</small></div><div class="node">Frontend<small>HTML · CSS · JavaScript · nginx</small></div></div>
+      <div class="arch-col"><div class="node">Keycloak<small>Anmeldung · OIDC · JWT</small></div><div class="node">Quarkus-Backend<small>REST-API · Java 21</small></div></div>
+      <div class="arch-col"><div class="node">PostgreSQL<small>App-Daten und Regeln</small></div><div class="node">Keycloak-DB<small>Identitäten und Realm</small></div></div>
+      <div class="node wide">Cudy WR3000S · OpenWrt-Testrouter<small>Router-Telemetrie → Mosquitto (MQTT) → Quarkus → PostgreSQL → Web-App; SSH bleibt als alternativer Lesepfad. Router-Agent und Regel-Durchsetzung sind getrennte nächste Schritte.</small></div>
+    </div>
+    <p style="font-size:.5em;margin-top:14px">Docker Compose startet die Dienste gemeinsam und verbindet sie im internen Docker-Netz. Browserzugriffe erfolgen über veröffentlichte lokale Ports.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Testhardware · unser eigener Router</p><h2>Unser eigener Router</h2>
+    <p class="subhead">Cudy AX3000 Gigabit Mesh Wi-Fi 6, Zielmodell WR3000S. Im Branch <code>router-telemetry-agent</code> ist OpenWrt 25.12.5 als Referenz dokumentiert; die Hardware-Revision am Gerät bleibt entscheidend.</p>
+    <div class="grid three">
+      <div class="panel"><div class="big-number">Wi-Fi 6</div><p>Dualband 2,4 und 5 GHz; AX3000-Klasse.</p></div>
+      <div class="panel"><div class="big-number">5×</div><p>Gigabit-Ethernet: 1 WAN und 4 LAN-Ports.</p></div>
+      <div class="panel"><div class="big-number">OpenWrt</div><p>WR3000S v1 ist in der OpenWrt-Hardwareliste geführt. Vor Installation Firmware und Revision prüfen.</p></div>
+    </div>
+    <div class="note">Die Bezeichnung „AX3000“ allein identifiziert keine Router-Revision. Firmware-Wechsel können das Gerät unbrauchbar machen; nur ein zum exakten Modell und Hardwarestand passendes Image verwenden.</div>
+    <p style="font-size:.39em;margin-top:10px">Quellen: <a href="https://www.cudy.com/de-at/products/wr3000s-1-0" target="_blank" rel="noreferrer">Cudy WR3000S 1.0</a> · <a href="https://openwrt.org/toh/cudy/wr3000s_v1" target="_blank" rel="noreferrer">OpenWrt Geräteinfo</a> · <a href="https://www.alza.at/cudy-ax3000-gigabit-mesh-wi-fi-6-router-weiss-d12478341.htm" target="_blank" rel="noreferrer">Alza-Produkt</a></p>
+  </section>
+
+  <section>
+    <p class="eyebrow">04 · Anmeldung und API</p><h2>Was passiert beim Login?</h2>
+    <div class="flow"><div class="node">1 · Web-App<small>leitet zur Anmeldung weiter</small></div><div class="arrow">→</div><div class="node">2 · Keycloak<small>prüft Benutzer und Passwort</small></div><div class="arrow">→</div><div class="node">3 · JWT<small>signiertes Zugriffstoken</small></div><div class="arrow">→</div><div class="node">4 · REST-API<small>Request mit Bearer-Token</small></div></div>
+    <div class="grid two compact"><div class="panel"><h3>Keycloak</h3><p>Übernimmt Anmeldung und Token-Ausgabe. Das Frontend speichert nicht selbst das Passwort.</p></div><div class="panel"><h3>Backend</h3><p>Die App ruft Ressourcen wie Geräte, Limits oder Schutzregeln über HTTP auf. Das Backend prüft Requests und liest oder ändert Daten in PostgreSQL.</p></div></div>
+    <div class="note">Vereinfacht: „Wer bist du?“ beantwortet Keycloak. „Darfst du diese App-Funktion verwenden und welche Daten sollen gelesen werden?“ verarbeitet das Backend.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">05 · Datenfluss</p><h2>Von der Eingabe bis zur Speicherung</h2>
+    <div class="grid two">
+      <div class="panel"><div class="step"><b>1</b><p><strong>Bedienung:</strong> Nutzer wählt zum Beispiel ein Gerät und legt ein Zeitlimit fest.</p></div><hr><div class="step"><b>2</b><p><strong>Request:</strong> JavaScript sendet eine HTTP-Anfrage mit den Eingabedaten und – falls aktiviert – dem JWT.</p></div><hr><div class="step"><b>3</b><p><strong>Verarbeitung:</strong> Eine Quarkus-Resource validiert die Anfrage und verwendet Repository/Entity.</p></div><hr><div class="step"><b>4</b><p><strong>Persistenz:</strong> Hibernate ORM speichert die Änderung in PostgreSQL.</p></div></div>
+      <div class="panel"><h3>Lesen und Aktualisieren</h3><p>Beim Öffnen einer Seite lädt das Frontend die benötigten Daten über GET-Endpunkte. Speichern, Zuweisen und Entfernen verwenden passende POST-, PUT- oder DELETE-Requests.</p><h3 style="margin-top:14px">Demo-Daten</h3><p>Ein einmaliger Seed-Container ergänzt Beispieldaten, wenn die Tabellen leer sind. Danach bleiben Daten im Docker-Volume gespeichert.</p><span class="tag blue">Daten bleiben bei Neustart erhalten</span><span class="tag">bis das Volume gelöscht wird</span></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">06 · Technologie</p><h2>Technologien und ihre Aufgaben</h2>
+    <table class="table"><thead><tr><th>Technologie</th><th>Aufgabe im Projekt</th><th>Warum sie hier passt</th></tr></thead><tbody>
+      <tr><td>HTML, CSS, JavaScript</td><td>Web-Oberfläche, Navigation, Formulare und Datenvisualisierung</td><td>Direkt im Browser nutzbar; keine separate App-Installation</td></tr>
+      <tr><td>nginx / Docker</td><td>Stellt die statischen Frontend-Dateien bereit</td><td>Kleiner, reproduzierbarer Web-Container</td></tr>
+      <tr><td>Java 21 + Quarkus</td><td>REST-Endpunkte, Validierung, Geschäftslogik und Router-Service</td><td>Java-Backend mit schlankem Containerbetrieb</td></tr>
+      <tr><td>Hibernate ORM</td><td>Abbildung zwischen Java-Entities und relationalen Tabellen</td><td>Persistenz ohne SQL für jeden einzelnen CRUD-Schritt</td></tr>
+      <tr><td>PostgreSQL</td><td>Geräte, Gruppen, Limits, Konfiguration und Messwerte</td><td>Relationale Beziehungen und dauerhafte Speicherung</td></tr>
+      <tr><td>Keycloak / OIDC</td><td>Login, Realm, Benutzer und JWT</td><td>Authentifizierung getrennt von der Fachlogik</td></tr>
+      <tr><td>MQTT / Mosquitto</td><td>Router-Telemetrie an das Backend übertragen</td><td>Entkoppelte Übertragung mit definierten Topics und Zugangskontrolle</td></tr>
+      <tr><td>Docker Compose</td><td>Startet und vernetzt Frontend, Backend, Broker und Datenbanken</td><td>Ein gemeinsamer, nachvollziehbarer Start für Teammitglieder</td></tr>
+    </tbody></table>
+  </section>
+
+  <section>
+    <p class="eyebrow">07 · Oberfläche</p><h2>Seiten der Anwendung</h2>
+    <div class="grid three compact">
+      <div class="panel"><h3>Dashboard</h3><p>Router-/Client-Übersicht, Aktivität, DNS- und Speed-Bereiche; Anzeige und Layout anpassbar.</p></div>
+      <div class="panel"><h3>Clients</h3><p>Verbundene Geräte, Verbindung, Suche, Filter und Sortierung.</p></div>
+      <div class="panel"><h3>Zeitlimits</h3><p>Pro Gerät Tagesbudget, Sperrzeit von/bis, Status und Notiz.</p></div>
+      <div class="panel"><h3>Schutz</h3><p>Gruppen, Blocklisten, Domains, Presets und WLAN-Analyse.</p></div>
+      <div class="panel"><h3>Status / Topologie</h3><p>Netzwerkzustand und grafische Darstellung der Geräte- und Gruppenbeziehungen.</p></div>
+      <div class="panel"><h3>Datenverkehr / Konfiguration / Konto</h3><p>Messwerte, gespeicherte Routerkonfigurationen und persönliche Einstellungen.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">08 · Schon nutzbar</p><h2>Geräte und Zeitlimits</h2>
+    <div class="grid two">
+      <div class="panel"><span class="status done">✓ UI + Backend</span><h3>Geräteübersicht</h3><ul><li>Geräteliste aus dem Backend laden.</li><li>Geräte anhand von Name, IP und Verbindungsart darstellen.</li><li>Geräte Gruppen zuordnen; Zuweisungen werden gespeichert.</li></ul></div>
+      <div class="panel"><span class="status done">✓ CRUD + DB</span><h3>Zeitbeschränkungen</h3><ul><li>Pro Gerät tägliches Zeitbudget festlegen.</li><li>Sperrzeitraum „ab“ und „bis“ sowie aktiv/pausiert speichern.</li><li>Limits laden, bearbeiten und löschen.</li></ul></div>
+    </div>
+    <div class="note">Ein gespeichertes Limit ist zunächst eine Regel in der Nethera-Datenbank. Ohne aktive Router-Synchronisation wird ein Gerät dadurch noch nicht technisch vom WLAN getrennt.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">09 · Schon nutzbar</p><h2>Gruppen, Blocklisten und Presets</h2>
+    <div class="grid three compact">
+      <div class="panel"><span class="status done">✓</span><h3>Gruppen</h3><p>Gruppen erstellen, Namen ändern, Geräte zuweisen und Mitgliederübersicht ansehen.</p></div>
+      <div class="panel"><span class="status done">✓</span><h3>Blocklisten</h3><p>Kategorien auswählen und Domains ergänzen. Gruppenbezogene Regeln sind speicherbar.</p></div>
+      <div class="panel"><span class="status done">✓</span><h3>Presets</h3><p>Profile mit Schutzoptionen erstellen und einem Gerät zuweisen; aktive Zuordnung anzeigen.</p></div>
+    </div>
+    <div class="panel" style="margin-top:14px"><h3>Wichtig bei der Interpretation</h3><p>Die Web-App verwaltet und persistiert diese Einstellungen. Die Anwendung durch DNS-Filter, Firewall oder Router ist im Demo-Betrieb nicht automatisch garantiert. Das ist die zentrale technische Grenze zwischen „Regel konfiguriert“ und „Regel wirkt auf Netzwerkverkehr“.</p></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Feature-Stand · Oberfläche bis Router</p><h2>Oberfläche, Backend und Routerwirkung</h2>
+    <table class="table"><thead><tr><th>Feature</th><th>Oberfläche</th><th>Backend / DB</th><th>Auf echtem Router</th></tr></thead><tbody>
+      <tr><td>Geräte und Gruppen</td><td>Übersicht, Zuordnung, Namen</td><td>Speichern und wieder laden</td><td>Live-Geräte lesen möglich; Gruppen-Policy noch anwenden</td></tr>
+      <tr><td>Blocklisten / Domains</td><td>Erstellen und Gruppen zuordnen</td><td>Regeln werden gespeichert</td><td>DNS-Filter aktiv befüllen und Wirkung testen</td></tr>
+      <tr><td>Presets</td><td>Erstellen, Gerät zuweisen, Status sehen</td><td>Profil + Zuordnung gespeichert</td><td>Profiloptionen in Router-Konfiguration umsetzen</td></tr>
+      <tr><td>Zeitlimits</td><td>Tagesbudget und Sperrzeit einstellen</td><td>Limits pro Gerät gespeichert</td><td>Zeitplan und Firewall-Regeln fehlen</td></tr>
+      <tr><td>Priorität / QoS</td><td>Option im Preset vorhanden</td><td>Profilwert gespeichert</td><td>QoS-Regel am Router fehlt</td></tr>
+      <tr><td>Dashboard-Messwerte</td><td>Diagramme und Kennzahlen</td><td>MQTT und SSH schreiben in gemeinsame Datenstruktur</td><td>MQTT-Empfang auf main; echte Router-Publikation separat nachweisen</td></tr>
+    </tbody></table>
+    <p style="font-size:.45em;margin-top:12px">„Oberfläche vorhanden“ heißt nicht automatisch, dass eine Einstellung schon Netzwerkverkehr beeinflusst. Der Router-Schreibpfad muss separat umgesetzt und am Cudy nachgewiesen werden.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">10 · Dashboard und Messwerte</p><h2>Echtzeitdaten oder Beispieldaten?</h2>
+    <div class="grid two">
+      <div class="panel"><span class="status demo">● Docker-Demo</span><h3>Ohne Hardware startbar</h3><ul><li>Seed-Daten befüllen Geräte, Router und Kennzahlen.</li><li>Ein Simulator kann MQTT-Telemetrie senden und den Datenpfad testen.</li><li>Im Compose-Start nutzt das Backend <code>mqtt</code>; ein SSH-Key ist dort nicht vorhanden.</li></ul></div>
+      <div class="panel"><span class="status done">✓ Auf main</span><h3>MQTT-Empfang und SSH-Alternative</h3><ul><li>MQTT-Topics für Status, Metadaten, Durchsatz, DNS und Geräte.</li><li>Backend validiert Nachrichten und speichert sie wie den SSH-Lesepfad.</li><li><code>auto</code> nutzt SSH als Fallback, wenn ein MQTT-Datenstrom veraltet ist.</li></ul></div>
+    </div>
+    <div class="note">MQTT-Empfang und Integrationstest sind implementiert. Echte Live-Werte erfordern zusätzlich, dass der Cudy passende Telemetrie an den Broker sendet. Ohne Router oder Simulator bleiben die Seed-/DB-Werte sichtbar.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Routeranbindung · Voraussetzungen und offene Arbeit</p><h2>Was muss für den Router noch passieren?</h2>
+    <p class="subhead">Das Backend kann MQTT-Daten empfangen. Für echte Werte muss der Cudy diese Daten noch zuverlässig erzeugen und veröffentlichen; das ist eine eigene Router-seitige Aufgabe.</p>
+    <div class="grid two compact">
+      <div class="panel"><span class="status done">Backend + Broker bereit</span><h3>Voraussetzungen für Live-Daten</h3><ul><li>Passender MQTT-Client oder Agent auf dem OpenWrt-Router.</li><li>Router erreicht Mosquitto auf Port 1883; Zugangsdaten und Topic-Rechte stimmen.</li><li>Status, Metadaten, Speed, DNS und Geräte im vereinbarten Format publizieren.</li><li>Am echten Gerät Aktualität, Verbindungsabbruch und Datenqualität testen.</li><li>SSH ist als Alternative vorhanden, benötigt aber eigene sichere Konfiguration.</li></ul></div>
+      <div class="panel"><span class="status next">Noch umzusetzen</span><h3>Regeln wirksam machen</h3><ul><li>Blocklisten in DNS-Filter bzw. dnsmasq-Regeln übersetzen und aktivieren.</li><li>Zeitlimits/Sperrfenster in zeitgesteuerte Firewall-Regeln umsetzen.</li><li>QoS-/Prioritätsprofile auf eine konkrete OpenWrt-QoS-Konfiguration abbilden.</li><li>Regeln idempotent anwenden, Status zurückmelden und Fehler/Timeouts sichtbar machen.</li><li>Rollback, Berechtigungen und Hardware-Integrationstests ergänzen.</li></ul></div>
+    </div>
+    <div class="note">Der Branch <code>router-telemetry-agent</code> dokumentiert aktuell die Cudy-/OpenWrt-Zielhardware, belegt aber noch keinen fertigen Router-Agenten. MQTT-Telemetrie ist ein Lesepfad, keine automatische Umsetzung von Sperrregeln. Für echten Betrieb sind zudem TLS/Netzwerkgrenzen und beim SSH-Fallback Host-Key-Prüfung nötig.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">11 · API und Datenmodell</p><h2>Beispiele aus dem Backend</h2>
+    <table class="table"><thead><tr><th>Bereich</th><th>Beispiel-Ressource</th><th>Gespeicherte Information</th></tr></thead><tbody>
+      <tr><td>Router & Geräte</td><td><code>/api/routers/list</code>, <code>/api/devices</code></td><td>Router-Metadaten und verbundene Geräte</td></tr>
+      <tr><td>Zeitlimits</td><td><code>/api/device-time-limits</code></td><td>Gerät, Tageslimit, Sperrzeit und Status</td></tr>
+      <tr><td>Schutz</td><td><code>/api/security/state</code>, <code>/api/security/groups</code></td><td>Gruppen, Mitglieder, Blocklisten, Presets und Zuordnungen</td></tr>
+      <tr><td>Konfiguration</td><td><code>/api/configs/list</code></td><td>Gespeicherte Routerkonfigurationen</td></tr>
+      <tr><td>Konto / Einstellungen</td><td><code>/api/accounts/me</code>, <code>/api/settings</code></td><td>Aktuelles Konto und persönliche Anzeigeoptionen</td></tr>
+    </tbody></table>
+    <p style="font-size:.48em;margin-top:12px">Das sind Beispiele aus den vorhandenen Ressourcen. Schreibzugriffe verwenden je nach Operation POST, PUT oder DELETE. Auf <code>main</code> sind API-Endpunkte standardmäßig login-geschützt; explizite Ausnahmen bleiben öffentlich.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">12 · Docker</p><h2>Ein Start für das ganze Demo-System</h2>
+    <div class="grid two">
+      <div class="panel"><h3>Starten</h3><pre style="font-size:.5em;color:#dce8e2;background:#151b19;padding:12px;border-radius:6px;white-space:pre-wrap">git pull
+docker compose up -d --build</pre><p>Aufruf: Frontend <code>http://localhost:5500</code> · Backend <code>http://localhost:8080</code> · Keycloak <code>http://localhost:8081</code></p></div>
+      <div class="panel"><h3>Was Compose übernimmt</h3><ul><li>Startet zwei PostgreSQL-Datenbanken (App und Keycloak).</li><li>Startet Keycloak, Quarkus-Backend und nginx-Frontend.</li><li>Startet Mosquitto als MQTT-Broker mit Passwort und Router-ACL.</li><li>Initialisiert Beispieldaten und speichert Daten in Docker-Volumes.</li></ul></div>
+    </div>
+    <div class="note">Für Team-Übergabe: Code wird mit Git geteilt; Laufzeitdaten stecken in Volumes. Ein Image allein ersetzt weder den Quellcode für spätere Änderungen noch ein Datenbank-Backup.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">13 · Stand heute</p><h2>Was funktioniert – und was bedeutet das?</h2>
+    <table class="table"><thead><tr><th>Status</th><th>Bereich</th><th>Einordnung</th></tr></thead><tbody>
+      <tr><td><span class="status done">Funktioniert</span></td><td>Docker-Start</td><td>Frontend, Backend, Keycloak, Mosquitto und beide Datenbanken starten gemeinsam.</td></tr>
+      <tr><td><span class="status done">Funktioniert</span></td><td>Verwaltung</td><td>Geräte, Gruppen, Zeitlimits, Blocklisten und Presets können über UI/API verwaltet und persistiert werden.</td></tr>
+      <tr><td><span class="status demo">Demo</span></td><td>Dashboard-Metriken</td><td>Ohne Router sind vorbefüllte Beispieldaten keine Live-Werte.</td></tr>
+      <tr><td><span class="status done">Auf main</span></td><td>MQTT-Telemetrie empfangen</td><td>Status, Clients, Speed, DNS und Metadaten; Simulator, Tests und SSH-Fallback vorhanden.</td></tr>
+      <tr><td><span class="status no">Noch offen</span></td><td>Regeln am Router erzwingen</td><td>End-to-end Nachweis für echte Zeit-, DNS- und Firewall-Regeln fehlt im Standard-Demo.</td></tr>
+      <tr><td><span class="status next">Router-Arbeit</span></td><td>Cudy WR3000S anbinden</td><td>MQTT-Agent auf dem Router, echte Nachrichten und durchgängige Live-Anzeige verifizieren.</td></tr>
+      <tr><td><span class="status next">Zu prüfen</span></td><td>Produktionsbetrieb</td><td>Dev-Secrets, TLS, Host-Key-Prüfung, Rollen/Autorisierung, Backup und Betriebskonzept härten.</td></tr>
+    </tbody></table>
+  </section>
+
+  <section>
+    <p class="eyebrow">Git-Fortschritt · bereits gelieferte Arbeit</p><h2>Was die Commits bereits belegen</h2>
+    <div class="grid three compact">
+      <div class="panel"><span class="tag">bbf584e</span><h3>Live-Routerdaten</h3><p>SSH-basierter Sync und Ereignisprotokoll für erkannte Geräteverbindungen ergänzt.</p></div>
+      <div class="panel"><span class="tag">0646b5d</span><h3>Erkennung verbessert</h3><p>WLAN-/LAN-Zuordnung, Router-IP und DNS-Zeitstempel angepasst.</p></div>
+      <div class="panel"><span class="tag">1a0f98d · main</span><h3>MQTT integriert</h3><p>Mosquitto, Telemetrie-Empfang, gemeinsame Speicherung und SSH-Fallback ergänzt.</p></div>
+      <div class="panel"><span class="tag">d9e5dcb · main</span><h3>MQTT getestet</h3><p>Aktualitäts-/Online-Logik korrigiert und Integrationstest mit Postgres und Mosquitto ergänzt.</p></div>
+      <div class="panel"><span class="tag">d001a3f · main</span><h3>MQTT gemergt</h3><p>Branch <code>mqtt-router-telemetry</code> in <code>main</code> übernommen.</p></div>
+      <div class="panel"><span class="tag">90d3edc · Branch</span><h3>Cudy als Zielrouter</h3><p>Branch <code>router-telemetry-agent</code> dokumentiert WR3000S/OpenWrt 25.12.5; der Agent selbst ist noch offen.</p></div>
+    </div>
+    <div class="note">Die Commits belegen den MQTT-Empfang auf <code>main</code>, nicht automatisch einen produktiven Agenten auf dem Cudy oder die technische Durchsetzung gespeicherter Regeln.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">14 · Grenzen</p><h2>Was wir ehrlich dazusagen</h2>
+    <div class="grid two">
+      <div class="panel"><h3>Technische Grenze</h3><p>MQTT und SSH liefern Messwerte an das Backend. Eine gespeicherte Datenbankregel verändert aber nicht von selbst den Router: Übersetzung, Anwendung und bestätigte Rückmeldung fehlen noch.</p></div>
+      <div class="panel"><h3>Demo-Grenze</h3><p>Der Compose-Stack ist für lokale Entwicklung und Vorführung gedacht. Demo-Zugangsdaten, Keycloak-Dev-Modus und ein im LAN erreichbarer MQTT-Port sind kein öffentliches Produktions-Deployment.</p></div>
+      <div class="panel"><h3>Daten-Grenze</h3><p>Ein Seed füllt eine neue/leere Datenbank. Änderungen danach sind echte gespeicherte Daten im Volume. Beim Löschen des Volumes gehen sie verloren.</p></div>
+      <div class="panel"><h3>Test-Grenze</h3><p>Ein MQTT-Integrationstest mit Testcontainers und ein Simulator sind vorhanden. Den echten Cudy-Agenten und die Wirksamkeit von Router-Regeln müssen Hardwaretests zusätzlich belegen.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">15 · Nächste Ziele</p><h2>Was als Nächstes den größten Nutzen bringt</h2>
+    <div class="grid three compact">
+      <div class="panel"><span class="status next">Priorität 1</span><h3>Cudy live anbinden</h3><p>Router-Agent für die MQTT-Topics implementieren, auf dem WR3000S installieren und echte Werte bis ins Dashboard verifizieren.</p></div>
+      <div class="panel"><span class="status next">Priorität 2</span><h3>Ersten Schreibpfad umsetzen</h3><p>Einen einzelnen Regeltyp – sinnvoll: DNS-Domain-Blockliste – vom UI bis zum nachgewiesenen Routereffekt implementieren.</p></div>
+      <div class="panel"><span class="status next">Priorität 3</span><h3>Rückmeldung + Tests</h3><p>Erfolg/Fehler der Regelanwendung anzeigen; vorhandene MQTT-/API-Tests durch Hardwaretests ergänzen.</p></div>
+      <div class="panel"><h3>Bedienung abrunden</h3><p>Validierung, Ladezustände, verständliche Fehlermeldungen und responsive Ansichten testen.</p></div>
+      <div class="panel"><h3>Betrieb vorbereiten</h3><p>Passwörter aus Secrets beziehen, TLS/Netzwerkgrenzen definieren und Backups dokumentieren.</p></div>
+      <div class="panel"><h3>Messwerte klar kennzeichnen</h3><p>Live-, Demo- und veraltete Daten sichtbar unterscheiden, damit Nutzer Werte richtig verstehen.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">16 · Sprint-Vorschlag</p><h2>Ein realistischer nächster Sprint</h2>
+    <table class="table"><thead><tr><th>Arbeitspaket</th><th>Ergebnis</th><th>Abnahmekriterium</th></tr></thead><tbody>
+      <tr><td>Cudy-Verbindung reproduzierbar machen</td><td>MQTT-Agent und Broker-Zugang auf OpenWrt konfigurieren</td><td>Echte Client-/Routerdaten erscheinen mit Quelle und Aktualisierungszeit</td></tr>
+      <tr><td>Erste Routerregel anwenden</td><td>Eine Domain-Blockliste per DNS auf Test-Router übertragen</td><td>UI → API → DB → Router; Testdomain wird wirklich blockiert und Status bestätigt</td></tr>
+      <tr><td>Robustheit und Sicherheit</td><td>MQTT-Zugang/TLS, Fehlerstatus und Hardwaretests</td><td>Router-Ausfall wird erkannt; keine stille falsche Erfolgsmeldung</td></tr>
+      <tr><td>Demo- und Betriebsdoku</td><td>Start, Login, Seed, Backup, Reset und bekannte Grenzen</td><td>Neue Person kann Demo anhand der Anleitung selbst starten</td></tr>
+    </tbody></table>
+    <div class="note">Den Sprint auf einen Regeltyp begrenzen. Eine sauber getestete echte Routerwirkung ist wertvoller als mehrere nur teilweise verbundene Features.</div>
+  </section>
+
+  <section>
+    <p class="eyebrow">17 · Vorführung</p><h2>Empfohlener Demo-Ablauf</h2>
+    <div class="grid two">
+      <div class="panel"><div class="step"><b>1</b><p>Stack mit <code>docker compose up -d --build</code> starten und Login zeigen.</p></div><hr><div class="step"><b>2</b><p>Dashboard: Datenquelle als Demo/Seed benennen.</p></div><hr><div class="step"><b>3</b><p>Client öffnen, Gerät einer Gruppe zuweisen und die gespeicherte Übersicht zeigen.</p></div></div>
+      <div class="panel"><div class="step"><b>4</b><p>Für das Gerät Zeitlimit oder Sperrzeit einstellen und speichern.</p></div><hr><div class="step"><b>5</b><p>Preset erstellen/anwenden und aktive Zuordnung zeigen.</p></div><hr><div class="step"><b>6</b><p>MQTT-Datenpfad mit Simulator oder Cudy zeigen; Regel-Durchsetzung als offene Arbeit benennen.</p></div></div>
+    </div>
+  </section>
+
+  <section class="center">
+    <p class="eyebrow">Zusammenfassung</p><h2>Nethera heute</h2>
+    <p class="subhead">Ein startbarer Prototyp mit Verwaltung, Speicherung und MQTT-Telemetrie-Empfang; SSH bleibt als Alternative vorhanden.</p>
+    <div class="grid three" style="margin-top:24px"><div class="panel"><div class="big-number">UI</div><p>Geräte, Gruppen, Zeiten und Schutzprofile verwalten</p></div><div class="panel"><div class="big-number">MQTT</div><p>Broker und Backend empfangen Telemetrie; ein Simulator testet den Datenpfad</p></div><div class="panel"><div class="big-number">→</div><p>Nächster Schritt: Cudy-Agent und wirksame Router-Regeln nachweisen</p></div></div>
+    <p style="font-size:.8em;color:var(--teal);font-weight:700;margin-top:24px">Fragen?</p>
+  </section>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', progress: true, controls: true, center: false, transition: 'slide', width: 1280, height: 720, margin: 0.04, minScale: 0.55, maxScale: 1.15 });
+</script>
+</body>
+</html>
