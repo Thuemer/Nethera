@@ -1,0 +1,398 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nethera-db-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nethera-keycloak-db-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nethera-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nethera-db
+  template:
+    metadata:
+      labels:
+        app: nethera-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: nethera
+            - name: POSTGRES_USER
+              value: nethera
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: db-password
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "nethera", "-d", "nethera"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nethera-db-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nethera-db
+spec:
+  selector:
+    app: nethera-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nethera-keycloak-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nethera-keycloak-db
+  template:
+    metadata:
+      labels:
+        app: nethera-keycloak-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: keycloak
+            - name: POSTGRES_USER
+              value: keycloak
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: keycloak-db-password
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "keycloak", "-d", "keycloak"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nethera-keycloak-db-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nethera-keycloak-db
+spec:
+  selector:
+    app: nethera-keycloak-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nethera-keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nethera-keycloak
+  template:
+    metadata:
+      labels:
+        app: nethera-keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.6.1
+          args: ["start", "--import-realm"]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL
+              value: jdbc:postgresql://nethera-keycloak-db:5432/keycloak
+            - name: KC_DB_USERNAME
+              value: keycloak
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: keycloak-db-password
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: admin
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: admin-password
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            - name: KC_HOSTNAME
+              value: https://it220208.cloud.htl-leonding.ac.at
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 5
+          volumeMounts:
+            - name: realm
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+            - name: theme
+              mountPath: /opt/keycloak/themes/nethera/login
+              readOnly: true
+      volumes:
+        - name: realm
+          secret:
+            secretName: nethera-realm
+        - name: theme
+          configMap:
+            name: nethera-theme
+            items:
+              - key: theme.properties
+                path: theme.properties
+              - key: nethera-login.css
+                path: resources/css/nethera-login.css
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nethera-keycloak
+spec:
+  selector:
+    app: nethera-keycloak
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nethera-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nethera-backend
+  template:
+    metadata:
+      labels:
+        app: nethera-backend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: backend
+          image: ghcr.io/denizbernecker/nethera-backend:20261006-144848
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: QUARKUS_HTTP_HOST
+              value: 0.0.0.0
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              value: jdbc:postgresql://nethera-db:5432/nethera
+            - name: QUARKUS_DATASOURCE_USERNAME
+              value: nethera
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: db-password
+            - name: QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION
+              value: update
+            - name: QUARKUS_HIBERNATE_ORM_SQL_LOAD_SCRIPT
+              value: no-file
+            - name: QUARKUS_OIDC_AUTH_SERVER_URL
+              value: http://nethera-keycloak:8080/realms/Nethera
+            - name: QUARKUS_OIDC_TOKEN_ISSUER
+              value: https://it220208.cloud.htl-leonding.ac.at/realms/Nethera
+            - name: QUARKUS_OIDC_CONNECTION_DELAY
+              value: 60S
+            - name: QUARKUS_SCHEDULER_ENABLED
+              value: "false"
+            - name: NETHERA_TELEMETRY_MODE
+              value: ssh
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nethera-backend
+spec:
+  selector:
+    app: nethera-backend
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nethera-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nethera-frontend
+  template:
+    metadata:
+      labels:
+        app: nethera-frontend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: frontend
+          image: ghcr.io/denizbernecker/nethera-frontend:20261006-144848
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nethera-frontend
+spec:
+  selector:
+    app: nethera-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nethera-demo-seed
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seed
+          image: postgres:15
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              until [ "$(psql -h nethera-db -U nethera -d nethera -tAc "select to_regclass('public.router') is not null" 2>/dev/null)" = t ]; do sleep 2; done
+              psql -v ON_ERROR_STOP=1 -h nethera-db -U nethera -d nethera -f /seed/seed.sql
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: db-password
+          volumeMounts:
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+      volumes:
+        - name: seed
+          configMap:
+            name: nethera-seed
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nethera
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: it220208.cloud.htl-leonding.ac.at
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: nethera-backend
+                port:
+                  number: 8080
+          - path: /realms
+            pathType: Prefix
+            backend:
+              service:
+                name: nethera-keycloak
+                port:
+                  number: 8080
+          - path: /resources
+            pathType: Prefix
+            backend:
+              service:
+                name: nethera-keycloak
+                port:
+                  number: 8080
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: nethera-keycloak
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nethera-frontend
+                port:
+                  number: 80

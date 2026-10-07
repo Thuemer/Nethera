@@ -20,6 +20,9 @@ Willkommen beim Nethera-Projekt. Dieses Repository enthält die Implementierung 
 
 ## Schnellstart
 
+Die gehostete Demo-Instanz und Hinweise zu privaten Images, Zugangsdaten und
+Updates stehen in [deploy/leocloud/README.md](deploy/leocloud/README.md).
+
 Docker Desktop starten, dann im Projekt-Hauptordner ausfuehren:
 
 ```bash

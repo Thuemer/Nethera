@@ -5,3 +5,7 @@ target
 *.iml
 *.log
 db
+.env
+.env.*
+*.pem
+*.key
