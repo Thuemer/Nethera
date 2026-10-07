@@ -57,6 +57,56 @@ docker compose logs -f backend keycloak
 
 Mit `docker compose stop` haeltst du die Dienste an; `docker compose up -d` startet sie wieder. **Nicht** `docker compose down -v` verwenden, wenn die Daten erhalten bleiben sollen. Die Standardpasswoerter und der Demo-Nutzer sind nur fuer eine lokale Vorfuehrung gedacht. Vor einem Einsatz im Netzwerk muessen sie geaendert und HTTPS eingerichtet werden.
 
+## Online ausprobieren
+
+Die gehostete Instanz ist unter
+[it220208.cloud.htl-leonding.ac.at](https://it220208.cloud.htl-leonding.ac.at/)
+erreichbar. Die Anmeldung erfolgt über Keycloak. Für das Team sind in der
+LeoCloud-Instanz diese Benutzernamen angelegt:
+
+| Benutzername | Zweck |
+| --- | --- |
+| `demo` | Vorführung |
+| `nico` | Team-Account |
+| `tobi` | Team-Account |
+| `deniz` | Team-Account |
+| `manu` | Team-Account |
+
+Die **LeoCloud-Passwörter** werden nicht im Repository veröffentlicht. Bitte
+privat beim jeweiligen Account-Inhaber erfragen und bei Bedarf in Keycloak
+ändern. Die LeoCloud-Accounts und -Daten sind unabhängig von einer lokalen
+Installation.
+
+## Lokales Setup im Team
+
+Für eine frische Installation das Repository klonen:
+
+```bash
+git clone https://github.com/Thuemer/Nethera.git
+cd Nethera
+```
+
+Bei einem bestehenden Checkout stattdessen die Änderungen des Teams mit
+`git pull` holen. Anschließend Docker Desktop starten und wie oben unter
+"Schnellstart" `docker compose up -d --build` im Projekt-Hauptordner ausführen.
+`compose.yaml` liegt direkt in diesem Ordner.
+
+Beim ersten Start werden Images gebaut und Keycloak sowie die Datenbanken
+initialisiert. Das kann einige Minuten dauern. Die oben genannten Team-Accounts
+werden **nicht** in die lokale Keycloak-Datenbank importiert; für eine frische
+lokale Installation gilt das Demo-Login aus dem Schnellstart.
+
+| Dienst | Lokale Adresse | Aufgabe |
+| --- | --- | --- |
+| Web-App | [localhost:5500](http://localhost:5500/) | Oberfläche |
+| Keycloak | [localhost:8081](http://localhost:8081/) | Anmeldung |
+| Backend | `http://localhost:8080` | API |
+| MQTT-Broker | `localhost:1883` | Router-Telemetrie |
+
+Die lokale Installation und LeoCloud synchronisieren ihre Daten nicht
+automatisch. Die gehostete Version nutzt derzeit Demo-Daten; die lokale
+Router-Telemetrie per MQTT ist im Schnellstart beschrieben.
+
 ## Farbpalette
 - \#001818
 - \#144659
