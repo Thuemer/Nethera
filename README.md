@@ -107,6 +107,11 @@ Die lokale Installation und LeoCloud synchronisieren ihre Daten nicht
 automatisch. Die gehostete Version nutzt derzeit Demo-Daten; die lokale
 Router-Telemetrie per MQTT ist im Schnellstart beschrieben.
 
+Beim Öffnen von `http://localhost:5500/` erscheint zuerst die öffentliche
+Website. Über "Anmelden" gelangst du zu Keycloak und danach zur Anwendung unter
+`http://localhost:5500/index.html`. Auf LeoCloud funktioniert derselbe Ablauf
+unter der oben verlinkten Adresse.
+
 ## Farbpalette
 - \#001818
 - \#144659

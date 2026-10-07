@@ -10,9 +10,13 @@
     html, body { height: 100%; }
     body { margin: 0; background: #121212; font-family: "Avenir Next", "Segoe UI", sans-serif; overflow: hidden; }
     #home { display: flex; height: 100%; }
+    #home[hidden], #auth-loading[hidden] { display: none; }
+    #auth-loading { min-height: 100%; display: grid; place-content: center; gap: 16px; padding: 24px; box-sizing: border-box; color: #fff; text-align: center; }
+    #auth-loading p { margin: 0; color: #b8c0bd; }
+    #auth-loading a { color: #63e5c5; }
     #nav-bar { width: 240px; background: #144659; color: #fff; padding: 16px; box-sizing: border-box; position: relative; transition: width .25s ease; box-shadow: 6px 0 24px rgba(0,0,0,.45); z-index: 2; }
     #nav-bar.collapsed { width: 68px; }
-    .brand { display: flex; align-items: center; gap: 10px; margin: -16px -16px 12px; background: #2FB09A; padding: 12px 16px; border-radius: 0 0 6px 6px; }
+    .brand { display: flex; align-items: center; gap: 10px; margin: -16px -16px 12px; background: #2FB09A; padding: 12px 16px; border-radius: 0 0 6px 6px; color: #fff; text-decoration: none; }
     .brand img { width: 36px; height: 36px; border-radius: 6px; }
     .brand .name { font-size: 22px; font-weight: 800; }
     #nav-bar.collapsed .name, #nav-bar.collapsed .label, #nav-bar.collapsed .title-text { display: none; }
@@ -47,10 +51,11 @@
   </style>
 </head>
 <body>
-  <div id="home">
+  <div id="auth-loading" role="status" aria-live="polite">Anmeldung wird geprüft...</div>
+  <div id="home" hidden>
     <nav id="nav-bar" aria-label="Navigation">
       <button id="nav-toggle" aria-label="Navigation ein-/ausklappen">◀</button>
-      <div class="brand"><img src="nethera_logo.png" alt="Nethera Logo"><div class="name">Nethera</div></div>
+      <a class="brand" href="/" title="Zur Nethera-Website"><img src="nethera_logo.png" alt="Nethera Logo"><div class="name">Nethera</div></a>
 
       <h3 class="section-title"><span class="title-text">Hauptmenü</span></h3>
       <ul class="nav-list">
@@ -71,7 +76,7 @@
     </nav>
 
     <main id="screen">
-      <iframe id="screen-frame" src="overview.html?v=20260616-dashboard-fill" title="Nethera Dashboard"></iframe>
+      <iframe id="screen-frame" title="Nethera Dashboard"></iframe>
       <div id="account-root" aria-live="polite"></div>
     </main>
   </div>
@@ -135,12 +140,16 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        await window.NetheraAccount?.init();
+        const auth = await window.NetheraAccount?.init();
+        if (!auth?.authenticated) throw new Error('Keycloak hat die Anmeldung nicht bestätigt.');
       } catch (error) {
-        // Keycloak kann offline sein; die App bleibt trotzdem nutzbar.
         console.warn('Keycloak Initialisierung nicht verfügbar:', error);
+        document.getElementById('auth-loading').innerHTML = 'Anmeldung derzeit nicht verfügbar. <a href="/index.html">Erneut versuchen</a>';
+        return;
       }
 
+      document.getElementById('auth-loading').hidden = true;
+      document.getElementById('home').hidden = false;
       const params = new URLSearchParams(window.location.search);
       const requested = params.get('screen') === 'account' ? 'account.html' : 'overview.html';
       const item = [...items].find(i => i.dataset.src === requested) || items[0];

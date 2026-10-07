@@ -53,31 +53,6 @@ boxes.forEach((box, index) => {
 
 
 
-const dots = [
-    { x: 150, y: 200, size: 75 },
-    { x: 1200, y: 700, size: 50 },
-    { x: 375, y: 650, size: 75 },
-    { x: 900, y: 350, size: 80 },
-    { x: 1400, y: 200, size: 100 }
-];
-
-const repeats = 3;            
-const verticalOffset = 800;   
-
-for (let r = 0; r < repeats; r++) {
-    dots.forEach(d => {
-        const dot = document.createElement('div');
-        dot.className = 'dot';
-        dot.style.left = d.x + 'px';
-        dot.style.top = (d.y + r * verticalOffset) + 'px';
-        dot.style.width = d.size + 'px';
-        dot.style.height = d.size + 'px';
-        document.body.appendChild(dot);
-    });
-}
-
-
-
 function smoothScrollTo(element) {
   const targetY = element.getBoundingClientRect().top + window.pageYOffset;
   const startY = window.pageYOffset;

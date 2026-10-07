@@ -110,7 +110,9 @@ services:
         condition: service_started
 
   frontend:
-    build: ./Applikation
+    build:
+      context: .
+      dockerfile: Applikation/Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:5500:80"

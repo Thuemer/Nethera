@@ -1,33 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>step-by-step</title>
+    <title>Nethera</title>
+    <base href="/website/html/">
+    <link rel="icon" href="../images/nethera_logo.png">
     <link rel="stylesheet" href="../css/nethera.css">
     <script src="../js/nethera.js" defer></script>
 </head>
 <body>
 
 
-<div id="headlineHead">
-    <img id="nethera-logo" src="../images/nethera_logo.png" width="40vw">
-    <h1>Nethera</h1>
-</div>
+<header id="headlineHead">
+    <a class="site-brand" href="/" aria-label="Nethera Startseite">
+        <img id="nethera-logo" src="../images/nethera_logo.png" alt="" width="44" height="44">
+        <span>Nethera</span>
+    </a>
+    <a class="header-login" href="/index.html">Zur Anwendung</a>
+</header>
 
    <div class="hero">
     <div id="text">
-        <h1>Mehr Schutz im <br>Heimnetzwerk?</h1>
-        <h2>So einfach und unkompliziert. <br>Nethera, das volle Potential.</h2>
-        
-        <a href="nethera.html" style="text-decoration: none; color: white;">
-<a style="text-decoration: none; color: white;" href="javascript:void(0);">
-  <div class="button" id="more-btn">mehr</div>
-</a>        </a>
+        <h1>Mehr Schutz im Heimnetzwerk.</h1>
+        <h2>Geräte, Regeln und Netzwerkstatus an einem Ort.</h2>
+        <div class="hero-actions">
+            <a class="button" href="/index.html">Anmelden</a>
+            <button class="button button-secondary" id="more-btn" type="button">Mehr erfahren</button>
+        </div>
     </div>
 
     <div class="router-wrapper">
-        <img class="nethera-router" src="../images/router.png">
+        <img class="nethera-router" src="../images/router.png" alt="Nethera Router">
     </div>
 </div>
 
@@ -55,8 +59,7 @@
             <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <img class="expandedImage" src="../images/StepbyStep/Wähle_einen_Router.png" alt="Illustration">
             <div>
-            <p>Wählen Sie einen Router Ihrer Wahl aus <br> der bereitgestellten Liste aus: <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="step_by_step.html">Router-bestellen</a> <br> 
-            Infos zu den Features finden Sie auf unserer <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="javascript:void(0);" id="features-link">Features-Seite</a></p>
+            <p>Die Auswahl weiterer Router ist geplant. Welche Funktionen Nethera bietet, steht in der <a href="#headline1" id="features-link">Feature-Übersicht</a>.</p>
         </div>
         </div>
     </div>
@@ -77,8 +80,7 @@
             <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <img class="expandedImage" src="../images/StepbyStep/Router_bestellen.png" alt="Illustration">
             <div>
-            <p>Sie werden mit diesem <a style="text-decoration: none; color: rgba(0,255,204,0.8); cursor: grab;" href="step_by_step.html">Link</a> auf unsere Bestellseite weitergeleitet. <br>
-            Nach der Lieferung des Routers können Sie einen Schritt weitergehen...</p>
+            <p>Eine Bestellseite ist noch nicht verfügbar. Für die aktuelle Demo brauchst du keinen eigenen Router.</p>
         </div>
         </div>
     </div>
@@ -87,7 +89,7 @@
     <div class="grid-box">
         <div class="defaultContent">
             <img class="numbersInBox" src="../images/StepbyStep/number-circle-three.svg" alt="Three">
-            <div class="gridDesc">App herunterladen</div>
+            <div class="gridDesc">Web-App öffnen</div>
 
             <div class="numbersInBoxBottomWrap">
                 <img class="numbersInBoxBottom" src="../images/StepbyStep/Nethera_App_Laden.png" alt="Illustration">
@@ -95,12 +97,11 @@
         </div>
 
         <div class="expandedContent">
-            <h2>App herunterladen:</h2>
+            <h2>Web-App öffnen:</h2>
             <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <img class="expandedImage" src="../images/StepbyStep/Nethera_App_Laden.png" alt="Illustration">
             <div>
-            <p>Öffnen Sie ihren App-Store auf ihrem Handy oder Laptop 
-            <br> Suchen Sie die Nethera-App und laden Sie diese herunter.</p>
+            <p>Öffne die <a href="/index.html">Nethera-Web-App</a> im Browser. Ein Download ist für die Demo nicht nötig.</p>
         </div>
         </div>
     </div>
@@ -109,19 +110,18 @@
     <div class="grid-box">
         <div class="defaultContent">
             <img class="numbersInBox" src="../images/StepbyStep/number-circle-four.svg" alt="Four">
-            <div class="gridDesc">Registrieren</div>
+            <div class="gridDesc">Anmelden</div>
             <div class="numbersInBoxBottomWrap">
                 <img class="numbersInBoxBottom" src="../images/StepbyStep/Registrieren.png" alt="Illustration">
             </div>
         </div>
 
         <div class="expandedContent">
-            <h2>Registrieren:</h2>
+            <h2>Anmelden:</h2>
             <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <img class="expandedImage" src="../images/StepbyStep/Registrieren.png" alt="Illustration">
             <div>
-            <p>Erstellen Sie sich in der App ein neues Konto. 
-            <br> Benutzen Sie ein starkes Passwort um ihr Heimnetzwerk gut zu schützen!</p>
+            <p>Melde dich mit deinem bestehenden Nethera-Konto über Keycloak an. Neue Konten legt das Team an.</p>
         </div>
         </div>
     </div>
@@ -142,8 +142,7 @@
             <img class="closeX" src="../images/StepbyStep/x-circle.svg" alt="x-circle">
             <img class="expandedImage" src="../images/StepbyStep/Router_verbinden.png" alt="Illustration">
             <div>
-            <p>Folgen Sie nun unserer detaillierten Anleitung <br> um sich mit dem Router zu verbinden. 
-            </p>
+            <p>Die Router-Anbindung wird weiterentwickelt. Die Online-Demo funktioniert bis dahin mit Beispieldaten.</p>
         </div>
         </div>
     </div>

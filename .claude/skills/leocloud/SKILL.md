@@ -6,7 +6,7 @@ description: Deploy a project to LeoCloud, the Kubernetes cluster of HTL Leondin
 # LeoCloud
 
 Source: https://cloud.htl-leonding.ac.at/html/skill/leocloud/SKILL.md
-Version: 2026-10-05.5
+Version: 2026-10-07
 
 ## If you are reading a saved copy
 
@@ -38,6 +38,8 @@ curl -fsSL https://cloud.htl-leonding.ac.at/html/skill/ghcr/SKILL.md -o .claude/
 - The cluster has a web console at https://dashboard.cloud.htl-leonding.ac.at. The student
   opens it with `leocloud dashboard`, which prints a token for one hour to paste into its login
   page. No template and nothing in the namespace is needed for it.
+- `kubectl top pod` shows the CPU and memory use of the student's own pods, and so does the web
+  console. The use of the nodes (`kubectl top node`) is refused.
 - The user manual is the contract. It is in German:
   https://cloud.htl-leonding.ac.at/html/user-manual.html
   If this file and the manual disagree, the manual is right.

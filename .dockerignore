@@ -1,0 +1,17 @@
+*
+!Applikation/
+!Applikation/*.html
+!Applikation/*.css
+!Applikation/*.js
+!Applikation/*.png
+!Applikation/Dockerfile
+!Applikation/nginx.conf
+!Website/
+!Website/html/
+!Website/html/nethera.html
+!Website/css/
+!Website/css/nethera.css
+!Website/js/
+!Website/js/nethera.js
+!Website/images/
+!Website/images/**
