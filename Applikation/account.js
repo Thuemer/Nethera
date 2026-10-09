@@ -270,6 +270,7 @@
 
     document.getElementById('netheraLogoutButton')?.addEventListener('click', () => {
       if (!keycloak) return;
+      try { sessionStorage.removeItem('nethera-website-visited'); } catch (_) { /* session storage can be disabled */ }
       keycloak.logout({ redirectUri: `${window.location.origin}${window.location.pathname}?screen=account` });
     });
 

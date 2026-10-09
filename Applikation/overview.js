@@ -707,6 +707,7 @@ class DashboardContainer extends HTMLElement {
         this.buttons = Array.from(document.querySelectorAll('dashboard-nav button'));
         
         this.setupCardDragAndDrop();
+        this.loadMobileOrder();
         this.fitCardsPool();
         this.loadLayout();
     }
@@ -728,6 +729,11 @@ class DashboardContainer extends HTMLElement {
         
         const controls = document.querySelector('layout-controls');
         controls?.updateEditMode(this.editMode);
+        if ((this.querySelector('.dashboard') || this).clientWidth < 900) {
+            this.ensureMobileControls();
+            this.showLayoutFeedback(this.editMode ? 'Boxen mit den Tasten neu anordnen.' : 'Reihenfolge gespeichert.');
+            return;
+        }
         this.showLayoutFeedback(this.editMode ? 'Bearbeiten aktiv: Boxen verschieben.' : 'Layout gespeichert.');
         
         if (!this.editMode) {
@@ -737,13 +743,37 @@ class DashboardContainer extends HTMLElement {
     }
 
     fitCardsPool() {
-        if (this.editMode) return;
-
         const dashboard = this.querySelector('.dashboard') || this;
         const visibleCards = this.cards.filter(c => !c.classList.contains('hidden'));
         const gap = 14;
 
         const vw = dashboard.clientWidth;
+        dashboard.classList.toggle('flow-layout', vw < 900);
+        if (vw < 900) {
+            if (this.editMode) this.ensureMobileControls();
+            dashboard.style.display = 'grid';
+            dashboard.style.gridTemplateColumns = vw < 700 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
+            dashboard.style.gap = `${gap}px`;
+            dashboard.style.height = 'auto';
+            dashboard.style.minHeight = '0';
+            this.cards.forEach(card => {
+                card.style.position = 'static';
+                card.style.width = '100%';
+                card.style.height = 'auto';
+                card.style.left = '';
+                card.style.top = '';
+                card.style.display = card.classList.contains('hidden') ? 'none' : '';
+            });
+            return;
+        }
+
+        dashboard.style.display = '';
+        dashboard.style.gridTemplateColumns = '';
+        dashboard.style.gap = '';
+        dashboard.style.minHeight = '';
+        this.cards.forEach(card => { card.style.display = ''; });
+        if (this.editMode) return;
+
         const dashboardTop = dashboard.getBoundingClientRect().top;
         const vh = Math.max(360, window.innerHeight - dashboardTop - 12);
 
@@ -787,6 +817,47 @@ class DashboardContainer extends HTMLElement {
             card.style.height = `${cardHeight}px`;
             card.style.left = `${x}px`;
             card.style.top = `${row * (cardHeight + gap)}px`;
+        });
+    }
+
+    ensureMobileControls() {
+        this.cards.forEach(card => {
+            if (card.querySelector(':scope > .mobile-card-actions')) return;
+            const actions = document.createElement('div');
+            actions.className = 'mobile-card-actions';
+            const title = card.querySelector('h2')?.textContent?.trim() || 'Box';
+            for (const [label, direction] of [['Nach oben', -1], ['Nach unten', 1]]) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = label;
+                button.setAttribute('aria-label', `${title} ${label.toLowerCase()}`);
+                button.addEventListener('click', () => this.moveMobileCard(card, direction));
+                actions.appendChild(button);
+            }
+            card.appendChild(actions);
+        });
+    }
+
+    moveMobileCard(card, direction) {
+        const ordered = [...this.cards].sort((a, b) => Number(a.style.order) - Number(b.style.order));
+        const visible = ordered.filter(item => !item.classList.contains('hidden'));
+        const index = visible.indexOf(card);
+        const neighbor = visible[index + direction];
+        if (!neighbor) return;
+        const oldOrder = card.style.order;
+        card.style.order = neighbor.style.order;
+        neighbor.style.order = oldOrder;
+        localStorage.setItem('dashboardMobileOrder', JSON.stringify(
+            [...this.cards].sort((a, b) => Number(a.style.order) - Number(b.style.order)).map(item => item.dataset.section)
+        ));
+    }
+
+    loadMobileOrder() {
+        let order = [];
+        try { order = JSON.parse(localStorage.getItem('dashboardMobileOrder') || '[]'); } catch (_) { /* ignore invalid saved layout */ }
+        this.cards.forEach((card, index) => {
+            const savedIndex = Array.isArray(order) ? order.indexOf(card.dataset.section) : -1;
+            card.style.order = String(savedIndex >= 0 ? savedIndex : index);
         });
     }
 
@@ -871,6 +942,7 @@ class DashboardContainer extends HTMLElement {
     }
 
     loadLayout() {
+        if ((this.querySelector('.dashboard') || this).clientWidth < 900) return;
         const saved = localStorage.getItem('dashboardLayout');
         if (!saved) return;
 
@@ -887,6 +959,7 @@ class DashboardContainer extends HTMLElement {
 
     resetLayout() {
         localStorage.removeItem('dashboardLayout');
+        localStorage.removeItem('dashboardMobileOrder');
 
         this.editMode = false;
         document.body.classList.remove('edit-mode');
@@ -894,13 +967,14 @@ class DashboardContainer extends HTMLElement {
         const controls = document.querySelector('layout-controls');
         controls?.updateEditMode(false);
 
-        this.cards.forEach(card => {
+        this.cards.forEach((card, index) => {
             card.style.left = '';
             card.style.top = '';
             card.style.width = '';
             card.style.height = '';
             card.style.position = '';
             card.style.zIndex = '';
+            card.style.order = String(index);
         });
 
         setTimeout(() => this.fitCardsPool(), 50);

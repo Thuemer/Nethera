@@ -133,6 +133,25 @@ body::-webkit-scrollbar-thumb,
     pointer-events: none;
 }
 
+.mobile-card-actions { display: none; }
+
+body.edit-mode .dashboard.flow-layout .mobile-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.mobile-card-actions button {
+    flex: 1;
+    min-height: 44px;
+    color: #fff;
+    background: rgba(47,176,154,.16);
+    border: 1px solid rgba(110,231,200,.38);
+    border-radius: 8px;
+    font: inherit;
+    cursor: pointer;
+}
+
 .card-header {
     display: flex;
     justify-content: space-between;
@@ -1023,13 +1042,11 @@ body.edit-mode .card:hover {
 }
 
 @media (max-width: 600px) {
-    .control-btn span {
-        display: none;
-    }
-
     .control-btn {
-        padding: 12px;
-        border-radius: 50%;
+        min-height: 44px;
+        justify-content: center;
+        padding: 10px 8px;
+        border-radius: 8px;
     }
 }
 
@@ -1095,6 +1112,38 @@ body.edit-mode .card:hover {
         padding: 12px;
     }
 
+    .hero {
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+
+    .layout-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        margin: 0;
+    }
+
+    .dashboard-toolbar {
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .nav-group {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .nav-group-label {
+        grid-column: 1 / -1;
+        padding: 4px;
+    }
+
+    .bottom-nav button {
+        padding: 9px 4px;
+        gap: 3px;
+        font-size: 13px;
+    }
+
     .hero h1 {
         font-size: 26px;
     }
@@ -1103,9 +1152,7 @@ body.edit-mode .card:hover {
         font-size: 13px;
     }
 
-    .dashboard {
-        min-height: 1500px;
-    }
+    .dashboard { min-height: 0; }
 
     .card-kpi-row {
         grid-template-columns: 1fr;
@@ -1130,4 +1177,15 @@ body.edit-mode .card:hover {
         margin-top: 6px;
         justify-content: flex-start;
     }
+}
+
+@media (max-width: 380px) {
+    .layout-controls { grid-template-columns: 1fr; }
+    .bottom-nav button {
+        flex-direction: column;
+        min-height: 52px;
+        gap: 2px;
+        font-size: 12px;
+    }
+    .bottom-nav button span { font-size: 12px; }
 }
