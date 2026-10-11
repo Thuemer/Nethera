@@ -27,14 +27,39 @@ cd Nethera
 git clone git@github.com:Thuemer/Nethera.git
 ```
 
-2. Präsentation lokal anzeigen: (für die Zukunft)
+2. Website lokal öffnen (vom Repository-Hauptverzeichnis aus):
 
 ```bash
-cd Projekt-Doku
-npx serve .
-# or
-npx live-server .
+# macOS: direkt im Standardbrowser öffnen
+open Website/index.html
 ```
+
+Alternativ mit einem lokalen Webserver:
+
+```bash
+python3 -m http.server 8000 --bind 127.0.0.1 --directory Website
+```
+
+Anschließend http://localhost:8000 öffnen. Mit `Ctrl+C` wird der Server beendet.
+Die Hauptseite liegt unter `Website/html/nethera.html`; ein Build oder `npm install` ist nicht nötig. Die ausführliche Anleitung liegt unter `Website/html/step_by_step.html`.
+
+### Stand der Website-Userstories
+
+- **#16 Zugriff:** Website und Anleitung sind lokal ohne Anmeldung nutzbar. Online-Veröffentlichung ist noch offen.
+- **#18 Anleitung:** Fünf Schritte mit Vorbereitung, OpenWrt-Grundeinrichtung, Verbindungstest und Fehlerhilfe.
+- **#19 Features:** Übersicht und Erläuterungen zu den fünf geplanten Nethera-Funktionen.
+- **#20 Einstieg:** Wege für vorhandene und neue Router, Voraussetzungen und nächste Schritte.
+
+Die Anleitung bereitet OpenWrt vor; sie ersetzt nicht die separate Nethera-Anbindung. Öffentliche Nethera-Zugangs-/Download-URLs und Bestellziele sind noch offen. Sobald diese bereitstehen, die Hinweise im Abschnitt `#loslegen` und in Schritt 5 der Anleitung ergänzen.
+
+
+3. Projektpräsentation lokal anzeigen:
+
+```bash
+python3 -m http.server 8001 --bind 127.0.0.1 --directory Documentation
+```
+
+Anschließend http://localhost:8001 öffnen.
 
 ## Farbpalette
 - \#001818
