@@ -112,6 +112,51 @@ Website. Über "Anmelden" gelangst du zu Keycloak und danach zur Anwendung unter
 `http://localhost:5500/index.html`. Auf LeoCloud funktioniert derselbe Ablauf
 unter der oben verlinkten Adresse.
 
+## Projektpräsentation und Funktionsstand
+
+Die [aktuelle Projektpräsentation](Documentation/revealjs/nethera-projektpraesentation.html)
+beschreibt den Stand vom **11. Oktober 2026** auf Basis von `df170e7`: Website,
+Login, Anwendung, Datenhaltung, LeoCloud, lokale Docker-Umgebung, MQTT und die
+noch offenen Routerfunktionen. Sie verwendet wie die bisherigen Präsentationen
+Reveal.js. Zum Öffnen im Browser werden die Reveal.js-Dateien vom CDN geladen.
+
+Bereits in Oberfläche und Backend verwaltbar sind Geräte, Gruppen mit
+Umbenennen und Zuweisung, Domainsperren für Geräte/Gruppen/das gesamte Netzwerk,
+Presets mit optionalen Internetzeiten, tägliche Sperrfenster, optionale
+Tagesbudgets sowie gespeicherte Werbeschutz- und Prioritätsoptionen.
+Dashboard-Bereiche und Layout sind weiterhin anpassbar. Website und App wurden
+für mobile Ansichten überarbeitet.
+
+**Gespeichert ist nicht automatisch am Router aktiv:** DNS-Filter, Firewall-
+Sperrzeiten, Werbefilter und QoS müssen noch mit bestätigter Routerwirkung
+verbunden werden. Feste Mbit/s-/Prozentanteile und ein echter WLAN-Scan sind
+keine fertigen Funktionen. Die Cloud-Demo nutzt gespeicherte Demo-/DB-Daten;
+der lokale MQTT-Pfad ist davon getrennt.
+
+Die [Abschlusspräsentation 2025/26](Documentation/revealjs/nethera-abschlusspraesentation.html)
+bleibt als historischer Rückblick erhalten. Ihre früheren Kennzahlen sind keine
+aktuelle Erhebung; unbelegte Live-/Testaussagen sind als offene Nachweise
+gekennzeichnet. Für eine aktuelle Vorführung die Projektpräsentation verwenden.
+
+Die Regeltests lassen sich ohne laufendes Backend ausführen:
+
+```bash
+node --test Applikation/tests/rules.test.cjs
+```
+
+Bekannte Grenzen: Das Datenvolumen in der Datenverkehrsansicht wird derzeit
+fälschlich aus Geschwindigkeiten abgeleitet; DNS-Zähler unterscheiden lokal
+beantwortete und tatsächlich blockierte Anfragen noch nicht zuverlässig.
+Die direkte Backend-Entwicklungskonfiguration nutzt `drop-and-create`.
+Vor `./mvnw quarkus:dev` deshalb eine isolierte Entwicklungsdatenbank verwenden
+oder die Datenbank sichern und die ORM-Konfiguration prüfen. Compose und
+LeoCloud überschreiben dies bereits mit `update` und `no-file`.
+
+Ein Git-Push aktualisiert LeoCloud nicht automatisch. Dafür Images neu bauen,
+in GHCR veröffentlichen, die Image-Versionen im Deployment aktualisieren und
+den Rollout prüfen; siehe [LeoCloud-Anleitung](deploy/leocloud/README.md).
+Lokale und Cloud-Datenbanken sowie Keycloak-Konten bleiben voneinander getrennt.
+
 ## Farbpalette
 - \#001818
 - \#144659
