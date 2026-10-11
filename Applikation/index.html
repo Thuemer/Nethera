@@ -71,20 +71,21 @@
     }
     @media (max-width: 380px) { .nav-list { grid-template-columns: 1fr; } }
   </style>
+  <link id="nethera-theme" rel="stylesheet" href="nethera-theme.css?v=20261011-brand">
 </head>
-<body>
+<body class="app-shell">
   <div id="auth-loading" role="status" aria-live="polite">Anmeldung wird geprüft...</div>
   <div id="home" hidden>
     <nav id="nav-bar" aria-label="Navigation">
       <button id="nav-toggle" aria-label="Navigation ein-/ausklappen" aria-controls="nav-groups" aria-expanded="false">◀</button>
-      <a class="brand" href="/" title="Zur Nethera-Website"><img src="nethera_logo.png" alt="Nethera Logo"><div class="name">Nethera</div></a>
+      <a class="brand" href="/" title="Zur Nethera-Website"><img src="nethera_logo.png" alt=""><div class="name">nethera<span class="brand-dot">.</span></div></a>
 
       <div class="nav-groups" id="nav-groups">
       <h3 class="section-title"><span class="title-text">Hauptmenü</span></h3>
       <ul class="nav-list">
         <li><a class="nav-item" data-src="overview.html"><span class="icon">▦</span><span class="label">Dashboard</span></a></li>
         <li><a class="nav-item" data-src="devices.html"><span class="icon">▣</span><span class="label">Clients</span></a></li>
-        <li><a class="nav-item" data-src="time-limits.html"><span class="icon">◷</span><span class="label">Zeitlimits</span></a></li>
+        <li><a class="nav-item" data-src="time-limits.html"><span class="icon">◷</span><span class="label">Internetzeiten</span></a></li>
         <li><a class="nav-item" data-src="security.html"><span class="icon">◇</span><span class="label">Schutz</span></a></li>
         <li><a class="nav-item" data-src="network-status.html"><span class="icon">◉</span><span class="label">Status</span></a></li>
         <li><a class="nav-item" data-src="topologie_custom.html"><span class="icon">⌘</span><span class="label">Topologie</span></a></li>
@@ -108,9 +109,9 @@
   <script src="config.js"></script>
   <script src="nethera-select.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
-  <script src="account.js?v=20261009-entry"></script>
+  <script src="account.js?v=20261011-brand"></script>
   <script>
-    const APP_VERSION = '20261009-responsive';
+    const APP_VERSION = '20261011-brand';
     const nav = document.getElementById('nav-bar');
     const items = document.querySelectorAll('.nav-item');
     const screen = document.getElementById('screen');

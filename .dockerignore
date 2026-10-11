@@ -8,7 +8,7 @@
 !Applikation/nginx.conf
 !Website/
 !Website/html/
-!Website/html/nethera.html
+!Website/html/*.html
 !Website/css/
 !Website/css/nethera.css
 !Website/js/

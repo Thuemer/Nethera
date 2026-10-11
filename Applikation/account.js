@@ -67,7 +67,7 @@
       @media (max-width: 900px) { .account-view { padding: 16px; } .account-hero { flex-direction: column; align-items: flex-start; } .account-two-grid, .account-settings-grid { grid-template-columns: 1fr; } }
       @media (max-width: 560px) { .account-view { padding: 12px; } .account-data-card { align-items: flex-start; } .account-one-line { white-space: normal; } }
     `;
-    document.head.appendChild(style);
+    document.head.insertBefore(style, document.getElementById('nethera-theme'));
   }
 
   function escapeHtml(value) {
