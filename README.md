@@ -157,12 +157,29 @@ in GHCR veröffentlichen, die Image-Versionen im Deployment aktualisieren und
 den Rollout prüfen; siehe [LeoCloud-Anleitung](deploy/leocloud/README.md).
 Lokale und Cloud-Datenbanken sowie Keycloak-Konten bleiben voneinander getrennt.
 
+## Frontend ohne Container lokal starten
+
+Wenn Backend und Keycloak bereits laufen, kann die aktuelle Website und App direkt aus dem Arbeitsordner gestartet werden:
+
+```bash
+python3 scripts/serve-local.py
+```
+
+- Website: http://localhost:5500/
+- App mit Anmeldung: http://localhost:5500/index.html?entry=website
+
+Der Server bildet die URL-Pfade des Frontend-Containers nach. Port `5500` ist für Keycloak-Weiterleitungen und Backend-CORS freigegeben. Backend und Keycloak müssen auf `8080` bzw. `8081` laufen. Der Frontend-Container darf währenddessen Port `5500` nicht belegen. Mit `Ctrl+C` wird der lokale Webserver beendet.
+
+Ein neu angelegtes Keycloak-Konto liegt in der lokalen Datenbank und wird nicht durch einen Git-Push übertragen. Die Demo-Zugangsdaten oben gelten für eine frische Installation; bestehende Datenbanken behalten ihre bisherigen Konten.
+
 ## Farbpalette
 - \#001818
 - \#144659
 - \#E5EBE7
 - \#63E5C5
 - \#212121 
+
+Website und Applikation verwenden die gemeinsamen Farbvariablen aus [`Website/css/palette.css`](Website/css/palette.css). Transparente Flächen werden daraus abgeleitet; Rot und Gelb bleiben für Fehler- und Warnzustände erhalten.
 
 ## Mitwirkende
 
