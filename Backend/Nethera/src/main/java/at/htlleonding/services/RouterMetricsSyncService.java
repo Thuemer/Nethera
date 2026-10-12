@@ -11,7 +11,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -23,6 +22,9 @@ import java.util.concurrent.TimeUnit;
 public class RouterMetricsSyncService {
 
     private static final Logger LOG = Logger.getLogger(RouterMetricsSyncService.class);
+
+    @Inject
+    RouterHostKeyVerifier hostKeyVerifier;
 
     @Inject
     EntityManager entityManager;
@@ -42,7 +44,7 @@ public class RouterMetricsSyncService {
     @Transactional
     public void syncSpeed(Router router) {
         try (SSHClient ssh = new SSHClient()) {
-            ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            hostKeyVerifier.apply(ssh);
             ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);
@@ -96,7 +98,7 @@ public class RouterMetricsSyncService {
     @Transactional
     public void syncDnsStats(Router router) {
         try (SSHClient ssh = new SSHClient()) {
-            ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            hostKeyVerifier.apply(ssh);
             ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);
@@ -172,7 +174,7 @@ public class RouterMetricsSyncService {
     public void syncRouterMetadata(Router router) {
         Router managed = entityManager.merge(router);
         try (SSHClient ssh = new SSHClient()) {
-            ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            hostKeyVerifier.apply(ssh);
             ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);

@@ -7,11 +7,9 @@ import at.htlleonding.repository.ConnectedDevicesRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
-import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -29,6 +27,9 @@ public class RouterSyncService {
     private static final Logger LOG = Logger.getLogger(RouterSyncService.class);
 
     @Inject
+    RouterHostKeyVerifier hostKeyVerifier;
+
+    @Inject
     ConnectedDevicesRepository deviceRepository;
 
     @Inject
@@ -43,7 +44,7 @@ public class RouterSyncService {
     @Transactional
     public void syncDhcpLeases(Router router) {
         try (SSHClient ssh = new SSHClient()) {
-            ssh.addHostKeyVerifier(new PromiscuousVerifier());
+            hostKeyVerifier.apply(ssh);
             ssh.setConnectTimeout(5000);
             ssh.connect(routerIp);
             ssh.authPublickey("root", sshKeyPath);
@@ -114,7 +115,9 @@ public class RouterSyncService {
         return wifiMacs;
     }
 
-    private void parseAndSaveLeases(Router router, String dhcpOutput, Set<String> activeMacs, Set<String> wifiMacs) throws Exception {
+    // Package-private for tests
+    void parseAndSaveLeases(Router router, String dhcpOutput, Set<String> activeMacs, Set<String> wifiMacs) throws Exception {
+        Set<String> leasedMacs = new HashSet<>();
         try (BufferedReader reader = new BufferedReader(new StringReader(dhcpOutput))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -127,8 +130,9 @@ public class RouterSyncService {
                     String hostname = parts[3].equals("*") ? "Unbekannt" : parts[3];
                     boolean isOnline = activeMacs.contains(mac);
                     String connectionType = wifiMacs.contains(mac) ? "WIFI" : "LAN";
+                    leasedMacs.add(mac);
 
-                    ConnectedDevice existing = findExistingDevice(router, mac);
+                    ConnectedDevice existing = deviceRepository.findByMac(router, mac);
                     boolean wasNew = existing == null;
                     boolean wasOnline = existing != null && Boolean.TRUE.equals(existing.getOnline());
 
@@ -144,18 +148,20 @@ public class RouterSyncService {
                 }
             }
         }
+        markMissingDevicesOffline(router, leasedMacs);
     }
 
-    private ConnectedDevice findExistingDevice(Router router, String mac) {
-        try {
-            return entityManager.createQuery(
-                            "SELECT d FROM ConnectedDevice d WHERE d.macAddress = :mac AND d.router = :router",
-                            ConnectedDevice.class)
-                    .setParameter("mac", mac)
-                    .setParameter("router", router)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return null;
+    // Devices whose lease vanished (router reboot clears /tmp/dhcp.leases, lease expired) would otherwise stay online forever.
+    // An empty lease list is treated as unreliable (e.g. timed-out command) so one glitch can't disconnect everything.
+    private void markMissingDevicesOffline(Router router, Set<String> leasedMacs) {
+        if (leasedMacs.isEmpty()) {
+            return;
+        }
+        for (ConnectedDevice device : deviceRepository.findOnline(router)) {
+            if (!leasedMacs.contains(device.getMacAddress())) {
+                device.setOnline(false);
+                emitActivityLog(router, device, "DISCONNECTED", device.getHostname() + " disconnected");
+            }
         }
     }
 

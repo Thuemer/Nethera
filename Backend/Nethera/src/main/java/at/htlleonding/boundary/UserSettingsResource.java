@@ -33,6 +33,7 @@ public class UserSettingsResource {
     @Path("{key}")
     @Transactional
     public SettingDto save(@PathParam("key") String key, SettingDto dto) {
+        RequestValidation.requireBody(dto);
         UserSetting setting = entityManager.createNamedQuery(UserSetting.QUERY_FIND_BY_KEY, UserSetting.class)
                 .setParameter("settingKey", key)
                 .getResultStream()
