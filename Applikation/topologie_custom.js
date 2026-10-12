@@ -178,7 +178,7 @@ class NetworkTopology extends HTMLElement {
         this.innerHTML=`
         <div id="topology">
             <img src="router.png" id="router" draggable="false" tabindex="-1" aria-hidden="true">
-            <button id="regroup-topology" type="button">Neu anordnen</button>
+            <button id="regroup-topology" type="button" title="Verschobene Geräte und Gruppen zurücksetzen">Anordnung zurücksetzen</button>
             <svg id="lines"></svg>
         </div>
         <div id="bottom-info">
@@ -477,19 +477,18 @@ class NetworkTopology extends HTMLElement {
 
     regroup(){
         this.devices.forEach(dev => { dev.offsetX = undefined; dev.offsetY = undefined; });
-        this._hasAnimatedInitial = true;
-        this.initLayout(true);
+        this.initLayout();
         this.updateDeviceInfo();
         if(this.devices.length) this.showBottomInfo(this.selectedIndex);
     }
 
-    initLayout(forceRegroup=false){
+    initLayout(){
         // Responsive compact layout:
         // - Place groups evenly around a small circle centered on the viewport
         // - Scale the circle radius to keep groups compact but avoid overlap with edges
         const topologyBox = this.querySelector('#topology');
-        const width = Math.max(400, topologyBox?.clientWidth || window.innerWidth);
-        const height = Math.max(300, topologyBox?.clientHeight || window.innerHeight - 60);
+        const width = Math.max(1, topologyBox?.clientWidth || window.innerWidth);
+        const height = Math.max(1, topologyBox?.clientHeight || window.innerHeight);
         const centerX = width / 2;
         const centerY = height / 2;
 
@@ -508,7 +507,7 @@ class NetworkTopology extends HTMLElement {
             const gH = group.offsetHeight || 50;
 
             // angle for this group (start at -90deg to put first group top-center)
-            const angle = (2 * Math.PI * idx / n) - Math.PI / 2 + (forceRegroup ? Math.PI / 6 : 0);
+            const angle = (2 * Math.PI * idx / n) - Math.PI / 2;
 
             // compute candidate position and then clamp to viewport padding
             let gLeft = centerX + groupRadius * Math.cos(angle) - gW / 2;
@@ -540,6 +539,7 @@ class NetworkTopology extends HTMLElement {
         });
 
         // If this is the first layout pass, animate from center into place
+        [...this.groups, ...this.devices].forEach(node => { node._cx = undefined; node._cy = undefined; });
         if(!this._hasAnimatedInitial){
             const centerLeft = centerX; const centerTop = centerY;
             // place everything at center first
@@ -606,6 +606,12 @@ class NetworkTopology extends HTMLElement {
                 });
                 // draw lines after positions set so transitions can animate them smoothly
                 this.drawLines();
+                const start = performance.now();
+                const tick = ts => {
+                    this.drawLines();
+                    if (ts - start < 280) requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
             });
         }
 

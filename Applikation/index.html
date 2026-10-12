@@ -26,57 +26,54 @@
     #auth-loading { min-height: 100%; display: grid; place-content: center; gap: 16px; padding: 24px; box-sizing: border-box; color: var(--text-main); text-align: center; }
     #auth-loading p { margin: 0; color: var(--text-soft); }
     #auth-loading a { color: var(--accent); }
-    #nav-bar { width: 240px; background: var(--accent-2); color: var(--text-main); padding: 16px; box-sizing: border-box; position: relative; transition: width .25s ease; box-shadow: 6px 0 24px rgba(0,0,0,.45); z-index: 2; }
-    #nav-bar.collapsed { width: 68px; }
-    .brand { display: flex; align-items: center; gap: 10px; margin: -16px -16px 12px; background: var(--accent); padding: 12px 16px; border-radius: 0 0 6px 6px; color: var(--text-main); text-decoration: none; }
-    .brand img { width: 36px; height: 36px; border-radius: 6px; }
-    .brand .name { font-size: 22px; font-weight: 800; }
-    #nav-bar.collapsed .name, #nav-bar.collapsed .label, #nav-bar.collapsed .title-text { display: none; }
-    #nav-toggle { position: absolute; top: 12px; right: -20px; background: rgba(var(--text-rgb), .08); border: 0; color: var(--text-main); cursor: pointer; padding: 8px 10px; border-radius: 10px; box-shadow: 0 6px 14px rgba(0,0,0,.35); }
-    #nav-bar.collapsed #nav-toggle { transform: rotate(180deg); }
-    .section-title { margin: 12px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-soft); }
-    .nav-groups { display: contents; }
-    .nav-list { list-style: none; padding: 0; margin: 6px 0 12px; }
-    .nav-list li { margin: 8px 0; }
-    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: var(--text-main); text-decoration: none; border-radius: 8px; cursor: pointer; transition: background .16s ease, transform .16s ease; }
-    .nav-item:hover { background: rgba(var(--text-rgb), .06); transform: translateX(5px); }
-    .nav-item.active { background: rgba(var(--text-rgb), .11); box-shadow: inset 4px 0 0 var(--accent); }
+    #nav-bar { width: 248px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--accent-2); color: var(--text-main); padding: 16px 12px 12px; box-sizing: border-box; position: relative; transition: width .25s ease; z-index: 2; }
+    #nav-bar.collapsed { width: 72px; }
+    .nav-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 48px; padding: 0 4px 0 8px; margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--text-main); text-decoration: none; }
+    .brand img { width: 34px; height: 34px; flex: none; object-fit: contain; }
+    .brand .name { font-size: 21px; font-weight: 700; white-space: nowrap; }
+    #nav-bar.collapsed .nav-header { flex-direction: column; padding: 0; gap: 10px; margin-bottom: 20px; }
+    #nav-bar.collapsed .name, #nav-bar.collapsed .label, #nav-bar.collapsed .section-title { display: none; }
+    #nav-toggle { flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; background: transparent; border: 1px solid rgba(var(--text-rgb), .16); color: var(--text-soft); cursor: pointer; padding: 0; border-radius: 7px; }
+    #nav-toggle:hover { color: var(--text-main); background: rgba(var(--text-rgb), .08); }
+    #nav-toggle svg, .icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    #nav-toggle .expand-icon, #nav-toggle .menu-icon, #nav-toggle .close-icon, #nav-bar.collapsed #nav-toggle .collapse-icon { display: none; }
+    #nav-bar.collapsed #nav-toggle .expand-icon { display: block; }
+    .nav-groups { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+    .nav-group { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(var(--text-rgb), .12); }
+    .nav-group:last-child { border-bottom: 0; margin-bottom: 0; }
+    .nav-account { margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(var(--text-rgb), .12); }
+    #nav-bar.collapsed .nav-group { padding-bottom: 10px; margin-bottom: 10px; }
+    .section-title { margin: 0 0 6px; padding: 0 12px; font-size: 11px; font-weight: 650; text-transform: uppercase; color: var(--text-soft); }
+    .nav-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; box-sizing: border-box; color: var(--text-soft); text-decoration: none; border-radius: 7px; cursor: pointer; transition: background .16s ease, color .16s ease; }
+    .nav-item:hover { color: var(--text-main); background: rgba(var(--text-rgb), .06); }
+    .nav-item.active { color: var(--accent); background: rgba(var(--accent-rgb), .12); }
+    #nav-bar.collapsed .nav-item { justify-content: center; padding: 0; }
     .icon { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 22px; }
-    .label { white-space: nowrap; font-weight: 650; font-size: 14px; }
-    .spacer { height: 10px; }
+    .label { white-space: nowrap; font-weight: 500; font-size: 14px; }
     #screen { flex: 1; min-width: 0; min-height: 100%; position: relative; overflow: hidden; }
     iframe { width: 100%; height: 100%; border: 0; display: block; }
     #account-root { width: 100%; height: 100%; display: none; }
     #screen.account-active iframe { display: none; }
     #screen.account-active #account-root { display: block; }
-    @media (min-width: 901px) {
-      #nav-bar { display: flex; flex-direction: column; flex-shrink: 0; }
-      .brand { flex-shrink: 0; }
-      .nav-groups { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 12px; overflow-y: auto; }
-      .section-title { flex-shrink: 0; margin: 8px 0 0; }
-      .nav-list { display: flex; flex-direction: column; flex: 6 0 auto; gap: 4px; margin: 0; }
-      .nav-list:last-child { flex-grow: 3; }
-      .nav-list li { display: flex; align-items: center; flex: 1 0 auto; min-height: 44px; margin: 0; }
-      .nav-item { flex: 1; min-height: 44px; box-sizing: border-box; }
-      .spacer { display: none; }
-    }
     @media (max-width: 900px) {
       #home { flex-direction: column; height: 100dvh; }
-      #nav-bar, #nav-bar.collapsed { width: 100%; height: 64px; flex: none; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 18px rgba(0,0,0,.28); }
-      .brand { margin: 0; border-radius: 6px; padding: 5px 8px; }
+      #nav-bar, #nav-bar.collapsed { width: 100%; height: 64px; flex: none; padding: 8px 16px; display: block; }
+      .nav-header, #nav-bar.collapsed .nav-header { display: flex; flex-direction: row; justify-content: space-between; min-height: 48px; padding: 0; margin: 0; }
       #nav-bar.collapsed .brand .name { display: inline; }
-      #nav-toggle, #nav-bar.collapsed #nav-toggle { position: static; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; transform: none; font-size: 0; }
-      #nav-toggle { order: 1; }
-      .brand { order: 0; }
-      #nav-toggle::before { content: '☰'; font-size: 24px; line-height: 1; }
-      #nav-bar.mobile-open #nav-toggle::before { content: '×'; font-size: 30px; }
-      .section-title, .spacer { display: none; }
-      .nav-groups { display: none; position: absolute; left: 0; right: 0; top: 64px; max-height: calc(100dvh - 64px); overflow-y: auto; padding: 8px 12px 12px; background: var(--accent-2); box-shadow: 0 16px 28px rgba(0,0,0,.4); border-radius: 0 0 8px 8px; }
+      #nav-bar.collapsed .section-title { display: block; }
+      #nav-toggle, #nav-bar.collapsed #nav-toggle { width: 44px; height: 44px; }
+      #nav-toggle .collapse-icon, #nav-toggle .expand-icon { display: none !important; }
+      #nav-toggle .menu-icon { display: block; }
+      #nav-bar.mobile-open #nav-toggle .menu-icon { display: none; }
+      #nav-bar.mobile-open #nav-toggle .close-icon { display: block; }
+      .nav-groups { display: none; position: absolute; left: 0; right: 0; top: 64px; max-height: calc(100dvh - 64px); overflow-y: auto; padding: 16px; background: var(--accent-2); box-shadow: 0 16px 28px rgba(0,0,0,.4); border-radius: 0 0 8px 8px; }
       #nav-bar.mobile-open .nav-groups { display: block; }
-      .nav-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 0; }
-      .nav-list:last-child { margin-top: 4px; }
-      .nav-list li { margin: 0; min-width: 0; }
-      .nav-item { padding: 10px; min-height: 44px; }
+      .nav-group { margin-bottom: 16px; }
+      .nav-account { margin-top: 0; }
+      .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+      #nav-bar.collapsed .nav-item { justify-content: flex-start; padding: 0 12px; }
       .nav-item .label, #nav-bar.collapsed .nav-item .label { display: inline; font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
       #screen { min-height: 0; flex: 1; }
     }
@@ -88,26 +85,43 @@
   <div id="auth-loading" role="status" aria-live="polite">Anmeldung wird geprüft...</div>
   <div id="home" hidden>
     <nav id="nav-bar" aria-label="Navigation">
-      <button id="nav-toggle" aria-label="Navigation ein-/ausklappen" aria-controls="nav-groups" aria-expanded="false">◀</button>
-      <a class="brand" href="/" title="Zur Nethera-Website"><img src="nethera_logo.png" alt=""><div class="name">nethera<span class="brand-dot">.</span></div></a>
+      <div class="nav-header">
+        <a class="brand" href="index.html" title="Zum Dashboard"><img src="nethera_logo.png" alt=""><div class="name">nethera<span class="brand-dot">.</span></div></a>
+        <button id="nav-toggle" type="button" aria-label="Seitenleiste einklappen" title="Seitenleiste einklappen" aria-controls="nav-groups" aria-expanded="true">
+          <svg class="collapse-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18m6-12-3 3 3 3"/></svg>
+          <svg class="expand-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18m4-12 3 3-3 3"/></svg>
+          <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <svg class="close-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
 
       <div class="nav-groups" id="nav-groups">
-      <h3 class="section-title"><span class="title-text">Hauptmenü</span></h3>
-      <ul class="nav-list">
-        <li><a class="nav-item" data-src="overview.html"><span class="icon">▦</span><span class="label">Dashboard</span></a></li>
-        <li><a class="nav-item" data-src="devices.html"><span class="icon">▣</span><span class="label">Clients</span></a></li>
-        <li><a class="nav-item" data-src="time-limits.html"><span class="icon">◷</span><span class="label">Internetzeiten</span></a></li>
-        <li><a class="nav-item" data-src="security.html"><span class="icon">◇</span><span class="label">Schutz</span></a></li>
-        <li><a class="nav-item" data-src="network-status.html"><span class="icon">◉</span><span class="label">Status</span></a></li>
-        <li><a class="nav-item" data-src="topologie_custom.html"><span class="icon">⌘</span><span class="label">Topologie</span></a></li>
-      </ul>
-
-      <div class="spacer"></div>
-      <ul class="nav-list">
-        <li><a class="nav-item" data-src="traffic.html"><span class="icon">▥</span><span class="label">Datenverkehr</span></a></li>
-        <li><a class="nav-item" data-src="configuration.html"><span class="icon">⚙</span><span class="label">Konfiguration</span></a></li>
-        <li><a class="nav-item" data-src="account.html"><span class="icon">●</span><span class="label">Mein Account</span></a></li>
-      </ul>
+        <div class="nav-group">
+          <h3 class="section-title">Übersicht</h3>
+          <ul class="nav-list">
+            <li><a class="nav-item" href="overview.html" data-src="overview.html" aria-label="Dashboard" title="Dashboard"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span class="label">Dashboard</span></a></li>
+            <li><a class="nav-item" href="devices.html" data-src="devices.html" aria-label="Clients" title="Clients"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg></span><span class="label">Clients</span></a></li>
+            <li><a class="nav-item" href="network-status.html" data-src="network-status.html" aria-label="Status" title="Status"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg></span><span class="label">Status</span></a></li>
+            <li><a class="nav-item" href="topologie_custom.html" data-src="topologie_custom.html" aria-label="Topologie" title="Topologie"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/><path d="M12 8v4m0 0-7 4m7-4 7 4"/></svg></span><span class="label">Topologie</span></a></li>
+          </ul>
+        </div>
+        <div class="nav-group">
+          <h3 class="section-title">Steuerung</h3>
+          <ul class="nav-list">
+            <li><a class="nav-item" href="time-limits.html" data-src="time-limits.html" aria-label="Internetzeiten" title="Internetzeiten"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="label">Internetzeiten</span></a></li>
+            <li><a class="nav-item" href="security.html" data-src="security.html" aria-label="Schutz" title="Schutz"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="label">Schutz</span></a></li>
+            <li><a class="nav-item" href="traffic.html" data-src="traffic.html" aria-label="Datenverkehr" title="Datenverkehr"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8m-6 0h6v6"/></svg></span><span class="label">Datenverkehr</span></a></li>
+          </ul>
+        </div>
+        <div class="nav-group">
+          <h3 class="section-title">System</h3>
+          <ul class="nav-list">
+            <li><a class="nav-item" href="configuration.html" data-src="configuration.html" aria-label="Konfiguration" title="Konfiguration"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06-2 2-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21h-2.8v-.1A1.7 1.7 0 0 0 11 19.34a1.7 1.7 0 0 0-1.87.34l-.06.06-2-2 .06-.06A1.7 1.7 0 0 0 7.47 15a1.7 1.7 0 0 0-1.56-1.03H5v-2.8h.9A1.7 1.7 0 0 0 7.47 10a1.7 1.7 0 0 0-.34-1.87l-.06-.06 2-2 .06.06A1.7 1.7 0 0 0 11 6.47a1.7 1.7 0 0 0 1.03-1.56V4h2.8v.9A1.7 1.7 0 0 0 15.87 6.47a1.7 1.7 0 0 0 1.87-.34l.06-.06 2 2-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03h.9v2.8h-.9A1.7 1.7 0 0 0 19.4 15Z"/></svg></span><span class="label">Konfiguration</span></a></li>
+          </ul>
+        </div>
+        <div class="nav-account">
+          <a class="nav-item" href="index.html?screen=account" data-src="account.html" aria-label="Mein Account" title="Mein Account"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><span class="label">Mein Account</span></a>
+        </div>
       </div>
     </nav>
 
@@ -122,15 +136,30 @@
   <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
   <script src="account.js?v=20261011-brand"></script>
   <script>
-    const APP_VERSION = '20261011-brand';
+    const APP_VERSION = '20261012-sidebar2';
     const nav = document.getElementById('nav-bar');
     const items = document.querySelectorAll('.nav-item');
     const screen = document.getElementById('screen');
     const frame = document.getElementById('screen-frame');
     const accountRoot = document.getElementById('account-root');
     const toggle = document.getElementById('nav-toggle');
+    const brand = document.querySelector('.brand');
 
     if (localStorage.getItem('nav-collapsed') === '1') nav.classList.add('collapsed');
+
+    function updateToggleLabel() {
+      const mobile = window.matchMedia('(max-width: 900px)').matches;
+      const label = mobile ? (nav.classList.contains('mobile-open') ? 'Menü schließen' : 'Menü öffnen')
+        : (nav.classList.contains('collapsed') ? 'Seitenleiste ausklappen' : 'Seitenleiste einklappen');
+      toggle.setAttribute('aria-label', label);
+      toggle.title = label;
+      toggle.setAttribute('aria-expanded', String(mobile ? nav.classList.contains('mobile-open') : !nav.classList.contains('collapsed')));
+    }
+    updateToggleLabel();
+    window.addEventListener('resize', updateToggleLabel);
+    nav.addEventListener('transitionend', event => {
+      if (event.propertyName === 'width') frame.contentWindow?.dispatchEvent(new Event('resize'));
+    });
 
     function setActive(item) {
       items.forEach(i => i.classList.remove('active'));
@@ -152,7 +181,7 @@
       setActive(item);
 
       nav.classList.remove('mobile-open');
-      toggle.setAttribute('aria-expanded', 'false');
+      updateToggleLabel();
       if (src === 'account.html') {
         screen.classList.add('account-active');
         await window.NetheraAccount?.render(accountRoot);
@@ -168,23 +197,31 @@
     }
 
     items.forEach(item => {
-      item.addEventListener('click', () => openScreen(item.dataset.src, item));
+      item.addEventListener('click', event => {
+        event.preventDefault();
+        openScreen(item.dataset.src, item);
+      });
+    });
+    brand.addEventListener('click', event => {
+      event.preventDefault();
+      openScreen('overview.html', [...items].find(item => item.dataset.src === 'overview.html'));
     });
 
     toggle.addEventListener('click', () => {
       if (window.matchMedia('(max-width: 900px)').matches) {
-        const open = nav.classList.toggle('mobile-open');
-        toggle.setAttribute('aria-expanded', String(open));
+        nav.classList.toggle('mobile-open');
+        updateToggleLabel();
         return;
       }
       const collapsed = nav.classList.toggle('collapsed');
       localStorage.setItem('nav-collapsed', collapsed ? '1' : '0');
+      updateToggleLabel();
     });
 
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         nav.classList.remove('mobile-open');
-        toggle.setAttribute('aria-expanded', 'false');
+        updateToggleLabel();
       }
     });
 

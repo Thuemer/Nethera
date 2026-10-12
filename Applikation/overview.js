@@ -780,17 +780,11 @@ class DashboardContainer extends HTMLElement {
         const count = visibleCards.length;
         if (!count) return;
 
-        let cols;
-
-        if (vw < 560) cols = 1;
-        else if (vw < 900) cols = Math.min(2, count);
-        else if (count === 3) cols = 2;
-        else if (count === 5) cols = 3;
-        else cols = Math.ceil(Math.sqrt(count));
+        const cols = count <= 2 ? count : count === 4 ? 2 : Math.min(3, count);
 
         const rows = Math.ceil(count / cols);
 
-        const cardWidth = Math.min((vw - gap * (cols - 1)) / cols, 430);
+        const cardWidth = count === 1 ? Math.min(vw, 720) : (vw - gap * (cols - 1)) / cols;
         const cardHeight = Math.max(210, Math.min((vh - gap * (rows - 1)) / rows, 430));
         dashboard.style.height = `${rows * cardHeight + gap * (rows - 1)}px`;
 

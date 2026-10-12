@@ -6,17 +6,18 @@
 
 body {
     margin: 0;
-    min-height: 100vh;
-    padding: 20px;
+    min-height: 100dvh;
+    padding: 0;
     color: var(--text-main);
-    overflow: auto;
+    overflow: hidden;
     font-family: "Avenir Next", "Segoe UI", sans-serif;
     background: radial-gradient(1000px 500px at 10% -10%, rgba(var(--accent-rgb), 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(var(--accent-2-rgb), 0.35), transparent 58%), var(--bg-main);
 }
 
 network-topology {
     display: block;
-    height: calc(100vh - 40px);
+    height: 100dvh;
+    width: 100%;
     position: relative;
 }
 
@@ -24,10 +25,10 @@ network-topology {
     position: relative;
     width: 100%;
     height: 100%;
-    background: linear-gradient(155deg, var(--bg-card), var(--bg-card-2));
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    background: radial-gradient(ellipse at 50% 48%, rgba(var(--accent-2-rgb), .23), transparent 62%), var(--bg-main);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
     overflow: hidden;
 }
 
@@ -104,9 +105,10 @@ network-topology {
     position: absolute;
     width: 34px;
     height: 34px;
-    background: radial-gradient(circle at 30% 30%, var(--accent), var(--accent) 68%);
-    border: 1px solid rgba(var(--text-rgb), 0.2);
+    background: radial-gradient(circle at 30% 28%, var(--text-main), var(--accent) 28%, var(--accent-2) 95%);
+    border: 1px solid rgba(var(--accent-rgb), 0.9);
     border-radius: 50%;
+    box-shadow: 0 0 0 5px rgba(var(--accent-rgb), .10), 0 0 20px rgba(var(--accent-rgb), .42);
     cursor: pointer;
     z-index: 14;
     transition: left 240ms cubic-bezier(.2,.8,.2,1), top 240ms cubic-bezier(.2,.8,.2,1), transform 180ms ease, box-shadow 180ms ease;
@@ -115,9 +117,9 @@ network-topology {
 }
 
 .device.selected {
-    background: var(--accent-2);
+    background: radial-gradient(circle at 30% 28%, var(--text-main), var(--accent) 35%, var(--accent-2));
     transform: scale(1.05);
-    box-shadow: 0 10px 22px rgba(0,0,0,0.45);
+    box-shadow: 0 0 0 7px rgba(var(--accent-rgb), .18), 0 0 30px rgba(var(--accent-rgb), .7);
 }
 
 svg {
@@ -145,7 +147,7 @@ svg {
 
 .device:hover {
     transform: translateY(-3px) scale(1.08);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+    box-shadow: 0 0 0 7px rgba(var(--accent-rgb), .16), 0 0 28px rgba(var(--accent-rgb), .6);
 }
 
 .group:focus {
@@ -290,14 +292,14 @@ svg line {
     top: 14px;
     right: 14px;
     z-index: 40;
-    border: 1px solid rgba(var(--text-rgb), .12);
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--accent-2), var(--accent));
+    border: 1px solid rgba(var(--text-rgb), .16);
+    border-radius: 7px;
+    background: var(--bg-card);
     color: var(--text-main);
     padding: 9px 14px;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 8px 18px rgba(0,0,0,.28);
+    box-shadow: none;
     max-width: 100%;
 }
 
@@ -319,14 +321,6 @@ svg line {
 }
 
 @media (max-width: 960px) {
-    body {
-        padding: 12px;
-    }
-
-    network-topology {
-        height: calc(100vh - 24px);
-    }
-
     #bottom-info {
         width: calc(100% - 18px);
         min-height: 40px;

@@ -85,6 +85,9 @@ h2, .card-header h2 { font-size: 18px; font-weight: 600; }
 .activity.ok { background: rgba(var(--accent-rgb), .06); }
 .activity-message { font-weight: 600; }
 .card-kpi-value, .card-detail-value { font-weight: 600; }
+.stat strong, .card-kpi-value, .dns-value { color: var(--accent); font-variant-numeric: tabular-nums; }
+.stat.warn strong { color: var(--warn); }
+.stat.danger strong { color: var(--danger); }
 .dns-list { gap: 6px; }
 .dns-row { padding: 6px 0; }
 .nav-group { background: transparent; border-radius: 8px; }
