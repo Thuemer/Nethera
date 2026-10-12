@@ -290,6 +290,12 @@ select {
     }
 }
 
+@media (max-width: 560px) {
+    .traffic-table table { min-width: 620px; }
+    .traffic-table th { white-space: nowrap; }
+    .traffic-table .table-wrapper { overscroll-behavior-x: contain; }
+}
+
 @media (max-width: 900px) {
     body {
         padding-left: max(12px, env(safe-area-inset-left));

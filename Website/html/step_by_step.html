@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <base href="/website/html/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Nethera einrichten: Router prüfen, OpenWrt vorbereiten, Heimnetzwerk einrichten und die Verbindung testen. Schritt für Schritt erklärt.">
+    <title>Einrichtung Schritt für Schritt – Nethera</title>
+    <link rel="stylesheet" href="../css/nethera.css?v=20261011-brand">
+    <script src="../js/nethera.js?v=20261011-brand" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Zum Inhalt</a>
+<header id="headlineHead">
+    <a class="brand" href="nethera.html" aria-label="Nethera Startseite"><img id="nethera-logo" src="../images/nethera_logo.png" width="36" height="36" alt=""><span class="brand-name">nethera<span class="brand-dot">.</span></span></a>
+    <nav aria-label="Hauptnavigation">
+        <a href="nethera.html">Übersicht</a>
+        <a href="step_by_step.html" aria-current="page">Anleitung</a>
+        <a class="nav-cta" href="/index.html?entry=website">Anmelden <span aria-hidden="true">→</span></a>
+    </nav>
+</header>
+<main id="main" class="guide content-section">
+    <p class="eyebrow">Einrichtung</p>
+    <h1>Dein Heimnetzwerk, Schritt für Schritt</h1>
+    <p class="lead">Diese Anleitung begleitet dich von der Routerauswahl bis zu einem vorbereiteten Heimnetzwerk. Du brauchst dafür einen Computer, ein LAN-Kabel und die Zugangsdaten deines Internetanbieters.</p>
+    <aside class="availability">
+        <h2>Was du hier einrichten kannst</h2>
+        <p>Die folgenden Schritte bereiten deinen Router mit OpenWrt vor. Der separate Nethera-Zugang wird anschließend benötigt, um Nethera-Funktionen zu verwenden. Mit einem bestehenden Nethera-Konto kannst du dich oben anmelden. Die Cloud-Demo zeigt derzeit Beispieldaten; die Anbindung deines Routers wird separat eingerichtet.</p>
+    </aside>
+    <nav class="guide-nav" aria-label="Schritte der Anleitung">
+        <a href="#router-pruefen">1. Router prüfen</a>
+        <a href="#vorbereiten">2. Vorbereiten</a>
+        <a href="#openwrt">3. OpenWrt einrichten</a>
+        <a href="#netzwerk">4. Netzwerk einrichten</a>
+        <a href="#nethera">5. Verbindung prüfen</a>
+        <a href="#hilfe">Fehlerhilfe</a>
+    </nav>
+
+    <section class="guide-step" data-reveal id="router-pruefen" aria-labelledby="router-title">
+        <p class="eyebrow">Schritt 1</p>
+        <h2 id="router-title">Prüfe deinen Router</h2>
+        <ol>
+            <li>Lies die <strong>Modellbezeichnung und Hardware-Version</strong> auf dem Typenschild des Routers oder auf seiner Verpackung ab. Ähnlich benannte Geräte können unterschiedliche Hardware haben.</li>
+            <li>Suche das genaue Gerät in der <a href="https://openwrt.org/toh/start">OpenWrt Table of Hardware</a>. Öffne die zugehörige Geräteseite.</li>
+            <li>Prüfe, ob eine unterstützte stabile Firmware und eine Installationsanleitung für diese Variante vorhanden sind. Lies auch besondere Einschränkungen.</li>
+            <li>Behalte die Geräteseite für die weiteren Schritte geöffnet. Wenn deine Variante nicht unterstützt wird, verwende ein anderes Gerät.</li>
+        </ol>
+        <p class="result"><strong>Danach:</strong> Du kennst das genaue Gerät und die dazugehörige Installationsanleitung.</p>
+        <a href="#vorbereiten">Weiter zu Schritt 2 →</a>
+    </section>
+
+    <section class="guide-step" data-reveal id="vorbereiten" aria-labelledby="prepare-title">
+        <p class="eyebrow">Schritt 2</p>
+        <h2 id="prepare-title">Bereite Gerät und Zugangsdaten vor</h2>
+        <ol>
+            <li><strong>Vorhandener Router:</strong> Verwende ihn weiter, wenn die Prüfung aus Schritt 1 erfolgreich war. <strong>Neuer Router:</strong> Vergleiche Modell und Hardware-Version des Händlerangebots mit der Geräteseite, bevor du bestellst. Nethera verkauft hier derzeit keine Router.</li>
+            <li>Lege einen Computer mit Browser, ein LAN-Kabel und eine zuverlässige Stromversorgung bereit. Nutze für die Installation die kabelgebundene Verbindung.</li>
+            <li>Sichere die bisherigen Einstellungen, soweit die vorhandene Routeroberfläche eine Sicherung anbietet. Notiere WLAN-Name und Internetanbieter-Zugangsdaten, etwa PPPoE-Daten, falls dein Anschluss sie benötigt.</li>
+            <li>Lies auf der Geräteseite nach, welcher Anschluss und welche Installationsmethode für deinen Router vorgesehen sind.</li>
+        </ol>
+        <p class="result"><strong>Danach:</strong> Gerät, Kabel, Sicherung und benötigte Zugangsdaten sind bereit.</p>
+        <a href="#openwrt">Weiter zu Schritt 3 →</a>
+    </section>
+
+    <section class="guide-step" data-reveal id="openwrt" aria-labelledby="openwrt-title">
+        <p class="eyebrow">Schritt 3</p>
+        <h2 id="openwrt-title">Richte OpenWrt ein</h2>
+        <p><strong>OpenWrt ist bereits installiert?</strong> Überspringe die Erstinstallation und fahre mit Schritt 4 fort.</p>
+        <ol>
+            <li>Öffne den <a href="https://firmware-selector.openwrt.org/">offiziellen OpenWrt Firmware Selector</a>. Suche dein genaues Modell und wähle die auf der Geräteseite unterstützte stabile Version.</li>
+            <li>Lade die für die <strong>Erstinstallation</strong> vorgeschriebene Datei herunter. Installationsdatei und Update-Datei sind nicht bei jedem Gerät austauschbar.</li>
+            <li>Verbinde den Computer so mit dem Router, wie es dessen Geräteseite beschreibt. Folge genau dieser Anleitung; manche Geräte nutzen das Hersteller-Webinterface, andere eine besondere Installationsmethode.</li>
+            <li>Lass den Installationsvorgang und den anschließenden Neustart vollständig abschließen. Trenne dabei weder Strom noch das Netzwerkkabel.</li>
+        </ol>
+        <aside class="guide-note"><strong>Vor der Installation:</strong> Eine falsche Firmware kann den Router unbrauchbar machen. Installiere erst, wenn Modell, Hardware-Version, Datei und Methode eindeutig übereinstimmen.</aside>
+        <p>Quelle und weitere Hinweise: <a href="https://openwrt.org/docs/guide-quick-start/start">OpenWrt Quick Start</a> und die Geräteseite deines Routers.</p>
+        <p class="result"><strong>Danach:</strong> OpenWrt ist gestartet und du kannst die lokale Verwaltung öffnen.</p>
+        <a href="#netzwerk">Weiter zu Schritt 4 →</a>
+    </section>
+
+    <section class="guide-step" data-reveal id="netzwerk" aria-labelledby="network-title">
+        <p class="eyebrow">Schritt 4</p>
+        <h2 id="network-title">Richte dein Heimnetzwerk ein</h2>
+        <ol>
+            <li>Verbinde den Computer mit einem <strong>LAN-Port</strong> des Routers. Lass IP-Adresse und DNS am Computer automatisch beziehen, sofern die Geräteanleitung nichts anderes verlangt.</li>
+            <li>Öffne die lokale Routeradresse im Browser. Bei einer frischen OpenWrt-Installation ist das normalerweise <code>http://192.168.1.1</code>. Bei einem bereits eingerichteten Router verwende dessen aktuelle Adresse.</li>
+            <li>Melde dich in der OpenWrt-Verwaltung an. Bei einer unveränderten Erstinstallation ist der Benutzer <code>root</code>; falls noch kein Passwort gesetzt wurde, lege sofort ein eigenes Administratorpasswort fest. Dieses Passwort schützt den Routerzugang.</li>
+            <li>Verbinde den Internetanschluss mit dem vorgesehenen WAN-Port und konfiguriere den Zugang nach den Vorgaben deines Anbieters. DHCP, PPPoE und weitere Einstellungen hängen vom Anschluss ab.</li>
+            <li>Richte das WLAN ein: Wähle das richtige Land, aktiviere das Funknetz und vergib einen WLAN-Namen sowie ein starkes WLAN-Passwort. Speichere die Einstellungen.</li>
+        </ol>
+        <p>Offizielle Anleitungen: <a href="https://openwrt.org/docs/guide-quick-start/walkthrough_login">Erste Anmeldung</a> und <a href="https://openwrt.org/docs/guide-quick-start/basic_wifi">WLAN-Grundeinrichtung</a>.</p>
+        <p class="result"><strong>Danach:</strong> Der Routerzugang ist geschützt und dein Heimnetzwerk ist eingerichtet.</p>
+        <a href="#nethera">Weiter zu Schritt 5 →</a>
+    </section>
+
+    <section class="guide-step" data-reveal id="nethera" aria-labelledby="nethera-title">
+        <p class="eyebrow">Schritt 5</p>
+        <h2 id="nethera-title">Prüfe die Verbindung und deinen nächsten Schritt</h2>
+        <ol>
+            <li>Verbinde ein Handy oder einen Computer mit deinem eingerichteten WLAN beziehungsweise per LAN.</li>
+            <li>Öffne eine Website und prüfe, ob der Internetzugang funktioniert. Prüfe anschließend, ob die lokale Routerverwaltung erreichbar ist.</li>
+            <li>Wiederhole den Verbindungstest mit einem zweiten Gerät, wenn vorhanden. Bei Problemen helfen die Hinweise weiter unten.</li>
+            <li>Für die Nethera-Funktionen brauchst du zusätzlich den separat bereitgestellten Nethera-Zugang und die dazugehörigen Verbindungsinformationen. Nutze die zu diesem Zugang gehörende Einrichtung; OpenWrt allein aktiviert Nethera noch nicht.</li>
+        </ol>
+        <p class="result"><strong>Danach:</strong> Dein Heimnetzwerk ist vorbereitet und geprüft. Die Nethera-Verwaltung kommt mit dem bereitgestellten Zugang hinzu.</p>
+        <a class="button" href="nethera.html#loslegen">Zum Nethera-Angebot</a>
+        <a class="text-link" href="nethera.html#steps2">Features entdecken</a>
+    </section>
+
+    <section class="faq" id="hilfe" aria-labelledby="help-title">
+        <h2 id="help-title">Wenn etwas nicht funktioniert</h2>
+        <details class="container-box">
+            <summary>Die Routerverwaltung ist nicht erreichbar</summary>
+            <p>Prüfe Stromversorgung, LAN-Kabel und den verwendeten LAN-Port. Warte, bis der Router vollständig gestartet ist. Bei einem bereits konfigurierten Router kann die Adresse von <code>192.168.1.1</code> abweichen; prüfe die Gateway-Adresse in den Netzwerkeinstellungen deines Computers. Die gerätespezifischen Hinweise findest du auf der OpenWrt-Geräteseite.</p>
+        </details>
+        <details class="container-box">
+            <summary>Das WLAN wird nicht angezeigt</summary>
+            <p>Öffne die Verwaltung über die LAN-Verbindung. Prüfe, ob das WLAN aktiviert und der richtige Länder-Code eingestellt ist. Speichere die Konfiguration und prüfe den WLAN-Namen auf deinem Gerät erneut.</p>
+        </details>
+        <details class="container-box">
+            <summary>WLAN funktioniert, aber es gibt kein Internet</summary>
+            <p>Prüfe die Verbindung vom Internetanschluss zum WAN-Port, den WAN-Status und die Zugangseinstellungen deines Anbieters. Ein verbundenes WLAN bestätigt noch keinen funktionierenden Internetzugang.</p>
+        </details>
+        <details class="container-box">
+            <summary>OpenWrt läuft, aber ich sehe keine Nethera-Funktionen</summary>
+            <p>OpenWrt und Nethera sind getrennte Teile. Für Nethera benötigst du den zusätzlichen Nethera-Zugang und die dafür vorgesehene Routeranbindung. Die OpenWrt-Grundeinrichtung allein stellt die Nethera-Oberfläche nicht bereit.</p>
+        </details>
+        <details class="container-box">
+            <summary>Nach der Firmwareinstallation startet der Router nicht</summary>
+            <p>Verwende die Wiederherstellungsanleitung für dein genaues Modell auf der OpenWrt-Geräteseite. Installiere keine beliebige andere Firmware und folge keiner Anleitung für eine andere Hardware-Version.</p>
+        </details>
+    </section>
+</main>
+<footer><span>Nethera · Heimnetzwerkverwaltung</span><a href="nethera.html">Zur Website</a><a href="#main">Nach oben</a></footer>
+</body>
+</html>

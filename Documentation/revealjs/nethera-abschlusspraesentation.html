@@ -163,6 +163,7 @@
       <p style="font-size: 0.65em; color: #888;">
         Tobias Huemer &nbsp;·&nbsp; Deniz Bernecker &nbsp;·&nbsp; Nico Hofer &nbsp;·&nbsp; Manuel Freihaut &nbsp;·&nbsp; Moritz Kapeller
       </p>
+      <p style="font-size:0.58em;color:#f2c879;margin-top:1em;">Historischer Rückblick 2025/26, kein aktueller Statusbericht.<br>Aktueller Funktionsstand: <a href="nethera-projektpraesentation.html">Projektpräsentation · 11.10.2026</a>.<br>Frühere Kennzahlen und Zielaussagen sind keine aktuellen Testnachweise.</p>
     </section>
 
 
@@ -347,15 +348,15 @@
         <div class="column-card">
           <h3>📡 REST-API (Backend ↔ Frontend)</h3>
           <ul>
-            <li><strong>Sicheres Benutzer-Login:</strong> Cloud-basierte Authentifizierung schützt jeden REST-Endpoint ab.</li>
-            <li><strong>Verbindungsabbruch-Sicherung:</strong> Transaktionssichere API-Abwicklung, um instabile Routerzustände zu verhindern.</li>
+            <li><strong>Benutzer-Login:</strong> Keycloak authentifiziert Benutzer; REST-Endpunkte sind standardmäßig login-geschützt, mit expliziten öffentlichen Ausnahmen.</li>
+            <li><strong>Persistenz:</strong> Das Backend speichert Regeln. Eine durchgängige Transaktion bis zur bestätigten Router-Anwendung ist noch offen.</li>
           </ul>
         </div>
         <div class="column-card">
           <h3>🔒 OS-Ebene (Backend ↔ OpenWRT)</h3>
           <ul>
-            <li><strong>MUSS-Kriterium SSH:</strong> Verschlüsselte Kommando-Injektion zur direkten Steuerung von OpenWRT.</li>
-            <li><strong>Inhaltsfilterung:</strong> Externe Repositories (z.B. OISD) speisen die DNS-basierten Blocklisten des Routers.</li>
+            <li><strong>Telemetrie:</strong> SSH-Lesepfad und MQTT-Empfang sind implementiert; die aktuelle Hardware-Anbindung muss separat nachgewiesen werden.</li>
+            <li><strong>Geplanter Schreibpfad:</strong> Gespeicherte Blocklisten in DNS-Filter am Router übernehmen. Externe Filterquellen und deren Aktivierung sind noch keine nachgewiesene Funktion.</li>
           </ul>
         </div>
       </div>
@@ -473,11 +474,12 @@
       <h1 style="font-size: 2.2em; margin-top: 1em;">🔮 Live-Demo</h1>
       <p style="font-size: 0.9em; color: var(--teal-lt); margin-top: 0.5em;">Präsentation des lauffähigen Systems</p>
       <hr style="max-width: 250px; margin: 1em auto;" />
-      <p style="font-size: 0.75em; color: #888;">Einblick in das Admin-Dashboard, intuitive Gerätegruppen-Zuweisung und Live-DNS-Sperren.</p>
+      <p style="font-size: 0.75em; color: #888;">Dashboard, Gerätegruppen und gespeicherte Domainregeln zeigen. Tatsächliche DNS-Sperrwirkung am Router nur mit Hardware-Nachweis behaupten.</p>
     </section>
 
     <section>
-      <h2>Projektergebnis in Zahlen</h2>
+      <h2>Historische Projektkennzahlen 2025/26</h2>
+      <p style="font-size:.55em;color:#f2c879;text-align:center;">Übernommene frühere Angaben, keine aktuelle Erhebung. Den heutigen Code-Stand zeigt die Projektpräsentation.</p>
       
       <div class="grid-stats" style="grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, auto); gap: 0.6em;">
         <div class="stat-box"><div class="val">181</div><div class="lbl">Git Commits</div></div>
@@ -495,28 +497,28 @@
         </div>
         <hr style="margin: 0.4em 0; border-color: #444;" />
         <div style="font-size: 0.85em; color: #999;">
-          Ausgezeichnete, homogene Lastverteilung und agile Zusammenarbeit über alle Sprints hinweg.
+          Zusammenarbeit über gemeinsame Sprints, Git-Branches und dokumentierte Arbeitspakete.
         </div>
       </div>
     </section>
 
     <section>
-      <h2>Erfolgskriterien &amp; Sonderfälle</h2>
+      <h2>Erfolgskriterien und offene Nachweise</h2>
       <div class="two-columns">
         <div class="column-card">
-          <h3>✅ Erreichte Erfolgskriterien</h3>
+          <h3>Umsetzung und Abnahmeziele</h3>
           <ul style="font-size:0.65em; padding-left: 1.1em;">
-            <li><strong>Usability-Erfolg:</strong> Ein fachfremder Testnutzer kann einen Filter in unter 60 Sekunden aktivieren.</li>
-            <li><strong>Stabilität:</strong> Die SSH-Kommunikation zwischen Quarkus-Backend und Router funktioniert im Dauertest stabil.</li>
-            <li><strong>Persistenz:</strong> Die vorgenommenen Einstellungen bleiben nach einem Stromausfall oder Reboot erhalten.</li>
+            <li><strong>Usability-Ziel:</strong> Einen Filter ohne technisches Vorwissen konfigurieren; einen zeitlich gemessenen Nutzertest noch dokumentieren.</li>
+            <li><strong>Stabilitätsziel:</strong> SSH-/MQTT-Verbindung mit echter Router-Hardware im Dauertest und bei Ausfällen nachweisen.</li>
+            <li><strong>Persistenz:</strong> Regeln werden in PostgreSQL gespeichert. Volumes/PVCs erhalten Daten bei normalen Neustarts; Backup und Wiederherstellung zusätzlich testen.</li>
           </ul>
         </div>
         <div class="column-card">
-          <h3>⚠️ Abgesicherte Fehlerfälle</h3>
+          <h3>Fehlerfälle gezielt prüfen</h3>
           <ul style="font-size:0.65em; padding-left: 1.1em;">
-            <li><strong>Router Offline:</strong> Die App zeigt sofort einen verständlichen Warnhinweis im Interface.</li>
-            <li><strong>Fehlerhafte Filterliste:</strong> Bei Problemen mit einer externen Quelle fällt das System auf sichere Standardwerte zurück.</li>
-            <li><strong>Offene Fragen geklärt:</strong> Entscheidung für On-Demand SSH-Verbindungen zur Absicherung der Echtzeit-Rückmeldung.</li>
+            <li><strong>Router offline:</strong> Datenquelle und Aktualität unterscheiden; Erkennung von Ausfällen am echten Gerät testen.</li>
+            <li><strong>Fehlerhafte Filterliste:</strong> Validierung, sichere Aktivierung und Rollback für den geplanten Router-Schreibpfad ergänzen.</li>
+            <li><strong>Transport:</strong> Modi SSH, MQTT und Auto mit SSH-Fallback sind vorgesehen; kein pauschaler On-Demand-SSH-Nachweis.</li>
           </ul>
         </div>
       </div>

@@ -111,6 +111,7 @@ async function loadSecurityState() {
   const data = await response.json();
   state.presets = data.presets || [];
   state.assignments = data.assignments || [];
+  state.securityDevices = data.devices || [];
 }
 
 function escapeText(value) {
@@ -152,8 +153,8 @@ function isBlockedNow(limit) {
   const until = minutesSinceMidnight(limit.until);
 
   if (from === until) return false;
-  if (from < until) return current >= from && current <= until;
-  return current >= from || current <= until;
+  if (from < until) return current >= from && current < until;
+  return current >= from || current < until;
 }
 
 function usedPercent(limit) {
@@ -201,8 +202,7 @@ function renderDeviceOptions() {
   select.disabled = false;
   select.innerHTML = state.devices.map(device => {
     const key = deviceKey(device);
-    const preset = presetForDevice(device.id);
-    const label = `${device.hostname || 'Unbekanntes Gerät'} (${device.ipAddress || device.macAddress || 'ohne Adresse'}) · Preset: ${preset?.name || 'Keines'}`;
+    const label = `${device.hostname || 'Unbekanntes Gerät'} · ${device.ipAddress || device.macAddress || 'ohne Adresse'}`;
     return `<option value="${escapeText(key)}">${escapeText(label)}</option>`;
   }).join('');
 
@@ -215,7 +215,7 @@ function loadSelectedLimit() {
 
   const dailyLimit = document.getElementById('dailyLimit');
   const limitStatus = document.getElementById('limitStatus');
-  dailyLimit.value = String(limit.dailyLimit ?? 120);
+  dailyLimit.value = String(limit.dailyLimit ?? 0);
   limitStatus.value = limit.status || 'active';
   dailyLimit.dispatchEvent(new Event('change', { bubbles: true }));
   limitStatus.dispatchEvent(new Event('change', { bubbles: true }));
@@ -223,6 +223,24 @@ function loadSelectedLimit() {
   document.getElementById('blockedFrom').value = limit.from || '21:00';
   document.getElementById('blockedUntil').value = limit.until || '07:00';
   document.getElementById('limitNote').value = limit.note || '';
+  document.querySelector('.advanced-settings').open = Number(limit.dailyLimit) > 0;
+  document.getElementById('clearLimitButton').disabled = !state.limits[key];
+  updateSchedulePreview();
+}
+
+function updateSchedulePreview() {
+  const key = document.getElementById('deviceSelect').value;
+  const device = state.devices.find(item => deviceKey(item) === key);
+  const from = document.getElementById('blockedFrom').value;
+  const until = document.getElementById('blockedUntil').value;
+  const paused = document.getElementById('limitStatus').value === 'paused';
+  const daily = Number(document.getElementById('dailyLimit').value);
+  const overnight = from > until ? ' am nächsten Morgen' : '';
+  document.getElementById('schedulePreview').innerHTML = `
+    <strong>${escapeText(device?.hostname || 'Kein Gerät ausgewählt')}</strong>
+    <p>${paused ? 'Zeitsperre ausgeschaltet.' : `Täglich kein Internet von <b>${escapeText(from)}</b> bis <b>${escapeText(until)}</b>${overnight}.`}</p>
+    <span>${paused ? 'Sperrzeit und Tageslimit werden nicht angewendet.' : daily ? `Zusätzlich maximal ${formatMinutes(daily)} pro Tag.` : 'Außerhalb der Sperrzeit kein Tageslimit.'}</span>
+    <small>Uhrzeit: ${escapeText(Intl.DateTimeFormat().resolvedOptions().timeZone)}</small>`;
 }
 
 function renderList() {
@@ -237,22 +255,22 @@ function renderList() {
   list.innerHTML = state.filteredDevices.map(device => {
     const key = deviceKey(device);
     const limit = state.limits[key];
-    const blocked = isBlockedNow(limit);
+    const blocked = isBlockedNow(limit) || (limit?.status === 'active' && limit.dailyLimit > 0 && limit.usedMinutesToday >= limit.dailyLimit);
     const paused = limit?.status === 'paused';
     const percent = limit ? usedPercent(limit) : 0;
     const preset = presetForDevice(device.id);
-    const budgetText = limit
-      ? `${formatMinutes(limit.usedMinutesToday || 0)} von ${formatMinutes(limit.dailyLimit)} genutzt`
-      : 'Noch kein Limit gesetzt';
+    const budgetText = limit?.dailyLimit > 0
+      ? `${Number(limit.usedMinutesToday) || 0} min von ${formatMinutes(limit.dailyLimit)} erfasst`
+      : 'Kein zusätzliches Tageslimit';
     const note = limit?.note ? `<span>${escapeText(limit.note)}</span>` : '';
     const cardState = blocked ? 'is-blocked' : paused ? 'is-paused' : '';
     const statusBadge = !limit
       ? '<span class="badge">Ohne Limit</span>'
       : blocked
-        ? '<span class="badge danger">Jetzt gesperrt</span>'
+        ? '<span class="badge danger">Sperre laut Zeitplan</span>'
         : paused
-          ? '<span class="badge paused">Pausiert</span>'
-          : '<span class="badge ok">Aktiv</span>';
+          ? '<span class="badge paused">Regel ausgeschaltet</span>'
+          : '<span class="badge ok">Regel eingeschaltet</span>';
 
     return `
       <article class="limit-card ${cardState}">
@@ -260,7 +278,7 @@ function renderList() {
           <div class="limit-title-row">
             <h3>${escapeText(device.hostname || 'Unbekanntes Gerät')}</h3>
             ${statusBadge}
-            <span class="badge wifi">WiFi</span>
+            <span class="badge">${escapeText(device.connectionType || 'Netzwerk')}</span>
           </div>
           <div class="limit-meta">
             <span>${escapeText(device.ipAddress || 'Keine IP')}</span>
@@ -273,13 +291,13 @@ function renderList() {
               <strong>${limit ? formatMinutes(limit.dailyLimit) : 'Kein Tageslimit'}</strong>
               <span>${limit ? `Verboten: ${escapeText(limit.from)} bis ${escapeText(limit.until)}` : 'Kein Sperrzeitraum gesetzt'}</span>
             </div>
-            <div class="budget-bar" aria-hidden="true"><span style="--budget: ${percent}%"></span></div>
+            ${limit?.dailyLimit > 0 ? `<div class="budget-bar" aria-hidden="true"><span style="--budget: ${percent}%"></span></div>` : ''}
             <div class="budget-text">${escapeText(budgetText)}</div>
           </div>
         </div>
         <div class="limit-side">
           <button class="small-btn" type="button" data-action="edit" data-key="${escapeText(key)}">Bearbeiten</button>
-          <button class="small-btn ghost" type="button" data-action="toggle" data-key="${escapeText(key)}">${paused ? 'Aktivieren' : 'Pausieren'}</button>
+          ${limit ? `<button class="small-btn ghost" type="button" data-action="toggle" data-key="${escapeText(key)}">${paused ? 'Regel einschalten' : 'Regel ausschalten'}</button>` : ''}
         </div>
       </article>
     `;
@@ -303,34 +321,31 @@ function applyFilters() {
 }
 
 async function loadDevices() {
-  setStatus('Lade WLAN-Geräte ...');
+  setStatus('Lade Internetzeiten ...');
 
   try {
-    const router = await NetheraApi.getPrimaryRouter();
+    await loadSecurityState();
     try {
       await loadBackendLimits();
-      await loadSecurityState();
     } catch {
       state.limits = loadLimits();
       state.storageMode = 'local';
     }
 
-    const devices = Array.isArray(router?.devices) ? router.devices : [];
+    const devices = state.securityDevices || [];
     state.devices = devices
-      .filter(device => normalizeConnectionType(device.connectionType) === 'wifi')
       .map(device => ({
         id: device.id,
         hostname: device.hostname,
         ipAddress: device.ipAddress,
         macAddress: device.macAddress,
-        connectionType: 'wifi',
+        connectionType: normalizeConnectionType(device.connectionType),
         lastSeen: device.lastSeen
       }));
 
     renderDeviceOptions();
     applyFilters();
-    const storageText = state.storageMode === 'backend' ? 'Backend' : 'lokaler Notfall-Speicher';
-    setStatus(`${state.devices.length} WLAN-Geräte geladen. Zeitlimits kommen aus dem ${storageText}.`, 'success');
+    setStatus(`${state.devices.length} Geräte · ${state.storageMode === 'backend' ? 'Regeln aus der Datenbank geladen' : 'Nur lokale Vorschau – Speichern nicht verfügbar'}.`, state.storageMode === 'backend' ? 'success' : 'warning');
   } catch (error) {
     state.devices = [];
     renderDeviceOptions();
@@ -344,11 +359,16 @@ async function saveSelectedLimit(event) {
 
   const key = document.getElementById('deviceSelect')?.value;
   if (!key) {
-    setStatus('Bitte zuerst ein WLAN-Gerät auswählen.', 'error');
+    setStatus('Bitte zuerst ein Gerät auswählen.', 'error');
     return;
   }
 
-  state.limits[key] = {
+  if (state.storageMode !== 'backend') return setStatus('Nicht gespeichert. Die Verbindung zur Datenbank fehlt.', 'error');
+  if (document.getElementById('blockedFrom').value === document.getElementById('blockedUntil').value) {
+    return setStatus('Start und Ende müssen unterschiedlich sein.', 'error');
+  }
+
+  const nextLimit = {
     dailyLimit: Number(document.getElementById('dailyLimit').value),
     usedMinutesToday: Number(document.getElementById('usedMinutesToday').value) || 0,
     status: document.getElementById('limitStatus').value,
@@ -358,27 +378,23 @@ async function saveSelectedLimit(event) {
     updatedAt: new Date().toISOString()
   };
 
-  if (state.storageMode === 'backend') {
-    try {
-      state.limits[key] = await saveBackendLimit(key, state.limits[key]);
-    } catch (error) {
-      state.storageMode = 'local';
-      saveLimits();
-      setStatus(`Backend-Speichern nicht möglich: ${error.message}. Lokal gespeichert.`, 'error');
-      applyFilters();
-      return;
-    }
-  } else {
-    saveLimits();
+  try {
+    state.limits[key] = await saveBackendLimit(key, nextLimit);
+  } catch (error) {
+    setStatus(`Nicht gespeichert: ${error.message}. Deine Eingaben bleiben erhalten.`, 'error');
+    return;
   }
 
+  saveLimits();
+  loadSelectedLimit();
   applyFilters();
-  setStatus(state.storageMode === 'backend' ? 'Zeitlimit im Backend gespeichert.' : 'Zeitlimit lokal gespeichert.', 'success');
+  setStatus('Sperrzeit in der Datenbank gespeichert. Router-Anwendung ausstehend.', 'success');
 }
 
 async function clearSelectedLimit() {
   const key = document.getElementById('deviceSelect')?.value;
   if (!key) return;
+  if (state.storageMode !== 'backend') return setStatus('Nicht entfernt. Die Verbindung zur Datenbank fehlt.', 'error');
 
   if (state.storageMode === 'backend') {
     try {
@@ -414,10 +430,11 @@ async function handleListClick(event) {
   }
 
   if (button.dataset.action === 'toggle') {
-    const current = state.limits[key] || { dailyLimit: 120, usedMinutesToday: 0, from: '21:00', until: '07:00', note: '' };
+    if (!state.limits[key]) return;
+    if (state.storageMode !== 'backend') return setStatus('Nicht gespeichert. Die Verbindung zur Datenbank fehlt.', 'error');
+    const current = { ...state.limits[key] };
     current.status = current.status === 'paused' ? 'active' : 'paused';
     current.updatedAt = new Date().toISOString();
-    state.limits[key] = current;
 
     if (state.storageMode === 'backend') {
       try {
@@ -432,7 +449,7 @@ async function handleListClick(event) {
 
     loadSelectedLimit();
     applyFilters();
-    setStatus(current.status === 'active' ? 'Zeitlimit aktiviert.' : 'Zeitlimit pausiert.', 'success');
+    setStatus(current.status === 'active' ? 'Regel eingeschaltet gespeichert.' : 'Regel ausgeschaltet gespeichert. Keine Zeitsperre angefordert.', 'success');
   }
 }
 
@@ -444,6 +461,8 @@ function setupEvents() {
   document.getElementById('searchInput')?.addEventListener('input', applyFilters);
   document.getElementById('statusFilter')?.addEventListener('change', applyFilters);
   document.getElementById('limitsList')?.addEventListener('click', handleListClick);
+  document.getElementById('limitForm')?.addEventListener('input', updateSchedulePreview);
+  document.getElementById('limitForm')?.addEventListener('change', updateSchedulePreview);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

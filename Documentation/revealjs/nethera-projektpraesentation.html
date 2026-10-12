@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nethera – Projektpräsentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css">
+  <style>
+    :root { --bg:#141918; --panel:#202725; --line:#394441; --text:#edf2ef; --muted:#b4c0bb; --teal:#62d3bd; --amber:#f2c879; }
+    * { box-sizing:border-box; }
+    .reveal,.reveal .slides,.slide-background { background:var(--bg)!important; }
+    .reveal { color:var(--text); font-family:Inter,"Avenir Next","Segoe UI",system-ui,sans-serif; font-size:26px; }
+    .reveal .slides > section { text-align:left; padding:36px 48px 42px!important; height:100%; }
+    .reveal .slides > section.present { display:flex!important; flex-direction:column; gap:22px; }
+    .reveal h1,.reveal h2,.reveal h3 { color:var(--text); text-transform:none; letter-spacing:0; font-weight:750; margin:0; }
+    .reveal h1 { font-size:112px; }
+    .reveal h2 { font-size:46px; line-height:1.12; }
+    .reveal h3 { font-size:30px; line-height:1.2; color:var(--teal); }
+    .reveal p,.reveal li { color:var(--muted); line-height:1.4; }
+    .reveal p { margin:0; }
+    .reveal strong { color:var(--text); }
+    .reveal ul { margin:0; padding-left:26px; }
+    .reveal li { margin:14px 0; }
+    .reveal a { color:var(--teal); }
+    .heading { display:grid; gap:10px; flex:none; }
+    .eyebrow { color:var(--teal)!important; font-size:17px; font-weight:700; letter-spacing:0; text-transform:uppercase; }
+    .lead { font-size:28px; }
+    .content { flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:26px; }
+    .grid { display:grid; gap:26px; min-width:0; }
+    .two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .fill { flex:1; min-height:0; align-content:stretch; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:28px; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:18px; }
+    .feature-grid { grid-template-rows:repeat(2,minmax(0,1fr)); }
+    .feature-grid .panel { padding:24px; }
+    .feature-grid p { font-size:24px; }
+    .takeaway { border-top:1px solid var(--line); padding-top:18px; font-size:25px; flex:none; }
+    .takeaway strong { color:var(--teal); }
+    .flow { display:flex; align-items:stretch; gap:14px; min-width:0; }
+    .node { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:18px; padding:28px 20px; text-align:center; background:var(--panel); border:1px solid var(--line); border-radius:8px; }
+    .node strong { font-size:29px; }
+    .node span { color:var(--muted); font-size:24px; line-height:1.35; }
+    .arrow { display:flex; align-items:center; color:var(--teal); font-size:36px; flex:none; }
+    .architecture { display:grid; gap:28px; }
+    .architecture .flow { min-height:195px; }
+    .table { width:100%; border-collapse:collapse; font-size:24px; table-layout:fixed; }
+    .reveal .table { margin:0; }
+    .reveal .table th,.reveal .table td { border-bottom:1px solid var(--line); padding:19px 16px; text-align:left; vertical-align:middle; line-height:1.32; }
+    .table th { color:var(--teal); font-weight:700; }
+    .table td { color:var(--muted); }
+    .table td:first-child { color:var(--text); font-weight:650; }
+    .table th:first-child { width:31%; }
+    .status-table { font-size:23px; }
+    .status-table th:first-child { width:27%; }
+    .status-table th:nth-child(2) { width:37%; }
+    .reveal .status-table th,.reveal .status-table td { padding:10px 14px; }
+    .ready { color:var(--teal)!important; }
+    .number { display:block; font-size:72px; line-height:1; font-weight:800; color:var(--teal); margin-bottom:12px; }
+    .hardware .number { font-size:60px; }
+    .clock { font-size:58px; line-height:1.1; font-weight:800; color:var(--teal)!important; white-space:nowrap; }
+    .example { font-size:19px; color:var(--muted); text-transform:uppercase; }
+    .link { font-size:35px; overflow-wrap:anywhere; }
+    .sources { font-size:16px; color:var(--muted); }
+    .title-slide { justify-content:center; text-align:center!important; gap:26px!important; }
+    .title-slide h1,.title-slide h2,.title-slide p { text-align:center; }
+    .brand { display:flex; align-items:center; justify-content:center; gap:26px; }
+    .reveal .brand img { width:114px; height:114px; object-fit:contain; margin:0; }
+    .subtitle { color:var(--teal)!important; font-size:36px; }
+    .team { font-size:23px; max-width:1020px; align-self:center; margin-top:30px!important; }
+    .reveal .progress { color:var(--teal); height:4px; }
+    .reveal .controls { color:var(--teal); }
+    .reveal .slide-number { color:var(--muted); background:transparent; font-size:15px; }
+  </style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+  <section class="title-slide">
+    <p class="eyebrow">HTL Leonding · Projektpräsentation</p>
+    <div class="brand"><img src="../../Applikation/nethera_logo.png" alt="Nethera-Logo"><h1>Nethera</h1></div>
+    <p class="subtitle">Heimnetzwerk verständlich verwalten</p>
+    <p class="lead">Eine gemeinsame Oberfläche für Geräte, Internetzeiten und Schutzregeln</p>
+    <p class="team">Tobias Huemer · Deniz Bernecker · Nico Hofer<br>Manuel Freihaut · Moritz Kapeller</p>
+    <p class="sources">Stand: Oktober 2026</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Projektidee</p><h2>Warum Nethera?</h2></header>
+    <p class="lead">Ein Heimnetzwerk soll auch ohne technisches Vorwissen verwaltbar sein.</p>
+    <div class="grid two fill">
+      <div class="panel"><h3>Heute oft umständlich</h3><ul><li>Viele Einstellungen in unterschiedlichen Router-Menüs.</li><li>Technische Begriffe erschweren die Bedienung.</li><li>Unklar, welche Regeln für welches Gerät gelten.</li></ul></div>
+      <div class="panel"><h3>Unser Ansatz</h3><ul><li>Geräte und Regeln an einer Stelle verwalten.</li><li>Verständliche Auswahl von Gerät, Gruppe oder Netzwerk.</li><li>Aktive Zuordnungen übersichtlich darstellen.</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Funktionsumfang</p><h2>Was Nethera abdecken soll</h2></header>
+    <div class="grid three feature-grid fill">
+      <div class="panel"><h3>Überblick</h3><p>Geräte, Routerstatus, Verbindungen und Datenverkehr anzeigen.</p></div>
+      <div class="panel"><h3>Gruppen</h3><p>Geräte zusammenfassen und gemeinsame Regeln festlegen.</p></div>
+      <div class="panel"><h3>Schutz</h3><p>Websites, Werbung und unerwünschte Inhalte filtern.</p></div>
+      <div class="panel"><h3>Internetzeiten</h3><p>Tägliche Sperrzeiten und optionale Zeitbudgets verwalten.</p></div>
+      <div class="panel"><h3>Presets</h3><p>Mehrere Einstellungen als Profil auf Geräte anwenden.</p></div>
+      <div class="panel"><h3>Priorität</h3><p>Wichtige Geräte bei der Bandbreitenverteilung bevorzugen.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Nutzung</p><h2>Von der Website zur Anwendung</h2></header>
+    <div class="content">
+      <div class="flow"><div class="node"><strong>Website</strong><span>Projekt und Funktionen kennenlernen</span></div><div class="arrow">→</div><div class="node"><strong>Anmelden</strong><span>Mit dem eigenen Nethera-Konto</span></div><div class="arrow">→</div><div class="node"><strong>Anwendung</strong><span>Geräte und Regeln verwalten</span></div></div>
+      <div class="grid two"><div><h3>Ein gemeinsamer Auftritt</h3><p>Website und Anwendung verwenden eine abgestimmte Gestaltung.</p></div><div><h3>Auch am Handy</h3><p>Navigation und Formulare passen sich kleineren Bildschirmen an.</p></div></div>
+    </div>
+    <p class="takeaway">Die Website ist öffentlich. Die Anmeldung erfolgt erst beim Einstieg in die Anwendung.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Oberfläche</p><h2>Dashboard und Geräteübersicht</h2></header>
+    <div class="grid two fill">
+      <div class="panel"><h3>Dashboard</h3><ul><li>Routerstatus und Anzahl der Geräte.</li><li>Aktivität, DNS-Kennzahlen und Geschwindigkeit.</li><li>Bereiche ein- und ausblenden.</li><li>Layout individuell anpassen.</li></ul></div>
+      <div class="panel"><h3>Clients und Netzwerk</h3><ul><li>Geräte nach Name oder IP-Adresse suchen.</li><li>Nach Verbindung filtern und sortieren.</li><li>Netzwerkstatus und Topologie ansehen.</li><li>Verbindungen und Messwerte vergleichen.</li></ul></div>
+    </div>
+    <p class="takeaway"><strong>Ziel:</strong> Schnell erkennen, welche Geräte im Netzwerk vorhanden sind.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Geräteverwaltung</p><h2>Gruppen und Presets</h2></header>
+    <div class="grid two fill">
+      <div class="panel"><h3>Gruppen</h3><ul><li>Gruppen erstellen und umbenennen.</li><li>Geräte zuordnen oder wieder entfernen.</li><li>Mitglieder und Gruppenregeln überblicken.</li><li>Beispiel: gemeinsame Regeln für „Kinder“.</li></ul></div>
+      <div class="panel"><h3>Presets</h3><ul><li>Schutz, Priorität und Zeiten als Profil speichern.</li><li>Preset und Zielgerät ausdrücklich auswählen.</li><li>Profile auf weitere Geräte anwenden.</li><li>Pro Gerät das zugewiesene Preset sehen.</li></ul></div>
+    </div>
+    <p class="takeaway">Gruppen bündeln Geräte. Presets bündeln Einstellungen.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Internetzeiten</p><h2>Wann darf ein Gerät ins Internet?</h2></header>
+    <div class="grid two fill">
+      <div class="panel"><p class="example">Beispiel: Nachtruhe</p><p class="clock">21:00 – 07:00</p><h3>Tägliche Sperrzeit</h3><p>Das Zeitfenster kann auch über Mitternacht reichen.</p></div>
+      <div class="panel"><h3>In der Oberfläche</h3><ul><li>Gerät auswählen.</li><li>Beginn und Ende der Sperrzeit einstellen.</li><li>Optional ein tägliches Zeitbudget ergänzen.</li><li>Regel speichern, pausieren oder entfernen.</li></ul></div>
+    </div>
+    <p class="takeaway">Die Zeitregeln sind speicherbar. Ihre Durchsetzung am Router ist ein nächster Entwicklungsschritt.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Schutz</p><h2>Websites und Werbung filtern</h2></header>
+    <p class="lead">Eine Website-Adresse eingeben und auswählen, für wen die Regel gelten soll.</p>
+    <div class="grid three fill">
+      <div class="panel"><span class="number">1</span><h3>Ein Gerät</h3><p>Eine individuelle Regel, beispielsweise für ein Tablet.</p></div>
+      <div class="panel"><span class="number">2</span><h3>Eine Gruppe</h3><p>Gemeinsame Regeln für alle zugeordneten Geräte.</p></div>
+      <div class="panel"><span class="number">3</span><h3>Das Netzwerk</h3><p>Eine Regel für das gesamte Heimnetzwerk.</p></div>
+    </div>
+    <p class="takeaway">Zusätzlich: Kategorien wie Social Media oder Glücksspiel sowie ein eigener Werbeschutz-Bereich. Die Router-Anwendung folgt.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Weitere Einstellungen</p><h2>Priorität, Konfiguration und Konto</h2></header>
+    <div class="grid three fill">
+      <div class="panel"><h3>Gerätepriorität</h3><p>Ein Gerät auswählen und „Normal“ oder „Bevorzugt“ speichern.</p><p>Die eigentliche Bandbreitensteuerung wird am Router ergänzt.</p></div>
+      <div class="panel"><h3>Konfiguration</h3><p>Routername, Betriebsmodus, Netzwerkadressen und Schutzoptionen verwalten.</p><p>Gastnetz und Updates sind als Optionen vorbereitet.</p></div>
+      <div class="panel"><h3>Mein Account</h3><p>Eigenes Profil, E-Mail, Rollen und Anmeldestatus ansehen.</p><p>App-Einstellungen speichern und sich abmelden.</p></div>
+    </div>
+    <p class="takeaway">Gespeicherte Optionen bilden die Grundlage für die spätere Steuerung des Routers.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Architektur</p><h2>Wie die Bausteine zusammenspielen</h2></header>
+    <div class="content architecture">
+      <div class="flow"><div class="node"><strong>Web-Anwendung</strong><span>Zeigt Daten und nimmt Eingaben entgegen</span></div><div class="arrow">↔</div><div class="node"><strong>Quarkus-Backend</strong><span>Verarbeitet Anfragen und Regeln</span></div><div class="arrow">↔</div><div class="node"><strong>PostgreSQL</strong><span>Speichert Geräte, Regeln und Messwerte</span></div></div>
+      <div class="grid two"><div><h3>Keycloak</h3><p>Übernimmt die Anmeldung und stellt Zugriffstoken aus.</p></div><div><h3>Routeranbindung</h3><p>MQTT und SSH ermöglichen die Übertragung von Routerdaten zum Backend.</p></div></div>
+    </div>
+    <p class="takeaway">Die Oberfläche greift über das Backend auf die Daten zu, nicht direkt auf die Datenbank.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Technologien · Anwendung</p><h2>Oberfläche, Backend und Daten</h2></header>
+    <div class="content"><table class="table"><thead><tr><th>Technologie</th><th>Aufgabe in Nethera</th></tr></thead><tbody>
+      <tr><td>HTML, CSS, JavaScript</td><td>Seiten, Gestaltung, Formulare und Diagramme im Browser.</td></tr>
+      <tr><td>Java 21 / Quarkus</td><td>Backend mit Schnittstellen für Geräte, Regeln und Messwerte.</td></tr>
+      <tr><td>Hibernate ORM</td><td>Verbindet die Java-Datenmodelle mit den Datenbanktabellen.</td></tr>
+      <tr><td>PostgreSQL</td><td>Speichert Einstellungen, Zuordnungen und Netzwerkdaten dauerhaft.</td></tr>
+      <tr><td>Keycloak / OIDC</td><td>Verwaltet die Anmeldung und den Zugriff auf die Anwendung.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Technologien · Kommunikation und Betrieb</p><h2>Routerdaten und Hosting</h2></header>
+    <div class="content"><table class="table"><thead><tr><th>Technologie</th><th>Aufgabe in Nethera</th></tr></thead><tbody>
+      <tr><td>MQTT / Mosquitto</td><td>Überträgt Router-Messwerte über einen zentralen Nachrichtenvermittler.</td></tr>
+      <tr><td>nginx / Docker</td><td>Stellt die Website bereit und verpackt die Dienste in Container.</td></tr>
+      <tr><td>Docker Compose</td><td>Verbindet die benötigten Dienste für den lokalen Betrieb.</td></tr>
+      <tr><td>LeoCloud / Kubernetes</td><td>Betreibt die Online-Version unabhängig von unseren Laptops.</td></tr>
+      <tr><td>Git / GitHub / GHCR</td><td>Gemeinsame Codeverwaltung und Ablage der Container-Images.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Anmeldung</p><h2>Welche Aufgabe hat Keycloak?</h2></header>
+    <div class="content">
+      <div class="flow"><div class="node"><strong>1 · Anmelden</strong><span>Benutzer öffnet den Login über die Website.</span></div><div class="arrow">→</div><div class="node"><strong>2 · Prüfen</strong><span>Keycloak prüft Benutzername und Passwort.</span></div><div class="arrow">→</div><div class="node"><strong>3 · Zugriff</strong><span>Die Anwendung erhält ein signiertes Zugriffstoken.</span></div></div>
+      <div class="grid two"><div><h3>Passwortprüfung</h3><p>Die Anmeldung ist vom eigentlichen Netzwerkmanagement getrennt.</p></div><div><h3>Geschützte Anfragen</h3><p>Das Backend prüft das Token bei Anfragen der Anwendung.</p></div></div>
+    </div>
+    <p class="takeaway">Ein JWT ist ein digital signiertes Zugriffstoken, das die Anmeldung bestätigt.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Datenfluss</p><h2>Was passiert beim Speichern?</h2></header>
+    <p class="lead">Beispiel: Für ein Tablet wird eine tägliche Sperrzeit eingestellt.</p>
+    <div class="content">
+      <div class="flow"><div class="node"><strong>Eingabe</strong><span>Gerät und Zeitraum in der Oberfläche auswählen.</span></div><div class="arrow">→</div><div class="node"><strong>Anfrage</strong><span>JavaScript sendet die Angaben an das Backend.</span></div><div class="arrow">→</div><div class="node"><strong>Speicherung</strong><span>Das Backend speichert die Regel in PostgreSQL.</span></div><div class="arrow">→</div><div class="node"><strong>Übersicht</strong><span>Die Anwendung zeigt die gespeicherte Zuordnung.</span></div></div>
+      <p>Beim Öffnen einer Seite werden die benötigten Daten geladen. Beim Speichern, Ändern oder Entfernen sendet die Oberfläche eine neue Anfrage.</p>
+    </div>
+  </section>
+
+  <section class="hardware">
+    <header class="heading"><p class="eyebrow">Hardware</p><h2>Unser eigener Router</h2></header>
+    <p class="lead">Cudy WR3000S · AX3000 Gigabit Mesh Wi-Fi 6</p>
+    <div class="grid three fill">
+      <div class="panel"><h3>WLAN</h3><span class="number">Wi-Fi 6</span><p>Dualband mit 2,4 und 5 GHz.</p></div>
+      <div class="panel"><h3>Netzwerk</h3><span class="number">Gigabit</span><p>Ein WAN- und vier LAN-Anschlüsse.</p></div>
+      <div class="panel"><h3>Projektziel</h3><span class="number">OpenWrt</span><p>Plattform für Telemetrie, Filter und Geräte-Regeln.</p></div>
+    </div>
+    <p class="takeaway">Mit eigener Hardware können wir Nethera an einem echten Heimnetzwerk erproben.</p>
+    <aside class="notes">Hardwarequellen: https://www.cudy.com/de-at/products/wr3000s-1-0 und https://openwrt.org/toh/cudy/wr3000s_v1 . Produktlink: https://www.alza.at/cudy-ax3000-gigabit-mesh-wi-fi-6-router-weiss-d12478341.htm .</aside>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Routeranbindung</p><h2>Routerdaten mit MQTT übertragen</h2></header>
+    <div class="content">
+      <div class="flow"><div class="node"><strong>Router</strong><span>Erfasst Geräte, Status und Messwerte.</span></div><div class="arrow">→</div><div class="node"><strong>MQTT-Broker</strong><span>Mosquitto verteilt die Nachrichten.</span></div><div class="arrow">→</div><div class="node"><strong>Backend</strong><span>Empfängt und speichert die Daten.</span></div><div class="arrow">→</div><div class="node"><strong>Dashboard</strong><span>Zeigt die verfügbaren Werte an.</span></div></div>
+      <div class="grid two"><div><h3>Bereits umgesetzt</h3><p>MQTT-Empfang für Status, Geräte, Geschwindigkeit, DNS und Routerinformationen. SSH ist als alternativer Lesepfad vorhanden.</p></div><div><h3>Nächster Schritt</h3><p>Die Datenübertragung vom Cudy bis zur Oberfläche durchgängig mit echten Routerwerten verbinden.</p></div></div>
+    </div>
+    <p class="takeaway">Die Online-Vorführung verwendet aktuell Beispieldaten.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Projektstand</p><h2>Was ist bereits umgesetzt?</h2></header>
+    <div class="content"><table class="table status-table"><thead><tr><th>Bereich</th><th>Heute nutzbar</th><th>Nächster Schritt</th></tr></thead><tbody>
+      <tr><td>Website und Anmeldung</td><td class="ready">Online-Auftritt und Keycloak-Login</td><td>Weitere Bedienverbesserungen</td></tr>
+      <tr><td>Geräte, Gruppen, Presets</td><td class="ready">Verwalten, zuweisen und speichern</td><td>Profile am Router anwenden</td></tr>
+      <tr><td>Internetzeiten</td><td class="ready">Sperrzeiten und Tagesbudget speichern</td><td>Zugriff zeitgesteuert sperren</td></tr>
+      <tr><td>Domains und Werbeschutz</td><td class="ready">Regeln und Geltungsbereich speichern</td><td>DNS-Filter am Router aktivieren</td></tr>
+      <tr><td>Priorität und WLAN</td><td>Prioritätsoption; Analyse mit Beispieldaten</td><td>QoS und echten WLAN-Scan ergänzen</td></tr>
+      <tr><td>MQTT</td><td class="ready">Empfang und Speicherung im Backend</td><td>Live-Anbindung des Cudy abschließen</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Online-Version</p><h2>Nethera auf LeoCloud</h2></header>
+    <div class="content">
+      <p class="link"><a href="https://it220208.cloud.htl-leonding.ac.at/" target="_blank" rel="noreferrer">it220208.cloud.htl-leonding.ac.at</a></p>
+      <div class="grid two"><div class="panel"><h3>Im Browser erreichbar</h3><p>Website, Anmeldung und Anwendung laufen auf der Schul-Cloud.</p><p>Für Besucher ist keine lokale Installation nötig.</p></div><div class="panel"><h3>Gemeinsame Plattform</h3><p>Backend und Datenbanken laufen ebenfalls online.</p><p>Zusätzlich bleibt das Projekt lokal mit Docker nutzbar.</p></div></div>
+    </div>
+    <p class="takeaway">Unsere Laptops müssen für den Aufruf der Online-Version nicht eingeschaltet sein.</p>
+  </section>
+
+  <section>
+    <header class="heading"><p class="eyebrow">Nächste Ziele</p><h2>Die Verbindung zum echten Netzwerk</h2></header>
+    <div class="grid three fill">
+      <div class="panel"><span class="number">1</span><h3>Live-Daten</h3><p>Routerdaten des Cudy automatisch ins Dashboard übertragen.</p><p>Geräte und Verbindungsänderungen aktuell anzeigen.</p></div>
+      <div class="panel"><span class="number">2</span><h3>Wirksame Regeln</h3><p>Zuerst Domainsperren direkt am Router anwenden.</p><p>Danach Internetzeiten und Werbeschutz verbinden.</p></div>
+      <div class="panel"><span class="number">3</span><h3>Weitere Funktionen</h3><p>Bandbreitenverteilung, echter WLAN-Scan und Gastnetz.</p><p>Später auch Gastzugang per QR-Code.</p></div>
+    </div>
+    <p class="takeaway"><strong>Unser Schwerpunkt:</strong> Aus gespeicherten Einstellungen wird eine tatsächlich wirksame Routersteuerung.</p>
+  </section>
+
+  <section class="title-slide">
+    <p class="eyebrow">Zusammenfassung</p><h2>Nethera</h2>
+    <p class="subtitle">Einfacher Überblick. Verständliche Regeln.</p>
+    <div class="grid three"><div class="panel"><h3>Oberfläche</h3><p>Geräte, Gruppen, Zeiten und Schutzprofile zentral verwalten.</p></div><div class="panel"><h3>Plattform</h3><p>Backend, Datenbank und Anmeldung; online auf LeoCloud.</p></div><div class="panel"><h3>Ausblick</h3><p>Echte Routerdaten und wirksame Regeln am Cudy verbinden.</p></div></div>
+    <p class="subtitle">Fragen?</p>
+  </section>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({ hash: true, slideNumber: 'c/t', progress: true, controls: true, center: false, transition: 'slide', width: 1280, height: 720, margin: 0.04, minScale: 0.2, maxScale: 1.5 });
+</script>
+</body>
+</html>
