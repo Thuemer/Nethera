@@ -49,6 +49,17 @@
     #account-root { width: 100%; height: 100%; display: none; }
     #screen.account-active iframe { display: none; }
     #screen.account-active #account-root { display: block; }
+    @media (min-width: 901px) {
+      #nav-bar { display: flex; flex-direction: column; flex-shrink: 0; }
+      .brand { flex-shrink: 0; }
+      .nav-groups { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 12px; overflow-y: auto; }
+      .section-title { flex-shrink: 0; margin: 8px 0 0; }
+      .nav-list { display: flex; flex-direction: column; flex: 6 0 auto; gap: 4px; margin: 0; }
+      .nav-list:last-child { flex-grow: 3; }
+      .nav-list li { display: flex; align-items: center; flex: 1 0 auto; min-height: 44px; margin: 0; }
+      .nav-item { flex: 1; min-height: 44px; box-sizing: border-box; }
+      .spacer { display: none; }
+    }
     @media (max-width: 900px) {
       #home { flex-direction: column; height: 100dvh; }
       #nav-bar, #nav-bar.collapsed { width: 100%; height: 64px; flex: none; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 18px rgba(0,0,0,.28); }
@@ -71,7 +82,7 @@
     }
     @media (max-width: 380px) { .nav-list { grid-template-columns: 1fr; } }
   </style>
-  <link id="nethera-theme" rel="stylesheet" href="nethera-theme.css?v=20261011-brand">
+  <link id="nethera-theme" rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
 </head>
 <body class="app-shell">
   <div id="auth-loading" role="status" aria-live="polite">Anmeldung wird geprüft...</div>
