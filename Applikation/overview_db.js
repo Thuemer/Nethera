@@ -127,12 +127,12 @@ class SpeedCard extends HTMLElement {
         const maxY = Math.max(...this.upload, ...this.download) * 1.1;
 
         this.drawAxes(ctx, canvas, maxY);
-        this.drawLine(ctx, canvas, this.upload, '#3b82f6', maxY);
-        this.drawLine(ctx, canvas, this.download, '#6ee7c8', maxY);
+        this.drawLine(ctx, canvas, this.upload, getComputedStyle(document.documentElement).getPropertyValue('--chart-upload').trim(), maxY);
+        this.drawLine(ctx, canvas, this.download, getComputedStyle(document.documentElement).getPropertyValue('--chart-download').trim(), maxY);
     }
 
     drawAxes(ctx, canvas, maxY) {
-        ctx.strokeStyle = "#aaa";
+        ctx.strokeStyle = "#E5EBE7";
         ctx.lineWidth = 1;
 
         // Y-Achse
@@ -148,7 +148,7 @@ class SpeedCard extends HTMLElement {
         ctx.stroke();
 
         // Y Labels
-        ctx.fillStyle = "#aaa";
+        ctx.fillStyle = "#E5EBE7";
         ctx.font = "12px system-ui";
         const steps = 4;
 
@@ -162,7 +162,7 @@ class SpeedCard extends HTMLElement {
 
             ctx.fillText(`${val} MB/s`, 5, y + 4);
 
-            ctx.strokeStyle = "#333";
+            ctx.strokeStyle = "rgba(229,235,231,.07)";
             ctx.beginPath();
             ctx.moveTo(this.padding.left, y);
             ctx.lineTo(canvas.width - this.padding.right, y);

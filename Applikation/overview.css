@@ -1,13 +1,4 @@
-:root {
-    --bg-main: #212121;
-    --bg-card: #1b1f1d;
-    --bg-card-2: #242927;
-    --line: rgba(255, 255, 255, 0.10);
-    --text-main: #ffffff;
-    --text-soft: #b8c0bd;
-    --accent: #2fb09a;
-    --accent-2: #144659;
-}
+@import url("/website/css/palette.css");
 
 * {
     box-sizing: border-box;
@@ -17,7 +8,7 @@
 body {
     margin: 0;
     padding: 12px;
-    background: radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%), var(--bg-main);
+    background: radial-gradient(1000px 500px at 10% -10%, rgba(var(--accent-rgb), 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(var(--accent-2-rgb), 0.35), transparent 58%), var(--bg-main);
     color: var(--text-main);
     overflow: auto;
 }
@@ -31,7 +22,7 @@ body::-webkit-scrollbar,
 body::-webkit-scrollbar-thumb,
 .bottom-nav::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(255,255,255,.18);
+    background: rgba(var(--text-rgb), .18);
 }
 
 .router-box {
@@ -66,7 +57,7 @@ body::-webkit-scrollbar-thumb,
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #7be1cf;
+    color: var(--accent);
     font-weight: 500;
     position: relative;
     transform: none;
@@ -97,7 +88,7 @@ body::-webkit-scrollbar-thumb,
 .dot {
     width: 8px;
     height: 8px;
-    background: #2fb09a;
+    background: var(--accent);
     border-radius: 50%;
 }
 
@@ -109,7 +100,7 @@ body::-webkit-scrollbar-thumb,
 }
 
 .card {
-    background: linear-gradient(155deg, rgba(27, 31, 29, .98), rgba(36, 41, 39, .98));
+    background: linear-gradient(155deg, rgba(var(--bg-card-rgb), .98), rgba(var(--bg-main-rgb), .98));
     border: 1px solid var(--line);
     border-radius: 12px;
     padding: 14px;
@@ -144,8 +135,8 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 .mobile-card-actions button {
     flex: 1;
     min-height: 44px;
-    color: #fff;
-    background: rgba(47,176,154,.16);
+    color: var(--text-main);
+    background: rgba(var(--accent-rgb), .16);
     border: 1px solid rgba(110,231,200,.38);
     border-radius: 8px;
     font: inherit;
@@ -176,7 +167,7 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 
 .icon {
     font-size: 20px;
-    color: #7be1cf;
+    color: var(--accent);
 }
 
 .feature-list {
@@ -208,7 +199,7 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 }
 
 .ok::before {
-    background: #4ade80;
+    background: var(--accent);
 }
 
 .bad::before {
@@ -222,8 +213,8 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     gap: 7px;
     padding: clamp(8px, 1.2vw, 12px) clamp(9px, 1.4vw, 14px);
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(var(--text-rgb), 0.1);
+    background: linear-gradient(145deg, rgba(var(--text-rgb), 0.08), rgba(var(--text-rgb), 0.03));
     color: var(--text-main);
     margin-bottom: 10px;
     overflow: hidden;
@@ -241,7 +232,7 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     top: 0;
     bottom: 0;
     width: 4px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(var(--text-rgb), 0.2);
 }
 
 .allAcitivities {
@@ -251,12 +242,12 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 }
 
 .activity.ok {
-    border-color: rgba(47, 176, 154, 0.35);
-    background: linear-gradient(145deg, rgba(47, 176, 154, 0.22), rgba(47, 176, 154, 0.08));
+    border-color: rgba(var(--accent-rgb), 0.35);
+    background: linear-gradient(145deg, rgba(var(--accent-rgb), 0.22), rgba(var(--accent-rgb), 0.08));
 }
 
 .activity.ok::before {
-    background: #2fb09a;
+    background: var(--accent);
 }
 
 .activity.warn {
@@ -293,14 +284,14 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 .activity-badge {
     display: inline-flex;
     align-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(var(--text-rgb), 0.2);
     border-radius: 999px;
     padding: 3px 10px;
     font-size: 12px;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    color: #dce7e4;
-    background: rgba(10, 14, 13, 0.3);
+    color: var(--text-main);
+    background: rgba(var(--bg-card-rgb), 0.3);
     flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
@@ -405,7 +396,7 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 }
 
 .upload i {
-    background: #3b82f6;
+    background: var(--chart-upload);
 }
 
 .download {
@@ -413,7 +404,7 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 }
 
 .download i {
-    background: #6ee7c8;
+    background: var(--accent);
 }
 
 .bottom-nav {
@@ -466,8 +457,8 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     min-width: 0;
     padding: 4px;
     border-radius: 12px;
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.055);
+    background: rgba(var(--text-rgb), .03);
+    border: 1px solid rgba(var(--text-rgb), .055);
 }
 
 .nav-group-label {
@@ -481,8 +472,8 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 }
 
 .bottom-nav button {
-    background: rgba(255,255,255,.055);
-    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(var(--text-rgb), .055);
+    border: 1px solid rgba(var(--text-rgb), .1);
     color: var(--text-main);
     border-radius: 10px;
     justify-content: center;
@@ -537,8 +528,8 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     font-weight: 500;
     letter-spacing: .2px;
     border: 1px solid var(--line);
-    background: linear-gradient(155deg, rgba(28, 31, 30, 0.88), rgba(35, 40, 38, 0.88));
-    color: #e5e7eb;
+    background: linear-gradient(155deg, rgba(var(--bg-card-rgb), 0.88), rgba(var(--bg-main-rgb), 0.88));
+    color: var(--text-main);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     cursor: pointer;
@@ -557,18 +548,18 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 }
 
 .control-btn.edit {
-    border-color: rgba(47, 176, 154, 0.35);
+    border-color: rgba(var(--accent-rgb), 0.35);
 }
 
 .control-btn.edit:hover {
-    background: rgba(47, 176, 154, 0.15);
-    color: #7be1cf;
+    background: rgba(var(--accent-rgb), 0.15);
+    color: var(--accent);
 }
 
 body.edit-mode .control-btn.edit {
-    background: rgba(47, 176, 154, 0.25);
+    background: rgba(var(--accent-rgb), 0.25);
     color: var(--accent);
-    box-shadow: 0 0 0 1px rgba(47,176,154,.4), 0 10px 30px rgba(0,0,0,.5);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), .4), 0 10px 30px rgba(0,0,0,.5);
 }
 
 .control-btn.reset {
@@ -642,7 +633,7 @@ body.edit-mode .control-btn.edit {
 }
 
 .card.is-moving {
-    box-shadow: 0 0 0 2px rgba(47, 176, 154, 0.55), 0 16px 34px rgba(0,0,0,.45);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.55), 0 16px 34px rgba(0,0,0,.45);
 }
 
 h2 {
@@ -687,7 +678,7 @@ h2 {
 }
 
 body.edit-mode .dashboard {
-    background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(var(--text-rgb), .035) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--text-rgb), .035) 1px, transparent 1px);
     background-size: 16px 16px;
     border-radius: 14px;
 }
@@ -714,8 +705,8 @@ body.edit-mode .dashboard {
     min-width: 0;
     padding: 9px 11px;
     border-radius: 10px;
-    background: linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.028));
-    border: 1px solid rgba(255,255,255,.075);
+    background: linear-gradient(145deg,rgba(var(--text-rgb), .075),rgba(var(--text-rgb), .028));
+    border: 1px solid rgba(var(--text-rgb), .075);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -767,7 +758,7 @@ body.edit-mode .dashboard {
     gap: clamp(8px, 1vw, 14px);
     min-width: 0;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,.055);
+    border-bottom: 1px solid rgba(var(--text-rgb), .055);
 }
 
 .dns-row {
@@ -777,7 +768,7 @@ body.edit-mode .dashboard {
     gap: clamp(8px, 1vw, 14px);
     min-width: 0;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,.055);
+    border-bottom: 1px solid rgba(var(--text-rgb), .055);
     margin: 0!important;
 }
 
@@ -820,9 +811,9 @@ body.edit-mode .dashboard {
     gap: 7px;
     padding: 3px 9px;
     border-radius: 999px;
-    border: 1px solid rgba(47,176,154,.25);
-    background: rgba(47,176,154,.13);
-    color: #7be1cf;
+    border: 1px solid rgba(var(--accent-rgb), .25);
+    background: rgba(var(--accent-rgb), .13);
+    color: var(--accent);
     font-weight: 700;
     white-space: nowrap;
 }
@@ -845,8 +836,8 @@ body.edit-mode .dashboard {
     margin: 0;
     padding: 10px 11px 10px 32px;
     border-radius: 10px;
-    background: rgba(255,255,255,.045);
-    border: 1px solid rgba(255,255,255,.055);
+    background: rgba(var(--text-rgb), .045);
+    border: 1px solid rgba(var(--text-rgb), .055);
 }
 
 .feature-list.content-list li::before {
@@ -927,7 +918,7 @@ body.edit-mode .dashboard {
     justify-content: space-between;
     gap: 12px;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,.055);
+    border-bottom: 1px solid rgba(var(--text-rgb), .055);
     min-width: 0;
 }
 
@@ -994,8 +985,8 @@ html {
     z-index: 5;
     padding: 7px 9px;
     border-radius: 10px;
-    background: rgba(12,16,15,.92);
-    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(var(--bg-card-rgb), .92);
+    border: 1px solid rgba(var(--text-rgb), .12);
     box-shadow: 0 8px 20px rgba(0,0,0,.35);
     font-size: 13px;
     color: var(--text-main);
@@ -1016,8 +1007,8 @@ html {
     transform: translateX(-50%) translateY(8px);
     opacity: 0;
     pointer-events: none;
-    background: rgba(14,18,17,.93);
-    border: 1px solid rgba(47,176,154,.35);
+    background: rgba(var(--bg-card-rgb), .93);
+    border: 1px solid rgba(var(--accent-rgb), .35);
     color: var(--text-main);
     padding: 10px 14px;
     border-radius: 999px;
@@ -1038,7 +1029,7 @@ body.edit-mode .card {
 }
 
 body.edit-mode .card:hover {
-    box-shadow: 0 0 0 1px rgba(47,176,154,.28), 0 16px 34px rgba(0,0,0,.45);
+    box-shadow: 0 0 0 1px rgba(var(--accent-rgb), .28), 0 16px 34px rgba(0,0,0,.45);
 }
 
 @media (max-width: 600px) {

@@ -1,0 +1,23 @@
+/* Gemeinsame Farbpalette aus README.md für Website und Applikation. */
+:root {
+    --bg-main: #212121;
+    --bg-card: #001818;
+    --bg-card-2: #212121;
+    --accent-2: #144659;
+    --text-main: #E5EBE7;
+    --accent: #63E5C5;
+
+    --bg-main-rgb: 33, 33, 33;
+    --bg-card-rgb: 0, 24, 24;
+    --accent-2-rgb: 20, 70, 89;
+    --text-rgb: 229, 235, 231;
+    --accent-rgb: 99, 229, 197;
+    --text-soft: rgba(var(--text-rgb), .75);
+    --line: rgba(var(--text-rgb), .10);
+    --chart-upload: var(--text-main);
+    --chart-download: var(--accent);
+
+    /* Semantische Farben für Warnungen und Fehler. */
+    --warn: #f59e0b;
+    --danger: #ef4444;
+}

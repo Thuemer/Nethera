@@ -15,7 +15,7 @@
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: rgba(255,255,255,.035);
+    background: rgba(var(--text-rgb), .035);
 }
 
 .status-row span {

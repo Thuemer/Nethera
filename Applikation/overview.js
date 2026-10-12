@@ -307,12 +307,12 @@ class SpeedCard extends HTMLElement {
         const maxY = Math.max(1, Math.max(...this.upload, ...this.download) * 1.1);
 
         this.drawAxes(ctx, this._chartSize, maxY);
-        this.drawLine(ctx, this._chartSize, this.upload, '#3b82f6', maxY);
-        this.drawLine(ctx, this._chartSize, this.download, '#6ee7c8', maxY);
+        this.drawLine(ctx, this._chartSize, this.upload, getComputedStyle(document.documentElement).getPropertyValue('--chart-upload').trim(), maxY);
+        this.drawLine(ctx, this._chartSize, this.download, getComputedStyle(document.documentElement).getPropertyValue('--chart-download').trim(), maxY);
     }
 
     drawAxes(ctx, canvas, maxY) {
-        ctx.strokeStyle = "rgba(255,255,255,.28)";
+        ctx.strokeStyle = "rgba(229,235,231,.28)";
         ctx.lineWidth = 1;
 
         // Y-Achse
@@ -328,7 +328,7 @@ class SpeedCard extends HTMLElement {
         ctx.stroke();
 
         // Y Labels
-        ctx.fillStyle = "rgba(232,244,240,.72)";
+        ctx.fillStyle = "rgba(229,235,231,.72)";
         ctx.font = "600 12px Avenir Next, Segoe UI, sans-serif";
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
@@ -344,14 +344,14 @@ class SpeedCard extends HTMLElement {
 
             ctx.fillText(`${val}`, this.padding.left - 12, y);
 
-            ctx.strokeStyle = "rgba(255,255,255,.07)";
+            ctx.strokeStyle = "rgba(229,235,231,.07)";
             ctx.beginPath();
             ctx.moveTo(this.padding.left, y);
             ctx.lineTo(canvas.width - this.padding.right, y);
             ctx.stroke();
         }
 
-        ctx.fillStyle = "rgba(232,244,240,.70)";
+        ctx.fillStyle = "rgba(229,235,231,.70)";
         ctx.textAlign = "center";
         ctx.textBaseline = "alphabetic";
         ctx.font = "600 12px Avenir Next, Segoe UI, sans-serif";

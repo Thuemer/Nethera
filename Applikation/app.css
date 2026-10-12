@@ -1,16 +1,4 @@
-:root {
-    --bg-main: #212121;
-    --bg-card: #1c1f1e;
-    --bg-card-2: #232826;
-    --line: rgba(255, 255, 255, 0.08);
-    --text-main: #ffffff;
-    --text-soft: #b8c0bd;
-    --accent: #2fb09a;
-    --accent-2: #144659;
-    --warn: #f59e0b;
-    --danger: #ef4444;
-    --blue: #60a5fa;
-}
+@import url("/website/css/palette.css");
 
 * {
     box-sizing: border-box;
@@ -21,7 +9,7 @@ body {
     min-height: 100vh;
     padding: 28px;
     color: var(--text-main);
-    background: radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%), var(--bg-main);
+    background: radial-gradient(1000px 500px at 10% -10%, rgba(var(--accent-rgb), 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(var(--accent-2-rgb), 0.35), transparent 58%), var(--bg-main);
     font-family: "Avenir Next", "Segoe UI", sans-serif;
     max-width: 100%;
     overflow-x: hidden;
@@ -87,7 +75,7 @@ h3 {
     border: 0;
     padding: 11px 16px;
     border-radius: 12px;
-    color: #fff;
+    color: var(--text-main);
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
     font-weight: 700;
     cursor: pointer;
@@ -97,7 +85,7 @@ h3 {
     border: 0;
     padding: 8px 11px;
     border-radius: 12px;
-    color: #fff;
+    color: var(--text-main);
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
     font-weight: 700;
     cursor: pointer;
@@ -111,7 +99,7 @@ h3 {
 }
 
 .small-btn.ghost {
-    background: rgba(255,255,255,.06);
+    background: rgba(var(--text-rgb), .06);
     border: 1px solid var(--line);
     color: var(--text-main);
 }
@@ -173,7 +161,7 @@ h3 {
 
 .stat-detail {
     font-size: 12px;
-    color: rgba(255,255,255,.45);
+    color: rgba(var(--text-rgb), .45);
 }
 
 .app-card {
@@ -196,7 +184,7 @@ h3 {
     padding: 12px 14px;
     border-radius: 12px;
     color: var(--text-soft);
-    background: rgba(255,255,255,.04);
+    background: rgba(var(--text-rgb), .04);
     border: 1px solid var(--line);
 }
 
@@ -207,9 +195,9 @@ h3 {
 }
 
 .status-message.success {
-    color: #bbf7d0;
-    background: rgba(34,197,94,.10);
-    border-color: rgba(34,197,94,.2);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), .10);
+    border-color: rgba(var(--accent-rgb), .2);
 }
 
 .loading {
@@ -223,7 +211,7 @@ h3 {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 2px solid rgba(255,255,255,.15);
+    border: 2px solid rgba(var(--text-rgb), .15);
     border-top-color: var(--accent);
     animation: spin 1s linear infinite;
 }
@@ -254,9 +242,9 @@ h3 {
     flex-wrap: wrap;
     gap: 8px;
     padding: 6px;
-    border: 1px solid rgba(255,255,255,.10);
+    border: 1px solid rgba(var(--text-rgb), .10);
     border-radius: 12px;
-    background: rgba(255,255,255,.04);
+    background: rgba(var(--text-rgb), .04);
 }
 
 .choice-row button {
@@ -271,8 +259,8 @@ h3 {
 }
 
 .choice-row button.active {
-    color: #fff;
-    border-color: rgba(47,176,154,.34);
+    color: var(--text-main);
+    border-color: rgba(var(--accent-rgb), .34);
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
     box-shadow: 0 8px 18px rgba(0,0,0,.24);
 }
@@ -292,7 +280,7 @@ h3 {
     border: 1px solid var(--line);
     outline: 0;
     color: var(--text-main);
-    background: rgba(255,255,255,.05);
+    background: rgba(var(--text-rgb), .05);
 }
 
 .field select,
@@ -301,24 +289,24 @@ select {
     min-height: 44px;
     padding: 10px 42px 10px 13px;
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,.12);
+    border: 1px solid rgba(var(--text-rgb), .12);
     outline: 0;
     color: var(--text-main);
     background:
-        linear-gradient(45deg, transparent 50%, #7be1cf 50%) calc(100% - 22px) 18px / 7px 7px no-repeat,
-        linear-gradient(135deg, #7be1cf 50%, transparent 50%) calc(100% - 17px) 18px / 7px 7px no-repeat,
-        linear-gradient(155deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+        linear-gradient(45deg, transparent 50%, var(--accent) 50%) calc(100% - 22px) 18px / 7px 7px no-repeat,
+        linear-gradient(135deg, var(--accent) 50%, transparent 50%) calc(100% - 17px) 18px / 7px 7px no-repeat,
+        linear-gradient(155deg, rgba(var(--text-rgb), .075), rgba(var(--text-rgb), .035));
     appearance: none;
     -webkit-appearance: none;
     font: inherit;
     font-weight: 700;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    box-shadow: inset 0 1px 0 rgba(var(--text-rgb), .04);
 }
 
 .field select:hover,
 select:hover {
-    border-color: rgba(47,176,154,.38);
-    background-color: rgba(47,176,154,.08);
+    border-color: rgba(var(--accent-rgb), .38);
+    background-color: rgba(var(--accent-rgb), .08);
 }
 
 select option {
@@ -330,7 +318,7 @@ select option {
 .field select:focus,
 select:focus,
 textarea:focus {
-    outline: 2px solid rgba(47,176,154,.35);
+    outline: 2px solid rgba(var(--accent-rgb), .35);
     outline-offset: 2px;
 }
 
@@ -341,7 +329,7 @@ textarea {
     border: 1px solid var(--line);
     outline: 0;
     color: var(--text-main);
-    background: rgba(255,255,255,.05);
+    background: rgba(var(--text-rgb), .05);
 }
 
 .table-wrap {
@@ -366,12 +354,12 @@ th {
 
 td {
     padding: 14px 8px;
-    border-top: 1px solid rgba(255,255,255,.05);
+    border-top: 1px solid rgba(var(--text-rgb), .05);
     min-width: 0;
 }
 
 tr:hover td {
-    background: rgba(47,176,154,.06);
+    background: rgba(var(--accent-rgb), .06);
 }
 
 .badge {
@@ -381,28 +369,28 @@ tr:hover td {
     padding: 5px 9px;
     font-size: 12px;
     font-weight: 700;
-    background: rgba(255,255,255,.07);
+    background: rgba(var(--text-rgb), .07);
     color: var(--text-main);
 }
 
 .badge.wifi {
-    color: #bbf7d0;
-    background: rgba(34,197,94,.12);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), .12);
 }
 
 .badge.ok {
-    color: #bbf7d0;
-    background: rgba(34,197,94,.12);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), .12);
 }
 
 .badge.lan {
-    color: #bfdbfe;
-    background: rgba(96,165,250,.14);
+    color: var(--text-main);
+    background: rgba(var(--accent-2-rgb), .14);
 }
 
 .badge.profi {
-    color: #bfdbfe;
-    background: rgba(96,165,250,.14);
+    color: var(--text-main);
+    background: rgba(var(--accent-2-rgb), .14);
 }
 
 .badge.danger {
@@ -422,7 +410,7 @@ tr:hover td {
     display: flex;
     justify-content: space-between;
     gap: 14px;
-    background: rgba(255,255,255,.035);
+    background: rgba(var(--text-rgb), .035);
 }
 
 .device-card.blocked {
@@ -478,7 +466,7 @@ tr:hover td {
     top: 12px;
     border: 0;
     background: transparent;
-    color: white;
+    color: var(--text-main);
     font-size: 28px;
     cursor: pointer;
 }
@@ -504,7 +492,7 @@ tr:hover td {
 
 .toggle-view {
     display: inline-flex;
-    background: rgba(255,255,255,.05);
+    background: rgba(var(--text-rgb), .05);
     padding: 5px;
     border-radius: 999px;
     border: 1px solid var(--line);
@@ -522,7 +510,7 @@ tr:hover td {
 
 .toggle-view button.active {
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
-    color: #fff;
+    color: var(--text-main);
 }
 
 .profi-area[hidden] {
@@ -538,7 +526,7 @@ tr:hover td {
     display: flex;
     justify-content: space-between;
     gap: 20px;
-    border-bottom: 1px solid rgba(255,255,255,.05);
+    border-bottom: 1px solid rgba(var(--text-rgb), .05);
     padding-bottom: 10px;
 }
 
@@ -555,7 +543,7 @@ tr:hover td {
     padding: 12px;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: rgba(255,255,255,.035);
+    background: rgba(var(--text-rgb), .035);
 }
 
 .activity-item strong {
@@ -571,7 +559,7 @@ tr:hover td {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: 12px;
-    background: rgba(255,255,255,.035);
+    background: rgba(var(--text-rgb), .035);
 }
 
 .config-row small {
@@ -595,9 +583,9 @@ tr:hover td {
 
 .settings-summary article {
     padding: 12px;
-    border: 1px solid rgba(255,255,255,.07);
+    border: 1px solid rgba(var(--text-rgb), .07);
     border-radius: 12px;
-    background: rgba(255,255,255,.035);
+    background: rgba(var(--text-rgb), .035);
 }
 
 .settings-summary strong {
@@ -828,7 +816,7 @@ select {
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: 14px;
-    background: rgba(255,255,255,.035);
+    background: rgba(var(--text-rgb), .035);
     min-width: 0;
 }
 
@@ -876,7 +864,7 @@ select {
     padding: 6px 8px;
     border-radius: 10px;
     color: var(--text-soft);
-    background: rgba(255,255,255,.045);
+    background: rgba(var(--text-rgb), .045);
     font-size: 12px;
 }
 
@@ -890,13 +878,13 @@ select {
 }
 
 .badge.admin {
-    color: #bbf7d0;
-    background: rgba(34,197,94,.12);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), .12);
 }
 
 .badge.user {
-    color: #dbeafe;
-    background: rgba(96,165,250,.14);
+    color: var(--text-main);
+    background: rgba(var(--accent-2-rgb), .14);
 }
 
 .badge.maintainer {

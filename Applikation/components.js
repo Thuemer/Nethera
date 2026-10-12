@@ -177,11 +177,11 @@ class LineChart extends HTMLElement {
     const max = Math.max(10, ...values) * 1.15;
 
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillStyle = 'rgba(229,235,231,0.04)';
     ctx.fillRect(0, 0, w, h);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.strokeStyle = 'rgba(229,235,231,0.08)';
+    ctx.fillStyle = 'rgba(229,235,231,0.55)';
     ctx.font = '12px system-ui';
     for (let i = 0; i <= 4; i++) {
       const y = h - pad.bottom - (i / 4) * (h - pad.top - pad.bottom);
@@ -206,16 +206,16 @@ class LineChart extends HTMLElement {
       ctx.stroke();
     };
 
-    drawLine(seriesA, '#6ee7c8');
-    drawLine(seriesB, '#60a5fa');
+    drawLine(seriesA, getComputedStyle(document.documentElement).getPropertyValue('--chart-download').trim());
+    drawLine(seriesB, getComputedStyle(document.documentElement).getPropertyValue('--chart-upload').trim());
 
-    ctx.fillStyle = '#6ee7c8';
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--chart-download').trim();
     ctx.fillText(`● ${labelA}`, pad.left, 18);
-    ctx.fillStyle = '#60a5fa';
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--chart-upload').trim();
     ctx.fillText(`● ${labelB}`, pad.left + 130, 18);
 
     if (labels.length) {
-      ctx.fillStyle = 'rgba(255,255,255,0.48)';
+      ctx.fillStyle = 'rgba(229,235,231,0.48)';
       ctx.fillText(labels[0], pad.left, h - 16);
       ctx.fillText(labels.at(-1), w - pad.right - 44, h - 16);
     }

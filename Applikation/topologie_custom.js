@@ -466,7 +466,7 @@ class NetworkTopology extends HTMLElement {
         const line=document.createElementNS("http://www.w3.org/2000/svg","line");
         line.setAttribute("x1",x1); line.setAttribute("y1",y1);
         line.setAttribute("x2",x2); line.setAttribute("y2",y2);
-        line.setAttribute("stroke","#2FB09A"); line.setAttribute("stroke-width","2"); line.setAttribute("stroke-opacity","0.7");
+        line.setAttribute("stroke","var(--accent)"); line.setAttribute("stroke-width","2"); line.setAttribute("stroke-opacity","0.7");
         this.svg.appendChild(line);
     }
 

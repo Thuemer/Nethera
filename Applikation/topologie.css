@@ -1,13 +1,4 @@
-:root {
-    --bg-main: #212121;
-    --bg-card: #1c1f1e;
-    --bg-card-2: #232826;
-    --line: rgba(255, 255, 255, 0.08);
-    --text-main: #ffffff;
-    --text-soft: #b8c0bd;
-    --accent: #2fb09a;
-    --accent-2: #144659;
-}
+@import url("/website/css/palette.css");
 
 * {
     box-sizing: border-box;
@@ -20,7 +11,7 @@ body {
     color: var(--text-main);
     overflow: auto;
     font-family: "Avenir Next", "Segoe UI", sans-serif;
-    background: radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%), var(--bg-main);
+    background: radial-gradient(1000px 500px at 10% -10%, rgba(var(--accent-rgb), 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(var(--accent-2-rgb), 0.35), transparent 58%), var(--bg-main);
 }
 
 network-topology {
@@ -50,8 +41,8 @@ network-topology {
     opacity: 0.93;
     filter:
         drop-shadow(0 12px 22px rgba(0, 0, 0, 0.48))
-        drop-shadow(0 0 24px rgba(47, 176, 154, 0.42))
-        drop-shadow(0 0 44px rgba(99, 229, 197, 0.22));
+        drop-shadow(0 0 24px rgba(var(--accent-rgb), 0.42))
+        drop-shadow(0 0 44px rgba(var(--accent-rgb), 0.22));
     pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;
@@ -86,13 +77,13 @@ network-topology {
     position: absolute;
     width: 118px;
     height: 48px;
-    background: linear-gradient(135deg, rgba(20, 70, 89, 0.9), rgba(47, 176, 154, 0.75));
-    border: 1px solid rgba(47, 176, 154, 0.45);
+    background: linear-gradient(135deg, rgba(var(--accent-2-rgb), 0.9), rgba(var(--accent-rgb), 0.75));
+    border: 1px solid rgba(var(--accent-rgb), 0.45);
     border-radius: 999px;
     text-align: center;
     line-height: 1.1 !important;
     font-weight: bold;
-    color: #fff;
+    color: var(--text-main);
     letter-spacing: 0.03em;
     cursor: pointer;
     z-index: 12;
@@ -113,8 +104,8 @@ network-topology {
     position: absolute;
     width: 34px;
     height: 34px;
-    background: radial-gradient(circle at 30% 30%, #61e2cd, #2fb09a 68%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: radial-gradient(circle at 30% 30%, var(--accent), var(--accent) 68%);
+    border: 1px solid rgba(var(--text-rgb), 0.2);
     border-radius: 50%;
     cursor: pointer;
     z-index: 14;
@@ -124,7 +115,7 @@ network-topology {
 }
 
 .device.selected {
-    background: #144659;
+    background: var(--accent-2);
     transform: scale(1.05);
     box-shadow: 0 10px 22px rgba(0,0,0,0.45);
 }
@@ -158,12 +149,12 @@ svg {
 }
 
 .group:focus {
-    outline: 2px solid rgba(47,176,154,0.9);
+    outline: 2px solid rgba(var(--accent-rgb), 0.9);
     outline-offset: 4px;
 }
 
 .device:focus {
-    outline: 2px solid rgba(47,176,154,0.9);
+    outline: 2px solid rgba(var(--accent-rgb), 0.9);
     outline-offset: 4px;
 }
 
@@ -178,7 +169,7 @@ svg line {
     transition: opacity 200ms ease, transform 200ms ease;
     opacity: 0.98;
     position: absolute;
-    background: rgba(23, 28, 26, 0.96);
+    background: rgba(var(--bg-card-rgb), 0.96);
     color: var(--text-main);
     border: 1px solid var(--line);
     padding: 8px 10px;
@@ -193,7 +184,7 @@ svg line {
     overflow: hidden;
     text-overflow: ellipsis;
     backdrop-filter: blur(8px);
-    border-color: rgba(47,176,154,.22);
+    border-color: rgba(var(--accent-rgb), .22);
 }
 
 #bottom-info {
@@ -205,7 +196,7 @@ svg line {
     width: min(960px, calc(100% - 28px));
     min-height: 42px;
     padding: 4px 6px;
-    background: rgba(17, 21, 20, 0.9);
+    background: rgba(var(--bg-card-rgb), 0.9);
     border: 1px solid var(--line);
     border-radius: 999px;
     color: var(--text-soft);
@@ -232,8 +223,8 @@ svg line {
 
 .edit-box {
     position: absolute;
-    background: #333;
-    color: #2FB09A;
+    background: var(--bg-main);
+    color: var(--accent);
     padding: 10px;
     border-radius: 8px;
     z-index: 50;
@@ -246,15 +237,15 @@ svg line {
     width: 100%;
     margin-bottom: 6px;
     padding: 4px;
-    background: #222;
-    border: 1px solid #2FB09A;
+    background: var(--bg-main);
+    border: 1px solid var(--accent);
     border-radius: 4px;
-    color: #ffffff;
+    color: var(--text-main);
 }
 
 .edit-box button {
-    background: #2FB09A;
-    color: #000;
+    background: var(--accent);
+    color: var(--bg-card);
     border: none;
     padding: 5px 8px;
     border-radius: 4px;
@@ -265,7 +256,7 @@ svg line {
     width: 34px;
     height: 30px;
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
-    color: #fff;
+    color: var(--text-main);
     border: none;
     border-radius: 999px;
     cursor: pointer;
@@ -299,10 +290,10 @@ svg line {
     top: 14px;
     right: 14px;
     z-index: 40;
-    border: 1px solid rgba(255,255,255,.12);
+    border: 1px solid rgba(var(--text-rgb), .12);
     border-radius: 999px;
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
-    color: #fff;
+    color: var(--text-main);
     padding: 9px 14px;
     font-weight: 700;
     cursor: pointer;

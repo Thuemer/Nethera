@@ -1,14 +1,4 @@
-:root {
-    --bg-main: #212121;
-    --bg-card: #1c1f1e;
-    --bg-card-2: #232826;
-    --line: rgba(255, 255, 255, 0.08);
-    --text-main: #ffffff;
-    --text-soft: #b8c0bd;
-    --accent: #2fb09a;
-    --accent-2: #144659;
-    --warn: #f59e0b;
-}
+@import url("/website/css/palette.css");
 
 * {
     box-sizing: border-box;
@@ -19,7 +9,7 @@ body {
     min-height: 100vh;
     padding: 28px;
     color: var(--text-main);
-    background: radial-gradient(1000px 500px at 10% -10%, rgba(47, 176, 154, 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(20, 70, 89, 0.35), transparent 58%), var(--bg-main);
+    background: radial-gradient(1000px 500px at 10% -10%, rgba(var(--accent-rgb), 0.25), transparent 55%), radial-gradient(900px 400px at 100% 0%, rgba(var(--accent-2-rgb), 0.35), transparent 58%), var(--bg-main);
     font-family: "Avenir Next", "Segoe UI", sans-serif;
     max-width: 100%;
     overflow-x: hidden;
@@ -75,7 +65,7 @@ h2 {
     border: 0;
     padding: 12px 18px;
     border-radius: 12px;
-    color: white;
+    color: var(--text-main);
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
     font-weight: 700;
     cursor: pointer;
@@ -120,7 +110,7 @@ h2 {
 
 .stat-detail {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(var(--text-rgb), 0.4);
 }
 
 .traffic-info {
@@ -135,7 +125,7 @@ h2 {
     padding: 60px 20px;
     border: 1px dashed var(--line);
     border-radius: 10px;
-    background: rgba(47, 176, 154, 0.04);
+    background: rgba(var(--accent-rgb), 0.04);
 }
 
 .traffic-chart-placeholder p {
@@ -174,13 +164,13 @@ th {
 
 td {
     padding: 14px 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(var(--text-rgb), 0.04);
     color: var(--text-main);
     min-width: 0;
 }
 
 tbody tr:hover {
-    background: rgba(47, 176, 154, 0.08);
+    background: rgba(var(--accent-rgb), 0.08);
 }
 
 html {
@@ -416,7 +406,7 @@ select {
 }
 
 .upload-bar {
-    background: linear-gradient(90deg, rgba(96,165,250,.45), #60a5fa);
+    background: linear-gradient(90deg, rgba(var(--accent-2-rgb), .45), var(--chart-upload));
 }
 
 .protocol-pill {
@@ -426,8 +416,8 @@ select {
     max-width: 100%;
     padding: 5px 9px;
     border-radius: 999px;
-    color: #dbeafe;
-    background: rgba(96,165,250,.14);
+    color: var(--text-main);
+    background: rgba(var(--accent-2-rgb), .14);
     font-weight: 700;
 }
 
