@@ -25,10 +25,11 @@ public class AccountsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("me")
     public Account getCurrentAccount() {
-        String sub = identity.getPrincipal().getName();
-        String email = identity.getPrincipal() instanceof JsonWebToken token
-                ? token.getClaim("email")
-                : identity.getAttribute("email");
+        // Key accounts by the immutable Keycloak user ID. getPrincipal().getName() would return
+        // preferred_username, which a new user could take over after the old one is deleted.
+        JsonWebToken token = identity.getPrincipal() instanceof JsonWebToken jwt ? jwt : null;
+        String sub = token != null && token.getSubject() != null ? token.getSubject() : identity.getPrincipal().getName();
+        String email = token != null ? token.getClaim("email") : identity.getAttribute("email");
         if (email == null || email.isBlank()) {
             email = sub + "@nethera.local";
         }

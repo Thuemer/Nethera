@@ -32,6 +32,7 @@ public class ConfigsResource {
     @Path("{id}")
     @Transactional
     public Config save(@PathParam("id") Long id, Config input) {
+        RequestValidation.requireBody(input);
         Config config = entityManager.find(Config.class, id);
         if (config == null) {
             throw new NotFoundException("Konfiguration nicht gefunden");

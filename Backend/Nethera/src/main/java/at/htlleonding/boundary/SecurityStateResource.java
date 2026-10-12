@@ -36,6 +36,7 @@ public class SecurityStateResource {
     @Path("groups")
     @Transactional
     public GroupDto saveGroup(GroupDto dto) {
+        RequestValidation.requireBody(dto);
         DeviceGroup group = dto.id() == null ? new DeviceGroup() : entityManager.find(DeviceGroup.class, dto.id());
         if (group == null) {
             throw new NotFoundException("Gruppe nicht gefunden");
@@ -109,6 +110,7 @@ public class SecurityStateResource {
     @Path("blocklists")
     @Transactional
     public BlocklistDto saveBlocklist(BlocklistDto dto) {
+        RequestValidation.requireBody(dto);
         BlockList blocklist = dto.id() == null ? new BlockList() : entityManager.find(BlockList.class, dto.id());
         if (blocklist == null) {
             throw new NotFoundException("Blockliste nicht gefunden");
@@ -131,6 +133,7 @@ public class SecurityStateResource {
     @Path("presets")
     @Transactional
     public PresetDto savePreset(PresetDto dto) {
+        RequestValidation.requireBody(dto);
         SecurityPreset preset = dto.id() == null ? new SecurityPreset() : entityManager.find(SecurityPreset.class, dto.id());
         if (preset == null) {
             throw new NotFoundException("Preset nicht gefunden");
@@ -139,9 +142,9 @@ public class SecurityStateResource {
         preset.setName(blankToDefault(dto.name(), "Neues Preset"));
         preset.setDescription(dto.description());
         preset.setBlocklistId(dto.blocklistId());
-        preset.setTimeLimitMinutes(dto.timeLimitMinutes());
-        preset.setBlockedFrom(dto.blockedFrom());
-        preset.setBlockedUntil(dto.blockedUntil());
+        preset.setTimeLimitMinutes(RequestValidation.minutesPerDay("timeLimitMinutes", dto.timeLimitMinutes()));
+        preset.setBlockedFrom(RequestValidation.timeOfDay("blockedFrom", dto.blockedFrom()));
+        preset.setBlockedUntil(RequestValidation.timeOfDay("blockedUntil", dto.blockedUntil()));
         preset.setParentalMode(dto.parentalMode() == null ? Boolean.FALSE : dto.parentalMode());
         preset.setPriorityMode(dto.priorityMode() == null ? Boolean.FALSE : dto.priorityMode());
 

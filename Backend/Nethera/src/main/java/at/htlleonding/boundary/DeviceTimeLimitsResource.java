@@ -26,11 +26,12 @@ public class DeviceTimeLimitsResource {
     @PUT
     @Path("{deviceId}")
     public Response save(@PathParam("deviceId") Long deviceId, DeviceTimeLimitDto dto) {
+        RequestValidation.requireBody(dto);
         DeviceTimeLimit input = new DeviceTimeLimit();
-        input.setDailyLimitMinutes(dto.dailyLimitMinutes());
-        input.setUsedMinutesToday(dto.usedMinutesToday());
-        input.setBlockedFrom(dto.blockedFrom());
-        input.setBlockedUntil(dto.blockedUntil());
+        input.setDailyLimitMinutes(RequestValidation.minutesPerDay("dailyLimitMinutes", dto.dailyLimitMinutes()));
+        input.setUsedMinutesToday(RequestValidation.minutesPerDay("usedMinutesToday", dto.usedMinutesToday()));
+        input.setBlockedFrom(RequestValidation.timeOfDay("blockedFrom", dto.blockedFrom()));
+        input.setBlockedUntil(RequestValidation.timeOfDay("blockedUntil", dto.blockedUntil()));
         input.setStatus(dto.status() == null ? "active" : dto.status());
         input.setNote(dto.note());
 

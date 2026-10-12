@@ -6,7 +6,7 @@ import java.util.Set;
 
 @Entity
  // Geändert von "connected_device" zu "device"
-@Table(name = "device")
+@Table(name = "device", uniqueConstraints = @UniqueConstraint(columnNames = {"router_id", "mac_address"}))
 @NamedQuery(name = ConnectedDevice.QUERY_FIND_ALL, query = "SELECT d FROM ConnectedDevice d")
 
 public class ConnectedDevice {
