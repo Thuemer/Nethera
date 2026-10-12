@@ -117,6 +117,13 @@ This change ships only the backend-side test tool:
 
 Rollback: set `nethera.telemetry.mode=ssh`. The broker can stay running unused. There are no schema changes, so no DB rollback is needed.
 
+## Follow-ups from agent exploration
+
+Found while designing `router-telemetry-agent` (2026-10-05):
+
+- **A — SSH DNS source likely missing on stock 25.12.** `syncDnsStats` reads `tail -40 /var/log/messages`. Stock OpenWrt logs only to the `logd` ring buffer (`logread`); `/var/log/messages` exists only if `system.log_file` is set. dnsmasq's SIGUSR1 line prints `metrics[METRIC_DNS_QUERIES_FORWARDED]` / `metrics[METRIC_DNS_LOCAL_ANSWERED]`, and OpenWrt exposes the same counters through `ubus call dnsmasq metrics` (`dns_queries_forwarded`, `dns_local_answered`). If the router probe confirms this, the SSH path switches to the ubus call (fallback `logread`), so both transports read the same source. Also note the base `router-dns-sync` spec requires a stats timestamp within 5 s, but the code never checks it. → task 1.9
+- **B — Status is not restored after the Last Will fires while the publisher keeps running.** If the broker restarts or the connection is lost for longer than 1.5× keepalive, the broker publishes retained `offline`. `mosquitto_sub` reconnects on its own, but nobody republishes `online`, so the router stays offline in the backend and metadata goes stale, which triggers SSH metadata fallback. Fix: the status connection already subscribes to its own status topic, so when it reads `offline` the publisher republishes retained `online`. On graceful stop, kill the status subscriber *before* publishing `offline`. The agent implements this (`router-telemetry-agent` D2). The simulator needs the same fix. → task 5.4
+
 ## Open Questions
 
 - Who owns the follow-up `router-telemetry-agent` change? (Router-side questions such as the MQTT client package and `logread` vs `/var/log/messages` belong there.)
