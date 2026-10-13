@@ -18,6 +18,16 @@ spec:
     requests:
       storage: 2Gi
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nethera-mosquitto-data
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -214,6 +224,83 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: nethera-mosquitto
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nethera-mosquitto
+  template:
+    metadata:
+      labels:
+        app: nethera-mosquitto
+    spec:
+      # The broker runs as user mosquitto (1883) and writes its database to the volume
+      securityContext:
+        fsGroup: 1883
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:2
+          # Builds the password file from the Secret and installs the ACL, then starts the broker
+          command: ["/bin/sh", "/nethera/entrypoint.sh"]
+          ports:
+            - containerPort: 1883
+            - containerPort: 9001
+          env:
+            - name: NETHERA_MQTT_BACKEND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: mqtt-backend-password
+            - name: NETHERA_MQTT_ROUTER1_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: mqtt-router1-password
+          readinessProbe:
+            tcpSocket:
+              port: 1883
+            periodSeconds: 5
+          volumeMounts:
+            - name: config
+              mountPath: /mosquitto/config
+              readOnly: true
+            - name: config
+              mountPath: /nethera/entrypoint.sh
+              subPath: entrypoint.sh
+              readOnly: true
+            - name: data
+              mountPath: /mosquitto/data
+      volumes:
+        - name: config
+          configMap:
+            name: nethera-mosquitto
+        - name: data
+          persistentVolumeClaim:
+            claimName: nethera-mosquitto-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nethera-mosquitto
+spec:
+  selector:
+    app: nethera-mosquitto
+  ports:
+    # Plain MQTT, only reachable inside the cluster (backend)
+    - name: mqtt
+      port: 1883
+      targetPort: 1883
+    # MQTT over WebSockets, reached from outside through the ingress path /mqtt (routers)
+    - name: websockets
+      port: 9001
+      targetPort: 9001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: nethera-backend
 spec:
   replicas: 1
@@ -258,7 +345,18 @@ spec:
             - name: QUARKUS_SCHEDULER_ENABLED
               value: "false"
             - name: NETHERA_TELEMETRY_MODE
-              value: ssh
+              value: mqtt
+            - name: NETHERA_MQTT_HOST
+              value: nethera-mosquitto
+            - name: NETHERA_MQTT_PORT
+              value: "1883"
+            - name: NETHERA_MQTT_USERNAME
+              value: nethera-backend
+            - name: NETHERA_MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: mqtt-backend-password
           startupProbe:
             tcpSocket:
               port: 8080
@@ -389,6 +487,13 @@ spec:
                 name: nethera-keycloak
                 port:
                   number: 8080
+          - path: /mqtt
+            pathType: Prefix
+            backend:
+              service:
+                name: nethera-mosquitto
+                port:
+                  number: 9001
           - path: /
             pathType: Prefix
             backend:

@@ -59,6 +59,8 @@ services:
     ports:
       # Not bound to 127.0.0.1: the router on the LAN has to reach the broker
       - "1883:1883"
+      # MQTT over WebSockets (ws://<host>:9001/mqtt), the transport routers use towards the cloud
+      - "9001:9001"
     volumes:
       - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - ./docker/mosquitto/acl:/mosquitto/config/acl:ro

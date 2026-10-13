@@ -1,0 +1,35 @@
+Station 02:00:00:00:00:01 (on phy0-ap0)
+	authorized:	yes
+	authenticated:	yes
+	associated:	yes
+	preamble:	short
+	WMM/WME:	yes
+	MFP:		yes
+	TDLS peer:	no
+	inactive time:	20 ms
+	rx bytes:	24713948
+	rx packets:	49533
+	tx bytes:	11242980
+	tx packets:	31884
+	tx retries:	7194
+	tx failed:	7361
+	rx drop misc:	5
+	signal:  	-45 [-47, -49] dBm
+	signal avg:	-44 [-45, -48] dBm
+	tx bitrate:	229.4 MBit/s HE-MCS 9 HE-NSS 2 HE-GI 0 HE-DCM 0
+	tx duration:	5141883 us
+	rx bitrate:	229.4 MBit/s HE-MCS 9 HE-NSS 2 HE-GI 0 HE-DCM 0
+	rx duration:	9154108 us
+	last ack signal:-45 dBm
+	avg ack signal:	-45 dBm
+	airtime weight: 256
+	expected throughput:	197.640Mbps
+	DTIM period:	2
+	beacon interval:100
+	short preamble:	yes
+	short slot time:yes
+	connected time:	990 seconds
+	associated at [boottime]:	1188.483s
+	associated at:	1791889342354 ms
+	current time:	1791890331896 ms
+
