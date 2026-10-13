@@ -195,6 +195,288 @@
       animation: fadeIn 1s ease-in-out;
     }
 
+    /* Sprint Review #10: dichteres Layout, nutzt die Folienfläche */
+    .s10 {
+      width: 100%;
+      max-width: 1180px;
+      text-align: left;
+    }
+
+    .reveal .s10-head {
+      font-size: 44px;
+      text-align: center;
+      margin: 0 0 1rem 0;
+    }
+
+    .reveal .s10-sub {
+      font-size: 24px;
+      color: #9aa4a0;
+      text-align: center;
+      margin: 0 0 1.2rem 0;
+      line-height: 1.3;
+    }
+
+    .s10-sub .highlight {
+      color: var(--blue);
+    }
+
+    .s10-stats {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .s10-stat {
+      position: relative;
+      background:
+        radial-gradient(120% 90% at 50% 0%, rgba(99, 229, 197, 0.12), transparent 70%),
+        linear-gradient(180deg, #2b2f2e, #262827);
+      border: 1px solid rgba(99, 229, 197, 0.18);
+      border-radius: 18px;
+      padding: 0.7rem 1.8rem 0.8rem;
+      text-align: center;
+      min-width: 170px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .s10-stat strong {
+      display: block;
+      font-size: 44px;
+      line-height: 1.1;
+      color: var(--blue-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .s10-stat.big {
+      border-color: rgba(99, 229, 197, 0.4);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 40px rgba(99, 229, 197, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .s10-stat.big strong {
+      font-size: 56px;
+      text-shadow: 0 0 24px rgba(99, 229, 197, 0.35);
+    }
+
+    .s10-stat span {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #9fb0a9;
+    }
+
+    .reveal .s10-shot {
+      display: block;
+      height: 370px;
+      width: auto;
+      margin: 0 auto;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .s10-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.3rem 1.5rem;
+    }
+
+    .s10-item {
+      background: linear-gradient(160deg, rgba(99, 229, 197, 0.07), rgba(255, 255, 255, 0.02) 45%), #262827;
+      border: 1px solid rgba(99, 229, 197, 0.16);
+      border-radius: 18px;
+      padding: 1.3rem 1.6rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .s10-item.wide {
+      grid-column: 1 / -1;
+    }
+
+    .s10-item.planned {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(201, 209, 217, 0.3);
+      box-shadow: none;
+    }
+
+    .reveal .s10-item h4 {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 38px;
+      color: var(--blue-dark);
+      margin: 0;
+      text-transform: none;
+      line-height: 1.2;
+    }
+
+    .reveal .s10-item h4::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--blue-dark);
+      box-shadow: 0 0 10px rgba(99, 229, 197, 0.8);
+      flex: none;
+    }
+
+    .reveal .s10-item.planned h4 {
+      color: #c9d1d9;
+    }
+
+    .reveal .s10-item.planned h4::before {
+      background: transparent;
+      border: 2px solid #8b949e;
+      box-sizing: border-box;
+      box-shadow: none;
+    }
+
+    .reveal .s10-item p {
+      font-size: 29px;
+      line-height: 1.35;
+      margin: 0.35rem 0 0 0;
+      padding-left: calc(12px + 0.7rem);
+      color: #c4cec9;
+    }
+
+    .s10-ref {
+      display: inline-block;
+      font-size: 20px;
+      font-weight: 600;
+      color: #3fb950;
+      border: 1px solid rgba(63, 185, 80, 0.45);
+      border-radius: 999px;
+      padding: 0 0.5rem;
+      margin-left: 0;
+      vertical-align: middle;
+    }
+
+    .s10-ref.muted {
+      color: #8b949e;
+      border-color: #484f58;
+    }
+
+    /* GitHub-Project-Karten */
+    .gh-board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.9rem;
+      align-items: start;
+    }
+
+    .gh-col {
+      background: #10141a;
+      border: 1px solid #262c34;
+      border-radius: 10px;
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .gh-col-head {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 19px;
+      font-weight: 700;
+      color: #e6edf3;
+      padding: 0 0.2rem 0.15rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+    }
+
+    .gh-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--t);
+      flex: none;
+    }
+
+    .gh-count {
+      font-size: 13px;
+      font-weight: 600;
+      color: #8b949e;
+      background: #21262d;
+      border-radius: 999px;
+      padding: 0 0.45rem;
+    }
+
+    .gh-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 0.45rem 0.65rem 0.55rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+    }
+
+    .gh-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 13px;
+      color: #8b949e;
+    }
+
+    .gh-meta svg {
+      width: 14px;
+      height: 14px;
+      fill: #3fb950;
+      flex: none;
+    }
+
+    .gh-avatars {
+      margin-left: auto;
+      display: flex;
+    }
+
+    .gh-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 9px;
+      font-weight: 700;
+      color: #0d1117;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #161b22;
+      margin-left: -5px;
+    }
+
+    .gh-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #e6edf3;
+      line-height: 1.3;
+      margin: 0.2rem 0 0.35rem;
+    }
+
+    .gh-label {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.6;
+      padding: 0 0.5rem;
+      border-radius: 999px;
+      color: var(--t);
+      background: rgba(var(--c), 0.18);
+      border: 1px solid rgba(var(--c), 0.45);
+    }
+
+    .av-th { background: #a78bfa; }
+    .av-mk { background: #f472b6; }
+    .av-mf { background: #fbbf24; }
+    .av-db { background: #38bdf8; }
+    .av-nh { background: #34d399; }
+
+    .lb-router { --c: 47, 213, 190; --t: #2fd5be; }
+    .lb-backend { --c: 81, 185, 150; --t: #6fd1ae; }
+    .lb-design { --c: 155, 194, 120; --t: #b3d891; }
+    .lb-hw { --c: 225, 233, 242; --t: #e1e9f2; }
+    .lb-story { --c: 134, 226, 165; --t: #9ff0ba; }
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -675,6 +957,233 @@
         </section>
       </section>
       <!--=====End Rückblick & Ausblick====-->
+
+      <!--=====Start Review Section====-->
+      <section>
+        <svg width="0" height="0" style="position:absolute">
+          <symbol id="gh-open" viewBox="0 0 16 16">
+            <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path>
+            <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
+          </symbol>
+        </svg>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Sprint Review #10</h3>
+            <p class="s10-sub">28.09.2026 – 13.10.2026</p>
+            <div class="s10-stats">
+              <div class="s10-stat big"><strong>88:58 h</strong><span>Gesamtstunden</span></div>
+              <div class="s10-stat"><strong>15</strong><span>Tage Sprint</span></div>            </div>
+            <img src="./sprint5_1/zeitaufzeichnung.png" class="s10-shot" alt="Zeitaufzeichnung">
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Verwendete Userstories/Issues</h3>
+            <div class="gh-board">
+              <div class="gh-col">
+                <div class="gh-col-head"><span class="gh-dot lb-router"></span>Router<span class="gh-count">3</span></div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #93
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mk">MK</span></span>
+                  </div>
+                  <div class="gh-title">Als Entwickler möchte ich einen passenden Router für die Entwicklung</div>
+                  <span class="gh-label lb-hw">HW Infrastructure</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #97
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mk">MK</span></span>
+                  </div>
+                  <div class="gh-title">Neuen Router einrichten</div>
+                  <span class="gh-label lb-router">Router</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #96
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mk">MK</span></span>
+                  </div>
+                  <div class="gh-title">MQTT am Router einrichten</div>
+                  <span class="gh-label lb-router">Router</span>
+                </div>
+              </div>
+              <div class="gh-col">
+                <div class="gh-col-head"><span class="gh-dot lb-backend"></span>Backend & Cloud<span class="gh-count">2</span></div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #95
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mf">MF</span></span>
+                  </div>
+                  <div class="gh-title">MQTT im Backend implementieren</div>
+                  <span class="gh-label lb-backend">Cloud Backend</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #98
+                    <span class="gh-avatars"><span class="gh-avatar av-db">DB</span><span class="gh-avatar av-nh">NH</span></span>
+                  </div>
+                  <div class="gh-title">Projekt Dockern/Auf Leocloud Hosten</div>
+                  <span class="gh-label lb-backend">Cloud Backend</span>
+                </div>
+              </div>
+              <div class="gh-col">
+                <div class="gh-col-head"><span class="gh-dot lb-story"></span>Website<span class="gh-count">4</span></div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #16
+                  </div>
+                  <div class="gh-title">Als User möchte ich Zugriff auf die Nethera Website haben</div>
+                  <span class="gh-label lb-story">userStory</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #19
+                  </div>
+                  <div class="gh-title">Als User möchte ich auf der Website sehen, was Nethera mir anbietet</div>
+                  <span class="gh-label lb-story">userStory</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #18
+                  </div>
+                  <div class="gh-title">Als User möchte ich eine einfache Schritt für Schritt Anleitung auf der Website zur Verfügung haben</div>
+                  <span class="gh-label lb-story">userStory</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #20
+                  </div>
+                  <div class="gh-title">Als User möchte ich wissen, wie das Nethera-Angebot in Anspruch nehme</div>
+                </div>
+              </div>
+              <div class="gh-col">
+                <div class="gh-col-head"><span class="gh-dot lb-design"></span>Organisation<span class="gh-count">2</span></div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #94
+                    <span class="gh-avatars"><span class="gh-avatar av-db">DB</span><span class="gh-avatar av-nh">NH</span></span>
+                  </div>
+                  <div class="gh-title">Als Team möchte ich eine gute Präsentation um das Projekt vorzustellen</div>
+                  <span class="gh-label lb-design">Design</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #99
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span></span>
+                  </div>
+                  <div class="gh-title">Als Scrum-Master möchte ich eine gute und kostenlose Zeiterfassung</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Organisatorisch</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Projektpräsentation <span class="s10-ref">#94</span></h4>
+              </div>
+              <div class="s10-item">
+                <h4>Neue Zeiterfassung <span class="s10-ref">#99</span></h4>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Website</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Neue Startseite <span class="s10-ref">#16</span> <span class="s10-ref">#19</span></h4>
+                <p>Feature-Karten</p>
+              </div>
+              <div class="s10-item">
+                <h4>Anleitung <span class="s10-ref">#18</span></h4>
+                <p>OpenWrt Schritt für Schritt</p>
+              </div>
+              <div class="s10-item">
+                <h4>Loslegen-Bereich <span class="s10-ref">#20</span></h4>
+              </div>
+              <div class="s10-item planned">
+                <h4>Offen</h4>
+                <p>Zugangslinks</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Frontend</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Neues App-Design</h4>
+                <p>Theme, Sidebar, Farben</p>
+              </div>
+              <div class="s10-item">
+                <h4>Regeln überarbeitet</h4>
+                <p>Schutz & Zeitlimits</p>
+              </div>
+              <div class="s10-item">
+                <h4>Mobile Layout</h4>
+              </div>
+              <div class="s10-item">
+                <h4>Login über Website</h4>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Backend</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>MQTT-Telemetrie <span class="s10-ref">#95</span></h4>
+                <p>statt SSH-Abfrage</p>
+              </div>
+              <div class="s10-item">
+                <h4>Mosquitto-Broker</h4>
+                <p>Login & Rechte pro Router</p>
+              </div>
+              <div class="s10-item wide">
+                <h4>API abgesichert</h4>
+                <p>Keycloak-Login Pflicht</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Router</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Neuer Router <span class="s10-ref">#93</span> <span class="s10-ref">#97</span></h4>
+                <p>Cudy WR3000S, OpenWrt 25.12.5</p>
+              </div>
+              <div class="s10-item">
+                <h4>MQTT am Router <span class="s10-ref">#96</span></h4>
+                <p>Router sendet Telemetrie selbst</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Docker & LeoCloud <span class="s10-ref">#98</span></h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Docker Compose</h4>
+                <p>Start mit einem Befehl</p>
+              </div>
+              <div class="s10-item">
+                <h4>Läuft auf LeoCloud</h4>
+                <p>App, Backend, Keycloak, DBs</p>
+              </div>
+              <div class="s10-item planned wide">
+                <h4>Geplant: MQTT in der Cloud</h4>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+      <!--=====End Review Section====-->
     </div>
   </div>
 
