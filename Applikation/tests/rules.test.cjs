@@ -164,7 +164,8 @@ test('failed save keeps previous time rule and does not claim local success', as
   h.field('blockedFrom').value = '22:00';
   h.field('blockedUntil').value = '07:00';
   h.field('limitNote').value = '';
-  h.run(`state.storageMode='backend'; state.limits['1']={from:'21:00'};
+  h.run(`NetheraApi={userMessage:()=> 'Bitte erneut versuchen.'};
+    state.storageMode='backend'; state.limits['1']={from:'21:00'};
     saveBackendLimit=async()=>{throw new Error('offline')};`);
   await h.run('saveSelectedLimit({preventDefault(){}})');
   assert.equal(h.run(`state.limits['1'].from`), '21:00');

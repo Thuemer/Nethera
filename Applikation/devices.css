@@ -255,10 +255,10 @@ td {
 
 .client-name { font-weight: 600; color: var(--text-main); }
 .client-address { font-variant-numeric: tabular-nums; color: var(--text-soft); }
-.client-details-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px; margin: -6px -8px; border: 0; border-radius: 5px; background: transparent; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.client-details-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 34px; padding: 6px 10px; border: 0; border-radius: 5px; background: transparent; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
 .client-details-toggle:hover, .client-details-toggle:focus-visible { background: rgba(var(--accent-rgb), .10); outline: none; }
-.client-details-toggle span { display: inline-block; font-size: 18px; line-height: .8; transition: transform .2s ease; }
-.client-details-toggle[aria-expanded="true"] span { transform: rotate(180deg); }
+.client-details-toggle svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
+.client-details-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
 .client-detail-row[hidden] { display: none; }
 .client-detail-row > td { padding: 14px 18px; background: rgba(var(--text-rgb), .035); border-bottom-color: rgba(var(--text-rgb), .09); }
 .client-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 0; }

@@ -37,6 +37,7 @@ function fillForm(config) {
 }
 
 async function loadConfigs() {
+  const saveButton = document.querySelector('app-hero button[data-action="hero-button"]');
   try {
     const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
     const authHeader = (await account?.getAuthHeader?.()) ?? {};
@@ -45,9 +46,12 @@ async function loadConfigs() {
     const data = await response.json();
     const configs = Array.isArray(data) ? data.map(normalizeConfig) : [];
     if (configs[0]) fillForm(configs[0]);
-    setStatus(configs.length ? 'Konfiguration aus der Datenbank geladen.' : 'Keine Konfiguration gefunden.', configs.length ? 'success' : 'warning');
+    if (saveButton) saveButton.disabled = !configs.length;
+    setStatus(configs.length ? 'Konfiguration aktualisiert.' : 'Noch keine Konfiguration vorhanden.', configs.length ? 'success' : 'warning');
   } catch (error) {
-    setStatus(`Backend nicht verfügbar: ${error.message}`, 'error');
+    activeConfigId = null;
+    if (saveButton) saveButton.disabled = true;
+    setStatus(NetheraApi.userMessage(error), 'error');
   }
 }
 
@@ -72,7 +76,7 @@ async function saveConfig() {
     body: JSON.stringify(payload)
   });
   if (!response.ok) throw new Error(`API ${response.status}`);
-  setStatus('Konfiguration in der Datenbank gespeichert.', 'success');
+  setStatus('Konfiguration gespeichert.', 'success');
   await loadConfigs();
 }
 

@@ -105,7 +105,7 @@ function renderTable() {
             <td class="client-name">${escapeHtml(device.hostname || 'Unbekanntes Gerät')}</td>
             <td class="client-address">${escapeHtml(device.ipAddress || '-')}</td>
             <td><span class="conn-badge ${device.connectionType}">${toConnectionLabel(device.connectionType)}</span></td>
-            <td><button class="client-details-toggle" type="button" aria-expanded="false" aria-controls="${detailsId}" aria-label="Details zu ${escapeHtml(device.hostname || 'Unbekanntes Gerät')} anzeigen">Details <span aria-hidden="true">⌄</span></button></td>
+            <td><button class="client-details-toggle" type="button" aria-expanded="false" aria-controls="${detailsId}" aria-label="Details zu ${escapeHtml(device.hostname || 'Unbekanntes Gerät')} anzeigen">Details <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></td>
         `;
         const detailRow = document.createElement('tr');
         detailRow.className = 'client-detail-row';
@@ -186,11 +186,12 @@ async function loadDevices() {
     } catch (error) {
         state.devices = [];
         state.filteredDevices = [];
+        state.updatedAt = null;
         updateStats();
         renderTable();
-        setMessage(error.message === 'API-Fehler 401'
-            ? 'Bitte melde dich in der Nethera-App an, um deine Geräte zu sehen.'
-            : `Geräte konnten nicht geladen werden: ${error.message}`, true);
+        setMessage(/\b(401|403)\b/.test(String(error.message))
+            ? 'Bitte melde dich erneut an, um deine Geräte zu sehen.'
+            : 'Geräte konnten nicht geladen werden. Bitte versuche es erneut.', true);
     }
 }
 

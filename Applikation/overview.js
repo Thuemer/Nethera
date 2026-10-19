@@ -667,6 +667,7 @@ class LayoutControls extends HTMLElement {
         const btn = this.querySelector('#editToggle');
         if (btn) {
             btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', String(isActive));
         }
     }
 }
@@ -711,6 +712,7 @@ class DashboardContainer extends HTMLElement {
         });
         
         button?.classList.toggle('active');
+        button?.setAttribute('aria-pressed', String(button.classList.contains('active')));
         setTimeout(() => this.fitCardsPool(), 50);
     }
 

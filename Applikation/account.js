@@ -255,9 +255,9 @@
         else if (value != null) control.value = value;
       });
       window.NetheraSelect?.refreshAll(document);
-      setStatus(keycloak?.authenticated ? 'Login aktiv. Einstellungen wurden aus der DB geladen.' : 'Gastmodus. Einstellungen wurden aus der DB geladen.', keycloak?.authenticated ? 'success' : 'info');
+      setStatus(keycloak?.authenticated ? 'Deine Einstellungen sind bereit.' : 'Melde dich an, um deine Einstellungen zu sehen.', keycloak?.authenticated ? 'success' : 'info');
     } catch (error) {
-      setStatus(`Backend nicht verfügbar: ${error.message}.`, 'warning');
+      setStatus('Einstellungen konnten nicht geladen werden. Bitte versuche es erneut.', 'warning');
     }
   }
 

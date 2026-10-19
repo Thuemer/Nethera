@@ -38,5 +38,12 @@ const NetheraApi = (() => {
     return routers[0];
   }
 
-  return { getRouters, getPrimaryRouter, getAuthHeader, routerUrl };
+  function userMessage(error) {
+    const message = String(error?.message || '');
+    if (/\b(401|403)\b/.test(message)) return 'Bitte melde dich erneut an, um diese Daten zu sehen.';
+    if (message === 'Keine Routerdaten gefunden') return 'Noch kein Router verbunden.';
+    return 'Daten konnten nicht geladen werden. Bitte versuche es erneut.';
+  }
+
+  return { getRouters, getPrimaryRouter, getAuthHeader, routerUrl, userMessage };
 })();

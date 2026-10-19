@@ -20,6 +20,20 @@ body {
     gap: 18px;
 }
 
+.traffic-notice {
+    margin: 0;
+    padding: 12px 16px;
+    border: 1px solid rgba(220, 153, 83, .3);
+    border-radius: 6px;
+    color: var(--text-main);
+    background: rgba(220, 153, 83, .08);
+    font-size: 14px;
+}
+
+.traffic-notice[hidden] {
+    display: none;
+}
+
 .card {
     background: linear-gradient(155deg, var(--bg-card), var(--bg-card-2));
     border: 1px solid var(--line);

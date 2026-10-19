@@ -4,6 +4,7 @@ const TIME_LIMITS_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'
 const SECURITY_STATE_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/security/state`;
 
 const state = {
+  loaded: false,
   devices: [],
   limits: loadLimits(),
   presets: [],
@@ -176,6 +177,12 @@ function setStatus(text, tone = 'info') {
 }
 
 function updateStats() {
+  if (!state.loaded) {
+    ['statDevices', 'statLimited', 'statBlockedSoon', 'statAverage'].forEach(id => {
+      document.getElementById(id)?.setAttribute('value', '—');
+    });
+    return;
+  }
   const limited = state.devices.filter(device => state.limits[deviceKey(device)]);
   const active = limited.filter(device => state.limits[deviceKey(device)]?.status === 'active');
   const budgets = active
@@ -193,8 +200,11 @@ function renderDeviceOptions() {
   const select = document.getElementById('deviceSelect');
   if (!select) return;
 
+  const saveButton = document.getElementById('saveLimitButton');
+  if (saveButton) saveButton.disabled = !state.devices.length || state.storageMode !== 'backend';
+
   if (!state.devices.length) {
-    select.innerHTML = '<option value="">Keine WLAN-Geräte gefunden</option>';
+    select.innerHTML = '<option value="">Keine Geräte verfügbar</option>';
     select.disabled = true;
     return;
   }
@@ -248,7 +258,9 @@ function renderList() {
   if (!list) return;
 
   if (!state.filteredDevices.length) {
-    list.innerHTML = '<empty-state title="Keine WLAN-Geräte" text="Für die aktuelle Filterung wurden keine Geräte gefunden."></empty-state>';
+    list.innerHTML = state.loaded && state.devices.length
+      ? '<empty-state title="Keine Treffer" text="Passe Suche oder Filter an."></empty-state>'
+      : '<empty-state title="Keine Geräte" text="Noch keine Geräte verfügbar."></empty-state>';
     return;
   }
 
@@ -337,6 +349,7 @@ async function loadDevices() {
     }
 
     const devices = state.securityDevices || [];
+    state.loaded = state.storageMode === 'backend';
     state.devices = devices
       .map(device => ({
         id: device.id,
@@ -349,12 +362,16 @@ async function loadDevices() {
 
     renderDeviceOptions();
     applyFilters();
-    setStatus(`${state.devices.length} Geräte · ${state.storageMode === 'backend' ? 'Regeln aus der Datenbank geladen' : 'Nur lokale Vorschau – Speichern nicht verfügbar'}.`, state.storageMode === 'backend' ? 'success' : 'warning');
+    setStatus(state.storageMode === 'backend'
+      ? `${state.devices.length} Geräte · Internetzeiten aktualisiert.`
+      : 'Internetzeiten konnten nicht geladen werden. Speichern ist derzeit nicht möglich.',
+    state.storageMode === 'backend' ? 'success' : 'warning');
   } catch (error) {
+    state.loaded = false;
     state.devices = [];
     renderDeviceOptions();
     applyFilters();
-    setStatus(`Backend nicht verfügbar: ${error.message}`, 'error');
+    setStatus(NetheraApi.userMessage(error), 'error');
   }
 }
 
@@ -367,7 +384,7 @@ async function saveSelectedLimit(event) {
     return;
   }
 
-  if (state.storageMode !== 'backend') return setStatus('Nicht gespeichert. Die Verbindung zur Datenbank fehlt.', 'error');
+  if (state.storageMode !== 'backend') return setStatus('Nicht gespeichert. Bitte prüfe die Verbindung und versuche es erneut.', 'error');
   if (document.getElementById('blockedFrom').value === document.getElementById('blockedUntil').value) {
     return setStatus('Start und Ende müssen unterschiedlich sein.', 'error');
   }
@@ -385,26 +402,26 @@ async function saveSelectedLimit(event) {
   try {
     state.limits[key] = await saveBackendLimit(key, nextLimit);
   } catch (error) {
-    setStatus(`Nicht gespeichert: ${error.message}. Deine Eingaben bleiben erhalten.`, 'error');
+    setStatus(`${NetheraApi.userMessage(error)} Deine Eingaben bleiben erhalten.`, 'error');
     return;
   }
 
   saveLimits();
   loadSelectedLimit();
   applyFilters();
-  setStatus('Sperrzeit in der Datenbank gespeichert. Router-Anwendung ausstehend.', 'success');
+  setStatus('Sperrzeit gespeichert. Die Umsetzung am Router ist noch nicht bestätigt.', 'success');
 }
 
 async function clearSelectedLimit() {
   const key = document.getElementById('deviceSelect')?.value;
   if (!key) return;
-  if (state.storageMode !== 'backend') return setStatus('Nicht entfernt. Die Verbindung zur Datenbank fehlt.', 'error');
+  if (state.storageMode !== 'backend') return setStatus('Nicht entfernt. Bitte prüfe die Verbindung und versuche es erneut.', 'error');
 
   if (state.storageMode === 'backend') {
     try {
       await deleteBackendLimit(key);
     } catch (error) {
-      setStatus(`Zeitlimit konnte nicht geloescht werden: ${error.message}`, 'error');
+      setStatus(NetheraApi.userMessage(error), 'error');
       return;
     }
   }
@@ -435,7 +452,7 @@ async function handleListClick(event) {
 
   if (button.dataset.action === 'toggle') {
     if (!state.limits[key]) return;
-    if (state.storageMode !== 'backend') return setStatus('Nicht gespeichert. Die Verbindung zur Datenbank fehlt.', 'error');
+    if (state.storageMode !== 'backend') return setStatus('Nicht gespeichert. Bitte prüfe die Verbindung und versuche es erneut.', 'error');
     const current = { ...state.limits[key] };
     current.status = current.status === 'paused' ? 'active' : 'paused';
     current.updatedAt = new Date().toISOString();
@@ -444,7 +461,7 @@ async function handleListClick(event) {
       try {
         state.limits[key] = await saveBackendLimit(key, current);
       } catch (error) {
-        setStatus(`Status konnte nicht gespeichert werden: ${error.message}`, 'error');
+        setStatus(NetheraApi.userMessage(error), 'error');
         return;
       }
     } else {

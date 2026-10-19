@@ -24,12 +24,17 @@ function renderDetails(router, error) {
   const details = document.getElementById('statusDetails');
   if (!details) return;
 
+  const authRequired = /\b(401|403)\b/.test(String(error?.message));
+  const sourceStatus = !error ? 'Erreichbar'
+    : authRequired ? 'Anmeldung erforderlich'
+      : error.message === 'Keine Routerdaten gefunden' ? 'Erreichbar' : 'Nicht erreichbar';
+
   const rows = [
-    ['Backend', error ? 'Nicht erreichbar' : 'Erreichbar'],
+    ['Datenquelle', sourceStatus],
     ['Routername', router?.name || '—'],
     ['Firmware', router?.firmware || '—'],
     ['Letzter Kontakt', formatDateTime(router?.lastSeen)],
-    ['Browser online', navigator.onLine ? 'Ja' : 'Nein']
+    ['Browser-Verbindung', navigator.onLine ? 'Aktiv' : 'Getrennt']
   ];
 
   details.innerHTML = rows.map(([label, value]) => `
@@ -41,21 +46,26 @@ function renderDetails(router, error) {
 }
 
 async function checkStatus() {
-  document.getElementById('connectionState')?.setAttribute('value', navigator.onLine ? 'Online' : 'Offline');
+  const browserOnline = navigator.onLine;
+  document.getElementById('connectionState')?.setAttribute('value', browserOnline ? 'Online' : 'Offline');
+  document.getElementById('connectionState')?.setAttribute('tone', browserOnline ? '' : 'danger');
   setStatus('Prüfe Routerstatus ...');
 
   try {
     const router = await NetheraApi.getPrimaryRouter();
     const wifiDevices = (router.devices || []).filter(device => String(device.connectionType || '').toLowerCase() === 'wifi');
     document.getElementById('routerState')?.setAttribute('value', router.isOnline ? 'Online' : 'Offline');
+    document.getElementById('routerState')?.setAttribute('tone', router.isOnline ? '' : 'danger');
     document.getElementById('deviceCount')?.setAttribute('value', String(wifiDevices.length));
     renderDetails(router, null);
     setStatus('Routerstatus aktualisiert.', 'success');
   } catch (error) {
-    document.getElementById('routerState')?.setAttribute('value', 'Offline');
-    document.getElementById('deviceCount')?.setAttribute('value', '0');
+    const noRouter = error.message === 'Keine Routerdaten gefunden';
+    document.getElementById('routerState')?.setAttribute('value', noRouter ? 'Nicht verbunden' : 'Unbekannt');
+    document.getElementById('routerState')?.setAttribute('tone', '');
+    document.getElementById('deviceCount')?.setAttribute('value', '—');
     renderDetails(null, error);
-    setStatus(`Backend nicht erreichbar: ${error.message}`, 'error');
+    setStatus(NetheraApi.userMessage(error), 'error');
   }
 }
 

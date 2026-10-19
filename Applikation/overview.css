@@ -487,6 +487,17 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     font-weight: 750;
 }
 
+.bottom-nav button svg, .control-btn svg {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .bottom-nav button.active {
     background: linear-gradient(135deg, var(--accent-2), var(--accent));
     box-shadow: 0 6px 18px rgba(0,0,0,.35);

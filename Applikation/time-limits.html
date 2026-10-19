@@ -16,10 +16,10 @@
     <data-status id="statusBox" role="status" aria-live="polite" text="Lade gespeicherte Internetzeiten ..."></data-status>
 
     <section class="grid stats-grid" aria-label="Zeitlimit Kennzahlen">
-      <stat-card id="statDevices" label="Geräte" value="0" detail="im Netzwerk"></stat-card>
-      <stat-card id="statLimited" label="Aktive Limits" value="0" detail="mit Zeitbeschränkung"></stat-card>
-      <stat-card id="statBlockedSoon" label="Heute begrenzt" value="0" detail="mit Tageslimit"></stat-card>
-      <stat-card id="statAverage" label="Ø Zeitbudget" value="0 h" detail="pro limitiertem Gerät"></stat-card>
+      <stat-card id="statDevices" label="Geräte" value="—" detail="im Netzwerk"></stat-card>
+      <stat-card id="statLimited" label="Aktive Limits" value="—" detail="mit Zeitbeschränkung"></stat-card>
+      <stat-card id="statBlockedSoon" label="Heute begrenzt" value="—" detail="mit Tageslimit"></stat-card>
+      <stat-card id="statAverage" label="Ø Zeitbudget" value="—" detail="pro limitiertem Gerät"></stat-card>
     </section>
 
     <section class="grid two-grid">
@@ -58,7 +58,7 @@
           </details>
 
           <div class="limit-actions">
-            <button class="refresh-btn" type="submit">Sperrzeit speichern</button>
+            <button id="saveLimitButton" class="refresh-btn" type="submit" disabled>Sperrzeit speichern</button>
             <button id="clearLimitButton" class="small-btn ghost" type="button">Regel entfernen</button>
           </div>
         </form>

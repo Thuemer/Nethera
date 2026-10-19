@@ -32,7 +32,7 @@
             </article>
             <article class="card stat">
                 <p>Aktive Verbindungen</p>
-                <strong id="statConnections">0</strong>
+                <strong id="statConnections">—</strong>
                 <span class="stat-detail">Gesamtzahl</span>
             </article>
             <article class="card stat">
@@ -42,13 +42,15 @@
             </article>
         </section>
 
+        <p id="trafficNotice" class="traffic-notice" role="status" hidden></p>
+
         <section class="card traffic-info">
-            <h2>Connection-Auslastung</h2>
+            <h2>Auslastung nach Verbindung</h2>
             <div id="connectionBars" class="connection-bars-chart" aria-live="polite"></div>
         </section>
 
         <section class="card traffic-table">
-            <h2>Top Verbindungen</h2>
+            <h2>Stärkste Verbindungen</h2>
             <div class="table-wrapper">
                 <table>
                     <thead>

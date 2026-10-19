@@ -23,8 +23,8 @@
             <p class="subline">Status, Speed und aktuelle Ereignisse deines Netzwerks.</p>
         </div>
         <layout-controls class="layout-controls">
-            <button id="editToggle" class="control-btn" type="button"><span aria-hidden="true">✎</span><span>Layout bearbeiten</span></button>
-            <button id="resetLayout" class="control-btn danger" type="button"><span aria-hidden="true">↺</span><span>Zurücksetzen</span></button>
+            <button id="editToggle" class="control-btn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 3 3M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/></svg><span>Layout bearbeiten</span></button>
+            <button id="resetLayout" class="control-btn danger" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Zurücksetzen</span></button>
             <p id="layoutHint" class="layout-hint">Nur die Dashboard-Karten lassen sich verschieben.</p>
         </layout-controls>
     </section>
@@ -37,15 +37,15 @@
         <dashboard-nav class="bottom-nav">
             <div class="nav-group">
                 <span class="nav-group-label">Basis</span>
-                <button class="active" type="button" data-filter="status"><span aria-hidden="true">●</span><span>Status</span></button>
-                <button class="active" type="button" data-filter="features"><span aria-hidden="true">⚙</span><span>Allgemein</span></button>
-                <button class="active" type="button" data-filter="clients"><span aria-hidden="true">▣</span><span>Clients</span></button>
+                <button class="active" type="button" data-filter="status" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg><span>Status</span></button>
+                <button class="active" type="button" data-filter="features" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>Allgemein</span></button>
+                <button class="active" type="button" data-filter="clients" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></svg><span>Clients</span></button>
             </div>
             <div class="nav-group">
                 <span class="nav-group-label">Monitoring</span>
-                <button class="active" type="button" data-filter="activity"><span aria-hidden="true">▥</span><span>Aktivität</span></button>
-                <button class="active" type="button" data-filter="dns"><span aria-hidden="true">◈</span><span>DNS</span></button>
-                <button class="active" type="button" data-filter="speed"><span aria-hidden="true">◴</span><span>Speed</span></button>
+                <button class="active" type="button" data-filter="activity" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span>Aktivität</span></button>
+                <button class="active" type="button" data-filter="dns" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><span>DNS</span></button>
+                <button class="active" type="button" data-filter="speed" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17a9 9 0 1 1 14 0"/><path d="m12 14 4-4"/><circle cx="12" cy="14" r="1"/></svg><span>Speed</span></button>
             </div>
         </dashboard-nav>
     </section>

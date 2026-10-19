@@ -3,6 +3,7 @@ const API_BASE_URL = appConfig.API_BASE_URL || 'http://localhost:8083';
 const SECURITY_API = `${API_BASE_URL}/api/security`;
 
 const state = {
+  loaded: false,
   devices: [],
   groups: [],
   members: [],
@@ -66,6 +67,7 @@ async function loadSecurityState() {
   try {
     const data = await apiJson(`${SECURITY_API}/state`);
     Object.assign(state, {
+      loaded: true,
       devices: data.devices || [],
       groups: data.groups || [],
       members: data.members || [],
@@ -75,10 +77,10 @@ async function loadSecurityState() {
       timeLimits: data.timeLimits || []
     });
     renderAll();
-    setStatus('Daten aus der Datenbank geladen.', 'success');
+    setStatus('Schutzregeln aktualisiert.', 'success');
   } catch (error) {
     renderAll();
-    setStatus('Backend nicht erreichbar. Starte Docker und lade neu.', 'error');
+    setStatus(NetheraApi.userMessage(error), 'error');
   }
 }
 
@@ -132,6 +134,12 @@ function blocklistOptions(selectedId = '') {
 }
 
 function renderStats() {
+  if (!state.loaded) {
+    ['statPackages', 'statManual', 'statAds', 'statPresets'].forEach(id => {
+      document.getElementById(id)?.setAttribute('value', '—');
+    });
+    return;
+  }
   const assignedPresets = state.assignments.filter(item => item.status === 'active').length;
   const domainCount = state.blocklists.reduce((sum, blocklist) => sum + blocklistDomains(blocklist).length, 0);
   document.getElementById('statPackages')?.setAttribute('value', String(state.blocklists.length));
@@ -164,7 +172,7 @@ function renderGroupDevices() {
   const list = document.getElementById('groupDeviceList');
   if (!list) return;
   if (!state.devices.length) {
-    list.innerHTML = '<empty-state title="Keine Geräte" text="Keine Geräte in der Datenbank gefunden."></empty-state>';
+    list.innerHTML = '<empty-state title="Keine Geräte" text="Noch keine Geräte verfügbar."></empty-state>';
     return;
   }
 
@@ -245,7 +253,7 @@ function renderManualDomains() {
   const list = document.getElementById('manualDomainsList');
   if (!list) return;
   if (!state.blocklists.length) {
-    list.innerHTML = '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um sie in der Datenbank zu speichern."></empty-state>';
+    list.innerHTML = '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um Websites zu blockieren."></empty-state>';
     return;
   }
 
