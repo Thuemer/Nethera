@@ -258,7 +258,18 @@ spec:
             - name: QUARKUS_SCHEDULER_ENABLED
               value: "false"
             - name: NETHERA_TELEMETRY_MODE
-              value: ssh
+              value: mqtt
+            - name: NETHERA_MQTT_HOST
+              value: nethera-mosquitto
+            - name: NETHERA_MQTT_PORT
+              value: "1883"
+            - name: NETHERA_MQTT_USERNAME
+              value: nethera-backend
+            - name: NETHERA_MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nethera-runtime
+                  key: mqtt-backend-password
           startupProbe:
             tcpSocket:
               port: 8080
@@ -298,7 +309,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: frontend
-          image: ghcr.io/denizbernecker/nethera-frontend:20261012-145413
+          image: ghcr.io/denizbernecker/nethera-frontend:20261019-123450
           imagePullPolicy: Always
           ports:
             - containerPort: 80
@@ -389,6 +400,13 @@ spec:
                 name: nethera-keycloak
                 port:
                   number: 8080
+          - path: /mqtt
+            pathType: Prefix
+            backend:
+              service:
+                name: nethera-mosquitto
+                port:
+                  number: 9001
           - path: /
             pathType: Prefix
             backend:

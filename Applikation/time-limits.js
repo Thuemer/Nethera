@@ -252,20 +252,16 @@ function renderList() {
     return;
   }
 
-  list.innerHTML = state.filteredDevices.map(device => {
+  const renderCard = device => {
     const key = deviceKey(device);
     const limit = state.limits[key];
     const blocked = isBlockedNow(limit) || (limit?.status === 'active' && limit.dailyLimit > 0 && limit.usedMinutesToday >= limit.dailyLimit);
     const paused = limit?.status === 'paused';
     const percent = limit ? usedPercent(limit) : 0;
     const preset = presetForDevice(device.id);
-    const budgetText = limit?.dailyLimit > 0
-      ? `${Number(limit.usedMinutesToday) || 0} min von ${formatMinutes(limit.dailyLimit)} erfasst`
-      : 'Kein zusätzliches Tageslimit';
-    const note = limit?.note ? `<span>${escapeText(limit.note)}</span>` : '';
     const cardState = blocked ? 'is-blocked' : paused ? 'is-paused' : '';
     const statusBadge = !limit
-      ? '<span class="badge">Ohne Limit</span>'
+      ? '<span class="badge">Keine Regel</span>'
       : blocked
         ? '<span class="badge danger">Sperre laut Zeitplan</span>'
         : paused
@@ -278,30 +274,38 @@ function renderList() {
           <div class="limit-title-row">
             <h3>${escapeText(device.hostname || 'Unbekanntes Gerät')}</h3>
             ${statusBadge}
-            <span class="badge">${escapeText(device.connectionType || 'Netzwerk')}</span>
           </div>
-          <div class="limit-meta">
-            <span>${escapeText(device.ipAddress || 'Keine IP')}</span>
-            <span>${escapeText(device.macAddress || 'Keine MAC')}</span>
-            <span>Preset: <b>${escapeText(preset?.name || 'Keines')}</b></span>
-            ${note}
-          </div>
-          <div class="limit-budget">
-            <div class="limit-meta">
-              <strong>${limit ? formatMinutes(limit.dailyLimit) : 'Kein Tageslimit'}</strong>
-              <span>${limit ? `Verboten: ${escapeText(limit.from)} bis ${escapeText(limit.until)}` : 'Kein Sperrzeitraum gesetzt'}</span>
-            </div>
-            ${limit?.dailyLimit > 0 ? `<div class="budget-bar" aria-hidden="true"><span style="--budget: ${percent}%"></span></div>` : ''}
-            <div class="budget-text">${escapeText(budgetText)}</div>
-          </div>
+          <p class="limit-summary">${limit
+            ? `Sperrzeit ${escapeText(limit.from)}–${escapeText(limit.until)}${limit.dailyLimit > 0 ? ` · ${formatMinutes(limit.dailyLimit)} pro Tag` : ''}`
+            : 'Noch keine Internetzeiten festgelegt.'}</p>
+          ${limit?.dailyLimit > 0 ? `<div class="budget-bar" role="progressbar" aria-label="Tageslimit genutzt" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"><span style="--budget: ${percent}%"></span></div>` : ''}
+          <details class="limit-details"><summary>Gerätedetails</summary><div class="limit-meta">
+            <span>IP: ${escapeText(device.ipAddress || '–')}</span>
+            <span>MAC: ${escapeText(device.macAddress || '–')}</span>
+            <span>Preset: ${escapeText(preset?.name || 'Keines')}</span>
+            ${limit?.note ? `<span>Notiz: ${escapeText(limit.note)}</span>` : ''}
+            ${limit?.dailyLimit > 0 ? `<span>${Number(limit.usedMinutesToday) || 0} Minuten heute erfasst</span>` : ''}
+          </div></details>
         </div>
         <div class="limit-side">
-          <button class="small-btn" type="button" data-action="edit" data-key="${escapeText(key)}">Bearbeiten</button>
+          <button class="small-btn" type="button" data-action="edit" data-key="${escapeText(key)}">${limit ? 'Bearbeiten' : 'Einrichten'}</button>
           ${limit ? `<button class="small-btn ghost" type="button" data-action="toggle" data-key="${escapeText(key)}">${paused ? 'Regel einschalten' : 'Regel ausschalten'}</button>` : ''}
         </div>
       </article>
     `;
-  }).join('');
+  };
+
+  const withRule = state.filteredDevices.filter(device => state.limits[deviceKey(device)]);
+  const withoutRule = state.filteredDevices.filter(device => !state.limits[deviceKey(device)]);
+  const filter = document.getElementById('statusFilter')?.value || 'all';
+  if (filter === 'all') {
+    list.innerHTML = `${withRule.length
+      ? withRule.map(renderCard).join('')
+      : '<p class="helper-text">Noch keine Internetzeiten eingerichtet.</p>'}
+      ${withoutRule.length ? `<details class="unconfigured-devices"><summary>Geräte ohne Regel (${withoutRule.length})</summary><div class="limit-list">${withoutRule.map(renderCard).join('')}</div></details>` : ''}`;
+  } else {
+    list.innerHTML = state.filteredDevices.map(renderCard).join('');
+  }
 }
 
 function applyFilters() {

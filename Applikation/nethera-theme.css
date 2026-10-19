@@ -16,7 +16,6 @@
 .priority-row:last-child { border-bottom: 0; }
 .priority-row button { flex: none; }
 .domain-entries { display: grid; gap: 4px; margin-top: 8px; }
-.security-page > data-status, .time-limits-page > data-status { position: sticky; top: 0; z-index: 60; background: var(--bg-main); }
 .apply-preset-form .effect-summary { grid-column: 1 / -1; }
 .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .group-subtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }

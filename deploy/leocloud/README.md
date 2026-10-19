@@ -54,10 +54,10 @@ pruefen. Nie einen alten Tag erneut verwenden.
 
 Der Keycloak-Realm wird beim erstmaligen Anlegen der Keycloak-Datenbank
 importiert. Aenderungen an `Applikation/realm-export.json` aktualisieren einen
-bestehenden Realm nicht automatisch. Die Cloud-Instanz nutzt bis zur
-Router-Anbindung Demo-Daten: Der Scheduler und MQTT-Empfang sind dort aus. Fuer
-echte Router-Telemetrie braucht es spaeter einen separat erreichbaren,
-abgesicherten Transport. Der lokale MQTT-Compose-Stack bleibt davon unberuehrt.
+bestehenden Realm nicht automatisch. In der Cloud ist der MQTT-Empfang ueber
+Mosquitto und `/mqtt` eingerichtet. Solange der Router keine Daten sendet,
+zeigt die Anwendung weiterhin Demo-Daten. Der lokale MQTT-Compose-Stack bleibt
+davon unberuehrt.
 
 Die PVCs `nethera-db-data` und `nethera-keycloak-db-data` enthalten die
 dauerhaften Daten. **Nicht loeschen**, ohne sie vorher zu sichern: LeoCloud

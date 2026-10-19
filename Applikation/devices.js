@@ -39,6 +39,15 @@ function toConnectionLabel(type) {
     return 'Sonstige';
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
 function bySort(sortBy, a, b) {
     if (sortBy === 'hostname') {
         return (a.hostname || '').localeCompare(b.hostname || '', 'de', { sensitivity: 'base' });
@@ -84,21 +93,30 @@ function renderTable() {
     if (!state.filteredDevices.length) {
         const row = document.createElement('tr');
         row.className = 'empty-row';
-        row.innerHTML = '<td colspan="5">Keine Clients für die aktuelle Filterung gefunden.</td>';
+        row.innerHTML = '<td colspan="4">Keine Clients für die aktuelle Filterung gefunden.</td>';
         body.appendChild(row);
         return;
     }
 
-    state.filteredDevices.forEach(device => {
+    state.filteredDevices.forEach((device, index) => {
         const row = document.createElement('tr');
+        const detailsId = `client-details-${index}`;
         row.innerHTML = `
-            <td>${device.hostname || '-'}</td>
-            <td>${device.ipAddress || '-'}</td>
-            <td>${device.macAddress || '-'}</td>
+            <td class="client-name">${escapeHtml(device.hostname || 'Unbekanntes Gerät')}</td>
+            <td class="client-address">${escapeHtml(device.ipAddress || '-')}</td>
             <td><span class="conn-badge ${device.connectionType}">${toConnectionLabel(device.connectionType)}</span></td>
-            <td>${formatDateTime(device.lastSeen)}</td>
+            <td><button class="client-details-toggle" type="button" aria-expanded="false" aria-controls="${detailsId}" aria-label="Details zu ${escapeHtml(device.hostname || 'Unbekanntes Gerät')} anzeigen">Details <span aria-hidden="true">⌄</span></button></td>
         `;
+        const detailRow = document.createElement('tr');
+        detailRow.className = 'client-detail-row';
+        detailRow.id = detailsId;
+        detailRow.hidden = true;
+        detailRow.innerHTML = `<td colspan="4"><dl class="client-detail-grid">
+            <div><dt>MAC-Adresse</dt><dd>${escapeHtml(device.macAddress || '-')}</dd></div>
+            <div><dt>Zuletzt gesehen</dt><dd>${escapeHtml(formatDateTime(device.lastSeen))}</dd></div>
+        </dl></td>`;
         body.appendChild(row);
+        body.appendChild(detailRow);
     });
 }
 
@@ -164,18 +182,29 @@ async function loadDevices() {
         updateStats();
         applyFilters();
 
-        const routerLabel = router?.name ? ` auf ${router.name}` : '';
-        setMessage(`${state.devices.length} Clients${routerLabel} geladen.`);
+        setMessage('Geräteübersicht aktualisiert.');
     } catch (error) {
         state.devices = [];
         state.filteredDevices = [];
         updateStats();
         renderTable();
-        setMessage(`Backend nicht verfügbar: ${error.message}`, true);
+        setMessage(error.message === 'API-Fehler 401'
+            ? 'Bitte melde dich in der Nethera-App an, um deine Geräte zu sehen.'
+            : `Geräte konnten nicht geladen werden: ${error.message}`, true);
     }
 }
 
 function setupEvents() {
+    document.getElementById('deviceTableBody').addEventListener('click', event => {
+        const button = event.target.closest('.client-details-toggle');
+        if (!button) return;
+        const detailRow = document.getElementById(button.getAttribute('aria-controls'));
+        if (!detailRow) return;
+        const open = button.getAttribute('aria-expanded') !== 'true';
+        button.setAttribute('aria-expanded', String(open));
+        button.setAttribute('aria-label', `${button.getAttribute('aria-label').replace(/ (anzeigen|schließen)$/, '')} ${open ? 'schließen' : 'anzeigen'}`);
+        detailRow.hidden = !open;
+    });
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('connectionFilter').addEventListener('change', applyFilters);
     document.getElementById('sortBy').addEventListener('change', applyFilters);

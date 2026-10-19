@@ -33,13 +33,14 @@
       .account-panel { padding: 20px; display: grid; gap: 14px; }
       .account-panel h2 { margin: 0; font-size: 18px; }
       .account-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 2px; }
-      .account-auth-card { padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border: 1px solid rgba(var(--accent-rgb), .20); }
-      .account-auth-title { margin: 0 0 5px; font-size: 18px; font-weight: 850; }
+      .account-auth-card { padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+      .account-auth-title { margin: 0 0 5px; font-size: 18px; font-weight: 650; }
       .account-actions { display: flex; gap: 10px; flex-wrap: wrap; }
       .account-btn { border: 0; padding: 11px 16px; border-radius: 12px; color: var(--text-main); background: linear-gradient(135deg, var(--accent-2), var(--accent)); font-weight: 800; cursor: pointer; font-family: inherit; }
       .account-btn:hover { transform: translateY(-1px); }
       .account-btn.secondary { background: rgba(var(--text-rgb), .06); border: 1px solid rgba(var(--text-rgb), .12); color: var(--text-main); }
-      .account-btn.danger { background: rgba(239,68,68,.16); border: 1px solid rgba(239,68,68,.28); color: #fecaca; }
+      .account-btn.danger { background: transparent; border: 1px solid rgba(var(--text-rgb), .22); color: var(--text-soft); font-weight: 650; }
+      .account-btn.danger:hover { color: var(--text-main); border-color: rgba(var(--text-rgb), .42); background: rgba(var(--text-rgb), .05); }
       .account-profile-box { display: flex; gap: 16px; align-items: center; }
       .account-avatar { width: 62px; height: 62px; border-radius: 18px; background: linear-gradient(135deg, var(--accent-2), var(--accent)); display: grid; place-items: center; font-size: 26px; font-weight: 900; flex: 0 0 62px; }
       .account-field { display: grid; gap: 7px; color: var(--text-soft); font-size: 13px; font-weight: 650; }
@@ -57,7 +58,8 @@
       .account-data-main { display: grid; gap: 8px; min-width: 0; width: 100%; }
       .account-one-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .account-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 750; background: rgba(var(--text-rgb), .07); color: var(--text-main); }
-      .account-badge.admin { color: var(--accent); background: rgba(var(--accent-rgb), .12); }
+      .account-badge.admin { color: var(--text-soft); background: rgba(var(--text-rgb), .06); border: 1px solid rgba(var(--text-rgb), .12); }
+      .account-badge.admin::before { content: ''; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: var(--accent); }
       .account-badge.user { color: var(--text-main); background: rgba(var(--accent-2-rgb), .14); }
       .account-badge.maintainer { color: #fde68a; background: rgba(245,158,11,.14); }
       .account-status { padding: 12px 14px; border-radius: 12px; color: var(--text-soft); background: rgba(var(--text-rgb), .04); border: 1px solid rgba(var(--text-rgb), .08); }
@@ -195,7 +197,7 @@
           <section class="account-card account-auth-card">
             <div>
               <p class="account-auth-title">${authenticated ? `Angemeldet als ${escapeHtml(tokenUser.username)}` : 'Nicht angemeldet'}</p>
-              <p class="account-muted">${authenticated ? 'JWT von Keycloak erhalten und bereit für Backend-Requests.' : 'Klicke auf „Mit Nethera anmelden“, um dich über Keycloak zu authentifizieren.'}</p>
+              <p class="account-muted">${authenticated ? 'Dein Konto ist aktiv.' : 'Melde dich an, um deine Einstellungen und Geräte zu verwalten.'}</p>
             </div>
             <span class="account-badge ${authenticated ? 'admin' : ''}">${authenticated ? 'Authentifiziert' : 'Gastmodus'}</span>
           </section>

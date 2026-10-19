@@ -10,11 +10,6 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     background: rgba(var(--text-rgb), .04);
-    position: sticky;
-    top: 10px;
-    z-index: 20;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
 }
 
 .security-tabs button {
@@ -34,7 +29,6 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 5px;
-        position: static;
     }
 
     .security-tabs button {

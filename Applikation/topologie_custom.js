@@ -54,7 +54,10 @@ class NetworkDevice extends HTMLElement {
                 this._cx = this.offsetLeft + (this.offsetWidth||30)/2;
                 this._cy = this.offsetTop + (this.offsetHeight||30)/2;
                 const group = topology.groups.find(g=>g.dataset.group===this.dataset.group);
-                if(group){ this.offsetX = this.offsetLeft - group.offsetLeft; this.offsetY = this.offsetTop - group.offsetTop; }
+                if(group){
+                    this.offsetX = this.offsetLeft + this.offsetWidth / 2 - group.offsetLeft - group.offsetWidth / 2;
+                    this.offsetY = this.offsetTop + this.offsetHeight / 2 - group.offsetTop - group.offsetHeight / 2;
+                }
                 // throttle redraw for smoother performance
                 topology.scheduleDraw();
             };
@@ -196,8 +199,15 @@ class NetworkTopology extends HTMLElement {
             this.router.addEventListener('load', ()=> this.drawLines(), { once: true });
         }
 
-        // Recalculate layout on window resize for a responsive, compact arrangement
-        window.addEventListener('resize', () => { clearTimeout(this._resizeTimer); this._resizeTimer = setTimeout(() => { this.initLayout(); this.drawLines(); this.updateDeviceInfo(); }, 120); });
+        this._onResize = () => {
+            if (this._resizeFrame) return;
+            this._resizeFrame = requestAnimationFrame(() => {
+                this._resizeFrame = null;
+                this.initLayout();
+                this.updateDeviceInfo();
+            });
+        };
+        window.addEventListener('resize', this._onResize);
 
         this.querySelector('#prev-device').addEventListener('click', ()=>{
             if(!this.devices.length) return;
@@ -218,6 +228,12 @@ class NetworkTopology extends HTMLElement {
         }catch(e){
             throw e;
         }
+    }
+
+    disconnectedCallback(){
+        window.removeEventListener('resize', this._onResize);
+        if (this._resizeFrame) cancelAnimationFrame(this._resizeFrame);
+        this.stopInfoUpdates();
     }
 
     async addGroupsAndDevices(){
@@ -277,16 +293,13 @@ class NetworkTopology extends HTMLElement {
             );
         });
 
-        setTimeout(()=>{
-            this.initLayout();
-            this.drawLines();
-            this.updateDeviceInfo();
-            if(this.devices.length){
-                this.selectedIndex = 0;
-                this.showBottomInfo(this.selectedIndex);
-            }
-            this.startInfoUpdates();
-        }, 50);
+        this.initLayout();
+        this.updateDeviceInfo();
+        if(this.devices.length){
+            this.selectedIndex = 0;
+            this.showBottomInfo(this.selectedIndex);
+        }
+        this.startInfoUpdates();
     }
 
     clearTopology(){
@@ -459,7 +472,11 @@ class NetworkTopology extends HTMLElement {
     scheduleDraw(){
         if(this._rafScheduled) return;
         this._rafScheduled = true;
-        requestAnimationFrame(()=>{ this._rafScheduled = false; this.drawLines(); });
+        requestAnimationFrame(()=>{
+            this._rafScheduled = false;
+            this.drawLines();
+            this.updateDeviceInfo(false);
+        });
     }
 
     createLine(x1,y1,x2,y2){
@@ -483,33 +500,20 @@ class NetworkTopology extends HTMLElement {
     }
 
     initLayout(){
-        // Responsive compact layout:
-        // - Place groups evenly around a small circle centered on the viewport
-        // - Scale the circle radius to keep groups compact but avoid overlap with edges
         const topologyBox = this.querySelector('#topology');
         const width = Math.max(1, topologyBox?.clientWidth || window.innerWidth);
         const height = Math.max(1, topologyBox?.clientHeight || window.innerHeight);
         const centerX = width / 2;
         const centerY = height / 2;
 
-        // Base radius for group placement: smaller for small viewports, larger for wide screens
         const base = Math.min(width, height);
         const groupRadius = Math.max(95, Math.min(base * 0.30, 260));
 
         const n = this.groups.length || 1;
-        // Prepare arrays of target positions so we can optionally animate from center
-        const groupTargets = [];
-
-        // compute targets but don't apply them yet if this is the first layout (to animate)
         this.groups.forEach((group, idx) => {
-            // ensure the group's measured size is available; provide reasonable defaults
             const gW = group.offsetWidth || 100;
             const gH = group.offsetHeight || 50;
-
-            // angle for this group (start at -90deg to put first group top-center)
             const angle = (2 * Math.PI * idx / n) - Math.PI / 2;
-
-            // compute candidate position and then clamp to viewport padding
             let gLeft = centerX + groupRadius * Math.cos(angle) - gW / 2;
             let gTop = centerY + groupRadius * Math.sin(angle) - gH / 2;
 
@@ -517,11 +521,12 @@ class NetworkTopology extends HTMLElement {
             gLeft = Math.max(pad, Math.min(gLeft, width - gW - pad));
             gTop = Math.max(pad, Math.min(gTop, height - gH - pad));
 
-            groupTargets.push({ group, gLeft, gTop, gW, gH });
+            group.style.left = gLeft + 'px';
+            group.style.top = gTop + 'px';
+            group._cx = undefined;
+            group._cy = undefined;
 
-            // layout devices around the group in a compact circle scaled to number of devices
             const children = this.devices.filter(d => d.dataset.group === group.dataset.group);
-            // device radius depends on number of children; keep compact but non-overlapping
             const devRadius = Math.min(base < 650 ? 118 : 170, Math.max(base < 650 ? 54 : 72, 42 + children.length * (base < 650 ? 9 : 12)));
 
             children.forEach((dev, i) => {
@@ -530,96 +535,16 @@ class NetworkTopology extends HTMLElement {
                     dev.offsetX = Math.round(devRadius * Math.cos(devAngle));
                     dev.offsetY = Math.round(devRadius * Math.sin(devAngle));
                 }
-                const targetLeft = gLeft + group.offsetWidth / 2 + dev.offsetX - (dev.offsetWidth || 30) / 2;
-                const targetTop = gTop + group.offsetHeight / 2 + dev.offsetY - (dev.offsetHeight || 30) / 2;
-                // store target on device for later animation
-                dev._targetLeft = targetLeft;
-                dev._targetTop = targetTop;
+                dev.style.left = gLeft + gW / 2 + dev.offsetX - (dev.offsetWidth || 30) / 2 + 'px';
+                dev.style.top = gTop + gH / 2 + dev.offsetY - (dev.offsetHeight || 30) / 2 + 'px';
+                dev._cx = undefined;
+                dev._cy = undefined;
             });
         });
-
-        // If this is the first layout pass, animate from center into place
-        [...this.groups, ...this.devices].forEach(node => { node._cx = undefined; node._cy = undefined; });
-        if(!this._hasAnimatedInitial){
-            const centerLeft = centerX; const centerTop = centerY;
-            // place everything at center first
-            groupTargets.forEach(t=>{
-                const {group, gW, gH} = t;
-                group.style.left = (centerLeft - gW/2) + 'px';
-                group.style.top = (centerTop - gH/2) + 'px';
-                // devices at center
-                const children = this.devices.filter(d=>d.dataset.group===group.dataset.group);
-                children.forEach(dev=>{
-                    dev.style.left = (centerLeft - (dev.offsetWidth||30)/2) + 'px';
-                    dev.style.top = (centerTop - (dev.offsetHeight||30)/2) + 'px';
-                });
-            });
-
-            // Ensure any lingering 'dragging' class is removed so transitions are active
-            try{ const tRoot = this.querySelector('#topology'); if(tRoot && tRoot.classList.contains('dragging')) tRoot.classList.remove('dragging'); }catch(e){}
-
-            // Force a layout reflow so the browser registers the "from" positions
-            void this.offsetWidth;
-
-            // apply targets on next animation frame to trigger transitions
-            requestAnimationFrame(()=>{
-                requestAnimationFrame(()=>{
-                    groupTargets.forEach(t=>{
-                        const {group, gLeft, gTop} = t;
-                        group.style.left = gLeft + 'px';
-                        group.style.top = gTop + 'px';
-                        const children = this.devices.filter(d=>d.dataset.group===group.dataset.group);
-                        children.forEach(dev=>{
-                            if(dev._targetLeft!=null){ dev.style.left = dev._targetLeft + 'px'; dev.style.top = dev._targetTop + 'px'; }
-                        });
-                    });
-                    // After applying target positions, ensure lines and info boxes update.
-                    this.drawLines();
-                    this.updateDeviceInfo();
-
-                    // While the CSS transitions run, keep redrawing lines for smooth tracking.
-                    const duration = 600; // ms - should match/cover CSS transition duration
-                    const start = performance.now();
-                    const tick = (ts) => {
-                        this.drawLines();
-                        if (ts - start < duration) requestAnimationFrame(tick);
-                        else this.drawLines();
-                    };
-                    requestAnimationFrame(tick);
-                });
-            });
-            this._hasAnimatedInitial = true;
-        } else {
-            // not first pass: animate to new targets
-            try{ const tRoot = this.querySelector('#topology'); if(tRoot && tRoot.classList.contains('dragging')) tRoot.classList.remove('dragging'); }catch(e){}
-            // force reflow so transitions fire when we set new positions
-            void this.offsetWidth;
-            requestAnimationFrame(()=>{
-                groupTargets.forEach(t=>{
-                    const {group, gLeft, gTop} = t;
-                    group.style.left = gLeft + 'px';
-                    group.style.top = gTop + 'px';
-                    const children = this.devices.filter(d=>d.dataset.group===group.dataset.group);
-                    children.forEach(dev=>{
-                        if(dev._targetLeft!=null){ dev.style.left = dev._targetLeft + 'px'; dev.style.top = dev._targetTop + 'px'; }
-                    });
-                });
-                // draw lines after positions set so transitions can animate them smoothly
-                this.drawLines();
-                const start = performance.now();
-                const tick = ts => {
-                    this.drawLines();
-                    if (ts - start < 280) requestAnimationFrame(tick);
-                };
-                requestAnimationFrame(tick);
-            });
-        }
-
-        // After positioning groups/devices, refresh lines (lines will update as transitions occur)
         this.drawLines();
     }
 
-    updateDeviceInfo(){
+    updateDeviceInfo(advanceTime = true){
         if(!this.devices || !this.devices.length) return;
         this.devices.forEach(dev=>{
             try{
@@ -627,7 +552,7 @@ class NetworkTopology extends HTMLElement {
                 if(dev.dataset.lastSeen){
                     displayTime = this.formatLastSeen(dev.dataset.lastSeen);
                 }else{
-                    dev.dataset.time = String((parseInt(dev.dataset.time,10)||0)+1);
+                    if(advanceTime) dev.dataset.time = String((parseInt(dev.dataset.time,10)||0)+1);
                     displayTime = this.formatTime(parseInt(dev.dataset.time,10)||0);
                 }
                 dev.dataset.timeLabel = displayTime;

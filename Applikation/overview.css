@@ -289,13 +289,17 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     padding: 3px 10px;
     font-size: 12px;
     letter-spacing: 0.02em;
-    text-transform: uppercase;
+    text-transform: none;
     color: var(--text-main);
     background: rgba(var(--bg-card-rgb), 0.3);
     flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.card .activity-badge {
+    font-size: 12px;
 }
 
 .activity-time {
@@ -311,10 +315,6 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     align-items: flex-start;
     gap: 10px;
     min-width: 0;
-}
-
-.activity-event-icon {
-    line-height: 1.2;
 }
 
 .activity-message {
@@ -355,24 +355,26 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
 
 .speedChart {
     width: 100%;
-    height: 150px !important;
+    height: 130px !important;
     display: block;
     position: relative;
     transform: none;
-    flex: 1 1 auto;
-    min-height: 150px;
-    max-height: 150px;
+    flex: 0 1 130px;
+    min-height: 0;
+    max-height: 130px;
 }
 
 .legend {
     position: static;
     display: flex;
     justify-content: flex-end;
+    align-self: flex-end;
+    flex: 0 0 auto;
     gap: 14px !important;
     font-size: 13px;
     max-width: 100%;
     white-space: nowrap;
-    margin-top: 6px;
+    margin: 0 0 4px;
 }
 
 .legend span {
@@ -425,11 +427,6 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     grid-template-columns: minmax(180px, .24fr) minmax(0, .9fr) minmax(0, .9fr);
     align-items: center;
     gap: 12px;
-    position: sticky;
-    top: 10px;
-    z-index: 50;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
 }
 
 .toolbar-copy {
@@ -495,7 +492,7 @@ body.edit-mode .dashboard.flow-layout .mobile-card-actions {
     box-shadow: 0 6px 18px rgba(0,0,0,.35);
 }
 
-.edit-mode .card {
+.edit-mode .dashboard .card {
     cursor: move;
 }
 
@@ -881,6 +878,7 @@ body.edit-mode .dashboard {
 
 .speed-summary {
     display: grid;
+    flex: 0 0 auto;
     gap: clamp(8px, 1.2vw, 16px);
     margin-bottom: 2px;
     min-width: 0;
@@ -976,7 +974,7 @@ html {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .chart-tooltip {
@@ -1023,12 +1021,12 @@ html {
     transform: translateX(-50%) translateY(0);
 }
 
-body.edit-mode .card {
+body.edit-mode .dashboard .card {
     user-select: none;
     touch-action: none;
 }
 
-body.edit-mode .card:hover {
+body.edit-mode .dashboard .card:hover {
     box-shadow: 0 0 0 1px rgba(var(--accent-rgb), .28), 0 16px 34px rgba(0,0,0,.45);
 }
 

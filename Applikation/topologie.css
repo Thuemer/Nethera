@@ -88,8 +88,7 @@ network-topology {
     letter-spacing: 0.03em;
     cursor: pointer;
     z-index: 12;
-    transition: left 240ms cubic-bezier(.2,.8,.2,1), top 240ms cubic-bezier(.2,.8,.2,1), transform 180ms ease, box-shadow 180ms ease;
-    will-change: left, top, transform;
+    transition: transform 180ms ease, box-shadow 180ms ease;
     font-size: 14px;
     max-width: 100%;
     display: flex !important;
@@ -111,8 +110,7 @@ network-topology {
     box-shadow: 0 0 0 5px rgba(var(--accent-rgb), .10), 0 0 20px rgba(var(--accent-rgb), .42);
     cursor: pointer;
     z-index: 14;
-    transition: left 240ms cubic-bezier(.2,.8,.2,1), top 240ms cubic-bezier(.2,.8,.2,1), transform 180ms ease, box-shadow 180ms ease;
-    will-change: left, top, transform;
+    transition: transform 180ms ease, box-shadow 180ms ease;
     max-width: 100%;
 }
 

@@ -209,19 +209,18 @@ class SpeedCard extends HTMLElement {
         this.innerHTML = `
             <div class="card-header">
                 <h2>Speed</h2>
-                <span class="icon">⏱</span>
             </div>
             <div class="speed-summary">
                 <div class="card-kpi"><span class="card-kpi-label">Upload</span><span class="card-kpi-value" id="uploadValue">—</span></div>
                 <div class="card-kpi align-right"><span class="card-kpi-label">Download</span><span class="card-kpi-value" id="downloadValue">—</span></div>
             </div>
             <div class="speed-card-body">
-                <canvas class="speedChart" width="620" height="260"></canvas>
-                <div class="chart-tooltip" id="speedTooltip"></div>
                 <div class="legend" aria-label="Diagramm-Legende">
                     <span class="upload"><i></i>Upload</span>
                     <span class="download"><i></i>Download</span>
                 </div>
+                <canvas class="speedChart" width="620" height="260"></canvas>
+                <div class="chart-tooltip" id="speedTooltip"></div>
             </div>
         `;
 
@@ -452,15 +451,8 @@ class ActivityCard extends HTMLElement {
         return '';
     }
 
-    getTypeIcon(eventType) {
-        if (eventType === 'CONNECTED') return '📶';
-        if (eventType === 'DISCONNECTED') return '❌';
-        if (eventType === 'BLOCKED_URL') return '⚠️';
-        return '•';
-    }
-
     getTypeLabel(eventType) {
-        if (eventType === 'CONNECTED') return 'Verbunden';
+        if (eventType === 'CONNECTED') return 'verbunden';
         if (eventType === 'DISCONNECTED') return 'Getrennt';
         if (eventType === 'BLOCKED_URL') return 'Blockiert';
         return 'Ereignis';
@@ -478,7 +470,6 @@ class ActivityCard extends HTMLElement {
                             <span class="activity-time">${formatDateTime(log.timestamp)}</span>
                         </div>
                         <div class="activity-text">
-                            <span class="activity-event-icon">${this.getTypeIcon(log.eventType)}</span>
                             <span class="activity-message">${log.details || 'Keine Details vorhanden'}</span>
                         </div>
                     </div>
@@ -731,10 +722,10 @@ class DashboardContainer extends HTMLElement {
         controls?.updateEditMode(this.editMode);
         if ((this.querySelector('.dashboard') || this).clientWidth < 900) {
             this.ensureMobileControls();
-            this.showLayoutFeedback(this.editMode ? 'Boxen mit den Tasten neu anordnen.' : 'Reihenfolge gespeichert.');
+            this.showLayoutFeedback(this.editMode ? 'Dashboard-Karten mit den Tasten neu anordnen.' : 'Reihenfolge gespeichert.');
             return;
         }
-        this.showLayoutFeedback(this.editMode ? 'Bearbeiten aktiv: Boxen verschieben.' : 'Layout gespeichert.');
+        this.showLayoutFeedback(this.editMode ? 'Nur Dashboard-Karten verschieben.' : 'Layout gespeichert.');
         
         if (!this.editMode) {
             this.snapAllCards();
@@ -785,7 +776,7 @@ class DashboardContainer extends HTMLElement {
         const rows = Math.ceil(count / cols);
 
         const cardWidth = count === 1 ? Math.min(vw, 720) : (vw - gap * (cols - 1)) / cols;
-        const cardHeight = Math.max(210, Math.min((vh - gap * (rows - 1)) / rows, 430));
+        const cardHeight = Math.max(300, Math.min((vh - gap * (rows - 1)) / rows, 430));
         dashboard.style.height = `${rows * cardHeight + gap * (rows - 1)}px`;
 
         const totalGridWidth = cols * cardWidth + gap * (cols - 1);
