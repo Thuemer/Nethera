@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <base href="/website/html/support.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Hilfe für Nethera: Antworten finden und eine Supportanfrage an das Projektteam vorbereiten.">
+    <title>Hilfe &amp; Kontakt – Nethera</title>
+    <link rel="stylesheet" href="../css/nethera.css?v=20261114-support">
+    <link rel="stylesheet" href="../css/support.css?v=20261114">
+    <script src="../js/support.js?v=20261114" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Zum Inhalt</a>
+<header id="headlineHead">
+    <a class="brand" href="nethera.html" aria-label="Nethera Startseite"><img id="nethera-logo" src="../images/nethera_logo.png" width="36" height="36" alt=""><span class="brand-name">nethera<span class="brand-dot">.</span></span></a>
+    <nav aria-label="Hauptnavigation">
+        <a href="support.html" aria-current="page">Hilfe &amp; Kontakt</a>
+        <a href="step_by_step.html">Anleitung</a>
+        <a class="nav-cta" href="/index.html?entry=website">Anmelden <span aria-hidden="true">→</span></a>
+    </nav>
+</header>
+<main id="main" class="guide content-section">
+    <p class="eyebrow">Wir helfen dir weiter</p>
+    <h1>Hilfe für dein Heimnetzwerk</h1>
+    <p class="lead">Finde eine passende Anleitung oder beschreibe dem Nethera-Team, wo du nicht weiterkommst.</p>
+    <section class="support-options" aria-label="Schnelle Hilfe">
+        <article class="availability"><h2>Einrichtung prüfen</h2><p>Router vorbereiten, OpenWrt einrichten und die Verbindung testen.</p><a href="step_by_step.html">Zur Schritt-für-Schritt-Anleitung →</a></article>
+        <article class="availability"><h2>Problem eingrenzen</h2><p>Kein WLAN, kein Internet oder die Routerverwaltung ist nicht erreichbar?</p><a href="step_by_step.html#hilfe">Zur Fehlerhilfe →</a></article>
+    </section>
+    <section class="guide-step" aria-labelledby="contact-title">
+        <p class="eyebrow">Kontakt zum Projektteam</p>
+        <h2 id="contact-title">Supportanfrage vorbereiten</h2>
+        <p>Unser Support läuft über die GitHub-Issues des Nethera-Projekts. Du brauchst dafür ein GitHub-Konto. Prüfe zuerst, ob dein Problem <a href="https://github.com/Thuemer/Nethera/issues">bereits gemeldet wurde</a>.</p>
+        <p id="public-note" class="guide-note">Deine Anfrage ist auf GitHub öffentlich. Teile keine Passwörter, Zugangsdaten oder persönlichen Netzwerkdaten. Dieses Formular sendet nichts automatisch: Du prüfst die Anfrage auf GitHub und veröffentlichst sie dort selbst.</p>
+        <form id="supportForm" aria-describedby="public-note">
+            <label for="supportTopic">Wobei brauchst du Hilfe?</label>
+            <select id="supportTopic" name="topic"><option>Einrichtung</option><option>Anmeldung</option><option>Geräte und Netzwerk</option><option>Schutz und Zeitlimits</option><option>Sonstiges</option></select>
+            <label for="supportTitle">Kurze Zusammenfassung <span>(Pflichtfeld)</span></label>
+            <input id="supportTitle" name="title" required maxlength="100" placeholder="Zum Beispiel: Die Geräteliste bleibt leer" autocomplete="off">
+            <label for="supportDetails">Was passiert? <span>(Pflichtfeld)</span></label>
+            <textarea id="supportDetails" name="details" required maxlength="2000" rows="5" aria-describedby="detailsHint"></textarea>
+            <small id="detailsHint">Beschreibe deine Schritte, das erwartete Ergebnis und das tatsächliche Verhalten. Ergänze bei Bedarf Browser und Routermodell.</small>
+            <p id="supportStatus" role="status" aria-live="polite"></p>
+            <button class="button" type="submit">Auf GitHub prüfen →</button>
+        </form>
+        <noscript><p>Du kannst deine Anfrage auch direkt auf GitHub schreiben.</p></noscript>
+        <p class="support-direct"><a href="https://github.com/Thuemer/Nethera/issues/new">Anfrage direkt auf GitHub erstellen</a></p>
+        <p class="muted">Nethera ist ein Schulprojekt. Eine feste Antwortzeit können wir nicht zusagen.</p>
+    </section>
+</main>
+<footer><span>Nethera · Heimnetzwerkverwaltung</span><a href="nethera.html">Zur Website</a><a href="step_by_step.html">Anleitung</a><a href="#main">Nach oben</a></footer>
+</body>
+</html>

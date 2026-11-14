@@ -28,7 +28,7 @@ class Page(HTMLParser):
 
 class NavigationTests(unittest.TestCase):
     def test_website_links_resolve_to_files_and_existing_sections(self):
-        for filename in ("nethera.html", "step_by_step.html"):
+        for filename in ("nethera.html", "step_by_step.html", "support.html"):
             page = Page(ROOT / "Website/html" / filename)
             entrypoints = ["/website/html/" + filename]
             if filename == "nethera.html":
