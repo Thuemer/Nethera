@@ -6,6 +6,8 @@
 !Applikation/*.png
 !Applikation/Dockerfile
 !Applikation/nginx.conf
+!Applikation/vendor/
+!Applikation/vendor/**
 !Website/
 !Website/html/
 !Website/html/*.html

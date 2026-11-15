@@ -2,6 +2,19 @@
     max-width: 1400px;
 }
 
+.router-control-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--accent);
+    background: rgba(var(--text-rgb), .045);
+    color: var(--text-soft);
+    font-size: 14px;
+}
+
 .limit-form {
     display: grid;
     gap: 14px;
@@ -52,8 +65,8 @@
 .limit-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 16px;
-    padding: 16px;
+    gap: 12px;
+    padding: 14px 16px;
     border: 1px solid var(--line);
     border-radius: 14px;
     background: rgba(var(--text-rgb), .035);
@@ -70,7 +83,7 @@
 
 .limit-main {
     display: grid;
-    gap: 10px;
+    gap: 6px;
 }
 
 .limit-title-row {
@@ -82,8 +95,16 @@
 
 .limit-title-row h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
 }
+
+.limit-summary { margin: 0; color: var(--text-soft); font-size: 14px; }
+.limit-details { color: var(--text-soft); font-size: 12px; }
+.limit-details summary { cursor: pointer; width: max-content; }
+.limit-details[open] .limit-meta { margin-top: 8px; }
+.unconfigured-devices { border-top: 1px solid var(--line); padding-top: 14px; }
+.unconfigured-devices > summary { cursor: pointer; color: var(--text-main); font-weight: 600; }
+.unconfigured-devices > .limit-list { margin-top: 12px; }
 
 .limit-meta {
     display: flex;

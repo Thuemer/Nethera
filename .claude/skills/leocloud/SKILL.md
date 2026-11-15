@@ -6,7 +6,7 @@ description: Deploy a project to LeoCloud, the Kubernetes cluster of HTL Leondin
 # LeoCloud
 
 Source: https://cloud.htl-leonding.ac.at/html/skill/leocloud/SKILL.md
-Version: 2026-10-07
+Version: 2026-10-14
 
 ## If you are reading a saved copy
 
@@ -245,7 +245,14 @@ These are the rules of the platform. Write manifests that keep all of them.
 - **No TLS settings.** Encrypted transport ends at the edge of the cluster, with a certificate
   the platform holds. The ingress has no `tls` section and no certificate annotations (no
   cert-manager, no issuer). The application is reachable at `https://` anyway.
-- **Ingress class.** Every ingress names `ingressClassName: nginx`.
+- **Ingress class.** Every ingress names `ingressClassName: nginx`, in the field. Never write the
+  older annotation `kubernetes.io/ingress.class`; if an ingress has it, replace it by the field.
+- **Annotations.** The ingress controller is Traefik. Only the `nginx.ingress.kubernetes.io/*`
+  annotations that Traefik lists as supported take effect:
+  https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/ingress-nginx/
+  Annotations of other controllers (`traefik.ingress.kubernetes.io/*`, `nginx.org/*`) and any
+  annotation not on that list have no effect. Do not write them; remove them where you find them.
+  The manual: https://cloud.htl-leonding.ac.at/html/user-manual.html#ingress
 - **Services are of type ClusterIP only.** Leave the type out, or write `ClusterIP`. No
   `NodePort`, no `LoadBalancer`, no `ExternalName`. An application is reachable from outside
   only through an ingress on the student's hostname.

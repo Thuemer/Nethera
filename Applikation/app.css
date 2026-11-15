@@ -364,7 +364,14 @@ tr:hover td {
 
 .badge {
     display: inline-flex;
+    flex: 0 0 auto;
+    width: fit-content;
+    max-width: 100%;
     align-items: center;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    line-height: 1.4;
     border-radius: 999px;
     padding: 5px 9px;
     font-size: 12px;

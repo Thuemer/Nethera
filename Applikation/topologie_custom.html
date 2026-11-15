@@ -1,19 +1,52 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Netzwerk-Topologie</title>
-<link rel="stylesheet" href="topologie.css">
-	<!-- Inline SVG favicon to avoid browser requesting /favicon.ico -->
-	<link rel="icon" href="nethera_logo.png">
-  <link rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Netzwerk-Topologie</title>
+  <link rel="icon" href="nethera_logo.png">
+  <link rel="stylesheet" href="topologie.css?v=20261115-graph">
 </head>
 <body>
-
-<!-- `network-topology` wird per Script erzeugt, nachdem die Custom Elements definiert sind -->
-
-<script src="config.js"></script>
-<script src="topologie_custom.js"></script>
+  <main class="topology-workspace">
+    <header class="topology-header">
+      <div><h1>Topologie</h1><p id="network-summary" role="status">Netzwerk wird geladen …</p></div>
+      <div class="topology-tools">
+        <div class="view-modes" role="group" aria-label="Topologieansicht">
+          <button type="button" data-view="groups" aria-pressed="true">Gruppen</button>
+          <button type="button" data-view="connections" aria-pressed="false">Verbindungen</button>
+        </div>
+        <button class="icon-button" id="reload-network" aria-label="Netzwerk neu laden" title="Netzwerk neu laden"><i data-lucide="refresh-cw"></i></button>
+      </div>
+    </header>
+    <div id="network-notice" class="network-notice" role="status" hidden></div>
+    <section class="legend-bar" aria-label="Legende und Gruppenfilter">
+      <span class="legend-title">Gruppen</span><div id="group-legend"></div>
+    </section>
+    <div class="topology-body">
+      <section class="graph-surface" aria-label="Netzwerkgraph">
+        <div id="network-graph" role="img" aria-label="Netzwerkgraph. Geräte sind auch über die Geräteauswahl erreichbar."></div>
+        <div id="graph-empty" role="status" hidden></div>
+        <div class="graph-controls" aria-label="Graphwerkzeuge">
+          <button class="icon-button" id="zoom-in" aria-label="Vergrößern" title="Vergrößern"><i data-lucide="plus"></i></button>
+          <button class="icon-button" id="zoom-out" aria-label="Verkleinern" title="Verkleinern"><i data-lucide="minus"></i></button>
+          <button class="icon-button" id="fit-network" aria-label="Alles anzeigen" title="Alles anzeigen"><i data-lucide="maximize"></i></button>
+          <button class="icon-button" id="reset-network" aria-label="Anordnung zurücksetzen" title="Anordnung zurücksetzen"><i data-lucide="rotate-ccw"></i></button>
+        </div>
+        <span class="graph-caption" id="graph-caption">Gespeicherte Gruppenzuordnung</span>
+      </section>
+      <aside class="network-inspector" aria-label="Gerätedetails">
+        <button id="back-to-graph" class="back-to-graph" type="button"><i data-lucide="arrow-up"></i>Zum Netzwerk</button>
+        <label class="search-field" for="device-search"><i data-lucide="search"></i><input type="search" id="device-search" placeholder="Gerät, IP oder MAC suchen" autocomplete="off"></label>
+        <label class="device-picker" for="device-picker">Gerät auswählen<select id="device-picker"><option value="">Netzwerkübersicht</option></select></label>
+        <div id="device-details" aria-live="polite"></div>
+      </aside>
+    </div>
+  </main>
+  <script src="config.js"></script>
+  <script src="vendor/cytoscape.min.js"></script>
+  <script src="vendor/lucide.min.js"></script>
+  <script src="topology-model.js?v=20261115-graph"></script>
+  <script src="topologie_custom.js?v=20261115-graph"></script>
 </body>
 </html>

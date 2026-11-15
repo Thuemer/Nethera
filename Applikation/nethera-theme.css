@@ -16,7 +16,6 @@
 .priority-row:last-child { border-bottom: 0; }
 .priority-row button { flex: none; }
 .domain-entries { display: grid; gap: 4px; margin-top: 8px; }
-.security-page > data-status, .time-limits-page > data-status { position: sticky; top: 0; z-index: 60; background: var(--bg-main); }
 .apply-preset-form .effect-summary { grid-column: 1 / -1; }
 .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .group-subtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
@@ -25,6 +24,31 @@
 .security-page .stat, .time-limits-page .stat { min-height: 0; padding: 12px 16px; gap: 6px; }
 .security-page .stat strong, .time-limits-page .stat strong { font-size: 23px; }
 .security-page .stat-detail, .time-limits-page .stat-detail { display: none; }
+.page > .stats-grid, .traffic-page > .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--stat-columns, 4), minmax(0, 1fr));
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg-main) 88%, var(--accent-2));
+}
+.network-status-page > .stats-grid { --stat-columns: 3; }
+.page > .stats-grid stat-card { display: block; min-width: 0; }
+.page > .stats-grid .stat, .traffic-page > .stats-grid .stat {
+    min-height: 90px;
+    height: 100%;
+    padding: 16px 18px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.page > .stats-grid stat-card:last-child .stat,
+.traffic-page > .stats-grid .stat:last-child { border-right: 0; }
+.page > .stats-grid .stat strong, .traffic-page > .stats-grid .stat strong { font-size: 24px; line-height: 1.2; }
+.page > .stats-grid .stat-detail, .traffic-page > .stats-grid .stat-detail { color: var(--text-soft); }
 .security-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
 .security-tabs button { min-width: 0; min-height: 44px; white-space: normal; }
 .security-tabs button:last-child { grid-column: auto; }
@@ -85,6 +109,9 @@ h2, .card-header h2 { font-size: 18px; font-weight: 600; }
 .activity.ok { background: rgba(var(--accent-rgb), .06); }
 .activity-message { font-weight: 600; }
 .card-kpi-value, .card-detail-value { font-weight: 600; }
+.stat strong, .card-kpi-value, .dns-value { color: var(--accent); font-variant-numeric: tabular-nums; }
+.stat.warn strong { color: var(--warn); }
+.stat.danger strong { color: var(--danger); }
 .dns-list { gap: 6px; }
 .dns-row { padding: 6px 0; }
 .nav-group { background: transparent; border-radius: 8px; }
@@ -99,6 +126,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     outline: 2px solid var(--accent);
     outline-offset: 3px;
 }
+button:disabled { cursor: not-allowed; opacity: .5; }
 
 @media (max-width: 560px) {
     .security-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -107,6 +135,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     h1, .hero h1, .account-hero h1 { font-size: 26px; }
     .refresh-btn, .small-btn, .account-btn, .control-btn { min-height: 44px; }
     .field input, .account-field input, .controls input, .nethera-select-button { font-size: 16px; }
+}
+@media (max-width: 700px) {
+    .page > .stats-grid, .traffic-page > .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .page > .stats-grid stat-card:nth-child(2n) .stat,
+    .traffic-page > .stats-grid .stat:nth-child(2n) { border-right: 0; }
+    .page > .stats-grid stat-card:nth-child(-n+2) .stat,
+    .traffic-page > .stats-grid .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }

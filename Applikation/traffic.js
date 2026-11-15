@@ -30,24 +30,35 @@ async function fetchJson(url) {
 async function loadTrafficData() {
     let router = null;
     let connections = [];
+    let routerError = null;
+    let connectionError = null;
 
     try {
         const routers = await fetchJson(ROUTER_API_URL);
         router = Array.isArray(routers) ? routers[0] : null;
     } catch (error) {
-        router = null;
+        routerError = error;
     }
 
     try {
         const data = await fetchJson(CONNECTION_API_URL);
         connections = Array.isArray(data) ? data : [];
     } catch (error) {
-        connections = [];
+        connectionError = error;
     }
 
-    updateStatsDisplay(router, connections);
-    updateTrafficTable(connections);
-    updateTrafficChart(connections);
+    const notice = document.getElementById('trafficNotice');
+    if (notice) {
+        const authExpired = [routerError, connectionError].some(error => /\b(401|403)\b/.test(String(error?.message)));
+        notice.hidden = !routerError && !connectionError;
+        notice.textContent = authExpired
+            ? 'Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.'
+            : 'Ein Teil der Verkehrsdaten ist gerade nicht erreichbar. Bitte versuche es erneut.';
+    }
+    updateStatsDisplay(router, connections, !routerError, !connectionError);
+    const emptyMessage = connectionError ? 'Keine Verbindungsdaten verfügbar.' : 'Noch keine Verbindungen vorhanden.';
+    updateTrafficTable(connections, emptyMessage);
+    updateTrafficChart(connections, emptyMessage);
 }
 
 function formatMbit(value) {
@@ -61,16 +72,21 @@ function sortByTimestamp(items = []) {
     return [...items].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
 
-function updateStatsDisplay(router, connections = []) {
+function updateStatsDisplay(router, connections = [], routerAvailable = true, connectionsAvailable = true) {
     const speedStats = sortByTimestamp(Array.isArray(router?.speedStats) ? router.speedStats : []);
     const latestSpeed = speedStats.length > 0 ? speedStats[speedStats.length - 1] : null;
     const connectionDownload = connections.reduce((sum, c) => sum + Number(c.download || 0), 0);
     const connectionUpload = connections.reduce((sum, c) => sum + Number(c.upload || 0), 0);
 
-    document.getElementById('statDownload').textContent = formatMbit(latestSpeed?.downloadSpeed ?? connectionDownload);
-    document.getElementById('statUpload').textContent = formatMbit(latestSpeed?.uploadSpeed ?? connectionUpload);
-    document.getElementById('statConnections').textContent = String(connections.length);
-    document.getElementById('statVolume').textContent = `${((connectionDownload + connectionUpload) / 1024).toFixed(2)} GB`;
+    document.getElementById('statDownload').textContent = latestSpeed && routerAvailable
+        ? formatMbit(latestSpeed.downloadSpeed)
+        : connectionsAvailable ? formatMbit(connectionDownload) : '—';
+    document.getElementById('statUpload').textContent = latestSpeed && routerAvailable
+        ? formatMbit(latestSpeed.uploadSpeed)
+        : connectionsAvailable ? formatMbit(connectionUpload) : '—';
+    document.getElementById('statConnections').textContent = connectionsAvailable ? String(connections.length) : '—';
+    // Rates cannot be converted to a daily volume without a cumulative counter.
+    document.getElementById('statVolume').textContent = '—';
 }
 
 function normalizeConnection(connection) {
@@ -83,7 +99,7 @@ function normalizeConnection(connection) {
     };
 }
 
-function updateTrafficTable(connections = []) {
+function updateTrafficTable(connections = [], emptyMessage = 'Noch keine Verbindungen vorhanden.') {
     const tableBody = document.getElementById('traffic-table-body');
     if (!tableBody) return;
 
@@ -91,7 +107,7 @@ function updateTrafficTable(connections = []) {
         .sort((a, b) => (b.download + b.upload) - (a.download + a.upload));
 
     if (rows.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5">Keine Verbindungen verfügbar</td></tr>';
+        tableBody.innerHTML = `<tr><td colspan="5">${escapeHtml(emptyMessage)}</td></tr>`;
         return;
     }
 
@@ -106,14 +122,14 @@ function updateTrafficTable(connections = []) {
     `).join('');
 }
 
-function updateTrafficChart(connections = []) {
+function updateTrafficChart(connections = [], emptyMessage = 'Noch keine Verbindungen vorhanden.') {
     const chart = document.getElementById('connectionBars');
     if (!chart) return;
 
     const rows = connections.map(normalizeConnection);
 
     if (rows.length === 0) {
-        chart.innerHTML = '<div class="connection-empty">Keine Verbindungen vom Backend verfügbar.</div>';
+        chart.innerHTML = `<div class="connection-empty">${escapeHtml(emptyMessage)}</div>`;
         return;
     }
 

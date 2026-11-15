@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clients</title>
     <link rel="icon" href="nethera_logo.png">
-    <link rel="stylesheet" href="devices.css">
+    <link rel="stylesheet" href="devices.css?v=20261019-controls">
     <link rel="stylesheet" href="nethera-select.css">
   <link rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
 </head>
@@ -20,23 +20,23 @@
             <button id="refreshButton" class="refresh-btn" type="button">Neu laden</button>
         </section>
 
-        <section class="stats-grid" aria-label="Client Kennzahlen">
-            <article class="card stat">
+        <section class="card stats-grid" aria-label="Client Kennzahlen">
+            <div class="stat">
                 <p>Gesamt</p>
                 <strong id="statTotal">0</strong>
-            </article>
-            <article class="card stat">
+            </div>
+            <div class="stat">
                 <p>WiFi</p>
                 <strong id="statWifi">0</strong>
-            </article>
-            <article class="card stat">
+            </div>
+            <div class="stat">
                 <p>LAN</p>
                 <strong id="statLan">0</strong>
-            </article>
-            <article class="card stat">
+            </div>
+            <div class="stat stat-updated">
                 <p>Letztes Update</p>
                 <strong id="statUpdated">-</strong>
-            </article>
+            </div>
         </section>
 
         <section class="card controls" aria-label="Client Filter">
@@ -73,9 +73,8 @@
                         <tr>
                             <th>Client</th>
                             <th>IP-Adresse</th>
-                            <th>MAC-Adresse</th>
                             <th>Verbindung</th>
-                            <th>Zuletzt gesehen</th>
+                            <th>Weitere Infos</th>
                         </tr>
                     </thead>
                     <tbody id="deviceTableBody"></tbody>
@@ -86,6 +85,6 @@
 
     <script src="config.js"></script>
 <script src="nethera-select.js"></script>
-<script src="devices.js?v=20260616-dropdowns"></script>
+<script src="devices.js?v=20261019-controls"></script>
 </body>
 </html>

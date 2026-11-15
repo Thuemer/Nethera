@@ -7,35 +7,40 @@
   <link rel="icon" href="nethera_logo.png">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="nethera-select.css">
-  <link rel="stylesheet" href="security.css?v=20261009-mobile">
+  <link rel="stylesheet" href="security.css?v=20261115-router-ui">
   <link rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
 </head>
 <body>
   <main class="page security-page">
     <app-hero title="Schutz &amp; Regeln" text="Internetregeln für ein Gerät, eine Gruppe oder das ganze Netzwerk." button="Neu laden"></app-hero>
+    <nav class="security-tabs" role="tablist" aria-label="Schutzbereiche">
+      <button class="active" type="button" data-tab="groups" role="tab"><i data-lucide="users"></i><span>Geräte &amp; Gruppen</span></button>
+      <button type="button" data-tab="blocklists" role="tab"><i data-lucide="globe"></i><span>Websites sperren</span></button>
+      <button type="button" data-tab="ads" role="tab"><i data-lucide="shield-check"></i><span>Werbeschutz</span></button>
+      <button type="button" data-tab="presets" role="tab"><i data-lucide="layers"></i><span>Vorlagen</span></button>
+      <button type="button" data-tab="priority" role="tab"><i data-lucide="gauge"></i><span>Priorität</span></button>
+      <button type="button" data-tab="wifi" role="tab"><i data-lucide="wifi"></i><span>WLAN-Analyse</span></button>
+    </nav>
     <data-status id="statusBox" role="status" aria-live="polite" text="Lade Regeln ..."></data-status>
-    <p class="router-state">Regeln werden gespeichert. Die Ausführung auf dem Router ist noch nicht bestätigt.</p>
+    <div class="router-control-strip" role="status" aria-live="polite">
+      <span id="routerControlStatus">Routerwirkung wird geprüft ...</span>
+      <button id="refreshRouterControl" class="small-btn ghost" type="button">Status prüfen</button>
+    </div>
 
+    <details class="security-summary">
+    <summary><i data-lucide="chevron-right"></i>Regelübersicht</summary>
     <section class="grid stats-grid" aria-label="Schutz Kennzahlen">
-      <stat-card id="statPackages" label="Blocklisten" value="0" detail="gespeichert"></stat-card>
-      <stat-card id="statManual" label="Filtereinträge" value="0" detail="Domains und Kategorien"></stat-card>
-      <stat-card id="statAds" label="Werbe-Domains" value="0" detail="im Filter gespeichert"></stat-card>
-      <stat-card id="statPresets" label="Presets" value="0" detail="aktive Geräte-Presets"></stat-card>
+      <stat-card id="statPackages" label="Blocklisten" value="—" detail="gespeichert"></stat-card>
+      <stat-card id="statManual" label="Filtereinträge" value="—" detail="Domains und Kategorien"></stat-card>
+      <stat-card id="statAds" label="Werbe-Domains" value="—" detail="im Filter gespeichert"></stat-card>
+      <stat-card id="statPresets" label="Vorlagen" value="—" detail="gespeicherte Gerätevorlagen"></stat-card>
     </section>
-
-    <section class="security-tabs" aria-label="Schutz Bereiche">
-      <button class="active" type="button" data-tab="groups">Geräte & Gruppen</button>
-      <button type="button" data-tab="blocklists">Websites sperren</button>
-      <button type="button" data-tab="ads">Werbeschutz</button>
-      <button type="button" data-tab="presets">Presets</button>
-      <button type="button" data-tab="priority">Priorität</button>
-      <button type="button" data-tab="wifi">WLAN-Analyse</button>
-    </section>
+    </details>
 
     <section class="tab-panel active" id="tab-groups">
       <div class="group-subtabs" role="group" aria-label="Geräte oder Gruppen"><button class="active" type="button" data-group-view="devices" aria-pressed="true">Geräte</button><button type="button" data-group-view="management" aria-pressed="false">Gruppen verwalten</button></div>
       <div id="group-devices-panel">
-      <app-card title="Geräte & aktive Presets">
+      <app-card title="Geräte & zugewiesene Vorlagen">
         <label class="field"><span>Gerät suchen</span><input id="groupDeviceSearch" type="search" placeholder="Name oder IP-Adresse"></label>
         <div id="groupDeviceList" class="device-group-list"></div>
       </app-card>
@@ -90,6 +95,7 @@
     </section>
 
     <section class="tab-panel" id="tab-blocklists">
+      <p id="blocklistActual" class="router-effect-note">Gespeicherte Regeln sind noch keine bestätigte Router-Sperre.</p>
       <section class="grid two-grid">
         <app-card title="Website sperren">
           <form id="manualDomainForm" class="stack-form">
@@ -114,16 +120,18 @@
     <section class="tab-panel" id="tab-ads">
       <section class="grid two-grid">
         <app-card title="Werbeschutz">
+          <p id="adblockActual" class="router-effect-note" role="status" aria-live="polite">Installations- und Routerstatus werden geprüft ...</p>
+          <button id="installAdblock" class="small-btn ghost" type="button" disabled>Adblock installieren</button>
           <form id="adProtectionForm" class="stack-form">
-            <label class="security-toggle"><span><strong>Werbung &amp; Tracker filtern</strong><small>Gesamtes Netzwerk · gespeicherte DNS-Einstellung</small></span><input id="adProtectionEnabled" type="checkbox" disabled></label>
-            <button class="refresh-btn" id="saveAdProtection" type="submit" disabled>Werbeschutz speichern</button>
+            <label class="security-toggle"><span><strong>Werbung &amp; Tracker filtern</strong><small>Gewünschte Einstellung für das ganze Netzwerk</small></span><input id="adProtectionEnabled" type="checkbox" disabled></label>
+            <button class="refresh-btn" id="saveAdProtection" type="submit" disabled>Einstellung speichern</button>
           </form>
           <form id="adDomainForm" class="stack-form">
             <label class="field">
               <span>Werbe-Domain blockieren</span>
               <input id="adDomainInput" type="text" placeholder="ads.example.com">
             </label>
-            <button class="refresh-btn" type="submit">Blockieren</button>
+            <button class="refresh-btn" type="submit">Domain speichern</button>
           </form>
         </app-card>
 
@@ -134,6 +142,7 @@
     </section>
 
     <section class="tab-panel" id="tab-priority">
+      <p id="priorityActual" class="router-effect-note">Prioritäten werden erst nach Rückmeldung vom Router als wirksam angezeigt.</p>
       <section class="grid two-grid">
         <app-card title="Gerätepriorität">
           <form id="priorityForm" class="stack-form">
@@ -143,15 +152,15 @@
             <button class="refresh-btn" type="submit">Priorität speichern</button>
           </form>
         </app-card>
-        <app-card title="Bandbreitenaufteilung"><span class="badge warn">Router-Anbindung ausstehend</span><p class="muted">Bevorzugte Geräte sind als Regel gespeichert. Feste Mbit/s-Limits oder Prozentanteile werden noch nicht vom Router umgesetzt.</p><div id="priorityList" class="rule-list"></div></app-card>
+        <app-card title="Gespeicherte Prioritäten"><p class="muted">Feste Mbit/s-Limits oder Prozentanteile sind noch nicht Teil dieser Funktion.</p><div id="priorityList" class="rule-list"></div></app-card>
       </section>
     </section>
 
     <section class="tab-panel" id="tab-presets">
-      <app-card title="Vorhandenes Preset anwenden">
+      <app-card title="Vorlage zuweisen">
         <form id="applyPresetForm" class="apply-preset-form">
           <label class="field">
-            <span>Welches Preset?</span>
+            <span>Vorlage</span>
             <select id="applyPresetSelect"></select>
           </label>
           <label class="field">
@@ -159,16 +168,15 @@
             <select id="applyPresetDevice"></select>
           </label>
           <output id="applyPresetPreview" class="effect-summary" aria-live="polite"></output>
-          <button class="refresh-btn" type="submit">Preset auf Gerät anwenden</button>
+          <button class="refresh-btn" type="submit">Vorlage zuweisen</button>
         </form>
       </app-card>
 
       <section class="grid two-grid">
-        <app-card title="Preset erstellen und anwenden">
-          <p class="helper-text">Das Preset wird direkt auf das unten ausgewählte Gerät angewendet. Danach siehst du es sofort bei „Geräte & Gruppen“.</p>
+        <app-card title="Neue Vorlage">
           <form id="presetForm" class="stack-form">
             <label class="field">
-              <span>Preset-Name</span>
+              <span>Name</span>
               <input id="presetName" type="text" placeholder="z. B. Schultag">
             </label>
             <label class="field">
@@ -184,23 +192,23 @@
               <input id="presetParental" type="checkbox" checked>
             </label>
             <label class="security-toggle">
-              <span><strong>Priorisieren</strong><small>Geräte dieses Presets bevorzugen</small></span>
+              <span><strong>Priorisieren</strong><small>Geräte dieser Vorlage bevorzugen</small></span>
               <input id="presetPriority" type="checkbox">
             </label>
             <label class="security-toggle">
-              <span><strong>Internetzeiten einschließen</strong><small>Tägliche Sperrzeit dieses Presets</small></span>
+              <span><strong>Internetzeiten einschließen</strong><small>Tägliche Sperrzeit</small></span>
               <input id="presetTimeLimit" type="checkbox">
             </label>
             <div id="presetSchedule" class="stack-form" hidden>
               <div class="form-row"><label class="field"><span>Internet sperren ab</span><input id="presetFrom" type="time" value="21:00"></label><label class="field"><span>Wieder erlauben ab</span><input id="presetUntil" type="time" value="07:00"></label></div>
               <label class="field"><span>Tageslimit</span><select id="presetDaily"><option value="0">Unbegrenzt – nur Sperrzeiten</option><option value="60">1 Stunde</option><option value="120">2 Stunden</option><option value="180">3 Stunden</option><option value="240">4 Stunden</option></select></label>
             </div>
-            <button class="refresh-btn" type="submit">Preset erstellen und auf Gerät anwenden</button>
+            <button class="refresh-btn" type="submit">Vorlage erstellen und zuweisen</button>
           </form>
         </app-card>
 
-        <app-card title="Presets und Geräte">
-          <p class="helper-text">Hier siehst du, auf welchen Geräten ein Preset gerade aktiv ist.</p>
+        <app-card title="Vorlagen und Geräte">
+          <p class="helper-text">Gespeicherte Vorlagen und ihre Gerätezuordnung. Die Routerwirkung wird separat bestätigt.</p>
           <div id="presetList" class="preset-list"></div>
         </app-card>
       </section>
@@ -232,9 +240,10 @@
   </main>
 
   <script src="config.js"></script>
-  <script src="api.js"></script>
+  <script src="api.js?v=20261115-router-ui"></script>
   <script src="components.js"></script>
   <script src="nethera-select.js"></script>
-  <script src="security.js?v=20261011-ux"></script>
+  <script src="vendor/lucide.min.js"></script>
+  <script src="security.js?v=20261115-router-ui"></script>
 </body>
 </html>

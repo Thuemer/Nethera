@@ -38,5 +38,35 @@ const NetheraApi = (() => {
     return routers[0];
   }
 
-  return { getRouters, getPrimaryRouter, getAuthHeader, routerUrl };
+  async function getRouterControlStatus() {
+    const response = await fetch(`${config.API_BASE_URL}/api/router-control/status`, {
+      headers: { Accept: 'application/json', ...await getAuthHeader() },
+      cache: 'no-store'
+    });
+    if (response.status === 404 || response.status === 501) return null;
+    if (!response.ok) throw new Error(`Routerstatus antwortet mit ${response.status}`);
+    const status = await response.json();
+    if (!status || typeof status !== 'object' || Array.isArray(status)) {
+      throw new Error('Routerstatus ist ungültig');
+    }
+    return status;
+  }
+
+  async function installAdblock() {
+    const response = await fetch(`${config.API_BASE_URL}/api/router-control/adblock/install`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', ...await getAuthHeader() }
+    });
+    if (!response.ok) throw new Error(`Adblock-Installation antwortet mit ${response.status}`);
+    return response.json();
+  }
+
+  function userMessage(error) {
+    const message = String(error?.message || '');
+    if (/\b(401|403)\b/.test(message)) return 'Bitte melde dich erneut an, um diese Daten zu sehen.';
+    if (message === 'Keine Routerdaten gefunden') return 'Noch kein Router verbunden.';
+    return 'Daten konnten nicht geladen werden. Bitte versuche es erneut.';
+  }
+
+  return { getRouters, getPrimaryRouter, getRouterControlStatus, installAdblock, getAuthHeader, routerUrl, userMessage };
 })();

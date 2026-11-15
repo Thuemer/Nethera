@@ -138,6 +138,59 @@ test('invalid group domain does not silently save other settings', async () => {
   assert.equal(h.calls.length, 0);
 });
 
+test('duplicate website rule is not written again', async () => {
+  const h = securityHarness();
+  h.field('manualDomainInput').value = 'example.com';
+  h.field('domainScope').value = 'device';
+  h.field('domainTarget').value = '1';
+  await h.run('addManualDomain({preventDefault(){}})');
+  assert.equal(h.calls.length, 0);
+});
+
+test('editing a blocklist domain validates input and preserves other entries', async () => {
+  const h = securityHarness();
+  await assert.rejects(h.run(`updateBlocklistDomain(5, 'example.com', 'bad domain')`));
+  await assert.rejects(h.run(`updateBlocklistDomain(5, 'example.com', 'adult')`));
+  assert.equal(h.calls.length, 0);
+  assert.equal(await h.run(`updateBlocklistDomain(5, 'example.com', 'https://www.new.example.org/path')`), true);
+  assert.equal(h.calls[0].body.urlPattern, 'new.example.org|adult');
+  assert.equal(h.calls[0].body.id, 5);
+});
+
+test('unchanged domain edit does not write to the backend', async () => {
+  const h = securityHarness();
+  assert.equal(await h.run(`updateBlocklistDomain(5, 'example.com', 'example.com')`), false);
+  assert.equal(h.calls.length, 0);
+});
+
+test('preset count is a separate neutral header badge, not a router success', () => {
+  const h = securityHarness();
+  h.run('renderPresets()');
+  const html = h.field('presetList').innerHTML;
+  assert.match(html, /preset-heading.*badge">2 Geräte/);
+  assert.doesNotMatch(html, /badge ok/);
+});
+
+test('router effect is only confirmed by an explicit applied flag', () => {
+  const h = securityHarness();
+  assert.equal(h.run('routerEffect(null)'), 'Nur gespeichert');
+  assert.equal(h.run('routerEffect({applied:false})'), 'Nur gespeichert');
+  assert.equal(h.run('routerEffect({applied:false,error:"offline"})'), 'Routerfehler');
+  assert.equal(h.run('routerEffect({applied:true})'), 'Nur gespeichert');
+  h.run(`state.routerControl={connection:'online'};`);
+  assert.equal(h.run('routerEffect({applied:true})'), 'Am Router bestätigt');
+});
+
+test('priority list confirms only the matching device and mode', () => {
+  const h = securityHarness();
+  h.run(`state.routerControl={connection:'online',priority:{1:{mode:'high',applied:true},2:{mode:'normal',applied:false}}};
+    state.presets[0].priorityMode=true; renderPriorityList();`);
+  assert.match(h.field('priorityList').innerHTML, /Tablet.*Am Router bestätigt/);
+  assert.match(h.field('priorityList').innerHTML, /Laptop.*Nur gespeichert/);
+  h.run(`state.routerControl.connection='offline'; renderPriorityList();`);
+  assert.doesNotMatch(h.field('priorityList').innerHTML, /Am Router bestätigt/);
+});
+
 test('ad protection updates DNS setting without dropping other router settings', async () => {
   const h = securityHarness();
   h.run(`activeRouterConfig={id:1,routerName:'Router',mode:'GATEWAY',dnsBlocking:true,updates:true,lanIp:'192.168.1.1',guestNetwork:true};`);
@@ -164,8 +217,36 @@ test('failed save keeps previous time rule and does not claim local success', as
   h.field('blockedFrom').value = '22:00';
   h.field('blockedUntil').value = '07:00';
   h.field('limitNote').value = '';
-  h.run(`state.storageMode='backend'; state.limits['1']={from:'21:00'};
+  h.run(`NetheraApi={userMessage:()=> 'Bitte erneut versuchen.'};
+    state.storageMode='backend'; state.limits['1']={from:'21:00'};
     saveBackendLimit=async()=>{throw new Error('offline')};`);
   await h.run('saveSelectedLimit({preventDefault(){}})');
   assert.equal(h.run(`state.limits['1'].from`), '21:00');
+});
+
+test('time limit validation rejects empty, equal and out-of-range values', () => {
+  const h = harness('time-limits.js');
+  assert.match(h.run(`validLimitInput('', '07:00', 0, '')`), /Uhrzeiten/);
+  assert.match(h.run(`validLimitInput('07:00', '07:00', 0, '')`), /Uhrzeiten/);
+  assert.match(h.run(`validLimitInput('21:00', '07:00', 1500, '')`), /Tagesbudget/);
+  assert.equal(h.run(`validLimitInput('21:00', '07:00', 60, '')`), '');
+});
+
+test('scheduled time without router confirmation is never shown as a verified block', () => {
+  const h = harness('time-limits.js');
+  h.run(`state.devices=[{id:1,hostname:'Tablet'}]; state.filteredDevices=state.devices;
+    state.limits={'1':{from:'21:00',until:'07:00',status:'active',dailyLimit:0,usedMinutesToday:0}};
+    renderList();`);
+  assert.match(h.field('limitsList').innerHTML, /Nur gespeichert/);
+  assert.doesNotMatch(h.field('limitsList').innerHTML, /Am Router gesperrt/);
+});
+
+test('time limit readback is not confirmed while router is offline', () => {
+  const h = harness('time-limits.js');
+  h.run(`state.devices=[{id:1,hostname:'Tablet'}]; state.filteredDevices=state.devices;
+    state.limits={'1':{from:'21:00',until:'07:00',status:'active',dailyLimit:0,usedMinutesToday:0}};
+    state.routerControl={connection:'offline',timeLimits:{1:{applied:true,blockedNow:true}}};
+    renderList();`);
+  assert.match(h.field('limitsList').innerHTML, /Nur gespeichert/);
+  assert.doesNotMatch(h.field('limitsList').innerHTML, /Am Router gesperrt/);
 });
