@@ -1,6 +1,7 @@
 package at.htlleonding.mqtt;
 
 import at.htlleonding.model.Router;
+import at.htlleonding.telemetry.ControlIngestor;
 import at.htlleonding.telemetry.DeviceIngestor;
 import at.htlleonding.telemetry.DnsIngestor;
 import at.htlleonding.telemetry.MetadataIngestor;
@@ -23,7 +24,9 @@ public class TelemetryMessageHandler {
 
     private static final Logger LOG = Logger.getLogger(TelemetryMessageHandler.class);
 
-    private static final Pattern TOPIC = Pattern.compile("nethera/(\\d+)/(status|telemetry/(metadata|speed|dns|devices))");
+    private static final Pattern TOPIC = Pattern.compile("nethera/(\\d+)/(status|telemetry/(metadata|speed|dns|devices|control))");
+    // The backend's own desired-state messages come back through the nethera/# subscription
+    private static final Pattern OWN_CONFIG = Pattern.compile("nethera/[^/]+/config/.*");
 
     @Inject
     EntityManager entityManager;
@@ -41,10 +44,16 @@ public class TelemetryMessageHandler {
     DeviceIngestor deviceIngestor;
 
     @Inject
+    ControlIngestor controlIngestor;
+
+    @Inject
     TelemetryFreshness freshness;
 
     @Transactional
     public void handle(String topic, String payload) {
+        if (OWN_CONFIG.matcher(topic).matches()) {
+            return;
+        }
         Matcher matcher = TOPIC.matcher(topic);
         if (!matcher.matches()) {
             LOG.warn("MQTT: ignoring message on unknown topic " + topic);
@@ -61,6 +70,12 @@ public class TelemetryMessageHandler {
         String stream = matcher.group(3);
         if (stream == null) {
             handleStatus(router, payload.trim());
+            return;
+        }
+
+        if (stream.equals("control")) {
+            // Retained, so it also arrives when the backend starts: no proof that the router is alive now
+            controlIngestor.ingest(router, TelemetryPayloadParser.control(payload));
             return;
         }
 

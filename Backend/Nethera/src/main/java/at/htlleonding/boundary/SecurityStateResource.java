@@ -1,6 +1,8 @@
 package at.htlleonding.boundary;
 
+import at.htlleonding.control.RouterControlChanged;
 import at.htlleonding.model.*;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -17,6 +19,10 @@ public class SecurityStateResource {
 
     @Inject
     EntityManager entityManager;
+
+    // Delivered after the commit; the router then gets the new blocked websites
+    @Inject
+    Event<RouterControlChanged> routerControlChanged;
 
     @GET
     @Path("state")
@@ -36,6 +42,7 @@ public class SecurityStateResource {
     @Path("groups")
     @Transactional
     public GroupDto saveGroup(GroupDto dto) {
+        routerControlChanged.fire(new RouterControlChanged());
         RequestValidation.requireBody(dto);
         DeviceGroup group = dto.id() == null ? new DeviceGroup() : entityManager.find(DeviceGroup.class, dto.id());
         if (group == null) {
@@ -59,6 +66,7 @@ public class SecurityStateResource {
     @Path("groups/{groupId}")
     @Transactional
     public Response deleteGroup(@PathParam("groupId") Long groupId) {
+        routerControlChanged.fire(new RouterControlChanged());
         DeviceGroup group = entityManager.find(DeviceGroup.class, groupId);
         if (group == null) {
             throw new NotFoundException("Gruppe nicht gefunden");
@@ -75,6 +83,7 @@ public class SecurityStateResource {
     @Path("groups/{groupId}/members/{deviceId}")
     @Transactional
     public MemberDto addMember(@PathParam("groupId") Long groupId, @PathParam("deviceId") Long deviceId) {
+        routerControlChanged.fire(new RouterControlChanged());
         require(DeviceGroup.class, groupId, "Gruppe nicht gefunden");
         require(ConnectedDevice.class, deviceId, "Geraet nicht gefunden");
 
@@ -99,6 +108,7 @@ public class SecurityStateResource {
     @Path("groups/{groupId}/members/{deviceId}")
     @Transactional
     public Response removeMember(@PathParam("groupId") Long groupId, @PathParam("deviceId") Long deviceId) {
+        routerControlChanged.fire(new RouterControlChanged());
         entityManager.createQuery("DELETE FROM DeviceGroupMember m WHERE m.groupId = :groupId AND m.deviceId = :deviceId")
                 .setParameter("groupId", groupId)
                 .setParameter("deviceId", deviceId)
@@ -110,6 +120,7 @@ public class SecurityStateResource {
     @Path("blocklists")
     @Transactional
     public BlocklistDto saveBlocklist(BlocklistDto dto) {
+        routerControlChanged.fire(new RouterControlChanged());
         RequestValidation.requireBody(dto);
         BlockList blocklist = dto.id() == null ? new BlockList() : entityManager.find(BlockList.class, dto.id());
         if (blocklist == null) {
@@ -133,6 +144,7 @@ public class SecurityStateResource {
     @Path("presets")
     @Transactional
     public PresetDto savePreset(PresetDto dto) {
+        routerControlChanged.fire(new RouterControlChanged());
         RequestValidation.requireBody(dto);
         SecurityPreset preset = dto.id() == null ? new SecurityPreset() : entityManager.find(SecurityPreset.class, dto.id());
         if (preset == null) {
@@ -160,6 +172,7 @@ public class SecurityStateResource {
     @Path("devices/{deviceId}/preset/{presetId}")
     @Transactional
     public AssignmentDto assignPreset(@PathParam("deviceId") Long deviceId, @PathParam("presetId") Long presetId) {
+        routerControlChanged.fire(new RouterControlChanged());
         require(ConnectedDevice.class, deviceId, "Geraet nicht gefunden");
         require(SecurityPreset.class, presetId, "Preset nicht gefunden");
 
@@ -184,6 +197,7 @@ public class SecurityStateResource {
     @Path("devices/{deviceId}/preset")
     @Transactional
     public Response removePreset(@PathParam("deviceId") Long deviceId) {
+        routerControlChanged.fire(new RouterControlChanged());
         entityManager.createQuery("DELETE FROM DevicePresetAssignment a WHERE a.deviceId = :deviceId")
                 .setParameter("deviceId", deviceId)
                 .executeUpdate();

@@ -12,6 +12,8 @@ public class BlockList {
     private Long routerId;
     private String name;
     private String sourceType;
+    // Real lists are far longer than the default varchar(255)
+    @Column(columnDefinition = "text")
     private String urlPattern;
 
     public Long getBlocklistId() {

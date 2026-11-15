@@ -1,7 +1,9 @@
 package at.htlleonding.boundary;
 
+import at.htlleonding.control.RouterControlChanged;
 import at.htlleonding.model.Config;
 import at.htlleonding.repository.ConfigsRepository;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -18,6 +20,9 @@ public class ConfigsResource {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    Event<RouterControlChanged> routerControlChanged;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -46,6 +51,8 @@ public class ConfigsResource {
         config.setGatewayIp(input.getGatewayIp());
         config.setGuestNetwork(input.getGuestNetwork());
         config.setProfiling(input.getProfiling());
+        // dnsBlocking is the adblock switch the router has to apply
+        routerControlChanged.fire(new RouterControlChanged());
         return entityManager.merge(config);
     }
 }

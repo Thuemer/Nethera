@@ -6,6 +6,10 @@
 INSERT INTO router (name, model, firmware, is_online, last_seen) VALUES
     ('Nethera Router', 'Unbekannt', 'Unbekannt', FALSE, CURRENT_TIMESTAMP);
 
+-- One settings row: the adblock switch (dns_blocking) needs it; off until the user turns it on
+INSERT INTO config (router_name, mode, updates, dns_blocking, lan_ip, gateway_ip, guest_network, profiling) VALUES
+    ('Nethera Router', 'Router', TRUE, FALSE, '192.168.1.1', '192.168.1.1', FALSE, FALSE);
+
 -- Blocklisten fuer einfache Presets
 INSERT INTO blocklists (routerid, name, sourcetype, urlpattern) VALUES
     (1, 'Kinder Schutz', 'PRESET', 'adult|gambling|violence'),
