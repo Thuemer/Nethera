@@ -32,10 +32,10 @@
 ## 5. Verify in the cloud
 
 - [x] 5.1 Backend logs a successful MQTT connection to `nethera-mosquitto:1883` and no SSH attempts; existing pages (overview, devices) still load
-- [ ] 5.2 From the laptop (outside the cluster), publish fake telemetry as `router-1` over `wss://it220208.cloud.htl-leonding.ac.at/mqtt` (simulator or MQTT Explorer); check speed/DNS/devices rows in the cloud DB
+- [x] 5.2 From the laptop (outside the cluster), publish fake telemetry as `router-1` over `wss://it220208.cloud.htl-leonding.ac.at/mqtt` (simulator or MQTT Explorer); check speed/DNS/devices rows in the cloud DB (2026-11-15: covered by the real Cudy publishing over `wss`; its metadata and devices appear in the cloud dashboard)
 - [ ] 5.3 Check auth and ACL over `wss`: wrong password refused, `router-1` → `nethera/2/...` dropped; check port 1883/8883 on the host is not reachable
 - [ ] 5.4 Delete the Mosquitto Pod; retained status/metadata survive
-- [ ] 5.5 Once the agent supports `wss` (`router-telemetry-agent`): point the Cudy at the cloud, verify all streams arrive, then pull the router's power and check the Last Will `offline` arrives within about 45 s
+- [ ] 5.5 Once the agent supports `wss` (`router-telemetry-agent`): point the Cudy at the cloud, verify all streams arrive, then pull the router's power and check the Last Will `offline` arrives within about 45 s (2026-11-15: Cudy points at the cloud and data arrives; power test still open)
 
 ## 6. Documentation
 

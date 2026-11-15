@@ -194,3 +194,10 @@ The Cudy stopped booting OpenWrt (system LED kept blinking, no answer on the LAN
 
 The OpenWrt wiki notes that TFTP recovery was not tested on a WR3000S; this is a working case. The cause of the boot failure was not found.
 
+### Cause found: the deploy archive changed the owner of `/` (2026-11-15)
+
+After a fresh OpenWrt 25.12.5 install, the first `scripts/router-deploy.sh` run left the router with "Failed to connect to ubus". The old script packed the staging directory with `tar -C $STAGE -czf - .` and unpacked it on the router with `tar -xzf - -C /`. The archive's `./` entry is the `mktemp` directory itself (mode 700, owner = the Mac user, uid 501), so tar applied that owner and mode to the router's `/`. `/etc`, `/usr`, `/lib` and `/tmp` got uid 501 the same way. `ubusd` runs as a non-root user, cannot enter `/` any more, and every `ubus` call fails. A plain `reboot` then hangs, because it needs ubus. This very likely also caused the October boot failure above.
+
+- Fix in the script: unpack into `/tmp/nethera-deploy` and install only the agent files with `install_file` (owner root, mode 755/644, `/etc/config/nethera` 600)
+- Repair on an affected router: `chown root:root` and `chmod 755` on `/`, `/etc`, `/usr`, `/lib` and the agent's directories, `chmod 1777 /tmp`, `sync`, then **`reboot -f`** (not `reboot`)
+

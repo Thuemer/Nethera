@@ -49,9 +49,9 @@
 
 - [x] 7.1 Write `router/files/lib/upgrade/keep.d/nethera-agent` (binary, init script, hotplug script, rc.d symlinks)
 - [x] 7.2 Write `scripts/router-deploy.sh <host>`: `go test`, build static `linux/arm64`, `scp -O` binary and files, `apk add iw`, keep an existing `/etc/config/nethera`, `enable` + `restart`, print the next steps on first install; stop before copying if the tests fail
-- [ ] 7.3 Deploy to the Cudy; run `nethera-agent -dry-run` on the router and compare the four payloads with the router's real state
+- [ ] 7.3 Deploy to the Cudy; run `nethera-agent -dry-run` on the router and compare the four payloads with the router's real state (2026-11-15: deployed to OpenWrt 25.12.5 and running; dry-run comparison still open)
 - [ ] 7.4 Configure `transport=tcp` and the laptop broker, `enabled=1`; check the macOS firewall allows the port; all streams arrive and the dashboard shows the real router
-- [ ] 7.5 Configure `transport=wss` and the development broker in LeoCloud; all streams arrive over `wss`
+- [x] 7.5 Configure `transport=wss` and the development broker in LeoCloud; all streams arrive over `wss` (2026-11-15: connected as `router-1`; the cloud dashboard shows the real model "Cudy WR3000S v1" and the router's real devices next to the demo seed devices)
 
 ## 8. End-to-end verification
 
