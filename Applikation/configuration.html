@@ -19,7 +19,7 @@
       <article><strong>Speicherung</strong><span>Deine Änderungen bleiben erhalten.</span></article>
     </section>
 
-    <section class="grid two-grid">
+    <fieldset id="configFields" class="grid two-grid" disabled style="border:0;padding:0;margin:0;min-width:0">
       <app-card title="Router" >
         <p class="muted">Name und Betriebsmodus deines Routers.</p>
         <label class="field"><span>Routername</span><input id="routerName" type="text" value="Nethera Router"></label>
@@ -35,6 +35,11 @@
         <label class="config-row"><span><strong>Gastnetzwerk</strong><small>Separates WLAN für Gäste aktivieren</small></span><input id="guestNetwork" type="checkbox"></label>
         <label class="config-row"><span><strong>Profi-Metriken</strong><small>Zusätzliche technische Werte anzeigen</small></span><input id="profiling" type="checkbox" checked></label>
       </app-card>
+    </fieldset>
+
+    <section class="card" aria-label="Änderungen">
+      <p id="changeState" role="status">Noch keine Konfiguration geladen</p>
+      <button id="discardChanges" type="button" disabled>Änderungen verwerfen</button>
     </section>
 
     <data-status id="statusBox" text="Konfiguration wird geladen."></data-status>
@@ -44,6 +49,6 @@
   <script src="api.js"></script>
   <script src="components.js"></script>
   <script src="nethera-select.js"></script>
-  <script src="configuration.js?v=20260616-dropdowns"></script>
+  <script src="configuration.js?v=20261115-unsaved"></script>
 </body>
 </html>

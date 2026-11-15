@@ -2,6 +2,42 @@ const appConfig = window.NETHERA_CONFIG || {};
 const API_BASE_URL = appConfig.API_BASE_URL || 'http://localhost:8080';
 const CONFIG_API_URL = `${API_BASE_URL}/api/configs/list`;
 let activeConfigId = null;
+let savedConfig = null;
+let saving = false;
+
+function readForm() {
+  return {
+    routerName: document.getElementById('routerName').value.trim() || 'Nethera Router',
+    mode: document.getElementById('securityMode').value,
+    updates: document.getElementById('updates').checked,
+    dnsBlocking: document.getElementById('dnsBlocking').checked,
+    lanIp: document.getElementById('lanIp').value.trim(),
+    gatewayIp: document.getElementById('gatewayIp').value.trim(),
+    guestNetwork: document.getElementById('guestNetwork').checked,
+    profiling: document.getElementById('profiling').checked
+  };
+}
+
+function hasUnsavedChanges() {
+  return savedConfig !== null && JSON.stringify(readForm()) !== JSON.stringify(savedConfig);
+}
+
+function updateChangeState() {
+  const dirty = hasUnsavedChanges();
+  const saveButton = document.querySelector('app-hero button[data-action="hero-button"]');
+  if (saveButton) saveButton.disabled = !dirty || saving;
+  document.getElementById('discardChanges').disabled = !dirty || saving;
+  document.getElementById('changeState').textContent = saving
+    ? 'Änderungen werden gespeichert …'
+    : dirty ? 'Ungespeicherte Änderungen' : savedConfig ? 'Keine ungespeicherten Änderungen' : 'Noch keine Konfiguration geladen';
+}
+
+function discardChanges() {
+  if (!savedConfig || saving) return;
+  fillForm({ id: activeConfigId, ...savedConfig });
+  updateChangeState();
+  setStatus('Änderungen verworfen. Die zuletzt gespeicherten Werte wurden wiederhergestellt.');
+}
 
 function normalizeConfig(config) {
   return {
@@ -45,11 +81,22 @@ async function loadConfigs() {
     if (!response.ok) throw new Error(`API ${response.status}`);
     const data = await response.json();
     const configs = Array.isArray(data) ? data.map(normalizeConfig) : [];
-    if (configs[0]) fillForm(configs[0]);
-    if (saveButton) saveButton.disabled = !configs.length;
+    if (configs[0]) {
+      fillForm(configs[0]);
+      savedConfig = readForm();
+    } else {
+      activeConfigId = null;
+      savedConfig = null;
+    }
+    document.getElementById('configFields').disabled = !configs.length;
+    updateChangeState();
+
     setStatus(configs.length ? 'Konfiguration aktualisiert.' : 'Noch keine Konfiguration vorhanden.', configs.length ? 'success' : 'warning');
   } catch (error) {
     activeConfigId = null;
+    savedConfig = null;
+    document.getElementById('configFields').disabled = true;
+    updateChangeState();
     if (saveButton) saveButton.disabled = true;
     setStatus(NetheraApi.userMessage(error), 'error');
   }
@@ -57,27 +104,27 @@ async function loadConfigs() {
 
 async function saveConfig() {
   if (!activeConfigId) return setStatus('Keine Konfiguration zum Speichern geladen.', 'error');
-  const payload = {
-    routerName: document.getElementById('routerName').value.trim() || 'Nethera Router',
-    mode: document.getElementById('securityMode').value,
-    updates: document.getElementById('updates').checked,
-    dnsBlocking: document.getElementById('dnsBlocking').checked,
-    lanIp: document.getElementById('lanIp').value.trim(),
-    gatewayIp: document.getElementById('gatewayIp').value.trim(),
-    guestNetwork: document.getElementById('guestNetwork').checked,
-    profiling: document.getElementById('profiling').checked
-  };
-
-  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-  const authHeader = (await account?.getAuthHeader?.()) ?? {};
-  const response = await fetch(`${API_BASE_URL}/api/configs/${activeConfigId}`, {
-    method: 'PUT',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...authHeader },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) throw new Error(`API ${response.status}`);
-  setStatus('Konfiguration gespeichert.', 'success');
-  await loadConfigs();
+  if (saving || !hasUnsavedChanges()) return;
+  const payload = readForm();
+  saving = true;
+  document.getElementById('configFields').disabled = true;
+  updateChangeState();
+  try {
+    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+    const authHeader = (await account?.getAuthHeader?.()) ?? {};
+    const response = await fetch(`${API_BASE_URL}/api/configs/${activeConfigId}`, {
+      method: 'PUT',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...authHeader },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`API ${response.status}`);
+    savedConfig = payload;
+    setStatus('Konfiguration gespeichert.', 'success');
+  } finally {
+    saving = false;
+    document.getElementById('configFields').disabled = false;
+    updateChangeState();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -85,5 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
     saveConfig().catch(error => setStatus(`Speichern fehlgeschlagen: ${error.message}`, 'error'));
   });
 
+  const fields = document.getElementById('configFields');
+  fields.addEventListener('input', updateChangeState);
+  fields.addEventListener('change', updateChangeState);
+  document.getElementById('discardChanges').addEventListener('click', discardChanges);
+  window.addEventListener('beforeunload', event => {
+    if (!hasUnsavedChanges()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  updateChangeState();
   loadConfigs();
 });
