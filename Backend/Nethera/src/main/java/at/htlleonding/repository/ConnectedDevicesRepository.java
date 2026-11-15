@@ -33,8 +33,9 @@ public class ConnectedDevicesRepository {
 
     public List<ConnectedDevice> findOnline(Router router) {
         return entityManager.createQuery(
-                        "SELECT d FROM ConnectedDevice d WHERE d.router = :router AND d.isOnline = true", ConnectedDevice.class)
+                        "SELECT d FROM ConnectedDevice d WHERE d.router = :router AND d.isOnline = true AND d.dataSource = :source", ConnectedDevice.class)
                 .setParameter("router", router)
+                .setParameter("source", ConnectedDevice.DataSource.ROUTER)
                 .getResultList();
     }
 
@@ -52,6 +53,7 @@ public class ConnectedDevicesRepository {
         device.setHostname(hostname);
         device.setOnline(isOnline);
         device.setConnectionType(connectionType);
+        device.setDataSource(ConnectedDevice.DataSource.ROUTER);
 
         if (isOnline) {
             device.setLastSeen(LocalDateTime.now());

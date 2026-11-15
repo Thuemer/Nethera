@@ -26,6 +26,8 @@ public class DeviceIngestor {
 
     @Transactional
     public void ingest(Router router, DeviceSnapshot snapshot) {
+        router.recordContact(true);
+        entityManager.merge(router);
         Set<String> leasedMacs = new HashSet<>();
         for (DeviceSnapshot.Lease lease : snapshot.leases()) {
             String mac = lease.mac().toLowerCase();
@@ -72,6 +74,7 @@ public class DeviceIngestor {
 
     private void emitActivityLog(Router router, ConnectedDevice device, String eventType, String details) {
         ActivityLog log = new ActivityLog();
+        log.setDataSource(ActivityLog.DataSource.ROUTER);
         log.setEventType(eventType);
         log.setDetails(details);
         log.setTimestamp(LocalDateTime.now());

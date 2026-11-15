@@ -1,0 +1,13 @@
+.data-source-notice {
+  grid-column: 1 / -1;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-left: 3px solid #8fa6b0;
+  background: #20292e;
+  color: #d9e3e7;
+  font: 500 13px/1.5 system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+.data-source-notice[data-mode="live"] { border-color: #59bcae; }
+.data-source-notice[data-mode="demo"] { border-color: #e0b66b; }
+.topology-workspace > .data-source-notice { margin: 0; }

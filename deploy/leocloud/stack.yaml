@@ -304,6 +304,9 @@ metadata:
   name: nethera-backend
 spec:
   replicas: 1
+  # The MQTT consumer has a fixed client ID; avoid concurrent old/new consumers.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: nethera-backend
@@ -316,7 +319,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: backend
-          image: ghcr.io/denizbernecker/nethera-backend:20261006-144848
+          image: ghcr.io/denizbernecker/nethera-backend:20261115-183240@sha256:733345807ec8d3b6493a6693e27462705d6251a151eda4baa7a45554534778e3
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -333,7 +336,7 @@ spec:
                   name: nethera-runtime
                   key: db-password
             - name: QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION
-              value: update
+              value: validate
             - name: QUARKUS_HIBERNATE_ORM_SQL_LOAD_SCRIPT
               value: no-file
             - name: QUARKUS_OIDC_AUTH_SERVER_URL
@@ -396,7 +399,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: frontend
-          image: ghcr.io/denizbernecker/nethera-frontend:20261115-155632@sha256:9ec268cefdf48f707dff150d392745b501434f5aaed84525c21dcfb93fead822
+          image: ghcr.io/denizbernecker/nethera-frontend:20261115-183517@sha256:92ea6cd566c76e92b4293f5f228c7549b90e9a5f72e8af01d2c0318ff21e3ee4
           imagePullPolicy: Always
           ports:
             - containerPort: 80

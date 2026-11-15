@@ -1,7 +1,4 @@
 // Datenverkehr Seite - JavaScript
-const appConfig = window.NETHERA_CONFIG || {};
-const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
-const CONNECTION_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}/api/connections/list`;
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -12,21 +9,6 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
-async function fetchJson(url) {
-    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-    const authHeader = (await account?.getAuthHeader?.()) ?? {};
-    const response = await fetch(url, {
-        headers: { Accept: 'application/json', ...authHeader },
-        cache: 'no-store'
-    });
-
-    if (!response.ok) {
-        throw new Error(`API-Fehler ${response.status}`);
-    }
-
-    return response.json();
-}
-
 async function loadTrafficData() {
     let router = null;
     let connections = [];
@@ -34,14 +16,13 @@ async function loadTrafficData() {
     let connectionError = null;
 
     try {
-        const routers = await fetchJson(ROUTER_API_URL);
-        router = Array.isArray(routers) ? routers[0] : null;
+        router = await NetheraApi.getPrimaryRouter();
     } catch (error) {
         routerError = error;
     }
 
     try {
-        const data = await fetchJson(CONNECTION_API_URL);
+        const data = router ? await NetheraApi.getConnections(router) : [];
         connections = Array.isArray(data) ? data : [];
     } catch (error) {
         connectionError = error;
@@ -55,7 +36,7 @@ async function loadTrafficData() {
             ? 'Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.'
             : 'Ein Teil der Verkehrsdaten ist gerade nicht erreichbar. Bitte versuche es erneut.';
     }
-    updateStatsDisplay(router, connections, !routerError, !connectionError);
+    updateStatsDisplay(router, connections, !routerError && router?.dataMode !== 'unavailable', !connectionError && !!router && router.dataMode !== 'unavailable');
     const emptyMessage = connectionError ? 'Keine Verbindungsdaten verfügbar.' : 'Noch keine Verbindungen vorhanden.';
     updateTrafficTable(connections, emptyMessage);
     updateTrafficChart(connections, emptyMessage);
@@ -80,10 +61,10 @@ function updateStatsDisplay(router, connections = [], routerAvailable = true, co
 
     document.getElementById('statDownload').textContent = latestSpeed && routerAvailable
         ? formatMbit(latestSpeed.downloadSpeed)
-        : connectionsAvailable ? formatMbit(connectionDownload) : '—';
+        : connectionsAvailable && connections.length ? formatMbit(connectionDownload) : '—';
     document.getElementById('statUpload').textContent = latestSpeed && routerAvailable
         ? formatMbit(latestSpeed.uploadSpeed)
-        : connectionsAvailable ? formatMbit(connectionUpload) : '—';
+        : connectionsAvailable && connections.length ? formatMbit(connectionUpload) : '—';
     document.getElementById('statConnections').textContent = connectionsAvailable ? String(connections.length) : '—';
     // Rates cannot be converted to a daily volume without a cumulative counter.
     document.getElementById('statVolume').textContent = '—';
@@ -163,3 +144,4 @@ function setupEvents() {
 
 setupEvents();
 loadTrafficData();
+NetheraApi.watchSource(loadTrafficData);

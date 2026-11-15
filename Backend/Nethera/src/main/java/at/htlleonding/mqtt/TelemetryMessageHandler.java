@@ -14,7 +14,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
-import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -98,8 +97,8 @@ public class TelemetryMessageHandler {
             }
             default -> throw new IllegalStateException("unhandled stream " + stream);
         }
-        // Any valid telemetry proves the router is alive, like a successful SSH sync did
-        router.setLastSeen(LocalDateTime.now());
+        // Device/counter ingestors confirm contact. Retained metadata alone cannot.
+        if (!"metadata".equals(stream)) router.recordContact(true);
     }
 
     private void handleStatus(Router router, String status) {

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "activity_log")
 @NamedQuery(name = ActivityLog.QUERY_FIND_ALL, query = "SELECT a FROM ActivityLog a")
-public class ActivityLog {
+public class ActivityLog extends TelemetryRecord {
 
     public final static String QUERY_FIND_ALL = "ActivityLog.findAll";
 

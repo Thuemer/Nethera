@@ -13,6 +13,7 @@ function harness(file) {
   };
   const context = vm.createContext({
     URL, Intl, Event, Date, console,
+    NetheraApi: { requireLive: async () => {}, isLive: () => true },
     window: { NETHERA_CONFIG: { API_BASE_URL: 'http://test' } },
     localStorage: { getItem: () => null, setItem() {} },
     document: { addEventListener() {}, getElementById: field, querySelector: () => null },

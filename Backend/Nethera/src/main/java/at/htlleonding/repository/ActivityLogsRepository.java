@@ -15,8 +15,9 @@ public class ActivityLogsRepository {
 
     public List<ActivityLog> findLatest(Router router, int limit) {
         return this.entityManager.createQuery(
-                        "SELECT a FROM ActivityLog a WHERE a.router = :router ORDER BY a.timestamp DESC, a.id DESC", ActivityLog.class)
+                        "SELECT a FROM ActivityLog a WHERE a.router = :router AND a.dataSource = :source ORDER BY a.timestamp DESC, a.id DESC", ActivityLog.class)
                 .setParameter("router", router)
+                .setParameter("source", ActivityLog.DataSource.ROUTER)
                 .setMaxResults(limit)
                 .getResultList();
     }

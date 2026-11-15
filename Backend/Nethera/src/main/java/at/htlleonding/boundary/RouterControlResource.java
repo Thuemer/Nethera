@@ -6,6 +6,7 @@ import at.htlleonding.model.BlockList;
 import at.htlleonding.model.Config;
 import at.htlleonding.model.Router;
 import at.htlleonding.model.RouterControlState;
+import at.htlleonding.telemetry.RouterDataPolicy;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.inject.Inject;
@@ -34,6 +35,9 @@ public class RouterControlResource {
     @Inject
     RouterControlPublisher publisher;
 
+    @Inject
+    RouterDataPolicy dataPolicy;
+
     // There is no user-to-router mapping yet, so every user sees the one configured router
     @ConfigProperty(name = "nethera.router.id", defaultValue = "1")
     long routerId;
@@ -44,7 +48,8 @@ public class RouterControlResource {
         Router router = entityManager.find(Router.class, routerId);
         RouterControlState state = entityManager.find(RouterControlState.class, routerId);
 
-        String connection = router == null || router.getOnline() == null ? "unknown" : router.getOnline() ? "online" : "offline";
+        // Same rule as the router overview: a seeded or outdated "online" flag is no live connection
+        String connection = router == null ? "unknown" : dataPolicy.connection(router);
         boolean confirmed = state != null && state.versionConfirmed();
         boolean allApplied = confirmed && Boolean.TRUE.equals(state.getApplied());
         boolean installed = state != null && Boolean.TRUE.equals(state.getAdblockInstalled());

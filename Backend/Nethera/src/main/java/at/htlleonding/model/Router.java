@@ -7,7 +7,7 @@ import java.util.Set;
 
 @Entity
 @NamedQuery(name = Router.QUERY_FIND_ALL, query = "SELECT r FROM Router r")
-public class Router {
+public class Router extends TelemetryRecord {
 
     public final static String QUERY_FIND_ALL = "Router.findAll";
 
@@ -22,6 +22,18 @@ public class Router {
     private Boolean isOnline;
     @Column(name = "last_seen")
     private LocalDateTime lastSeen;
+
+    @Column(name = "connection_checked_at")
+    private LocalDateTime connectionCheckedAt;
+
+    public LocalDateTime getConnectionCheckedAt() { return connectionCheckedAt; }
+    public void setConnectionCheckedAt(LocalDateTime value) { connectionCheckedAt = value; }
+
+    public void recordContact(boolean online) {
+        connectionCheckedAt = LocalDateTime.now();
+        isOnline = online;
+        if (online) lastSeen = connectionCheckedAt;
+    }
 
     //if orphanRemoval is true, then it gets removed from the db
     @OneToMany(mappedBy = "router", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -66,9 +66,11 @@ class BackendFixesIT {
     void routerListIsBounded() {
         tx(() -> {
             Router router = entityManager.find(Router.class, 1L);
+            router.recordContact(true);
             LocalDateTime now = LocalDateTime.now();
             for (int i = 0; i < 1500; i++) {
                 SpeedStat stat = new SpeedStat();
+                stat.setDataSource(SpeedStat.DataSource.ROUTER);
                 stat.setRouter(router);
                 stat.setTimestamp(now.minusSeconds(30L * i));
                 stat.setDownloadSpeed(10.0);
@@ -77,6 +79,7 @@ class BackendFixesIT {
             }
             for (int i = 0; i < 60; i++) {
                 ActivityLog log = new ActivityLog();
+                log.setDataSource(ActivityLog.DataSource.ROUTER);
                 log.setRouter(router);
                 log.setEventType("CONNECTED");
                 log.setDetails("bulk " + i);

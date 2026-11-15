@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "speed_stat")
 @NamedQuery(name = SpeedStat.QUERY_FIND_ALL, query = "SELECT s FROM SpeedStat s")
-public class SpeedStat {
+public class SpeedStat extends TelemetryRecord {
 
     public final static String QUERY_FIND_ALL = "SpeedStat.findAll";
 

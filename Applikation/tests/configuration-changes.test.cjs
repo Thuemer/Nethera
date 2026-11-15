@@ -11,7 +11,7 @@ function harness() {
   };
   const calls = [];
   const context = vm.createContext({
-    window: {}, Event, NetheraApi: { userMessage: () => 'Laden fehlgeschlagen' },
+    window: {}, Event, NetheraApi: { userMessage: () => 'Laden fehlgeschlagen', requireLive: async () => {}, isLive: () => true },
     document: { getElementById: field, querySelector: () => field('save'), addEventListener() {} },
     fetch: async (url, options) => { calls.push(options); return { ok: true }; }
   });
