@@ -17,17 +17,46 @@ func controlSources(t *testing.T, nftset bool) (Sources, *[]string) {
 		t.Fatal(err)
 	}
 	var commands []string
+	// A small fake adblock-fast: like the real one it only starts with a blocklist switched on
+	initScript := filepath.Join(dir, "adblock-fast")
+	configured, listOn, started := false, false, false
 	run := func(name string, args ...string) ([]byte, error) {
 		line := strings.Join(append([]string{name}, args...), " ")
 		commands = append(commands, line)
+		switch line {
+		case "apk add adblock-fast":
+			return nil, os.WriteFile(initScript, nil, 0o755)
+		case "uci set adblock-fast.config.enabled=1":
+			configured = true
+		case "uci set adblock-fast.config.enabled=0":
+			configured = false
+		case "uci show adblock-fast":
+			return []byte("adblock-fast.config.enabled='0'\n" +
+				"adblock-fast.@file_url[0].name='OISD - Big'\nadblock-fast.@file_url[0].enabled='0'\n" +
+				"adblock-fast.@file_url[1].name='Hagezi - Pro'\nadblock-fast.@file_url[1].enabled='0'\n"), nil
+		case "uci set adblock-fast.@file_url[1].enabled=1":
+			listOn = true
+		case initScript + " restart":
+			started = configured && listOn
+		case initScript + " stop":
+			started = false
+		case "sh -c " + initScript + " status 2>&1":
+			if started {
+				return []byte("adblock-fast is blocking 180000 domains (with dnsmasq.servers).\n"), nil
+			}
+			return []byte("adblock-fast 1.2.4-r4 failed to start.\n"), nil
+		case "uci -q get adblock-fast.config.enabled":
+			if configured {
+				return []byte("1\n"), nil
+			}
+			return []byte("0\n"), nil
+		}
 		switch line {
 		case "dnsmasq --version":
 			if nftset {
 				return []byte("Compile time options: IPv6 GNU-getopt no-DBus UBus no-i18n nftset auth"), nil
 			}
 			return []byte("Compile time options: IPv6 GNU-getopt no-DBus UBus no-i18n no-nftset auth"), nil
-		case "uci -q get adblock-fast.config.enabled":
-			return []byte("0\n"), nil
 		}
 		return nil, nil
 	}
@@ -35,7 +64,8 @@ func controlSources(t *testing.T, nftset bool) (Sources, *[]string) {
 		DnsmasqDirGlob: filepath.Join(dir, "dnsmasq*.d"),
 		NftDir:         filepath.Join(dir, "nftables.d"),
 		ControlFile:    filepath.Join(dir, "etc", "dns-control.json"),
-		AdblockInit:    filepath.Join(dir, "adblock-fast"),
+		AdblockInit:    initScript,
+		Sleep:          func(time.Duration) {},
 		Run:            run,
 		RunLong:        run,
 		Now:            func() time.Time { return time.Unix(1791890000, 0) },
@@ -163,11 +193,60 @@ func TestApplyAdblockInstallsWhenWanted(t *testing.T) {
 		}
 	}
 
+	// A fresh installation has no blocklist switched on; the agent has to choose one
+	if !ran(*commands, "uci set adblock-fast.@file_url[1].enabled=1") {
+		t.Error("the default blocklist (Hagezi - Pro) was not switched on")
+	}
+	if state := readAdblock(src); !state.Installed || !state.Enabled {
+		t.Errorf("state = %+v, want installed and enabled", state)
+	}
+
+	// Switching off again
+	applyDNSControl(src, dnsControl{Version: 2, Adblock: false})
+	if state := readAdblock(src); !state.Installed || state.Enabled {
+		t.Errorf("state = %+v, want installed and disabled", state)
+	}
+
 	// Switching off while it is not installed must not install it
 	src, commands = controlSources(t, false)
 	applyDNSControl(src, dnsControl{Version: 1, Adblock: false})
 	if ran(*commands, "apk add adblock-fast") {
 		t.Error("adblock-fast was installed although it is not wanted")
+	}
+}
+
+func TestAdblockSwitchedOnButNotRunningIsNotReportedAsEnabled(t *testing.T) {
+	src, _ := controlSources(t, false)
+	if err := os.WriteFile(src.AdblockInit, nil, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Switched on in uci, but the service never started (as seen on the Cudy)
+	src.Run("uci", "set", "adblock-fast.config.enabled=1")
+	if state := readAdblock(src); !state.Installed || state.Enabled {
+		t.Errorf("state = %+v, want installed but not enabled", state)
+	}
+
+	// The next message repairs it instead of trusting the switch
+	result := applyDNSControl(src, dnsControl{Version: 1, Adblock: true})
+	if !result.Adblock.Enabled || strings.Contains(result.Error, "adblock") {
+		t.Errorf("result = %+v, want adblock running without error", result)
+	}
+}
+
+func TestAdblockThatDoesNotStartIsAnError(t *testing.T) {
+	src, _ := controlSources(t, false)
+	run := src.Run
+	src.Run = func(name string, args ...string) ([]byte, error) {
+		if len(args) > 0 && args[0] == "show" {
+			// No blocklist section at all
+			return []byte("adblock-fast.config.enabled='0'\n"), nil
+		}
+		return run(name, args...)
+	}
+	src.RunLong = src.Run
+	result := applyDNSControl(src, dnsControl{Version: 1, Adblock: true})
+	if result.Applied || result.Adblock.Enabled || !strings.Contains(result.Error, "adblock") {
+		t.Errorf("result = %+v, want not applied with an adblock error", result)
 	}
 }
 

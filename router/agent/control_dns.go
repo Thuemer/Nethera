@@ -18,11 +18,17 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 const (
 	maxDomains = 2000
 	maxDevices = 100
+
+	// Blocklist switched on when the user wants adblock and none is enabled yet
+	adblockDefaultList = "Hagezi - Pro"
+	adblockStartTries  = 12
+	adblockStartWait   = 5 * time.Second
 
 	dnsmasqFileName = "nethera-block.conf"
 	nftFileName     = "90-nethera.nft"
@@ -55,7 +61,9 @@ type adblockState struct {
 
 var (
 	domainPattern = regexp.MustCompile(`^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$`)
-	macPattern    = regexp.MustCompile(`^([0-9a-f]{2}:){5}[0-9a-f]{2}$`)
+	// One option of a blocklist section in "uci show adblock-fast"
+	adblockListLine = regexp.MustCompile(`^(adblock-fast\.@file_url\[\d+\])\.(name|enabled)='(.*)'$`)
+	macPattern      = regexp.MustCompile(`^([0-9a-f]{2}:){5}[0-9a-f]{2}$`)
 )
 
 // parseDNSControl reads and checks a message. The agent runs as root and writes the
@@ -265,11 +273,16 @@ func applyDNSControl(src Sources, c dnsControl) controlPayload {
 
 // applyAdblock installs adblock-fast once when it is wanted and switches it on or off
 func applyAdblock(src Sources, enabled bool) error {
-	state := readAdblock(src)
-	if state.Enabled == enabled {
+	installed, configured, running := adblockStatus(src)
+	if enabled && configured && (running || waitAdblockRunning(src)) {
+		// Already on. After a boot the service needs a while to download its list;
+		// starting it a second time meanwhile would only get in its way.
 		return nil
 	}
-	if enabled && !state.Installed {
+	if !enabled && !configured {
+		return nil
+	}
+	if enabled && !installed {
 		// Installing needs internet and can take a minute
 		if _, err := src.RunLong("apk", "update"); err != nil {
 			return fmt.Errorf("apk update: %w", err)
@@ -278,13 +291,13 @@ func applyAdblock(src Sources, enabled bool) error {
 			return fmt.Errorf("apk add adblock-fast: %w", err)
 		}
 	}
-	if !enabled && !state.Installed {
-		return nil
-	}
 
 	value, action, boot := "0", "stop", "disable"
 	if enabled {
-		value, action, boot = "1", "start", "enable"
+		value, action, boot = "1", "restart", "enable"
+		if err := enableAdblockList(src); err != nil {
+			return err
+		}
 	}
 	steps := [][]string{
 		{"uci", "set", "adblock-fast.config.enabled=" + value},
@@ -297,16 +310,76 @@ func applyAdblock(src Sources, enabled bool) error {
 			return fmt.Errorf("%s: %w", strings.Join(step, " "), err)
 		}
 	}
+	if !enabled {
+		return nil
+	}
+
+	// The switch alone proves nothing: the service downloads its list first and can fail
+	if !waitAdblockRunning(src) {
+		return errors.New("adblock-fast did not start (see logread -e adblock-fast)")
+	}
 	return nil
 }
 
-// readAdblock checks what is really installed and configured, not what was requested
+// waitAdblockRunning gives the service time to download its list and load it
+func waitAdblockRunning(src Sources) bool {
+	for try := 0; try < adblockStartTries; try++ {
+		src.Sleep(adblockStartWait)
+		if _, _, running := adblockStatus(src); running {
+			return true
+		}
+	}
+	return false
+}
+
+// enableAdblockList switches one blocklist on if none is. A fresh installation has every
+// list switched off, and adblock-fast refuses to start without one.
+func enableAdblockList(src Sources) error {
+	out, err := src.Run("uci", "show", "adblock-fast")
+	if err != nil {
+		return fmt.Errorf("uci show adblock-fast: %w", err)
+	}
+	section := ""
+	for _, line := range strings.Split(string(out), "\n") {
+		m := adblockListLine.FindStringSubmatch(strings.TrimSpace(line))
+		if m == nil {
+			continue
+		}
+		switch {
+		case m[2] == "enabled" && m[3] == "1":
+			return nil
+		case m[2] == "name" && m[3] == adblockDefaultList:
+			section = m[1]
+		case m[2] == "name" && section == "":
+			section = m[1]
+		}
+	}
+	if section == "" {
+		return errors.New("adblock-fast has no blocklist to enable")
+	}
+	if _, err := src.Run("uci", "set", section+".enabled=1"); err != nil {
+		return fmt.Errorf("uci set %s.enabled=1: %w", section, err)
+	}
+	return nil
+}
+
+// readAdblock checks what is really installed and running, not what was requested
 func readAdblock(src Sources) adblockState {
+	installed, configured, running := adblockStatus(src)
+	return adblockState{Installed: installed, Enabled: configured && running}
+}
+
+// adblockStatus: configured = switched on in uci, running = the service says it blocks domains
+func adblockStatus(src Sources) (installed, configured, running bool) {
 	if _, err := os.Stat(src.AdblockInit); err != nil {
-		return adblockState{}
+		return false, false, false
 	}
 	out, err := src.Run("uci", "-q", "get", "adblock-fast.config.enabled")
-	return adblockState{Installed: true, Enabled: err == nil && strings.TrimSpace(string(out)) == "1"}
+	configured = err == nil && strings.TrimSpace(string(out)) == "1"
+	// The status text goes to the error output, and a stopped or failed service may
+	// exit with an error; only the text counts
+	status, _ := src.Run("sh", "-c", src.AdblockInit+" status 2>&1")
+	return true, configured, strings.Contains(string(status), "is blocking")
 }
 
 // loadSavedControl reads the state saved on flash by the last successful message
