@@ -3,55 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Konfiguration – Nethera</title>
+  <title>Konfiguration</title>
   <link rel="icon" href="nethera_logo.png">
   <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="nethera-select.css">
   <link rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
-  <link rel="stylesheet" href="configuration.css?v=20261114">
 </head>
 <body>
   <main class="page">
-    <app-hero title="Konfiguration" text="Router und Heimnetzwerk verständlich einstellen."></app-hero>
-    <section class="settings-summary card" aria-label="Hinweise zur Konfiguration">
-      <article><strong>Dein Router</strong><span id="configName">Konfiguration wird geladen.</span></article>
-      <article><strong>Einfach erklärt</strong><span>Die Netzwerkeinstellungen findest du unter „Erweitert“.</span></article>
-      <article><strong>Speicherung</strong><span>Speichern bestätigt die Datenbankänderung. Die Übernahme am Router wird hier noch nicht bestätigt.</span></article>
+    <app-hero title="Konfiguration" text="Router, Netzwerk und Verhalten verständlich einstellen." button="Speichern"></app-hero>
+
+    <section class="settings-summary card">
+      <article><strong>Router</strong><span>Name und Betriebsmodus.</span></article>
+      <article><strong>Schutz</strong><span>Updates, DNS-Blocking und Gastnetz.</span></article>
+      <article><strong>Speicherung</strong><span>Deine Änderungen bleiben erhalten.</span></article>
     </section>
-    <form id="configForm" novalidate aria-describedby="statusBox">
-      <fieldset id="configFields" disabled>
-        <legend class="visually-hidden">Routereinstellungen</legend>
-        <div class="grid two-grid">
-          <app-card title="Router">
-            <label class="field" for="routerName"><span>Routername</span><input id="routerName" name="routerName" type="text" required maxlength="100" autocomplete="off" aria-describedby="routerNameHelp routerNameError"><small id="routerNameHelp">Ein Name, an dem du deinen Router wiedererkennst.</small><small class="field-error" id="routerNameError"></small></label>
-            <label class="field" for="securityMode"><span>Betriebsmodus</span><select id="securityMode" name="mode" aria-describedby="modeHelp securityModeError" required><option value="GATEWAY">Gateway – normaler Router</option><option value="REPEATER">Repeater – WLAN erweitern</option><option value="BRIDGE">Bridge – Netzwerkbrücke</option></select><small id="modeHelp">Gateway verbindet dein Heimnetz mit dem Internet. Repeater erweitert ein WLAN; Bridge verbindet Netzwerkabschnitte.</small><small class="field-error" id="securityModeError"></small></label>
-            <label class="config-row"><span><strong>Automatische Updates</strong><small>Automatische Firmware-Updates erlauben.</small></span><input id="updates" type="checkbox"></label>
-            <label class="config-row"><span><strong>Werbe- und Trackerschutz</strong><small>Bekannte Werbe- und Trackingdomains über DNS filtern.</small></span><input id="dnsBlocking" type="checkbox"></label>
-          </app-card>
-          <app-card title="Netzwerk">
-            <label class="config-row"><span><strong>Gastnetzwerk</strong><small>Ein separates WLAN für Gäste vorsehen.</small></span><input id="guestNetwork" type="checkbox"></label>
-            <label class="config-row"><span><strong>Zusätzliche Messwerte</strong><small>Weitere technische Werte in der Übersicht anzeigen.</small></span><input id="profiling" type="checkbox"></label>
-            <details id="advancedSettings" class="advanced-settings">
-              <summary>Erweiterte Netzwerkeinstellungen</summary>
-              <p class="muted">Ändere diese Adressen nur, wenn du die Werte für dein Netzwerk kennst. Eine neue Routeradresse kann den Zugriff unter der bisherigen Adresse unterbrechen.</p>
-              <label class="field" for="lanIp"><span>LAN-Adresse des Routers</span><input id="lanIp" name="lanIp" type="text" required inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="lanIpHelp lanIpError"><small id="lanIpHelp">Lokale IPv4-Adresse, zum Beispiel 192.168.1.1.</small><small class="field-error" id="lanIpError"></small></label>
-              <label class="field" for="gatewayIp"><span>Gateway-Adresse</span><input id="gatewayIp" name="gatewayIp" type="text" required inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="gatewayIpHelp gatewayIpError"><small id="gatewayIpHelp">Adresse des nächsten Routers für den Internetzugang. Übernimm den Wert deiner bestehenden Konfiguration.</small><small class="field-error" id="gatewayIpError"></small></label>
-            </details>
-          </app-card>
-        </div>
-        <div class="config-actions">
-          <button id="saveConfig" class="refresh-btn" type="submit" disabled>Änderungen speichern</button>
-          <button id="resetConfig" class="small-btn ghost" type="button" disabled>Änderungen verwerfen</button>
-          <span id="changeState" role="status" aria-live="polite">Keine ungespeicherten Änderungen.</span>
-        </div>
-      </fieldset>
-    </form>
-    <div role="status" aria-live="polite" aria-atomic="true"><data-status id="statusBox" text="Konfiguration wird geladen."></data-status></div>
-    <button id="retryConfig" class="small-btn" type="button" hidden>Erneut laden</button>
-    <p class="muted">Du brauchst Hilfe? <a href="/website/html/support.html" target="_blank" rel="noopener">Support kontaktieren (neuer Tab)</a></p>
+
+    <section class="grid two-grid">
+      <app-card title="Router" >
+        <p class="muted">Name und Betriebsmodus deines Routers.</p>
+        <label class="field"><span>Routername</span><input id="routerName" type="text" value="Nethera Router"></label>
+        <label class="field"><span>Betriebsmodus</span><select id="securityMode"><option value="GATEWAY">Gateway - normaler Router</option><option value="REPEATER">Repeater - WLAN erweitern</option><option value="BRIDGE">Bridge - nur Netzwerkbrücke</option></select></label>
+        <label class="config-row"><span><strong>Automatische Updates</strong><small>Firmware-Updates im Hintergrund erlauben</small></span><input id="updates" type="checkbox" checked></label>
+        <label class="config-row"><span><strong>DNS Blocking</strong><small>Tracker und bekannte Werbedomains blockieren</small></span><input id="dnsBlocking" type="checkbox" checked></label>
+      </app-card>
+
+      <app-card title="Netzwerk" >
+        <p class="muted">Für einen einfachen Heimrouter sind LAN-IP und Gateway meistens gleich.</p>
+        <label class="field"><span>LAN-IP</span><input id="lanIp" type="text" value="192.168.0.1"></label>
+        <label class="field"><span>Gateway</span><input id="gatewayIp" type="text" value="192.168.0.1"></label>
+        <label class="config-row"><span><strong>Gastnetzwerk</strong><small>Separates WLAN für Gäste aktivieren</small></span><input id="guestNetwork" type="checkbox"></label>
+        <label class="config-row"><span><strong>Profi-Metriken</strong><small>Zusätzliche technische Werte anzeigen</small></span><input id="profiling" type="checkbox" checked></label>
+      </app-card>
+    </section>
+
+    <data-status id="statusBox" text="Konfiguration wird geladen."></data-status>
   </main>
+
   <script src="config.js"></script>
   <script src="api.js"></script>
   <script src="components.js"></script>
-  <script src="configuration.js?v=20261114"></script>
+  <script src="nethera-select.js"></script>
+  <script src="configuration.js?v=20260616-dropdowns"></script>
 </body>
 </html>
