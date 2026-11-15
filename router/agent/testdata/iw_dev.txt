@@ -3,7 +3,7 @@ phy#1
 		ifindex 10
 		wdev 0x100000001
 		addr 02:00:00:00:00:05
-		ssid htlleonding-seminar
+		ssid upstream-wifi
 		type managed
 		channel 116 (5580 MHz), width: 80 MHz, center1: 5610 MHz
 		txpower 26.00 dBm

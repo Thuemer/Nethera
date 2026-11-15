@@ -8,47 +8,47 @@
 
 ## 2. Module skeleton and configuration
 
-- [ ] 2.1 Create the Go module in `router/agent/` (`go mod init`, pin `github.com/eclipse/paho.mqtt.golang`), add the build output and `router/build/` to `.gitignore`
-- [ ] 2.2 Write `config.go`: read the `NETHERA_*` environment variables into a config struct, apply the defaults (transport `wss`, port by transport, `ws_path` `/mqtt`, username `router-<id>`, interval 30 with minimum 10), reject missing `router_id`/`broker`/`password` and an unknown transport with a message naming the problem; unit-test the defaults and each rejection
-- [ ] 2.3 Write `main.go`: flags `-dry-run` and `-version`, logging to standard error with the prefix `nethera-agent`, load the config, exit non-zero with the config error
-- [ ] 2.4 Create `router/files/etc/config/nethera` (template with `enabled=0` and all options from the spec as comments or defaults)
-- [ ] 2.5 Write `router/files/etc/init.d/nethera-agent` (procd, `USE_PROCD=1`, `START=99`): validate with `uci_validate_section`, refuse to start and log the missing option, pass the options as `NETHERA_*` with `procd_set_param env`, `procd_set_param stderr 1`, `procd_set_param respawn 3600 5 0`, `procd_add_reload_trigger nethera`
+- [x] 2.1 Create the Go module in `router/agent/` (`go mod init`, pin `github.com/eclipse/paho.mqtt.golang`), add the build output and `router/build/` to `.gitignore`
+- [x] 2.2 Write `config.go`: read the `NETHERA_*` environment variables into a config struct, apply the defaults (transport `wss`, port by transport, `ws_path` `/mqtt`, username `router-<id>`, interval 30 with minimum 10), reject missing `router_id`/`broker`/`password` and an unknown transport with a message naming the problem; unit-test the defaults and each rejection
+- [x] 2.3 Write `main.go`: flags `-dry-run` and `-version`, logging to standard error with the prefix `nethera-agent`, load the config, exit non-zero with the config error
+- [x] 2.4 Create `router/files/etc/config/nethera` (template with `enabled=0` and all options from the spec as comments or defaults)
+- [x] 2.5 Write `router/files/etc/init.d/nethera-agent` (procd, `USE_PROCD=1`, `START=99`): validate with `uci_validate_section`, refuse to start and log the missing option, pass the options as `NETHERA_*` with `procd_set_param env`, `procd_set_param stderr 1`, `procd_set_param respawn 3600 5 0`, `procd_add_reload_trigger nethera`
 
 ## 3. Connection and status
 
-- [ ] 3.1 Write `mqtt.go`: build the broker URL from transport, host, port and `ws_path`; Paho options with client ID `nethera-router-<id>`, keepalive 30 s, connect timeout 15 s, write timeout 10 s, clean session, auto-reconnect and connect-retry with an interval growing from 5 s to 60 s
-- [ ] 3.2 TLS for `wss`: system CA pool by default, `tls_ca` PEM file as replacement, host name verification on; log one warning when the transport is `ws` or `tcp`
-- [ ] 3.3 Last Will: retained `offline`, QoS 1, on `nethera/<id>/status`; on-connect handler publishes metadata (group 4) and then retained `online`; connection-lost handler logs the reason once
-- [ ] 3.4 Graceful stop on SIGTERM/SIGINT: publish retained `offline`, disconnect, exit 0
-- [ ] 3.5 Publish helper with `WaitTimeout(10 s)` that returns an error on timeout or failure, and skips publishing while the client is not connected
+- [x] 3.1 Write `mqtt.go`: build the broker URL from transport, host, port and `ws_path`; Paho options with client ID `nethera-router-<id>`, keepalive 30 s, connect timeout 15 s, write timeout 10 s, clean session, auto-reconnect and connect-retry with an interval growing from 5 s to 60 s
+- [x] 3.2 TLS for `wss`: system CA pool by default, `tls_ca` PEM file as replacement, host name verification on; log one warning when the transport is `ws` or `tcp`
+- [x] 3.3 Last Will: retained `offline`, QoS 1, on `nethera/<id>/status`; on-connect handler publishes metadata (group 4) and then retained `online`; connection-lost handler logs the reason once
+- [x] 3.4 Graceful stop on SIGTERM/SIGINT: publish retained `offline`, disconnect, exit 0
+- [x] 3.5 Publish helper with `WaitTimeout(10 s)` that returns an error on timeout or failure, and skips publishing while the client is not connected
 
 ## 4. Collectors
 
-- [ ] 4.1 Write the `Sources` type (file paths, command runner, clock) with the real implementation and a test implementation that reads `testdata/` and returns canned command output
-- [ ] 4.2 Payload structs for metadata, speed, dns and devices with JSON tags matching the contract; a helper that encodes them with `encoding/json`
-- [ ] 4.3 Metadata collector from `ubus call system board`; test with the fixture (model `Cudy WR3000S v1`)
-- [ ] 4.4 WAN interface resolution: `wan_iface` if set, else the `l3_device` of the interface with the IPv4 default route in `ubus call network.interface dump`; test with the fixture where the uplink is `phy1-sta0`, and with one where it is `wan`
-- [ ] 4.5 Speed collector from `/proc/net/dev`; test: counters of the resolved interface, missing interface gives an error
-- [ ] 4.6 NTP gate: `router/files/etc/hotplug.d/ntp/50-nethera` creates `/var/run/nethera-ntp-synced` on `ACTION=stratum`; the agent publishes speed only when the flag exists or 5 minutes have passed since start, and logs one warning in the second case; test both branches with a fake clock
-- [ ] 4.7 DNS collector: `ubus call dnsmasq metrics`, fallback SIGUSR1 + newest stats line from `logread`; test: ubus path, fallback path, no data
-- [ ] 4.8 Devices collector: parallel ping sweep over lease IPs + 2 s wait, `/proc/net/arp` filter (flags ≠ `0x0`, MAC ≠ zeros), `/tmp/dhcp.leases`, `iw` station dump over all wireless interfaces; lowercase MACs; empty lists as `[]`; test: normal case, hostname with `"` and `\`, empty leases file, no `iw`
+- [x] 4.1 Write the `Sources` type (file paths, command runner, clock) with the real implementation and a test implementation that reads `testdata/` and returns canned command output
+- [x] 4.2 Payload structs for metadata, speed, dns and devices with JSON tags matching the contract; a helper that encodes them with `encoding/json`
+- [x] 4.3 Metadata collector from `ubus call system board`; test with the fixture (model `Cudy WR3000S v1`)
+- [x] 4.4 WAN interface resolution: `wan_iface` if set, else the `l3_device` of the interface with the IPv4 default route in `ubus call network.interface dump`; test with the fixture where the uplink is `phy1-sta0`, and with one where it is `wan`
+- [x] 4.5 Speed collector from `/proc/net/dev`; test: counters of the resolved interface, missing interface gives an error
+- [x] 4.6 NTP gate: `router/files/etc/hotplug.d/ntp/50-nethera` creates `/var/run/nethera-ntp-synced` on `ACTION=stratum`; the agent publishes speed only when the flag exists or 5 minutes have passed since start, and logs one warning in the second case; test both branches with a fake clock
+- [x] 4.7 DNS collector: `ubus call dnsmasq metrics`, fallback SIGUSR1 + newest stats line from `logread`; test: ubus path, fallback path, no data
+- [x] 4.8 Devices collector: parallel ping sweep over lease IPs + 2 s wait, `/proc/net/arp` filter (flags ≠ `0x0`, MAC ≠ zeros), `/tmp/dhcp.leases`, `iw` station dump over all wireless interfaces; lowercase MACs; empty lists as `[]`; test: normal case, hostname with `"` and `\`, empty leases file, no `iw`
 
 ## 5. Main loop and dry run
 
-- [ ] 5.1 Main loop with a ticker (start-to-start interval): skip the cycle while disconnected; run speed, dns and devices; one failing collector or publish must not skip the others; log a repeating failure when it starts and when it ends
-- [ ] 5.2 Dry run: run every collector once, print `<topic> <payload>` lines, connect to nothing, exit 0; works with only `NETHERA_ROUTER_ID` set
-- [ ] 5.3 Contract test: for each stream, check field names and JSON types against what `TelemetryPayloadParser` requires, and compare the shape with the payloads in `scripts/mqtt-simulate-router.sh`
+- [x] 5.1 Main loop with a ticker (start-to-start interval): skip the cycle while disconnected; run speed, dns and devices; one failing collector or publish must not skip the others; log a repeating failure when it starts and when it ends
+- [x] 5.2 Dry run: run every collector once, print `<topic> <payload>` lines, connect to nothing, exit 0; works with only `NETHERA_ROUTER_ID` set
+- [x] 5.3 Contract test: for each stream, check field names and JSON types against what `TelemetryPayloadParser` requires, and compare the shape with the payloads in `scripts/mqtt-simulate-router.sh`
 
 ## 6. Local end-to-end tests (developer machine)
 
 - [ ] 6.1 Run the agent on the developer machine with the test sources against the Compose Mosquitto over `tcp` (`router-1` credentials); check with `mosquitto_sub` as `nethera-backend` that all topics arrive with the right retained flags and that the backend writes rows
-- [ ] 6.2 Run it against a `wss` broker (the development broker in a student namespace): login, round trip of all streams, wrong password is logged and retried without exit
+- [x] 6.2 Run it against a `wss` broker (the development broker in a student namespace): login, round trip of all streams, wrong password is logged and retried without exit
 - [ ] 6.3 Stop and start the broker while the agent runs: one "connection lost" line, reconnect with backoff, metadata and `online` republished, no backlog
 
 ## 7. Deploy to the router
 
-- [ ] 7.1 Write `router/files/lib/upgrade/keep.d/nethera-agent` (binary, init script, hotplug script, rc.d symlinks)
-- [ ] 7.2 Write `scripts/router-deploy.sh <host>`: `go test`, build static `linux/arm64`, `scp -O` binary and files, `apk add iw`, keep an existing `/etc/config/nethera`, `enable` + `restart`, print the next steps on first install; stop before copying if the tests fail
+- [x] 7.1 Write `router/files/lib/upgrade/keep.d/nethera-agent` (binary, init script, hotplug script, rc.d symlinks)
+- [x] 7.2 Write `scripts/router-deploy.sh <host>`: `go test`, build static `linux/arm64`, `scp -O` binary and files, `apk add iw`, keep an existing `/etc/config/nethera`, `enable` + `restart`, print the next steps on first install; stop before copying if the tests fail
 - [ ] 7.3 Deploy to the Cudy; run `nethera-agent -dry-run` on the router and compare the four payloads with the router's real state
 - [ ] 7.4 Configure `transport=tcp` and the laptop broker, `enabled=1`; check the macOS firewall allows the port; all streams arrive and the dashboard shows the real router
 - [ ] 7.5 Configure `transport=wss` and the development broker in LeoCloud; all streams arrive over `wss`

@@ -182,3 +182,15 @@ Rollback: `uci set nethera.agent.enabled=0; uci commit nethera; /etc/init.d/neth
 - `jsonfilter` is present. `scp` to the router needs `-O`.
 
 A shell prototype built before this design is kept locally in `router/local-draft/shell-prototype/` (not committed). Its dry run produced all four payloads on the router, and the backend ingested metadata and a devices snapshot from it through a laptop broker over `tcp`. It is the reference for which commands and files deliver which values; it is not part of this change.
+
+### Recovery of the test router (2026-10-19)
+
+The Cudy stopped booting OpenWrt (system LED kept blinking, no answer on the LAN, link reset about every 30 s) after a session in failsafe mode. It was recovered with Cudy's bootloader TFTP recovery, without a serial console:
+
+- PC address `192.168.1.88/24` on a LAN port, TFTP server running (macOS: `launchctl load -F /System/Library/LaunchDaemons/tftp.plist`, files in `/private/tftpboot`)
+- Hold reset, plug in power, keep holding about 10 s
+- The bootloader asks from `192.168.1.112` for **`recovery.bin`** (`RRQ "recovery.bin" octet timeout 5 blksize 1468`), not for `cudy3000s.bin` as the OpenWrt wiki states for the serial method
+- Stock firmware `WR3000S-R59-2.5.30-20260825` (MD5 `a8e4f479f6db659f39cf2d866b286d81`) served as `recovery.bin` was accepted; the router came up with the Cudy web interface at `192.168.10.1`
+
+The OpenWrt wiki notes that TFTP recovery was not tested on a WR3000S; this is a working case. The cause of the boot failure was not found.
+

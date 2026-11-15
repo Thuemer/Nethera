@@ -27,11 +27,11 @@
 - [x] 4.2 Add ingress path `/mqtt` → `nethera-mosquitto:9001`; add annotations only if 1.2/1.3 showed they are needed and allowed
 - [x] 4.3 Backend: set `NETHERA_TELEMETRY_MODE=mqtt`, `NETHERA_MQTT_HOST=nethera-mosquitto`, `NETHERA_MQTT_PORT=1883`, `NETHERA_MQTT_USERNAME=nethera-backend`, `NETHERA_MQTT_PASSWORD` from the Secret; keep the scheduler off; new image tag if 1.1 requires it
 - [x] 4.4 Check with `grep` that no `NodePort`/`LoadBalancer`/`ExternalName`/`hostPort` is present and that PVCs sum to ≤ 20 Gi
-- [ ] 4.5 Namespace owner: add `mqtt-backend-password` and `mqtt-router1-password` to `nethera-runtime`, create ConfigMap `nethera-mosquitto` from `docker/mosquitto/`, `kubectl apply -f deploy/leocloud/stack.yaml`, wait for rollouts
+- [x] 4.5 Namespace owner: add `mqtt-backend-password` and `mqtt-router1-password` to `nethera-runtime`, create ConfigMap `nethera-mosquitto` from `docker/mosquitto/`, `kubectl apply -f deploy/leocloud/stack.yaml`, wait for rollouts
 
 ## 5. Verify in the cloud
 
-- [ ] 5.1 Backend logs a successful MQTT connection to `nethera-mosquitto:1883` and no SSH attempts; existing pages (overview, devices) still load
+- [x] 5.1 Backend logs a successful MQTT connection to `nethera-mosquitto:1883` and no SSH attempts; existing pages (overview, devices) still load
 - [ ] 5.2 From the laptop (outside the cluster), publish fake telemetry as `router-1` over `wss://it220208.cloud.htl-leonding.ac.at/mqtt` (simulator or MQTT Explorer); check speed/DNS/devices rows in the cloud DB
 - [ ] 5.3 Check auth and ACL over `wss`: wrong password refused, `router-1` → `nethera/2/...` dropped; check port 1883/8883 on the host is not reachable
 - [ ] 5.4 Delete the Mosquitto Pod; retained status/metadata survive
