@@ -48,16 +48,33 @@ ein Cloud-Rollout synchronisiert diese Daten automatisch.
 Code- oder Theme-Aenderungen erscheinen nicht automatisch auf LeoCloud. Fuer
 Frontend- oder Backend-Code ist jeweils ein neuer Image-Build mit einem neuen
 UTC-Zeitstempel-Tag, ein Push nach GHCR und eine Anpassung des entsprechenden
-`image:`-Eintrags in `stack.yaml` erforderlich. Danach `kubectl apply -f
-deploy/leocloud/stack.yaml` ausfuehren und die Rollouts sowie Image-Digests
-pruefen. Nie einen alten Tag erneut verwenden.
+`image:`-Eintrags in `stack.yaml` erforderlich. Bei einer bestehenden Instanz
+nur das betroffene Deployment gezielt aktualisieren, z.B. mit `kubectl set image`;
+nicht fuer einen Code-Rollout den kompletten Stack samt Seed-Job erneut anwenden.
+Danach die Rollouts sowie Image-Digests pruefen. Nie einen alten Tag erneut verwenden.
+
+### Routerdaten-Release vom 15.11.2026
+
+Backend und Frontend aus Quellstand `5008dcf` sind ausgerollt. Die genauen Images
+sind in `stack.yaml` mit unveraenderlichen Digests festgehalten. Vor dem Backend
+wurde die additive Migration `Backend/Nethera/migrations/20261115_telemetry_source.sql`
+nach Sicherung beider Datenbanken eingespielt. Das Backend verwendet jetzt
+Schema-Validierung statt automatischer Schema-Aenderungen. `Recreate` verhindert
+gleichzeitige MQTT-Consumer mit derselben Client-ID; ein Backend-Rollout hat
+dadurch eine kurze API-Unterbrechung. Keycloak, Konten, Secrets und PVCs wurden
+nicht ersetzt. Details und Abnahme: `Documentation/router-data-sources.md`.
+
+Bei einem Rollback nur die vorherigen Backend-/Frontend-Images wiederherstellen.
+Die zusaetzlichen Spalten koennen bestehen bleiben; keine Datenbank oder PVC
+loeschen und keine Seeds erneut importieren.
 
 Der Keycloak-Realm wird beim erstmaligen Anlegen der Keycloak-Datenbank
 importiert. Aenderungen an `Applikation/realm-export.json` aktualisieren einen
 bestehenden Realm nicht automatisch. In der Cloud ist der MQTT-Empfang ueber
-Mosquitto und `/mqtt` eingerichtet. Solange der Router keine Daten sendet,
-zeigt die Anwendung weiterhin Demo-Daten. Der lokale MQTT-Compose-Stack bleibt
-davon unberuehrt.
+Mosquitto und `/mqtt` eingerichtet. Bei bestaetigter Verbindung zeigt die App nur
+verifizierte Routerdaten, bei bestaetigtem Offline-Status eine gekennzeichnete
+schreibgeschuetzte Demo. Ein unbekannter Status oder API-Fehler erzeugt keine
+Beispielwerte. Der lokale MQTT-Compose-Stack bleibt davon unberuehrt.
 
 Die PVCs `nethera-db-data` und `nethera-keycloak-db-data` enthalten die
 dauerhaften Daten. **Nicht loeschen**, ohne sie vorher zu sichern: LeoCloud

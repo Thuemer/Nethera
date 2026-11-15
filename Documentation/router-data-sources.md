@@ -1,6 +1,6 @@
 # Routerdaten und Demo strikt trennen
 
-Stand: lokal vorbereitet, nicht auf LeoCloud ausgerollt.
+Stand: am 15.11.2026 auf LeoCloud ausgerollt. Die Image-Digests stehen in `deploy/leocloud/stack.yaml`.
 
 ## Verhalten
 
@@ -36,12 +36,21 @@ Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Ro
 ## Sicherer spaeterer Rollout
 
 1. Vor einem Produktions-Rollout Datenbank-Backup und Team-Abgleich durchfuehren.
-2. `Backend/Nethera/migrations/20261115_telemetry_source.sql` vor dem neuen Backend ausfuehren. Das Skript fuegt nur Spalten hinzu; es loescht keine Zeilen, Tabellen, Konten oder Volumes. Es wurde in dieser Aufgabe nicht auf vorhandenen lokalen oder Cloud-Datenbanken ausgefuehrt.
+2. `Backend/Nethera/migrations/20261115_telemetry_source.sql` vor dem neuen Backend ausfuehren. Das Skript fuegt nur Spalten hinzu; es loescht keine Zeilen, Tabellen, Konten oder Volumes. Auf `student-it220208` wurde es am 15.11.2026 nach geprueftem Backup erfolgreich ausgefuehrt. Andere bestehende Installationen muessen die Migration separat anwenden.
 3. Das Cloud-Backend mit `validate` betreiben, niemals mit `drop-and-create` gegen bestehende Daten. Neues Backend bauen und separat freigeben lassen; danach den frischen MQTT/SSH-Eingang pruefen. Die Strategie `Recreate` verhindert zwei gleichzeitige MQTT-Consumer mit derselben Client-ID; dabei ist die API kurz nicht erreichbar.
 4. Frontend zusammen mit diesem API-Vertrag aktualisieren. Gegen ein altes Backend zeigt es absichtlich einen unbekannten Datenstatus statt ungetrennter Beispieldaten.
 5. Live, fehlender Einzelstream, Disconnect, Reconnect und API-Fehler pruefen. Vor jedem Schreibtest sicherstellen, dass echte Geraete ausgewaehlt sind.
 
 Nach dem ersten Update koennen historische Werte fehlen, bis neue echte Telemetrie eintrifft. Die alten Zeilen bleiben erhalten, sind aber nicht automatisch nachtraeglich verifizierbar.
+
+## Rollout-Pruefung am 15.11.2026
+
+- Quellstand: `5008dcf`; Backend und Frontend gezielt ausgetauscht, kein erneuter Seed-Job.
+- Beide Datenbanken vorab als PostgreSQL-Custom-Archive gesichert und deren Inhaltsverzeichnisse geprueft. Das Cloud-Schema mit Migration und neuem Backend zusaetzlich in einer isolierten lokalen Datenbank getestet; keine Produktivzeilen in diese Testdatenbank importiert.
+- Backend und Frontend sind bereit und laufen mit den in `stack.yaml` hinterlegten Digests. MQTT-Verbindung und frischer Eingang von Geraeten, Speed und DNS bestaetigt.
+- Keycloak-Kontenanzahl unveraendert; keine gepruefte Tabelle hat weniger Zeilen. Datenbank-, Keycloak- und Broker-Deployments sowie alle drei PVCs unveraendert.
+- Website HTTP 200, API ohne Anmeldung HTTP 401, unveraenderter OIDC-Issuer. Ausgelieferte `index.html`, `api.js` und `data-source.css` bytegleich mit dem lokalen Stand.
+- Router-Modell/Firmware sind noch nicht als `ROUTER` markiert und bleiben bis zum Eingang einer Metadatenmeldung im neuen Backend leer. Vorhandene alte Werte wurden nicht pauschal als verifiziert umetikettiert.
 
 ## Tests
 
@@ -56,4 +65,4 @@ Im Verzeichnis `Backend/Nethera`:
 ./mvnw -Dtest=RouterDataSourceIT,BackendFixesIT,DeviceIngestorIT test
 ```
 
-Die Integrationstests verwenden einen eigenen kurzlebigen PostgreSQL-Container, deaktivieren MQTT/Scheduler und greifen nicht auf vorhandene Projekt-Datenbanken oder den echten Router zu. Sie pruefen die Trennung von Seed- und echten Test-Telemetriedaten, leere Live-Streams, Offline-Antworten sowie den Erhalt gespeicherter Zeilen. Der echte Cudy und LeoCloud wurden dabei nicht veraendert.
+Die Integrationstests verwenden einen eigenen kurzlebigen PostgreSQL-Container, deaktivieren MQTT/Scheduler und greifen nicht auf vorhandene Projekt-Datenbanken oder den echten Router zu. Sie pruefen die Trennung von Seed- und echten Test-Telemetriedaten, leere Live-Streams, Offline-Antworten sowie den Erhalt gespeicherter Zeilen. Der anschliessende Cloud-Rollout wurde separat geprueft; es wurden keine Testbefehle an den Cudy gesendet.
