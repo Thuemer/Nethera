@@ -44,7 +44,10 @@ func main() {
 		return
 	}
 
-	conn, err := NewConnection(cfg, func(*Connection) { agent.PublishMetadata() })
+	conn, err := NewConnection(cfg, func(*Connection) {
+		agent.PublishMetadata()
+		agent.SubscribeControl()
+	})
 	if err != nil {
 		log.Fatalf("configuration error: %v", err)
 	}
@@ -55,6 +58,9 @@ func main() {
 	defer stop()
 
 	log.Printf("started for router %d, every %s", cfg.RouterID, cfg.Interval)
+	// Applies the blocks saved on flash right away, then every new message from the backend
+	go agent.RunControl(ctx)
+
 	done := make(chan struct{})
 	go func() {
 		conn.Run(ctx)

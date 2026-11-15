@@ -178,6 +178,18 @@ func (c *Connection) Publish(suffix string, qos byte, retained bool, payload []b
 	return token.Error()
 }
 
+// Subscribe listens on a topic below the router's prefix. The session is not kept
+// across connects, so this is called again after every connect.
+func (c *Connection) Subscribe(suffix string, handle func(payload []byte)) error {
+	token := c.client.Subscribe(c.cfg.Topic(suffix), 1, func(_ mqtt.Client, m mqtt.Message) {
+		handle(m.Payload())
+	})
+	if !token.WaitTimeout(publishTimeout) {
+		return fmt.Errorf("subscribe to %s timed out after %s", c.cfg.Topic(suffix), publishTimeout)
+	}
+	return token.Error()
+}
+
 // Close reports the router offline and ends the connection cleanly, so the broker does
 // not send the Last Will on top of it.
 func (c *Connection) Close() {

@@ -22,6 +22,8 @@ type Agent struct {
 	started time.Time
 	// connected is signalled after every connect, so the first cycle does not wait a full interval
 	connected chan struct{}
+	// control holds the newest DNS control message; an older one that was not applied yet is dropped
+	control chan []byte
 
 	// failing remembers which problems are already logged, so each one is reported
 	// when it starts and when it ends instead of on every cycle
@@ -30,7 +32,7 @@ type Agent struct {
 }
 
 func NewAgent(cfg Config, src Sources) *Agent {
-	return &Agent{cfg: cfg, src: src, started: src.Now(), connected: make(chan struct{}, 1), failing: map[string]bool{}}
+	return &Agent{cfg: cfg, src: src, started: src.Now(), connected: make(chan struct{}, 1), control: make(chan []byte, 1), failing: map[string]bool{}}
 }
 
 // report logs a problem once when it appears and once when it is gone
@@ -142,4 +144,69 @@ func (a *Agent) DryRun(w io.Writer) bool {
 	devices, err := collectDevices(a.src)
 	print("devices", devices, err)
 	return ok
+}
+
+// SubscribeControl runs after every connect. The broker then sends the retained desired
+// state at once, so the router catches up with changes made while it was offline.
+func (a *Agent) SubscribeControl() {
+	a.report("control subscribe", a.conn.Subscribe("config/dns", a.receiveControl))
+}
+
+// receiveControl is called by the MQTT library. Applying can take minutes (installing
+// adblock-fast), so the message is only handed over to RunControl here.
+func (a *Agent) receiveControl(data []byte) {
+	for {
+		select {
+		case a.control <- data:
+			return
+		default:
+			// Drop the older message that is still waiting; only the newest state matters
+			select {
+			case <-a.control:
+			default:
+			}
+		}
+	}
+}
+
+// RunControl first applies the state saved on flash, so blocks are active after a power
+// cut even without internet. Then it applies every message until ctx is cancelled.
+func (a *Agent) RunControl(ctx context.Context) {
+	if saved, ok := loadSavedControl(a.src.ControlFile); ok {
+		result := applyDNSControl(a.src, saved)
+		a.report("control", resultError(result))
+	}
+	for {
+		select {
+		case data := <-a.control:
+			a.handleControl(data)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// handleControl checks one message, applies it, saves it on flash and reports the result
+func (a *Agent) handleControl(data []byte) {
+	c, err := parseDNSControl(data)
+	if err != nil {
+		a.report("control", err)
+		a.publish("control", 1, true, controlPayload{V: schemaVersion, TS: a.src.Now().Unix(), Error: err.Error()}, nil)
+		return
+	}
+	result := applyDNSControl(a.src, c)
+	a.report("control", resultError(result))
+
+	// The checked state is saved even if a part failed, so the next start tries again
+	if normalized, err := json.Marshal(c); err == nil {
+		a.report("control save", saveControl(a.src.ControlFile, normalized))
+	}
+	a.publish("control", 1, true, result, nil)
+}
+
+func resultError(result controlPayload) error {
+	if result.Error == "" {
+		return nil
+	}
+	return fmt.Errorf("%s", result.Error)
 }

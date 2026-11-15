@@ -1,9 +1,13 @@
-# Backend only reads telemetry of all routers
+# Backend reads telemetry of all routers and sends each router its desired settings
 user nethera-backend
 topic read nethera/+/#
+topic write nethera/+/config/#
 
 # One block per router: publish into its own namespace only.
 # Read on status is needed for the long-lived Last Will connection.
+# A router may not write config/, so it cannot change its own settings.
 user router-1
-topic write nethera/1/#
+topic write nethera/1/status
+topic write nethera/1/telemetry/#
 topic read nethera/1/status
+topic read nethera/1/config/#
