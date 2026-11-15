@@ -11,6 +11,8 @@ const state = {
   presets: [],
   assignments: [],
   timeLimits: [],
+  routerControl: null,
+  routerControlError: null,
   wifiNetworks: [
     { ssid: 'Nethera', bssid: 'A4:20:11:8C:90:01', type: 'router', signal: -48, channel: 6, frequency: '2.4 GHz', encryption: 'WPA3', known: true },
     { ssid: 'Nethera-5G', bssid: 'A4:20:11:8C:90:02', type: 'accessPoint', signal: -56, channel: 44, frequency: '5 GHz', encryption: 'WPA3', known: true },
@@ -82,6 +84,81 @@ async function loadSecurityState() {
     renderAll();
     setStatus(NetheraApi.userMessage(error), 'error');
   }
+  await loadRouterControlStatus();
+}
+
+function routerEffect(entry) {
+  if (state.routerControl?.connection === 'online' && entry?.applied === true) return 'Am Router bestätigt';
+  if (entry?.error) return 'Routerfehler';
+  return 'Nur gespeichert';
+}
+
+function renderRouterControlStatus() {
+  const control = state.routerControl;
+  const connection = control?.connection;
+  const summary = document.getElementById('routerControlStatus');
+  if (summary) summary.textContent = state.routerControlError
+    ? 'Routerstatus konnte nicht geladen werden. Gespeicherte Regeln sind nicht als wirksam bestätigt.'
+    : !control
+      ? 'Routerbestätigung noch nicht verfügbar. Regeln werden zunächst nur gespeichert.'
+      : connection === 'online'
+        ? `Router erreichbar · zuletzt geprüft: ${control.checkedAt ? new Date(control.checkedAt).toLocaleString('de-AT') : 'gerade eben'}`
+        : 'Router nicht erreichbar oder Status unbekannt. Regeln sind nicht als wirksam bestätigt.';
+
+  const adblock = control?.adblock;
+  const adblockText = document.getElementById('adblockActual');
+  if (adblockText) adblockText.textContent = connection !== 'online'
+    ? 'Installation und Aktivierung am Router können derzeit nicht bestätigt werden.'
+    : adblock?.installed === false
+      ? 'Adblock ist am Router nicht installiert.'
+      : adblock?.installed !== true
+        ? 'Installationsstatus am Router unbekannt.'
+        : adblock?.applied === true && adblock?.enabled === true
+          ? 'Adblock ist installiert und am Router aktiv.'
+          : adblock?.applied === true && adblock?.enabled === false
+            ? 'Adblock ist installiert, aber am Router ausgeschaltet.'
+            : 'Adblock ist installiert; die Aktivierung ist noch nicht bestätigt.';
+
+  const install = document.getElementById('installAdblock');
+  if (install) install.disabled = connection !== 'online' || !control?.capabilities?.adblockInstall || adblock?.installed !== false;
+
+  const blocklistNote = document.getElementById('blocklistActual');
+  if (blocklistNote) blocklistNote.textContent = control?.connection === 'online'
+    ? 'Jede Blockliste zeigt ihren bestätigten Routerstatus einzeln an.'
+    : 'Sperrlisten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
+  const priorityNote = document.getElementById('priorityActual');
+  if (priorityNote) priorityNote.textContent = control?.connection === 'online'
+    ? 'Die Übernahme wird für jedes Gerät getrennt bestätigt.'
+    : 'Prioritäten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
+
+  renderManualDomains();
+  renderPriorityList();
+  updatePriorityPreview();
+}
+
+async function loadRouterControlStatus() {
+  try {
+    state.routerControl = await NetheraApi.getRouterControlStatus();
+    state.routerControlError = null;
+  } catch (error) {
+    state.routerControl = null;
+    state.routerControlError = error;
+  }
+  renderRouterControlStatus();
+}
+
+async function requestAdblockInstallation() {
+  const button = document.getElementById('installAdblock');
+  if (state.routerControl?.connection !== 'online' || !state.routerControl.capabilities?.adblockInstall || state.routerControl.adblock?.installed !== false) return;
+  button.disabled = true;
+  try {
+    await NetheraApi.installAdblock();
+    setStatus('Installation angefordert. Prüfe den Routerstatus, bevor du Adblock als aktiv betrachtest.', 'info');
+    await loadRouterControlStatus();
+  } catch (error) {
+    setStatus(`Installation nicht bestätigt: ${error.message}`, 'error');
+    button.disabled = false;
+  }
 }
 
 function blocklistDomains(blocklist) {
@@ -121,7 +198,7 @@ function groupOptions(selectedId = '') {
 
 function presetOptions(selectedId = '') {
   return [
-    '<option value="">Kein Preset</option>',
+    '<option value="">Keine Vorlage</option>',
     ...state.presets.map(preset => `<option value="${preset.id}" ${Number(preset.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(preset.name)}</option>`)
   ].join('');
 }
@@ -140,12 +217,11 @@ function renderStats() {
     });
     return;
   }
-  const assignedPresets = state.assignments.filter(item => item.status === 'active').length;
   const domainCount = state.blocklists.reduce((sum, blocklist) => sum + blocklistDomains(blocklist).length, 0);
   document.getElementById('statPackages')?.setAttribute('value', String(state.blocklists.length));
   document.getElementById('statManual')?.setAttribute('value', String(domainCount));
   document.getElementById('statAds')?.setAttribute('value', String(blocklistDomains(state.blocklists.find(item => item.sourceType === 'DNS')).length));
-  document.getElementById('statPresets')?.setAttribute('value', String(assignedPresets));
+  document.getElementById('statPresets')?.setAttribute('value', String(state.presets.length));
   const adPercent = document.getElementById('adPercent');
   if (adPercent) adPercent.textContent = '—';
 }
@@ -186,8 +262,8 @@ function renderGroupDevices() {
     const presetBlocklist = state.blocklists.find(item => Number(item.id) === Number(preset?.blocklistId));
     const ruleCount = new Set([...blocklistDomains(groupBlocklist), ...blocklistDomains(presetBlocklist),
       ...state.blocklists.filter(item => item.sourceType === 'NETWORK').flatMap(blocklistDomains)]).size;
-    const presetState = preset ? (assignment?.status === 'paused' ? 'Pausiert' : 'Aktiv') : 'Kein Preset';
-    const presetClass = preset ? (assignment?.status === 'paused' ? 'warn' : 'ok') : '';
+    const presetState = preset ? (assignment?.status === 'paused' ? 'Vorlage pausiert' : 'Vorlage zugewiesen') : 'Keine Vorlage';
+    const presetClass = assignment?.status === 'paused' ? 'warn' : '';
     return `
       <article class="device-group-item">
         <div class="device-group-main">
@@ -196,11 +272,11 @@ function renderGroupDevices() {
             <span class="badge ${presetClass}">${escapeText(presetState)}</span>
           </div>
           <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(device.connectionType || 'unbekannt')} · Gruppe: ${escapeText(group?.name || 'Keine')}</span>
-          <span class="preset-line">Preset: <b>${escapeText(preset?.name || 'Keines')}</b> · ${ruleCount} Regeln · Priorität: ${preset?.priorityMode ? 'Bevorzugt' : 'Normal'}</span>
+          <span class="preset-line">Vorlage: <b>${escapeText(preset?.name || 'Keine')}</b> · ${ruleCount} Regeln · Priorität: ${preset?.priorityMode ? 'Bevorzugt' : 'Normal'}</span>
         </div>
         <div class="device-group-actions">
           <label><span>Gruppe</span><select aria-label="Gruppe für ${escapeText(device.hostname)}" data-device-group="${device.id}">${groupOptions(group?.id)}</select></label>
-          <label><span>Preset</span><select aria-label="Preset für ${escapeText(device.hostname)}" data-device-preset="${device.id}">${presetOptions(preset?.id)}</select></label>
+          <label><span>Vorlage</span><select aria-label="Vorlage für ${escapeText(device.hostname)}" data-device-preset="${device.id}">${presetOptions(preset?.id)}</select></label>
         </div>
       </article>
     `;
@@ -265,9 +341,9 @@ function renderManualDomains() {
         <div class="rule-main">
           <strong>${escapeText(blocklist.name)}</strong>
           <span>${escapeText(blocklistScope(blocklist))} · ${domains.length} Einträge${tags.length ? ` · ${escapeText(tags.join(', '))}` : ''}</span>
-          <div class="domain-entries">${domains.map(domain => `<div class="priority-row"><span>${escapeText(({adult:'18+ Inhalte',gambling:'Glücksspiele',social:'Social Media',violence:'Gewalt'})[domain] || domain)}</span><button class="small-btn ghost" type="button" data-remove-domain="${escapeText(domain)}" data-blocklist="${blocklist.id}" aria-label="${escapeText(domain)} aus ${escapeText(blocklist.name)} entfernen">Entfernen</button></div>`).join('') || '<span>Keine Einträge</span>'}</div>
+          <div class="domain-entries">${domains.map(domain => `<div class="priority-row" data-domain-row><span>${escapeText(({adult:'18+ Inhalte',gambling:'Glücksspiele',social:'Social Media',violence:'Gewalt'})[domain] || domain)}</span><div class="domain-actions">${!['adult', 'gambling', 'social', 'violence'].includes(domain) ? `<button class="small-btn ghost" type="button" data-edit-domain="${escapeText(domain)}" data-blocklist="${blocklist.id}" aria-label="${escapeText(domain)} bearbeiten">Bearbeiten</button>` : ''}<button class="small-btn ghost" type="button" data-remove-domain="${escapeText(domain)}" data-blocklist="${blocklist.id}" aria-label="${escapeText(domain)} aus ${escapeText(blocklist.name)} entfernen">Entfernen</button></div></div>`).join('') || '<span>Keine Einträge</span>'}</div>
         </div>
-        <span class="badge">Gespeichert</span>
+        <span class="badge ${routerEffect(state.routerControl?.blocklists?.[blocklist.id]) === 'Am Router bestätigt' ? 'ok' : ''}">${routerEffect(state.routerControl?.blocklists?.[blocklist.id])}</span>
       </article>
     `;
   }).join('');
@@ -284,7 +360,7 @@ function renderAdDomains() {
         <strong>${escapeText(domain)}</strong>
         <span>In der Werbefilter-Liste gespeichert</span>
       </div>
-      <span class="badge danger">Adblock</span>
+      <span class="badge">Gespeichert</span>
     </article>
   `).join('') || '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>';
 }
@@ -301,7 +377,7 @@ function renderPresetDeviceOptions() {
     applyPresetDevice.innerHTML = state.devices.map(device => `<option value="${device.id}">${escapeText(device.hostname || 'Unbekanntes Gerät')}</option>`).join('');
   }
   if (applyPresetSelect) {
-    applyPresetSelect.innerHTML = state.presets.map(preset => `<option value="${preset.id}">${escapeText(preset.name)}</option>`).join('') || '<option value="">Noch kein Preset vorhanden</option>';
+    applyPresetSelect.innerHTML = state.presets.map(preset => `<option value="${preset.id}">${escapeText(preset.name)}</option>`).join('') || '<option value="">Noch keine Vorlage vorhanden</option>';
   }
   if (blocklistSelect) {
     blocklistSelect.innerHTML = blocklistOptions();
@@ -312,7 +388,7 @@ function renderPresets() {
   const list = document.getElementById('presetList');
   if (!list) return;
   if (!state.presets.length) {
-    list.innerHTML = '<empty-state title="Keine Presets" text="Erstelle links ein Preset und weise es einem Gerät zu."></empty-state>';
+    list.innerHTML = '<empty-state title="Keine Vorlagen" text="Noch keine Vorlage gespeichert."></empty-state>';
     return;
   }
 
@@ -332,11 +408,11 @@ function renderPresets() {
     return `
       <article class="preset-item">
         <div class="preset-main">
-          <strong>${escapeText(preset.name)}</strong>
-          <span>${escapeText(tags)} · Blockliste: ${escapeText(blocklist?.name || 'Keine')}</span>
+          <div class="preset-heading"><strong>${escapeText(preset.name)}</strong><span class="badge">${devices.length} ${devices.length === 1 ? 'Gerät' : 'Geräte'}</span></div>
+          <span class="preset-settings">${escapeText(tags)}</span>
+          <span>Blockliste: ${escapeText(blocklist?.name || 'Keine')}</span>
           <span>Zugewiesen: ${escapeText(devices.join(', ') || 'keinem Gerät')}</span>
         </div>
-        <span class="badge ok">${devices.length} ${devices.length === 1 ? 'Gerät' : 'Geräte'}</span>
       </article>
     `;
   }).join('');
@@ -412,7 +488,7 @@ function updateApplyPresetPreview() {
   const preset = state.presets.find(item => Number(item.id) === Number(document.getElementById('applyPresetSelect').value));
   const device = state.devices.find(item => Number(item.id) === Number(document.getElementById('applyPresetDevice').value));
   const current = device ? presetForDevice(device.id) : null;
-  document.getElementById('applyPresetPreview').textContent = `${preset?.name || 'Kein Preset'} → ${device?.hostname || 'Kein Gerät'}${current ? ` · ersetzt „${current.name}“` : ''}${preset?.blockedFrom ? ` · Sperrzeit ${preset.blockedFrom}–${preset.blockedUntil}` : ' · bestehende Internetzeiten bleiben unverändert'}`;
+  document.getElementById('applyPresetPreview').textContent = `${preset?.name || 'Keine Vorlage'} → ${device?.hostname || 'Kein Gerät'}${current && current.id !== preset?.id ? ` · ersetzt „${current.name}“` : ''}${preset?.blockedFrom ? ` · Sperrzeit ${preset.blockedFrom}–${preset.blockedUntil}` : ' · bestehende Internetzeiten bleiben unverändert'}`;
 }
 
 function blocklistScope(blocklist) {
@@ -465,7 +541,18 @@ function renderPriorityControls() {
   const select = document.getElementById('priorityDevice');
   select.innerHTML = state.devices.map(device => `<option value="${device.id}">${escapeText(device.hostname)}</option>`).join('');
   updatePrioritySelection();
-  document.getElementById('priorityList').innerHTML = state.devices.map(device => `<div class="priority-row"><span>${escapeText(device.hostname)}</span><span class="badge ${presetForDevice(device.id)?.priorityMode ? 'ok' : ''}">${presetForDevice(device.id)?.priorityMode ? 'Bevorzugt' : 'Normal'}</span></div>`).join('');
+  renderPriorityList();
+}
+
+function renderPriorityList() {
+  const list = document.getElementById('priorityList');
+  if (!list) return;
+  list.innerHTML = state.devices.map(device => {
+    const desired = presetForDevice(device.id)?.priorityMode ? 'high' : 'normal';
+    const actual = state.routerControl?.priority?.[device.id];
+    const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
+    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${confirmed ? 'Am Router bestätigt' : 'Nur gespeichert'}</span></div>`;
+  }).join('');
 }
 
 function updatePrioritySelection() {
@@ -479,14 +566,16 @@ function updatePrioritySelection() {
 function updatePriorityPreview() {
   const device = state.devices.find(item => Number(item.id) === Number(document.getElementById('priorityDevice').value));
   const high = document.getElementById('priorityMode').value === 'high';
-  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · Router-Anwendung ausstehend`;
+  const actual = state.routerControl?.priority?.[device?.id];
+  const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === (high ? 'high' : 'normal');
+  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · ${confirmed ? 'Am Router bestätigt' : 'Routerbestätigung ausstehend'}`;
 }
 
 async function savePriority(event) {
   event.preventDefault();
   await saveDeviceProfile(Number(document.getElementById('priorityDevice').value), { priorityMode: document.getElementById('priorityMode').value === 'high' });
   await loadSecurityState();
-  setStatus('Gerätepriorität gespeichert. Router-Anwendung ausstehend.', 'success');
+  setStatus('Gerätepriorität gespeichert. Den Routerstatus siehst du bei der Geräteübersicht.', 'success');
 }
 
 let activeRouterConfig = null;
@@ -509,7 +598,10 @@ async function saveAdProtection(event) {
   const enabled = document.getElementById('adProtectionEnabled').checked;
   await apiJson(`${API_BASE_URL}/api/configs/${activeRouterConfig.id}`, { method: 'PUT', body: JSON.stringify({ ...activeRouterConfig, dnsBlocking: enabled }) });
   activeRouterConfig.dnsBlocking = enabled;
-  setStatus(`Werbeschutz ${enabled ? 'eingeschaltet' : 'ausgeschaltet'} gespeichert. Router-Anwendung ausstehend.`, 'success');
+  await loadRouterControlStatus();
+  const actual = state.routerControl?.adblock;
+  const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.enabled === enabled;
+  setStatus(`Werbeschutz-Einstellung gespeichert. ${confirmed ? 'Am Router bestätigt.' : 'Routerbestätigung für diese Einstellung ausstehend.'}`, 'success');
 }
 
 async function applyPresetToDevice(deviceId, preset) {
@@ -615,6 +707,7 @@ async function addManualDomain(event) {
   const preset = scope === 'device' ? presetForDevice(targetId) : null;
   const previous = scope === 'network' ? state.blocklists.find(item => item.sourceType === 'NETWORK')
     : state.blocklists.find(item => Number(item.id) === Number(scope === 'group' ? group.blocklistId : preset?.blocklistId));
+  if (blocklistDomains(previous).includes(domain)) return setStatus(`${domain} steht bereits in dieser Blockliste.`, 'info');
   const target = scope === 'network' ? 'Gesamtes Netzwerk' : scope === 'group' ? group.name : device.hostname;
   const blocklist = await apiJson(`${SECURITY_API}/blocklists`, {
     method: 'POST',
@@ -635,6 +728,7 @@ async function addAdDomain(event) {
   const domain = sanitizeDomain(input.value);
   if (!domain) return setStatus('Bitte eine gültige Werbe-Domain eingeben.', 'error');
   const dns = state.blocklists.find(item => item.sourceType === 'DNS');
+  if (blocklistDomains(dns).includes(domain)) return setStatus(`${domain} steht bereits im Werbefilter.`, 'info');
   const domains = [...new Set([...blocklistDomains(dns), domain])];
   await apiJson(`${SECURITY_API}/blocklists`, {
     method: 'POST',
@@ -642,14 +736,29 @@ async function addAdDomain(event) {
   });
   input.value = '';
   await loadSecurityState();
-  setStatus(`${domain} zum Werbeschutz hinzugefügt.`, 'success');
+  setStatus(`${domain} zum Werbefilter hinzugefügt. Routerwirkung noch nicht bestätigt.`, 'success');
+}
+
+async function updateBlocklistDomain(blocklistId, previousDomain, nextValue) {
+  const blocklist = state.blocklists.find(item => Number(item.id) === Number(blocklistId));
+  if (!blocklist) throw new Error('Blockliste nicht gefunden');
+  const nextDomain = sanitizeDomain(nextValue);
+  if (!nextDomain) throw new Error('Bitte eine gültige Website-Adresse eingeben.');
+  const domains = blocklistDomains(blocklist);
+  if (!domains.includes(previousDomain)) throw new Error('Eintrag nicht mehr vorhanden. Bitte neu laden.');
+  if (nextDomain !== previousDomain && domains.includes(nextDomain)) throw new Error('Die Domain steht bereits in dieser Blockliste.');
+  if (nextDomain === previousDomain) return false;
+  await apiJson(`${SECURITY_API}/blocklists`, { method: 'POST', body: JSON.stringify({ ...blocklist,
+    urlPattern: domains.map(domain => domain === previousDomain ? nextDomain : domain).join('|') }) });
+  await loadSecurityState();
+  return true;
 }
 
 async function createPreset(event) {
   event.preventDefault();
   const name = document.getElementById('presetName').value.trim();
   const deviceId = Number(document.getElementById('presetDevice').value);
-  if (!name) return setStatus('Bitte Preset-Namen eingeben.', 'error');
+  if (!name) return setStatus('Bitte einen Namen für die Vorlage eingeben.', 'error');
   if (!deviceId) return setStatus('Bitte Gerät wählen.', 'error');
   const schedule = document.getElementById('presetTimeLimit').checked;
   const from = document.getElementById('presetFrom').value;
@@ -672,7 +781,7 @@ async function createPreset(event) {
   await applyPresetToDevice(deviceId, preset);
   document.getElementById('presetName').value = '';
   await loadSecurityState();
-  setStatus(`Preset "${name}" gespeichert und zugewiesen.`, 'success');
+  setStatus(`Vorlage "${name}" gespeichert und zugewiesen.`, 'success');
 }
 
 async function applyExistingPreset(event) {
@@ -681,7 +790,7 @@ async function applyExistingPreset(event) {
   const deviceId = Number(document.getElementById('applyPresetDevice')?.value);
   const preset = state.presets.find(item => Number(item.id) === presetId);
   const device = state.devices.find(item => Number(item.id) === deviceId);
-  if (!presetId || !preset) return setStatus('Bitte zuerst ein Preset auswählen.', 'error');
+  if (!presetId || !preset) return setStatus('Bitte zuerst eine Vorlage auswählen.', 'error');
   if (!deviceId || !device) return setStatus('Bitte ein Gerät auswählen.', 'error');
 
   await applyPresetToDevice(deviceId, preset);
@@ -690,14 +799,35 @@ async function applyExistingPreset(event) {
 }
 
 function setupTabs() {
-  document.querySelectorAll('.security-tabs button').forEach(button => {
-    button.addEventListener('click', () => {
-      document.querySelectorAll('.security-tabs button').forEach(item => item.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
-      button.classList.add('active');
-      document.getElementById(`tab-${button.dataset.tab}`)?.classList.add('active');
+  const tabs = [...document.querySelectorAll('.security-tabs button')];
+  const activate = selected => {
+    tabs.forEach(button => {
+      const active = button === selected;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+      const panel = document.getElementById(`tab-${button.dataset.tab}`);
+      panel?.classList.toggle('active', active);
+      if (panel) panel.hidden = !active;
+    });
+  };
+  tabs.forEach((button, index) => {
+    button.id = `section-${button.dataset.tab}`;
+    button.setAttribute('aria-controls', `tab-${button.dataset.tab}`);
+    const panel = document.getElementById(`tab-${button.dataset.tab}`);
+    panel?.setAttribute('role', 'tabpanel');
+    panel?.setAttribute('aria-labelledby', button.id);
+    button.addEventListener('click', () => activate(button));
+    button.addEventListener('keydown', event => {
+      const target = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+        : event.key === 'ArrowRight' ? (index + 1) % tabs.length
+        : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : null;
+      if (target == null) return;
+      event.preventDefault(); activate(tabs[target]); tabs[target].focus();
     });
   });
+  activate(tabs.find(button => button.classList.contains('active')) || tabs[0]);
+  window.lucide?.createIcons({ attrs: { 'aria-hidden': 'true', 'stroke-width': 1.8 } });
 }
 
 function setupEvents() {
@@ -714,6 +844,8 @@ function setupEvents() {
     });
   }));
   document.querySelector('app-hero')?.addEventListener('hero-click', async () => { await loadSecurityState(); await loadAdProtection(); });
+  document.getElementById('refreshRouterControl')?.addEventListener('click', loadRouterControlStatus);
+  document.getElementById('installAdblock')?.addEventListener('click', requestAdblockInstallation);
   const forms = { groupForm: addGroup, groupBlocklistForm: saveGroupBlocklist, manualDomainForm: addManualDomain,
     adDomainForm: addAdDomain, presetForm: createPreset, applyPresetForm: applyExistingPreset,
     priorityForm: savePriority, adProtectionForm: saveAdProtection };
@@ -768,7 +900,7 @@ function setupEvents() {
         await apiJson(`${SECURITY_API}/devices/${deviceId}/preset`, { method: 'DELETE' });
       }
       await loadSecurityState();
-      return setStatus('Geräte-Preset gespeichert.', 'success');
+      return setStatus('Gerätevorlage gespeichert.', 'success');
     }
     } catch (error) {
       setStatus(`Änderung nicht vollständig gespeichert: ${error.message}. Bitte neu laden und prüfen.`, 'error');
@@ -776,6 +908,29 @@ function setupEvents() {
   });
 
   document.addEventListener('click', event => {
+    const edit = event.target.closest('[data-edit-domain]');
+    if (edit) {
+      const row = edit.closest('[data-domain-row]');
+      row.innerHTML = `<label class="field domain-edit-field"><span>Website-Adresse</span><input type="text" value="${escapeText(edit.dataset.editDomain)}" data-domain-input autocomplete="off"></label><div class="domain-actions"><button class="small-btn" type="button" data-update-domain="${escapeText(edit.dataset.editDomain)}" data-blocklist="${edit.dataset.blocklist}">Speichern</button><button class="small-btn ghost" type="button" data-cancel-domain>Abbrechen</button></div>`;
+      row.querySelector('[data-domain-input]').focus();
+      return;
+    }
+    if (event.target.closest('[data-cancel-domain]')) {
+      renderManualDomains();
+      return;
+    }
+    const update = event.target.closest('[data-update-domain]');
+    if (update) {
+      const input = update.closest('[data-domain-row]').querySelector('[data-domain-input]');
+      update.disabled = true;
+      updateBlocklistDomain(Number(update.dataset.blocklist), update.dataset.updateDomain, input.value)
+        .then(changed => {
+          if (!changed) renderManualDomains();
+          setStatus(changed ? 'Sperrlisten-Eintrag gespeichert. Routerwirkung noch nicht bestätigt.' : 'Keine Änderung an der Domain.', changed ? 'success' : 'info');
+        })
+        .catch(error => { update.disabled = false; setStatus(error.message, 'error'); });
+      return;
+    }
     const remove = event.target.closest('[data-remove-domain]');
     if (remove) {
       const blocklist = state.blocklists.find(item => Number(item.id) === Number(remove.dataset.blocklist));
@@ -783,7 +938,7 @@ function setupEvents() {
       apiJson(`${SECURITY_API}/blocklists`, { method: 'POST', body: JSON.stringify({ ...blocklist,
         urlPattern: blocklistDomains(blocklist).filter(domain => domain !== remove.dataset.removeDomain).join('|') }) })
         .then(loadSecurityState)
-        .then(() => setStatus('Eintrag aus der Blockliste entfernt.', 'success'))
+        .then(() => setStatus('Eintrag aus der Blockliste entfernt. Routerwirkung noch nicht bestätigt.', 'success'))
         .catch(error => { remove.disabled = false; setStatus(`Nicht entfernt: ${error.message}`, 'error'); });
     }
     const saveButton = event.target.closest('[data-save-group]');

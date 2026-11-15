@@ -1,591 +1,208 @@
-/*
- topologie_custom.js
- Web Components for the network topology view.
- - Defines `network-device`, `network-group` and `network-topology` custom elements
- - Handles layout, dragging and SVG line drawing
+(() => {
+  const $ = id => document.getElementById(id);
+  const config = window.NETHERA_CONFIG || {};
+  const { buildModel, graphElements, matchingDevices } = window.NetheraTopology;
+  let model = null, graph = null, mode = 'groups', groupFilter = '', selectedId = '';
+  let initialPositions = null, resizeObserver = null;
+  const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const row = (name, value) => `<div><dt>${escape(name)}</dt><dd>${escape(value)}</dd></div>`;
+  const date = value => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' }) : 'Nicht bekannt';
 
- Debug logs and in-page error overlay have been removed for a clean production build.
-*/
+  async function readApi(path) {
+    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+    const headers = await account?.getAuthHeader?.() || {};
+    const response = await fetch(`${config.API_BASE_URL || 'http://localhost:8080'}${path}`, { headers: { Accept: 'application/json', ...headers }, cache: 'no-store' });
+    if (!response.ok) throw new Error(`API ${response.status}`);
+    return response.json();
+  }
 
-const appConfig = window.NETHERA_CONFIG || {};
-const ROUTERS_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
+  function notice(message) {
+    $('network-notice').textContent = message;
+    $('network-notice').hidden = !message;
+  }
 
-// NetworkDevice: visual device node. Supports dragging and showing a small info box.
-class NetworkDevice extends HTMLElement {
-    constructor() {
-        super();
-        // offsets are left undefined so initLayout can detect uninitialized offsets
-        this.offsetX = undefined;
-        this.offsetY = undefined;
-        this.infoBox = null;
-        // Do not set attributes or inline styles here — some browsers (Safari) throw when
-        // a newly constructed custom element is assigned attributes in the constructor.
-        // Set styles in connectedCallback instead.
+  async function load() {
+    $('reload-network').disabled = true;
+    $('network-summary').textContent = 'Netzwerk wird geladen …';
+    try {
+      const [routerResult, rulesResult] = await Promise.allSettled([
+        readApi(config.ROUTERS_PATH || '/api/routers/list'), readApi('/api/security/state')
+      ]);
+      if (routerResult.status !== 'fulfilled' || !Array.isArray(routerResult.value) || !routerResult.value.length) throw new Error('router');
+      const rules = rulesResult.status === 'fulfilled' && rulesResult.value && !Array.isArray(rulesResult.value) ? rulesResult.value : null;
+      model = buildModel(routerResult.value[0], rules);
+      groupFilter = ''; selectedId = ''; $('device-search').value = '';
+      notice(model.rulesKnown ? '' : 'Gruppen und Vorlagen konnten nicht geladen werden. Verbindungsdaten werden weiterhin angezeigt.');
+      $('network-summary').textContent = `${model.devices.length} Geräte · ${model.groups.length} Gruppen · ${model.router.name}`;
+      renderLegend(); renderGraph(); filterGraph(); showDetails();
+    } catch {
+      notice('Netzwerk konnte nicht geladen werden. Bitte Anmeldung und Backend prüfen und erneut laden.');
+      $('network-summary').textContent = model ? 'Letzter geladener Stand' : 'Keine Netzwerkdaten';
+      if (!model) { $('graph-empty').textContent = 'Netzwerk nicht verfügbar'; $('graph-empty').hidden = false; }
+    } finally { $('reload-network').disabled = false; }
+  }
+
+  function renderLegend() {
+    $('group-legend').replaceChildren();
+    [{ id: '', name: 'Alle', count: model.devices.length }, ...model.groups].forEach(group => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'legend-item';
+      button.dataset.group = group.id;
+      button.setAttribute('aria-pressed', String(group.id === groupFilter));
+      if (group.color) {
+        const swatch = document.createElement('span');
+        swatch.className = 'swatch'; swatch.style.setProperty('--group-color', group.color); swatch.setAttribute('aria-hidden', 'true');
+        button.appendChild(swatch);
+      }
+      button.appendChild(document.createTextNode(group.name));
+      const count = document.createElement('span'); count.className = 'legend-count'; count.textContent = group.count; button.appendChild(count);
+      button.addEventListener('click', () => { groupFilter = groupFilter === group.id ? '' : group.id; renderLegend(); filterGraph(); });
+      $('group-legend').appendChild(button);
+    });
+  }
+
+  function fit() {
+    if (!graph) return;
+    graph.resize();
+    graph.nodes().style({ 'font-size': 12, 'text-max-width': 110, width: 42, height: 42 });
+    graph.nodes('[kind = "group"]').style({ width: 32, height: 32 });
+    graph.nodes('[kind = "router"]').style({ width: 86, height: 86 });
+    graph.fit(graph.elements(), 48);
+    // Keep labels readable when a full graph is fitted into a narrow viewport.
+    for (let pass = 0; pass < 3; pass++) {
+      const scale = graph.zoom();
+      const minFont = graph.width() < 600 ? 10 : 12;
+      graph.nodes().style({ 'font-size': Math.max(12, minFont / scale), 'text-max-width': 84 / scale, width: Math.max(42, 23 / scale), height: Math.max(42, 23 / scale) });
+      graph.nodes('[kind = "group"]').style({ width: Math.max(32, 18 / scale), height: Math.max(32, 18 / scale) });
+      graph.nodes('[kind = "router"]').style({ width: Math.max(86, 46 / scale), height: Math.max(86, 46 / scale) });
+      graph.fit(graph.elements(), 48);
     }
+    if (graph.zoom() > 1.2) graph.zoom({ level: 1.2, renderedPosition: { x: graph.width() / 2, y: graph.height() / 2 } });
+  }
 
-    connectedCallback(){
-        // Ensure basic positioning styles when attached
-        try{
-            this.style.position = this.style.position || 'absolute';
-            this.style.cursor = this.style.cursor || 'pointer';
-        }catch(e){ /* ignore */ }
+  function renderGraph() {
+    graph?.destroy(); resizeObserver?.disconnect();
+    graph = cytoscape({
+      container: $('network-graph'), elements: graphElements(model, mode),
+      minZoom: .02, maxZoom: 2.5, wheelSensitivity: .25, selectionType: 'single', boxSelectionEnabled: false,
+      style: [
+        { selector: 'node', style: { label: 'data(label)', 'background-color': 'data(color)', width: 42, height: 42, 'border-width': 2, 'border-color': '#1c2226', color: '#e4e9eb', 'font-family': 'Avenir Next, Segoe UI, sans-serif', 'font-size': 12, 'text-valign': 'bottom', 'text-margin-y': 9, 'text-wrap': 'wrap', 'text-max-width': 110, 'text-background-color': '#1c2226', 'text-background-opacity': .85, 'text-background-padding': 3, 'overlay-opacity': 0 } },
+        { selector: 'node[kind = "router"]', style: { width: 86, height: 86, 'background-image': 'router.png', 'background-fit': 'contain', 'background-width': '80%', 'background-height': '80%', 'border-width': 2, 'border-color': '#69c5b6', 'font-weight': 600 } },
+        { selector: 'node[kind = "group"]', style: { width: 32, height: 32, 'background-opacity': .18, 'border-color': 'data(color)', 'border-width': 2, 'font-weight': 600 } },
+        { selector: 'edge', style: { width: 1.4, 'line-color': '#617078', 'curve-style': 'bezier', 'overlay-opacity': 0 } },
+        { selector: '.muted', style: { opacity: .13 } },
+        { selector: 'node:selected', style: { 'border-color': '#ffffff', 'border-width': 4 } },
+        { selector: 'edge.highlighted', style: { 'line-color': '#9cd6cd', width: 2 } }
+      ],
+      layout: { name: 'grid', padding: 60 }
+    });
+    // Keep positions stable except when switching between wide and compact screens.
+    const layout = { name: 'cose', randomize: false, animate: false, fit: false, nodeDimensionsIncludeLabels: true, nodeRepulsion: () => 16000, idealEdgeLength: () => 115, edgeElasticity: () => 90, gravity: .3, numIter: 1000 };
+    graph.layout(layout).run();
+    fit();
+    if (graph.width() < 600) { graph.layout(layout).run(); fit(); }
+    initialPositions = new Map(graph.nodes().map(node => [node.id(), { ...node.position() }]));
+    graph.on('tap', 'node', event => {
+      const node = event.target;
+      if (node.data('kind') === 'device') {
+        selectDevice(node.id());
+        if (window.matchMedia('(max-width: 700px)').matches) document.querySelector('.network-inspector').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+      else if (node.data('kind') === 'group' && mode === 'groups') { groupFilter = groupFilter === node.id() ? '' : node.id(); renderLegend(); filterGraph(); }
+      else { selectedId = ''; showDetails(); $('device-picker').value = ''; }
+    });
+    graph.on('tap', event => { if (event.target === graph) { selectedId = ''; graph.nodes().unselect(); graph.edges().removeClass('highlighted'); showDetails(); $('device-picker').value = ''; } });
+    let compactLayout = graph.width() < 600;
+    resizeObserver = new ResizeObserver(() => {
+      graph.resize();
+      const compact = graph.width() < 600;
+      fit();
+      if (compact !== compactLayout) {
+        compactLayout = compact;
+        graph.layout(layout).run(); fit();
+        initialPositions = new Map(graph.nodes().map(node => [node.id(), { ...node.position() }]));
+      }
+    });
+    resizeObserver.observe($('network-graph'));
+    $('graph-caption').textContent = mode === 'groups' ? 'Gespeicherte Gruppenzuordnung' : 'Verbindungstyp laut Gerätedaten';
+    $('network-graph').setAttribute('aria-label', `Netzwerkgraph mit ${model.devices.length} Geräten. Auswahl auch unter Gerät auswählen.`);
+  }
+
+  function filterGraph() {
+    if (!model || !graph) return;
+    const matches = matchingDevices(model, $('device-search').value, groupFilter);
+    const filtered = Boolean(groupFilter || $('device-search').value.trim());
+    graph.elements().removeClass('muted');
+    if (filtered) {
+      graph.elements().addClass('muted');
+      let visible = graph.getElementById('router');
+      matches.forEach(device => {
+        const node = graph.getElementById(device.id);
+        visible = visible.union(node.closedNeighborhood()).union(node.neighborhood().nodes().connectedEdges().filter(edge => edge.source().id() === 'router'));
+      });
+      visible.removeClass('muted');
     }
+    $('device-picker').replaceChildren(new Option(filtered ? `${matches.length} Geräte gefunden` : 'Netzwerkübersicht', ''));
+    matches.forEach(device => $('device-picker').add(new Option(device.name, device.id)));
+    if (!matches.some(device => device.id === selectedId)) selectedId = '';
+    $('device-picker').value = selectedId;
+    $('graph-empty').hidden = matches.length > 0;
+    $('graph-empty').textContent = model.devices.length ? 'Keine passenden Geräte' : 'Noch keine Geräte vorhanden';
+    if (!selectedId) { graph.nodes().unselect(); graph.edges().removeClass('highlighted'); }
+    showDetails();
+  }
 
-    addDragAndClick(topology) {
-        let dragging=false, startX, startY, offsetX, offsetY;
-
-        this.addEventListener('mousedown', e=>{
-            e.preventDefault();
-            startX=e.clientX; startY=e.clientY;
-            offsetX=e.clientX - this.offsetLeft;
-            offsetY=e.clientY - this.offsetTop;
-            dragging=false;
-
-            // disable transitions during drag for immediate response
-            try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.add('dragging'); }catch(e){}
-
-            const moveHandler = e=>{
-                const dx = e.clientX-startX;
-                const dy = e.clientY-startY;
-                if(Math.abs(dx)>2||Math.abs(dy)>2) dragging=true;
-                this.style.left = e.clientX - offsetX + 'px';
-                this.style.top = e.clientY - offsetY + 'px';
-                // update cached center for device to help drawLines avoid reflow
-                this._cx = this.offsetLeft + (this.offsetWidth||30)/2;
-                this._cy = this.offsetTop + (this.offsetHeight||30)/2;
-                const group = topology.groups.find(g=>g.dataset.group===this.dataset.group);
-                if(group){
-                    this.offsetX = this.offsetLeft + this.offsetWidth / 2 - group.offsetLeft - group.offsetWidth / 2;
-                    this.offsetY = this.offsetTop + this.offsetHeight / 2 - group.offsetTop - group.offsetHeight / 2;
-                }
-                // throttle redraw for smoother performance
-                topology.scheduleDraw();
-            };
-            const upHandler = ()=>{ document.removeEventListener('mousemove',moveHandler); document.removeEventListener('mouseup',upHandler); };
-            document.addEventListener('mousemove',moveHandler);
-            document.addEventListener('mouseup',upHandler);
-            document.addEventListener('mouseup', ()=>{
-                // re-enable transitions after drag ends
-                try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.remove('dragging'); }catch(e){}
-            }, { once: true });
-        });
-
-        this.addEventListener('click', ()=>{
-            if(dragging) return;
-            topology.selectedIndex = topology.devices.indexOf(this);
-            topology.showBottomInfo(topology.selectedIndex);
-        });
+  function selectDevice(id) {
+    if (!model?.devices.some(device => device.id === id)) return;
+    if (![...$('device-picker').options].some(option => option.value === id)) {
+      groupFilter = ''; $('device-search').value = ''; renderLegend(); filterGraph();
     }
+    selectedId = id; $('device-picker').value = id;
+    graph.nodes().unselect(); graph.edges().removeClass('highlighted');
+    const node = graph.getElementById(id);
+    node.select(); node.connectedEdges().addClass('highlighted');
+    showDetails();
+  }
 
-    updateInfoBox(time, topology){
-        if(!this.infoBox){
-            const box = document.createElement('div');
-            box.classList.add('device-info');
-            this.infoBox = box;
-            topology.querySelector('#topology')?.appendChild(box);
-        }
-        const topologyBox = topology.querySelector('#topology');
-        const topologyRect = topologyBox?.getBoundingClientRect();
-        const rect=this.getBoundingClientRect();
-        const group = topology.groups.find(g=>g.dataset.group===this.dataset.group);
-        const groupRect = group?.getBoundingClientRect();
-        if(!topologyRect) return;
-
-        const devCx = rect.left - topologyRect.left + rect.width / 2;
-        const devCy = rect.top - topologyRect.top + rect.height / 2;
-        const groupCx = groupRect ? groupRect.left - topologyRect.left + groupRect.width / 2 : topologyRect.width / 2;
-        const groupCy = groupRect ? groupRect.top - topologyRect.top + groupRect.height / 2 : topologyRect.height / 2;
-        const dx = devCx - groupCx;
-        const dy = devCy - groupCy;
-
-        this.infoBox.innerHTML = `<b>${this.dataset.name}</b><span class="meta">${this.dataset.group} · ${this.dataset.ipAddress || '-'} · ${time}</span>`;
-
-        const boxW = this.infoBox.offsetWidth || 180;
-        const boxH = this.infoBox.offsetHeight || 44;
-        const gap = 10;
-        let left = devCx + (dx >= 0 ? rect.width / 2 + gap : -rect.width / 2 - gap - boxW);
-        let top = devCy + (Math.abs(dy) > Math.abs(dx) ? (dy >= 0 ? rect.height / 2 + gap : -rect.height / 2 - gap - boxH) : -boxH / 2);
-        const pad = 8;
-        left = Math.max(pad, Math.min(left, topologyRect.width - boxW - pad));
-        top = Math.max(pad, Math.min(top, topologyRect.height - boxH - pad));
-        this.infoBox.style.left = left+'px';
-        this.infoBox.style.top = top+'px';
+  function showDetails() {
+    if (!model) return;
+    const device = model.devices.find(item => item.id === selectedId);
+    if (!device) {
+      $('device-details').innerHTML = `<p class="detail-kicker">Netzwerkübersicht</p><h2>${escape(model.router.name)}</h2><p class="overview-count">${model.devices.length}</p><p class="detail-note">Geräte im gespeicherten Netzwerk</p><section class="detail-section"><h3>Gruppen</h3>${model.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span><span>${escape(group.name)}</span><span class="legend-count">${group.count}</span></div>`).join('')}</section><section class="detail-section"><h3>Router</h3><dl>${row('Modell', model.router.model)}</dl></section>`;
+      return;
     }
-}
+    const preset = device.preset;
+    const limit = device.timeLimit;
+    const presetName = !device.rulesKnown ? 'Nicht verfügbar' : preset?.name || (device.assignment ? 'Vorlagendetails fehlen' : 'Keine Vorlage zugewiesen');
+    const paused = device.assignment?.status === 'paused';
+    const limitText = !device.rulesKnown ? 'Nicht verfügbar' : !limit ? 'Keine Zeitregel gespeichert' : limit.status === 'paused' ? 'Pausiert' : limit.blockedFrom && limit.blockedUntil ? `${limit.blockedFrom}–${limit.blockedUntil}` : 'Kein Sperrzeitraum';
+    $('device-details').innerHTML = `<p class="detail-kicker">Gerät</p><h2>${escape(device.name)}</h2>
+      <section class="detail-section"><h3>Gruppenzuordnung</h3>${device.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span>${escape(group.name)}</div>`).join('')}</section>
+      <section class="detail-section"><h3>Zugewiesene Vorlage</h3><strong>${escape(presetName)}</strong>${device.assignment ? `<div><span class="assignment-state">${paused ? 'Zuweisung pausiert' : 'Gespeichert'}</span></div>` : ''}
+      <p class="detail-note">Die Routerwirkung ist hier nicht bestätigt.</p></section>
+      <section class="detail-section"><h3>Gespeicherte Regeln</h3><dl>${row('Priorität', !device.rulesKnown || (device.assignment && !preset) ? 'Nicht verfügbar' : paused ? 'Vorlage pausiert' : preset?.priorityMode ? 'Bevorzugt' : 'Normal')}${row('Sperrzeit', limitText)}${row('Tagesbudget', !device.rulesKnown ? 'Nicht verfügbar' : limit?.dailyLimitMinutes ? `${limit.dailyLimitMinutes} Minuten` : 'Kein Tagesbudget')}${row('Vorlagen-Blockliste', device.blocklist?.name || (!device.rulesKnown || preset?.blocklistId ? 'Nicht verfügbar' : 'Keine'))}</dl></section>
+      <section class="detail-section"><h3>Verbindung</h3><dl>${row('Typ', device.connection)}${row('IP-Adresse', device.ip)}${row('MAC-Adresse', device.mac)}${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section>`;
+  }
 
-// NetworkGroup: container for devices. Can be dragged; devices follow its position.
-class NetworkGroup extends HTMLElement {
-    constructor(){ super(); }
-
-    connectedCallback(){
-        try{
-            this.style.position = this.style.position || 'absolute';
-            this.style.cursor = this.style.cursor || 'pointer';
-        }catch(e){ /* ignore */ }
-    }
-
-    addDragAndClick(topology){
-        let dragging=false, startX, startY, offsetX, offsetY;
-
-        this.addEventListener('mousedown', e=>{
-            e.preventDefault();
-            startX=e.clientX; startY=e.clientY;
-            offsetX=e.clientX - this.offsetLeft;
-            offsetY=e.clientY - this.offsetTop;
-            dragging=false;
-            // disable transitions for responsive dragging
-            try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.add('dragging'); }catch(e){}
-
-            const moveHandler = e=>{
-                const dx=e.clientX-startX, dy=e.clientY-startY;
-                if(Math.abs(dx)>2||Math.abs(dy)>2) dragging=true;
-                this.style.left = e.clientX-offsetX+'px';
-                this.style.top = e.clientY-offsetY+'px';
-
-                // position children devices immediately and update cached centers
-                topology.devices.filter(d=>d.dataset.group===this.dataset.group)
-                    .forEach(dev=>{
-                        const left = this.offsetLeft + this.offsetWidth/2 + (dev.offsetX||0) - (dev.offsetWidth||30)/2;
-                        const top = this.offsetTop + this.offsetHeight/2 + (dev.offsetY||0) - (dev.offsetHeight||30)/2;
-                        dev.style.left = left + 'px';
-                        dev.style.top = top + 'px';
-                        dev._cx = left + (dev.offsetWidth||30)/2;
-                        dev._cy = top + (dev.offsetHeight||30)/2;
-                    });
-                // update group cached center as well
-                this._cx = this.offsetLeft + this.offsetWidth/2;
-                this._cy = this.offsetTop + this.offsetHeight/2;
-                // throttle redraw
-                topology.scheduleDraw();
-            };
-            const upHandler = ()=>{ document.removeEventListener('mousemove',moveHandler); document.removeEventListener('mouseup',upHandler); };
-            document.addEventListener('mousemove',moveHandler);
-            document.addEventListener('mouseup',upHandler);
-            document.addEventListener('mouseup', ()=>{ try{ const tRoot = topology.querySelector('#topology'); if(tRoot) tRoot.classList.remove('dragging'); }catch(e){} }, { once: true });
-        });
-    }
-
-}
-
-// NetworkTopology: root element that creates groups/devices, computes layout and draws lines.
-class NetworkTopology extends HTMLElement {
-    constructor(){
-        super();
-        this.groups=[]; this.devices=[]; this.selectedIndex=0;
-        this.routerData = null;
-        this.infoUpdateInterval = null;
-    }
-
-    connectedCallback(){
-        try{
-        this.innerHTML=`
-        <div id="topology">
-            <img src="router.png" id="router" draggable="false" tabindex="-1" aria-hidden="true">
-            <button id="regroup-topology" type="button" title="Verschobene Geräte und Gruppen zurücksetzen">Anordnung zurücksetzen</button>
-            <svg id="lines"></svg>
-        </div>
-        <div id="bottom-info">
-            <button id="prev-device">&lt;</button>
-            <div id="device-detail"></div>
-            <button id="next-device">&gt;</button>
-        </div>
-        `;
-        this.router=this.querySelector('#router');
-        this.svg=this.querySelector('#lines');
-        this.bottomDetail=this.querySelector('#device-detail');
-
-        // Ensure first line render is correct after router image dimensions are available.
-        if(this.router && !this.router.complete){
-            this.router.addEventListener('load', ()=> this.drawLines(), { once: true });
-        }
-
-        this._onResize = () => {
-            if (this._resizeFrame) return;
-            this._resizeFrame = requestAnimationFrame(() => {
-                this._resizeFrame = null;
-                this.initLayout();
-                this.updateDeviceInfo();
-            });
-        };
-        window.addEventListener('resize', this._onResize);
-
-        this.querySelector('#prev-device').addEventListener('click', ()=>{
-            if(!this.devices.length) return;
-            this.selectedIndex=(this.selectedIndex-1+this.devices.length)%this.devices.length;
-            this.showBottomInfo(this.selectedIndex);
-        });
-        this.querySelector('#next-device').addEventListener('click', ()=>{
-            if(!this.devices.length) return;
-            this.selectedIndex=(this.selectedIndex+1)%this.devices.length;
-            this.showBottomInfo(this.selectedIndex);
-        });
-
-        this.querySelector('#regroup-topology')?.addEventListener('click', ()=>{
-            this.regroup();
-        });
-
-        this.addGroupsAndDevices();
-        }catch(e){
-            throw e;
-        }
-    }
-
-    disconnectedCallback(){
-        window.removeEventListener('resize', this._onResize);
-        if (this._resizeFrame) cancelAnimationFrame(this._resizeFrame);
-        this.stopInfoUpdates();
-    }
-
-    async addGroupsAndDevices(){
-        try{
-            const routers = await this.fetchRouters();
-            if(!Array.isArray(routers) || routers.length===0){
-                this.showEmptyState('Keine Routerdaten von der API erhalten.');
-                return;
-            }
-
-            this.routerData = routers[0];
-            this.populateTopologyFromApi(this.routerData);
-        }catch(e){
-            this.showEmptyState('Routerdaten konnten nicht geladen werden.');
-        }
-    }
-
-    async fetchRouters(){
-        const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-        const authHeader = (await account?.getAuthHeader?.()) ?? {};
-        const response = await fetch(ROUTERS_API_URL, {
-            method: 'GET',
-            headers: { Accept: 'application/json', ...authHeader }
-        });
-        if(!response.ok){
-            throw new Error(`API request failed with status ${response.status}`);
-        }
-        return response.json();
-    }
-
-    populateTopologyFromApi(router){
-        this.clearTopology();
-
-        const devices = Array.isArray(router.devices) ? router.devices : [];
-        const groupOrder = ['wifi','lan','other'];
-        const groups = [...new Set(devices.map(d => this.normalizeConnectionType(d.connectionType)))];
-
-        groups
-            .sort((a,b)=>groupOrder.indexOf(a)-groupOrder.indexOf(b))
-            .forEach(group=>this.addGroup(this.toGroupLabel(group)));
-
-        devices.forEach(deviceData=>{
-            const normalizedType = this.normalizeConnectionType(deviceData.connectionType);
-            const groupLabel = this.toGroupLabel(normalizedType);
-            this.addDevice(
-                deviceData.hostname || deviceData.ipAddress || deviceData.macAddress || `Client ${deviceData.id}`,
-                groupLabel,
-                0,
-                {
-                    id: deviceData.id,
-                    ipAddress: deviceData.ipAddress,
-                    macAddress: deviceData.macAddress,
-                    hostname: deviceData.hostname,
-                    connectionType: normalizedType,
-                    lastSeen: deviceData.lastSeen
-                }
-            );
-        });
-
-        this.initLayout();
-        this.updateDeviceInfo();
-        if(this.devices.length){
-            this.selectedIndex = 0;
-            this.showBottomInfo(this.selectedIndex);
-        }
-        this.startInfoUpdates();
-    }
-
-    clearTopology(){
-        this.groups.forEach(group => group.remove());
-        this.devices.forEach(device => {
-            if(device.infoBox) device.infoBox.remove();
-            device.remove();
-        });
-        this.groups = [];
-        this.devices = [];
-        this.selectedIndex = 0;
-        this.stopInfoUpdates();
-    }
-
-    showEmptyState(message){
-        this.clearTopology();
-        if(this.bottomDetail){
-            this.bottomDetail.textContent = message;
-        }
-        this.drawLines();
-    }
-
-    startInfoUpdates(){
-        this.stopInfoUpdates();
-        this.infoUpdateInterval = setInterval(()=>{
-            this.updateDeviceInfo();
-            if(this.devices.length){
-                this.showBottomInfo(this.selectedIndex);
-            }
-        }, 1000);
-    }
-
-    stopInfoUpdates(){
-        if(this.infoUpdateInterval){
-            clearInterval(this.infoUpdateInterval);
-            this.infoUpdateInterval = null;
-        }
-    }
-
-    normalizeConnectionType(connectionType){
-        const value = (connectionType || '').toString().trim().toLowerCase();
-        if(value === 'wifi') return 'wifi';
-        if(value === 'lan') return 'lan';
-        return 'other';
-    }
-
-    toGroupLabel(connectionType){
-        if(connectionType === 'wifi') return 'WLAN';
-        if(connectionType === 'lan') return 'LAN';
-        return 'Sonstige';
-    }
-
-    formatLastSeen(lastSeenRaw){
-        if(!lastSeenRaw) return 'unbekannt';
-        const lastSeenDate = new Date(lastSeenRaw);
-        if(Number.isNaN(lastSeenDate.getTime())) return 'unbekannt';
-
-        const diffSeconds = Math.max(0, Math.floor((Date.now() - lastSeenDate.getTime()) / 1000));
-        if(diffSeconds < 60) return `vor ${diffSeconds}s`;
-        if(diffSeconds < 3600) return `vor ${Math.floor(diffSeconds/60)}min`;
-        if(diffSeconds < 86400) return `vor ${Math.floor(diffSeconds/3600)}h`;
-        return `vor ${Math.floor(diffSeconds/86400)}d`;
-    }
-
-    addGroup(name){
-        let group;
-        try{
-            group = document.createElement('network-group');
-        }catch(e){
-            // fallback to a div if custom element creation is not supported
-            group = document.createElement('div');
-            group.className = 'network-group-fallback';
-            // attach prototype methods if available
-            if(typeof NetworkGroup !== 'undefined' && NetworkGroup.prototype && typeof NetworkGroup.prototype.addDragAndClick === 'function'){
-                group.addDragAndClick = NetworkGroup.prototype.addDragAndClick.bind(group);
-            }
-        }
-        group.dataset.group=name; group.innerText=name;
-        // Accessibility: make groups focusable and announceable
-        try{ group.setAttribute('tabindex','0'); group.setAttribute('role','group'); group.setAttribute('aria-label', `Gruppe ${name}`); }catch(e){ }
-        // make the element use the same styles as the original implementation
-        try{ 
-            group.classList.add('group'); 
-            group.style.display = group.style.display || 'block'; 
-            // ensure size if stylesheet hasn't been applied yet
-            group.style.width = group.style.width || '100px';
-            group.style.height = group.style.height || '50px';
-        }catch(e){ /* ignore */ }
-        this.querySelector('#topology').appendChild(group);
-        if(typeof group.addDragAndClick==='function') group.addDragAndClick(this);
-        this.groups.push(group);
-        return group;
-    }
-
-    addDevice(name, groupName, time, meta={}){
-        let device;
-        try{
-            device = document.createElement('network-device');
-        }catch(e){
-            // fallback to a div if custom element creation is not supported
-            device = document.createElement('div');
-            device.className = 'network-device-fallback';
-            // attach prototype methods if available
-            if(typeof NetworkDevice !== 'undefined' && NetworkDevice.prototype){
-                if(typeof NetworkDevice.prototype.addDragAndClick === 'function') device.addDragAndClick = NetworkDevice.prototype.addDragAndClick.bind(device);
-                if(typeof NetworkDevice.prototype.updateInfoBox === 'function') device.updateInfoBox = NetworkDevice.prototype.updateInfoBox.bind(device);
-            }
-        }
-        device.dataset.name=name; device.dataset.group=groupName; device.dataset.time=time;
-        if(meta.id!=null) device.dataset.deviceId = String(meta.id);
-        if(meta.hostname) device.dataset.hostname = meta.hostname;
-        if(meta.ipAddress) device.dataset.ipAddress = meta.ipAddress;
-        if(meta.macAddress) device.dataset.macAddress = meta.macAddress;
-        if(meta.connectionType) device.dataset.connectionType = meta.connectionType;
-        if(meta.lastSeen) device.dataset.lastSeen = meta.lastSeen;
-        // Accessibility: make devices focusable and provide aria-label/role
-        try{ device.setAttribute('tabindex','0'); device.setAttribute('role','button'); device.setAttribute('aria-label', `${name}, Gruppe ${groupName}`); }catch(e){ }
-        // assign original class so topologie.css applies
-        try{ 
-            device.classList.add('device'); 
-            device.style.display = device.style.display || 'block'; 
-            // ensure size if stylesheet hasn't been applied yet
-            device.style.width = device.style.width || '30px';
-            device.style.height = device.style.height || '30px';
-        }catch(e){ /* ignore */ }
-        this.querySelector('#topology').appendChild(device);
-        if(typeof device.addDragAndClick==='function') device.addDragAndClick(this);
-        this.devices.push(device);
-        return device;
-    }
-
-    drawLines(){
-        if(!this.svg) return;
-        if(!this.router) return;
-        this.svg.innerHTML='';
-        const topologyRect = this.querySelector('#topology')?.getBoundingClientRect();
-        if(!topologyRect) return;
-        const routerCenter = this.getLocalCenter(this.router, topologyRect);
-        const rX = routerCenter.x;
-        const rY = routerCenter.y;
-
-        this.groups.forEach(group=>{
-            const groupCenter = this.getLocalCenter(group, topologyRect);
-            const gX = groupCenter.x;
-            const gY = groupCenter.y;
-            this.createLine(rX,rY,gX,gY);
-
-            this.devices.filter(d=>d.dataset.group===group.dataset.group)
-                .forEach(dev=>{
-                    const devCenter = this.getLocalCenter(dev, topologyRect);
-                    const dX = devCenter.x;
-                    const dY = devCenter.y;
-                    this.createLine(gX,gY,dX,dY);
-                });
-        });
-    }
-
-    getLocalCenter(el, topologyRect){
-        if(el._cx != null && el._cy != null){
-            return { x: el._cx, y: el._cy };
-        }
-        const rect = el.getBoundingClientRect();
-        return {
-            x: rect.left - topologyRect.left + rect.width / 2,
-            y: rect.top - topologyRect.top + rect.height / 2
-        };
-    }
-
-    // Schedule a draw on the next animation frame (throttles multiple calls).
-    scheduleDraw(){
-        if(this._rafScheduled) return;
-        this._rafScheduled = true;
-        requestAnimationFrame(()=>{
-            this._rafScheduled = false;
-            this.drawLines();
-            this.updateDeviceInfo(false);
-        });
-    }
-
-    createLine(x1,y1,x2,y2){
-        const line=document.createElementNS("http://www.w3.org/2000/svg","line");
-        line.setAttribute("x1",x1); line.setAttribute("y1",y1);
-        line.setAttribute("x2",x2); line.setAttribute("y2",y2);
-        line.setAttribute("stroke","var(--accent)"); line.setAttribute("stroke-width","2"); line.setAttribute("stroke-opacity","0.7");
-        this.svg.appendChild(line);
-    }
-
-    formatTime(sec){
-        const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
-        return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-    }
-
-    regroup(){
-        this.devices.forEach(dev => { dev.offsetX = undefined; dev.offsetY = undefined; });
-        this.initLayout();
-        this.updateDeviceInfo();
-        if(this.devices.length) this.showBottomInfo(this.selectedIndex);
-    }
-
-    initLayout(){
-        const topologyBox = this.querySelector('#topology');
-        const width = Math.max(1, topologyBox?.clientWidth || window.innerWidth);
-        const height = Math.max(1, topologyBox?.clientHeight || window.innerHeight);
-        const centerX = width / 2;
-        const centerY = height / 2;
-
-        const base = Math.min(width, height);
-        const groupRadius = Math.max(95, Math.min(base * 0.30, 260));
-
-        const n = this.groups.length || 1;
-        this.groups.forEach((group, idx) => {
-            const gW = group.offsetWidth || 100;
-            const gH = group.offsetHeight || 50;
-            const angle = (2 * Math.PI * idx / n) - Math.PI / 2;
-            let gLeft = centerX + groupRadius * Math.cos(angle) - gW / 2;
-            let gTop = centerY + groupRadius * Math.sin(angle) - gH / 2;
-
-            const pad = 16;
-            gLeft = Math.max(pad, Math.min(gLeft, width - gW - pad));
-            gTop = Math.max(pad, Math.min(gTop, height - gH - pad));
-
-            group.style.left = gLeft + 'px';
-            group.style.top = gTop + 'px';
-            group._cx = undefined;
-            group._cy = undefined;
-
-            const children = this.devices.filter(d => d.dataset.group === group.dataset.group);
-            const devRadius = Math.min(base < 650 ? 118 : 170, Math.max(base < 650 ? 54 : 72, 42 + children.length * (base < 650 ? 9 : 12)));
-
-            children.forEach((dev, i) => {
-                if (dev.offsetX === undefined || dev.offsetY === undefined) {
-                    const devAngle = (2 * Math.PI * i / Math.max(1, children.length)) - Math.PI / 2;
-                    dev.offsetX = Math.round(devRadius * Math.cos(devAngle));
-                    dev.offsetY = Math.round(devRadius * Math.sin(devAngle));
-                }
-                dev.style.left = gLeft + gW / 2 + dev.offsetX - (dev.offsetWidth || 30) / 2 + 'px';
-                dev.style.top = gTop + gH / 2 + dev.offsetY - (dev.offsetHeight || 30) / 2 + 'px';
-                dev._cx = undefined;
-                dev._cy = undefined;
-            });
-        });
-        this.drawLines();
-    }
-
-    updateDeviceInfo(advanceTime = true){
-        if(!this.devices || !this.devices.length) return;
-        this.devices.forEach(dev=>{
-            try{
-                let displayTime = 'unbekannt';
-                if(dev.dataset.lastSeen){
-                    displayTime = this.formatLastSeen(dev.dataset.lastSeen);
-                }else{
-                    if(advanceTime) dev.dataset.time = String((parseInt(dev.dataset.time,10)||0)+1);
-                    displayTime = this.formatTime(parseInt(dev.dataset.time,10)||0);
-                }
-                dev.dataset.timeLabel = displayTime;
-                if(typeof dev.updateInfoBox==='function') dev.updateInfoBox(displayTime,this);
-            }catch(e){ }
-        });
-    }
-
-    showBottomInfo(i){
-        if(!this.devices || !this.devices.length) return;
-        if(!this.devices[i]) return;
-        const d=this.devices[i];
-        try{
-            this.devices.forEach(dev=>dev.classList && dev.classList.remove('selected'));
-            d.classList && d.classList.add('selected');
-            const timeLabel = d.dataset.timeLabel || this.formatLastSeen(d.dataset.lastSeen);
-            if(this.bottomDetail) this.bottomDetail.innerHTML=`<b>${d.dataset.name}</b> · Gruppe: ${d.dataset.group} · IP: ${d.dataset.ipAddress || '-'} · zuletzt: ${timeLabel}`;
-        }catch(e){ }
-    }
-}
-
-// ======================
-// Custom Elements definieren
-// ======================
-customElements.define('network-device', NetworkDevice);
-customElements.define('network-group', NetworkGroup);
-customElements.define('network-topology', NetworkTopology);
-    // Erzeuge und füge das Topology-Element jetzt ein (nach der Definition)
-    try{
-        const topologyEl = document.createElement('network-topology');
-        document.body.appendChild(topologyEl);
-    }catch(e){
-        // Fallback: create a simple container if custom element cannot be created.
-        const div = document.createElement('div'); div.id = 'topology-root-fallback'; document.body.appendChild(div);
-        try{ if(typeof NetworkTopology === 'function'){ const inst = new NetworkTopology(); if(typeof inst.connectedCallback==='function') inst.connectedCallback(); }}catch(err){ /* ignore fallback init errors */ }
-    }
+  $('reload-network').addEventListener('click', load);
+  $('back-to-graph').addEventListener('click', () => document.querySelector('.topology-header').scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  $('device-search').addEventListener('input', filterGraph);
+  $('device-picker').addEventListener('change', event => {
+    if (event.target.value) selectDevice(event.target.value);
+    else { selectedId = ''; graph?.nodes().unselect(); graph?.edges().removeClass('highlighted'); showDetails(); }
+  });
+  document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => {
+    if (!model || mode === button.dataset.view) return;
+    mode = button.dataset.view;
+    document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+    renderGraph(); filterGraph(); if (selectedId) selectDevice(selectedId);
+  }));
+  $('fit-network').addEventListener('click', fit);
+  $('reset-network').addEventListener('click', () => { if (graph && initialPositions) { graph.nodes().positions(node => initialPositions.get(node.id())); fit(); } });
+  ['zoom-in', 'zoom-out'].forEach(id => $(id).addEventListener('click', () => {
+    if (graph) graph.zoom({ level: graph.zoom() * (id === 'zoom-in' ? 1.2 : 1 / 1.2), renderedPosition: { x: graph.width() / 2, y: graph.height() / 2 } });
+  }));
+  window.addEventListener('pagehide', () => { resizeObserver?.disconnect(); graph?.destroy(); });
+  window.lucide?.createIcons({ attrs: { 'aria-hidden': 'true', 'stroke-width': 1.8 } });
+  load();
+})();

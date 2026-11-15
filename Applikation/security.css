@@ -2,6 +2,96 @@
     max-width: 1400px;
 }
 
+.security-page .two-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+}
+
+.security-page app-card { min-width: 0; }
+.security-summary { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.security-summary summary { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; color: var(--text-soft); font-size: 14px; list-style: none; }
+.security-summary summary::-webkit-details-marker { display: none; }
+.security-summary summary svg { width: 16px; height: 16px; }
+.security-summary[open] summary svg { transform: rotate(90deg); }
+.security-summary .stats-grid { margin-top: 10px; }
+.security-page .security-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+    padding: 0 0 8px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    overflow: visible;
+}
+.security-page .security-tabs button {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 82px;
+    padding: 12px 6px;
+    border: 1px solid transparent;
+    border-bottom: 3px solid transparent;
+    border-radius: 5px 5px 0 0;
+    font-size: 13px;
+    line-height: 1.35;
+    white-space: normal;
+    color: var(--text-soft);
+}
+.security-page .security-tabs button svg { width: 21px; height: 21px; flex: none; }
+.security-page .security-tabs button:hover { background: rgba(var(--text-rgb), .05); color: var(--text-main); }
+.security-page .security-tabs button.active { background: var(--accent-2); color: var(--text-main); border-bottom-color: var(--accent); }
+.security-page .security-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 800px) {
+    .security-page .security-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .security-page .security-tabs button { min-height: 78px; font-size: 12px; padding: 10px 5px; }
+}
+.security-page form > button[type="submit"] { justify-self: start; max-width: 100%; }
+.security-page .rule-main, .security-page .preset-main,
+.security-page .device-group-main, .security-page .wifi-main { min-width: 0; flex: 1; }
+.security-page .priority-row { flex-wrap: wrap; }
+.security-page .priority-row > span:first-child { flex: 1 1 160px; min-width: 0; }
+.security-page .priority-row > .badge { flex: 0 0 auto; }
+.preset-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.preset-heading strong { min-width: 0; }
+.preset-heading .badge { white-space: nowrap; font-weight: 500; }
+.preset-item { align-items: start; }
+.preset-settings { line-height: 1.6; }
+
+@media (max-width: 1000px) {
+    .security-page .two-grid { grid-template-columns: 1fr; }
+}
+
+.router-control-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--accent);
+    background: rgba(var(--text-rgb), .045);
+    color: var(--text-soft);
+    font-size: 14px;
+}
+
+.router-effect-note {
+    margin: 0 0 14px;
+    color: var(--text-soft);
+    font-size: 14px;
+}
+
+#installAdblock { margin-bottom: 14px; }
+#adDomainForm { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+.domain-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.domain-edit-field { min-width: min(260px, 100%); flex: 1; }
+.domain-edit-field input { min-width: 0; }
+
 .security-tabs {
     display: flex;
     gap: 8px;
@@ -107,7 +197,7 @@
 
 .apply-preset-form {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     align-items: end;
 }
@@ -226,6 +316,7 @@
 
 .device-title-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;

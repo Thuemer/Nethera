@@ -85,8 +85,8 @@ function updateStatsDisplay(router, connections = [], routerAvailable = true, co
         ? formatMbit(latestSpeed.uploadSpeed)
         : connectionsAvailable ? formatMbit(connectionUpload) : '—';
     document.getElementById('statConnections').textContent = connectionsAvailable ? String(connections.length) : '—';
-    document.getElementById('statVolume').textContent = connectionsAvailable
-        ? `${((connectionDownload + connectionUpload) / 1024).toFixed(2)} GB` : '—';
+    // Rates cannot be converted to a daily volume without a cumulative counter.
+    document.getElementById('statVolume').textContent = '—';
 }
 
 function normalizeConnection(connection) {

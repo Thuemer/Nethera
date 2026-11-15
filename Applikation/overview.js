@@ -38,6 +38,7 @@ function sortByTimestamp(items) {
 }
 
 function formatSpeed(value) {
+    if (value == null || value === '') return '—';
     const number = Number(value);
     if (!Number.isFinite(number)) return '—';
     return `${number.toFixed(1)} Mb/s`;
@@ -113,8 +114,8 @@ class RouterCard extends HTMLElement {
     }
 
     render() {
-        const devices = this.router?.devices?.length ?? 0;
-        const status = this.router?.isOnline ? 'Online' : 'Offline';
+        const devices = this.router?.devices?.length ?? '—';
+        const status = typeof this.router?.isOnline !== 'boolean' ? 'Unbekannt' : this.router.isOnline ? 'Online' : 'Offline';
         const lastSeen = formatDateTime(this.router?.lastSeen);
         const firmware = this.router?.firmware || '—';
 
@@ -129,7 +130,7 @@ class RouterCard extends HTMLElement {
                 <div class="card-kpi-row">
                     <div class="card-kpi">
                         <span class="card-kpi-label">Status</span>
-                        <span class="card-kpi-value"><span class="status-pill ${isOnline ? '' : 'offline'}"><span class="dot"></span>${status}</span></span>
+                        <span class="card-kpi-value"><span class="status-pill ${isOnline === false ? 'offline' : ''}"><span class="dot"></span>${status}</span></span>
                     </div>
                     <div class="card-kpi align-right">
                         <span class="card-kpi-label">Clients</span>
@@ -226,6 +227,12 @@ class SpeedCard extends HTMLElement {
 
         this.loadSpeedData();
         this.setupChartHover();
+        this.chartResizeObserver = new ResizeObserver(() => this.drawChart());
+        this.chartResizeObserver.observe(this.querySelector('.speedChart'));
+    }
+
+    disconnectedCallback() {
+        this.chartResizeObserver?.disconnect();
     }
 
     async loadSpeedData() {
@@ -280,12 +287,6 @@ class SpeedCard extends HTMLElement {
         const canvas = this.querySelector('.speedChart');
         if (!canvas) return;
 
-        if (this.upload.length === 0 || this.download.length === 0 || this.labels.length === 0) {
-            this.upload = [0];
-            this.download = [0];
-            this.labels = ['--:--'];
-        }
-        
         const rect = canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         const width = Math.max(1, Math.round(rect.width || 620));
@@ -297,6 +298,14 @@ class SpeedCard extends HTMLElement {
         const ctx = canvas.getContext('2d');
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
+
+        if (!this.upload.length || !this.download.length || !this.labels.length) {
+            ctx.fillStyle = 'rgba(229,235,231,.72)';
+            ctx.font = '14px Avenir Next, Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Keine Messwerte verfügbar', width / 2, height / 2);
+            return;
+        }
 
         this._chartSize = { width, height };
         this.padding.left = width < 430 ? 64 : 78;
