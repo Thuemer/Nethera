@@ -1,20 +1,11 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const config = window.NETHERA_CONFIG || {};
   const { buildModel, graphElements, matchingDevices } = window.NetheraTopology;
   let model = null, graph = null, mode = 'groups', groupFilter = '', selectedId = '';
   let initialPositions = null, resizeObserver = null;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const row = (name, value) => `<div><dt>${escape(name)}</dt><dd>${escape(value)}</dd></div>`;
   const date = value => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' }) : 'Nicht bekannt';
-
-  async function readApi(path) {
-    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-    const headers = await account?.getAuthHeader?.() || {};
-    const response = await fetch(`${config.API_BASE_URL || 'http://localhost:8080'}${path}`, { headers: { Accept: 'application/json', ...headers }, cache: 'no-store' });
-    if (!response.ok) throw new Error(`API ${response.status}`);
-    return response.json();
-  }
 
   function notice(message) {
     $('network-notice').textContent = message;
@@ -25,17 +16,20 @@
     $('reload-network').disabled = true;
     $('network-summary').textContent = 'Netzwerk wird geladen …';
     try {
-      const [routerResult, rulesResult] = await Promise.allSettled([
-        readApi(config.ROUTERS_PATH || '/api/routers/list'), readApi('/api/security/state')
-      ]);
-      if (routerResult.status !== 'fulfilled' || !Array.isArray(routerResult.value) || !routerResult.value.length) throw new Error('router');
-      const rules = rulesResult.status === 'fulfilled' && rulesResult.value && !Array.isArray(rulesResult.value) ? rulesResult.value : null;
-      model = buildModel(routerResult.value[0], rules);
+      const router = await NetheraApi.getPrimaryRouter();
+      let rules = null;
+      try { rules = await NetheraApi.getSecurityState(router); } catch {}
+      model = buildModel(router, rules);
       groupFilter = ''; selectedId = ''; $('device-search').value = '';
       notice(model.rulesKnown ? '' : 'Gruppen und Vorlagen konnten nicht geladen werden. Verbindungsdaten werden weiterhin angezeigt.');
       $('network-summary').textContent = `${model.devices.length} Geräte · ${model.groups.length} Gruppen · ${model.router.name}`;
       renderLegend(); renderGraph(); filterGraph(); showDetails();
     } catch {
+      model = null;
+      graph?.destroy(); graph = null;
+      $('device-details').innerHTML = '';
+      $('group-legend').innerHTML = '';
+      $('device-picker').innerHTML = '<option value="">Keine Gerätedaten</option>';
       notice('Netzwerk konnte nicht geladen werden. Bitte Anmeldung und Backend prüfen und erneut laden.');
       $('network-summary').textContent = model ? 'Letzter geladener Stand' : 'Keine Netzwerkdaten';
       if (!model) { $('graph-empty').textContent = 'Netzwerk nicht verfügbar'; $('graph-empty').hidden = false; }
@@ -205,4 +199,5 @@
   window.addEventListener('pagehide', () => { resizeObserver?.disconnect(); graph?.destroy(); });
   window.lucide?.createIcons({ attrs: { 'aria-hidden': 'true', 'stroke-width': 1.8 } });
   load();
+  NetheraApi.watchSource(load);
 })();

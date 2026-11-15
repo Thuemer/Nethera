@@ -6,7 +6,7 @@ const SECURITY_STATE_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:80
 const state = {
   loaded: false,
   devices: [],
-  limits: loadLimits(),
+  limits: {},
   presets: [],
   assignments: [],
   filteredDevices: [],
@@ -62,7 +62,7 @@ async function loadBackendLimits() {
   state.limits = {};
   data.forEach(limit => {
     const normalized = normalizeLimit(limit);
-    if (normalized?.deviceId) {
+    if (normalized?.deviceId && state.securityDevices.some(device => Number(device.id) === Number(normalized.deviceId))) {
       state.limits[String(normalized.deviceId)] = normalized;
     }
   });
@@ -70,6 +70,7 @@ async function loadBackendLimits() {
 }
 
 async function saveBackendLimit(deviceId, limit) {
+  await NetheraApi.requireLive();
   const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
   const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(`${TIME_LIMITS_API_URL}/${deviceId}`, {
@@ -98,6 +99,7 @@ async function saveBackendLimit(deviceId, limit) {
 }
 
 async function deleteBackendLimit(deviceId) {
+  await NetheraApi.requireLive();
   const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
   const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(`${TIME_LIMITS_API_URL}/${deviceId}`, { method: 'DELETE', headers: { ...authHeader } });
@@ -107,11 +109,8 @@ async function deleteBackendLimit(deviceId) {
 }
 
 async function loadSecurityState() {
-  const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-  const authHeader = (await account?.getAuthHeader?.()) ?? {};
-  const response = await fetch(SECURITY_STATE_API_URL, { headers: { Accept: 'application/json', ...authHeader }, cache: 'no-store' });
-  if (!response.ok) throw new Error(`Security-API ${response.status}`);
-  const data = await response.json();
+  const data = await NetheraApi.getSecurityState();
+  state.dataMode = data.dataMode;
   state.presets = data.presets || [];
   state.assignments = data.assignments || [];
   state.securityDevices = data.devices || [];
@@ -381,14 +380,15 @@ async function loadDevices() {
   try {
     await loadSecurityState();
     try {
-      await loadBackendLimits();
+      if (state.dataMode === 'live') await loadBackendLimits();
+      else { state.limits = {}; state.storageMode = state.dataMode; }
     } catch {
-      state.limits = loadLimits();
-      state.storageMode = 'local';
+      state.limits = {};
+      state.storageMode = 'unavailable';
     }
 
     const devices = state.securityDevices || [];
-    state.loaded = state.storageMode === 'backend';
+    state.loaded = state.storageMode === 'backend' || state.storageMode === 'demo';
     state.devices = devices
       .map(device => ({
         id: device.id,
@@ -403,11 +403,13 @@ async function loadDevices() {
     applyFilters();
     setStatus(state.storageMode === 'backend'
       ? `${state.devices.length} Geräte · Internetzeiten aktualisiert.`
-      : 'Internetzeiten konnten nicht geladen werden. Speichern ist derzeit nicht möglich.',
+      : state.storageMode === 'demo' ? 'Demo-Geräte · Änderungen sind deaktiviert.'
+        : 'Internetzeiten konnten nicht geladen werden. Speichern ist derzeit nicht möglich.',
     state.storageMode === 'backend' ? 'success' : 'warning');
   } catch (error) {
     state.loaded = false;
     state.devices = [];
+    state.limits = {};
     renderDeviceOptions();
     applyFilters();
     setStatus(NetheraApi.userMessage(error), 'error');
@@ -536,4 +538,5 @@ function setupEvents() {
 document.addEventListener('DOMContentLoaded', () => {
   setupEvents();
   loadDevices();
+  NetheraApi.watchSource(loadDevices);
 });

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "dns_stat")
 @NamedQuery(name = DnsStat.QUERY_FIND_ALL, query = "SELECT d FROM DnsStat d")
-public class DnsStat {
+public class DnsStat extends TelemetryRecord {
 
     public final static String QUERY_FIND_ALL = "DnsStat.findAll";
 

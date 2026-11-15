@@ -22,6 +22,8 @@ public class DnsIngestor {
 
     @Transactional
     public synchronized void ingest(Router router, DnsSample sample) {
+        router.recordContact(true);
+        entityManager.merge(router);
         DnsSample previous = baselines.put(router.getId(), sample);
         if (previous == null) {
             return;
@@ -36,6 +38,7 @@ public class DnsIngestor {
         }
 
         DnsStat stat = new DnsStat();
+        stat.setDataSource(DnsStat.DataSource.ROUTER);
         stat.setTotalQueries((int) (deltaForwarded + deltaAnswered));
         stat.setBlockedQueries((int) deltaAnswered);
         stat.setTrackersDetected(0);

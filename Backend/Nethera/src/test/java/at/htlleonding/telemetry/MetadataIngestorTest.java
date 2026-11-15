@@ -28,22 +28,32 @@ class MetadataIngestorTest {
     }
 
     @Test
-    void updatesModelFirmwareAndLastSeen() {
+    void updatesVerifiedMetadataWithoutClaimingCurrentConnection() {
         ingestor.ingest(router, new MetadataSample("GL.iNet GL-MT3000", "OpenWrt 23.05.3"));
 
         assertEquals("GL.iNet GL-MT3000", router.getModel());
         assertEquals("OpenWrt 23.05.3", router.getFirmware());
-        assertNotNull(router.getLastSeen());
+        assertTrue(router.isRouterData());
+        assertNull(router.getConnectionCheckedAt());
+        assertNull(router.getLastSeen());
     }
 
     @Test
     void missingOrEmptyFieldsKeepStoredValues() {
+        router.setDataSource(Router.DataSource.ROUTER);
         ingestor.ingest(router, new MetadataSample("New Model", null));
         assertEquals("OpenWrt 22.03", router.getFirmware());
 
         ingestor.ingest(router, new MetadataSample("  ", ""));
         assertEquals("New Model", router.getModel());
         assertEquals("OpenWrt 22.03", router.getFirmware());
+    }
+
+    @Test
+    void partialMetadataDoesNotKeepAnUnverifiedSeedFirmware() {
+        ingestor.ingest(router, new MetadataSample("Cudy", null));
+        assertEquals("Cudy", router.getModel());
+        assertNull(router.getFirmware());
     }
 
     @Test

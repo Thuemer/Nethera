@@ -217,6 +217,9 @@ metadata:
   name: nethera-backend
 spec:
   replicas: 1
+  # The MQTT consumer has a fixed client ID; avoid concurrent old/new consumers.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: nethera-backend
@@ -246,7 +249,7 @@ spec:
                   name: nethera-runtime
                   key: db-password
             - name: QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION
-              value: update
+              value: validate
             - name: QUARKUS_HIBERNATE_ORM_SQL_LOAD_SCRIPT
               value: no-file
             - name: QUARKUS_OIDC_AUTH_SERVER_URL

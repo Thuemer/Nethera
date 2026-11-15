@@ -25,7 +25,7 @@ function hasUnsavedChanges() {
 function updateChangeState() {
   const dirty = hasUnsavedChanges();
   const saveButton = document.querySelector('app-hero button[data-action="hero-button"]');
-  if (saveButton) saveButton.disabled = !dirty || saving;
+  if (saveButton) saveButton.disabled = !dirty || saving || !NetheraApi.isLive();
   document.getElementById('discardChanges').disabled = !dirty || saving;
   document.getElementById('changeState').textContent = saving
     ? 'Änderungen werden gespeichert …'
@@ -75,6 +75,7 @@ function fillForm(config) {
 async function loadConfigs() {
   const saveButton = document.querySelector('app-hero button[data-action="hero-button"]');
   try {
+    await NetheraApi.requireLive();
     const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
     const authHeader = (await account?.getAuthHeader?.()) ?? {};
     const response = await fetch(CONFIG_API_URL, { headers: { Accept: 'application/json', ...authHeader }, cache: 'no-store' });
@@ -110,6 +111,7 @@ async function saveConfig() {
   document.getElementById('configFields').disabled = true;
   updateChangeState();
   try {
+    await NetheraApi.requireLive();
     const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
     const authHeader = (await account?.getAuthHeader?.()) ?? {};
     const response = await fetch(`${API_BASE_URL}/api/configs/${activeConfigId}`, {
@@ -122,7 +124,7 @@ async function saveConfig() {
     setStatus('Konfiguration gespeichert.', 'success');
   } finally {
     saving = false;
-    document.getElementById('configFields').disabled = false;
+    document.getElementById('configFields').disabled = !NetheraApi.isLive();
     updateChangeState();
   }
 }
@@ -143,4 +145,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   updateChangeState();
   loadConfigs();
+  NetheraApi.watchSource(loadConfigs);
 });

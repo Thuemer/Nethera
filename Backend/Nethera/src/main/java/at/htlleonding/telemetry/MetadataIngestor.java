@@ -6,7 +6,6 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
-import java.time.LocalDateTime;
 
 @ApplicationScoped
 public class MetadataIngestor {
@@ -14,23 +13,25 @@ public class MetadataIngestor {
     @Inject
     EntityManager entityManager;
 
-    // Updates model/firmware and lastSeen; null or blank fields keep the stored value
+    // Only previously verified metadata may survive a partial router update.
     @Transactional
     public void ingest(Router router, MetadataSample sample) {
-        Router managed = entityManager.merge(router);
-        if (hasText(sample.model())) managed.setModel(sample.model());
-        if (hasText(sample.firmware())) managed.setFirmware(sample.firmware());
-        managed.setLastSeen(LocalDateTime.now());
+        if (!router.isRouterData()) {
+            router.setModel(null);
+            router.setFirmware(null);
+        }
+        if (hasText(sample.model())) router.setModel(sample.model());
+        if (hasText(sample.firmware())) router.setFirmware(sample.firmware());
+        router.setDataSource(Router.DataSource.ROUTER);
+        // MQTT metadata can be retained; it does not prove a current connection.
+        entityManager.merge(router);
     }
 
     // Online refreshes lastSeen, offline leaves it unchanged
     @Transactional
     public void setOnline(Router router, boolean online) {
-        Router managed = entityManager.merge(router);
-        managed.setOnline(online);
-        if (online) {
-            managed.setLastSeen(LocalDateTime.now());
-        }
+        router.recordContact(online);
+        entityManager.merge(router);
     }
 
     private static boolean hasText(String value) {

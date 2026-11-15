@@ -18,8 +18,9 @@ public class SpeedStatsRepository {
     // Newest entries, returned oldest first for charting
     public List<SpeedStat> findLatest(Router router, int limit) {
         List<SpeedStat> newestFirst = this.entityManager.createQuery(
-                        "SELECT s FROM SpeedStat s WHERE s.router = :router ORDER BY s.timestamp DESC, s.id DESC", SpeedStat.class)
+                        "SELECT s FROM SpeedStat s WHERE s.router = :router AND s.dataSource = :source ORDER BY s.timestamp DESC, s.id DESC", SpeedStat.class)
                 .setParameter("router", router)
+                .setParameter("source", SpeedStat.DataSource.ROUTER)
                 .setMaxResults(limit)
                 .getResultList();
         List<SpeedStat> oldestFirst = new ArrayList<>(newestFirst);

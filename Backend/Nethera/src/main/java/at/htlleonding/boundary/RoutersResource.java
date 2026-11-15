@@ -6,6 +6,8 @@ import at.htlleonding.dto.RouterDnsStatsDto;
 import at.htlleonding.dto.RouterDto;
 import at.htlleonding.dto.RouterSpeedStatsDto;
 import at.htlleonding.model.Router;
+import at.htlleonding.model.TelemetryRecord;
+import at.htlleonding.telemetry.RouterDataPolicy;
 import at.htlleonding.repository.ActivityLogsRepository;
 import at.htlleonding.repository.DnsStatsRepository;
 import at.htlleonding.repository.RoutersRepository;
@@ -41,6 +43,9 @@ public class RoutersResource {
     @Inject
     ActivityLogsRepository activityLogsRepository;
 
+    @Inject
+    RouterDataPolicy dataPolicy;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("list")
@@ -49,16 +54,25 @@ public class RoutersResource {
         LocalDateTime dnsSince = LocalDate.now().atStartOfDay();
 
         return this.routersRepository.getAllRouters().stream()
-                .map(router -> new RouterDto(router.getId(), router.getName(), router.getModel(), router.getFirmware(), router.getOnline(), router.getLastSeen(),
+                .map(router -> {
+                    String connection = dataPolicy.connection(router);
+                    String mode = dataPolicy.mode(router);
+                    boolean live = "live".equals(mode);
+                    return new RouterDto(router.getId(), router.getName(), live && router.isRouterData() ? router.getModel() : null,
+                        live && router.isRouterData() ? router.getFirmware() : null,
+                        "unknown".equals(connection) ? null : "online".equals(connection), router.getLastSeen(),
+                        !live ? List.of() :
                         router.getConnectedDevices().stream()
+                                .filter(TelemetryRecord::isRouterData)
                                 .map(device -> new RouterConnectedDevicesDto(device.getId(), device.getMacAddress(), device.getIpAddress(), device.getHostname(), device.getConnectionType(), device.getLastSeen())).toList(),
-                        activityLogsRepository.findLatest(router, ACTIVITY_LOG_LIMIT).stream()
+                        !live ? List.of() : activityLogsRepository.findLatest(router, ACTIVITY_LOG_LIMIT).stream()
                                 .map(log -> new RouterActivityLogsDto(log.getId(), log.getEventType(), log.getDetails(), log.getTimestamp())).toList(),
-                        speedStatsRepository.findLatest(router, SPEED_HISTORY_LIMIT).stream()
+                        !live ? List.of() : speedStatsRepository.findLatest(router, SPEED_HISTORY_LIMIT).stream()
                                 .map(stat -> new RouterSpeedStatsDto(stat.getId(), stat.getTimestamp(), stat.getDownloadSpeed(), stat.getUploadSpeed())).toList(),
-                        dnsStatsRepository.findSince(router, dnsSince).stream()
-                                .map(stat -> new RouterDnsStatsDto(stat.getId(), stat.getTimestamp(), stat.getTotalQueries(), stat.getBlockedQueries(), stat.getTrackersDetected())).toList()
-                ))
+                        !live ? List.of() : dnsStatsRepository.findSince(router, dnsSince).stream()
+                                .map(stat -> new RouterDnsStatsDto(stat.getId(), stat.getTimestamp(), stat.getTotalQueries(), stat.getBlockedQueries(), stat.getTrackersDetected())).toList(),
+                        mode, connection, router.getConnectionCheckedAt()
+                ); })
                 .toList();
     }
 }

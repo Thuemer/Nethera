@@ -16,8 +16,9 @@ public class DnsStatsRepository {
 
     public List<DnsStat> findSince(Router router, LocalDateTime since) {
         return this.entityManager.createQuery(
-                        "SELECT d FROM DnsStat d WHERE d.router = :router AND d.timestamp >= :since ORDER BY d.timestamp", DnsStat.class)
+                        "SELECT d FROM DnsStat d WHERE d.router = :router AND d.dataSource = :source AND d.timestamp >= :since ORDER BY d.timestamp", DnsStat.class)
                 .setParameter("router", router)
+                .setParameter("source", DnsStat.DataSource.ROUTER)
                 .setParameter("since", since)
                 .getResultList();
     }

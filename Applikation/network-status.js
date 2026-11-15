@@ -54,7 +54,7 @@ async function checkStatus() {
   try {
     const router = await NetheraApi.getPrimaryRouter();
     const wifiDevices = (router.devices || []).filter(device => String(device.connectionType || '').toLowerCase() === 'wifi');
-    document.getElementById('routerState')?.setAttribute('value', router.isOnline ? 'Online' : 'Offline');
+    document.getElementById('routerState')?.setAttribute('value', router.isOnline == null ? 'Unbekannt' : router.isOnline ? 'Online' : 'Offline');
     document.getElementById('routerState')?.setAttribute('tone', router.isOnline ? '' : 'danger');
     document.getElementById('deviceCount')?.setAttribute('value', String(wifiDevices.length));
     renderDetails(router, null);
@@ -78,4 +78,5 @@ function setupEvents() {
 document.addEventListener('DOMContentLoaded', () => {
   setupEvents();
   checkStatus();
+  NetheraApi.watchSource(checkStatus);
 });

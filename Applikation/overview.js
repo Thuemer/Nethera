@@ -1,6 +1,4 @@
 // Basis Card-Komponente
-const appConfig = window.NETHERA_CONFIG || {};
-const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
 let primaryRouterPromise = null;
 
 function formatDateTime(value) {
@@ -46,18 +44,7 @@ function formatSpeed(value) {
 
 async function getPrimaryRouter() {
     if (!primaryRouterPromise) {
-        primaryRouterPromise = (async () => {
-            const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-            const authHeader = (await account?.getAuthHeader?.()) ?? {};
-            const response = await fetch(ROUTER_API_URL, {
-                headers: { Accept: 'application/json', ...authHeader },
-                cache: 'no-store'
-            });
-            if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
-            const routers = await response.json();
-            if (!Array.isArray(routers) || routers.length === 0) throw new Error('Keine Routerdaten gefunden');
-            return routers[0];
-        })();
+        primaryRouterPromise = NetheraApi.getPrimaryRouter();
     }
 
     return primaryRouterPromise;
@@ -181,7 +168,7 @@ class FeaturesCard extends HTMLElement {
             <ul class="feature-list content-list">
                 <li><span class="feature-line"><span class="feature-name">Router-Name</span><span class="feature-value">${routerName}</span></span></li>
                 <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
-                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">${appConfig.ROUTER_IP || '192.168.1.1'}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">${this.router?.ipAddress || '—'}</span></span></li>
             </ul>
         `;
     }

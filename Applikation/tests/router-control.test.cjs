@@ -13,6 +13,7 @@ function apiHarness(response) {
     },
     fetch: async (url, options) => {
       calls.push({ url, options });
+      if (url.endsWith('/routers/list')) return { ok: true, json: async () => [{ id: 1, dataMode: 'live', connection: 'online', devices: [] }] };
       return response;
     }
   });
@@ -36,7 +37,7 @@ test('adblock install uses an authenticated POST and returns only the backend re
   const h = apiHarness({ status: 202, ok: true, json: async () => ({ accepted: true }) });
   const result = await h.run('NetheraApi.installAdblock()');
   assert.equal(result.accepted, true);
-  assert.equal(h.calls[0].url, 'http://backend/api/router-control/adblock/install');
-  assert.equal(h.calls[0].options.method, 'POST');
-  assert.equal(h.calls[0].options.headers.Authorization, 'Bearer test-token');
+  assert.equal(h.calls[1].url, 'http://backend/api/router-control/adblock/install');
+  assert.equal(h.calls[1].options.method, 'POST');
+  assert.equal(h.calls[1].options.headers.Authorization, 'Bearer test-token');
 });

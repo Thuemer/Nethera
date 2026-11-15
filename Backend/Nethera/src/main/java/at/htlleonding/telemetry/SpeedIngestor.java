@@ -23,7 +23,10 @@ public class SpeedIngestor {
 
     @Transactional
     public void ingestRate(Router router, SpeedSample sample) {
+        router.recordContact(true);
+        entityManager.merge(router);
         SpeedStat stat = new SpeedStat();
+        stat.setDataSource(SpeedStat.DataSource.ROUTER);
         stat.setDownloadSpeed(sample.downloadMbps());
         stat.setUploadSpeed(sample.uploadMbps());
         stat.setTimestamp(LocalDateTime.now());
@@ -34,6 +37,8 @@ public class SpeedIngestor {
     // Rate = Δbytes / Δts between two consecutive counter samples of the same router
     @Transactional
     public synchronized void ingestCounters(Router router, CounterSample sample) {
+        router.recordContact(true);
+        entityManager.merge(router);
         CounterSample previous = baselines.put(router.getId(), sample);
         if (previous == null) {
             return;

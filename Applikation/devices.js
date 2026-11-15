@@ -1,7 +1,5 @@
-const appConfig = window.NETHERA_CONFIG || {};
-const ROUTER_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:8080'}${appConfig.ROUTERS_PATH || '/api/routers/list'}`;
-
 const state = {
+    dataMode: 'unavailable',
     devices: [],
     filteredDevices: [],
     updatedAt: null
@@ -74,9 +72,10 @@ function updateStats() {
     const wifi = state.devices.filter(d => d.connectionType === 'wifi').length;
     const lan = state.devices.filter(d => d.connectionType === 'lan').length;
 
-    document.getElementById('statTotal').textContent = String(total);
-    document.getElementById('statWifi').textContent = String(wifi);
-    document.getElementById('statLan').textContent = String(lan);
+    const available = state.dataMode !== 'unavailable';
+    document.getElementById('statTotal').textContent = available ? String(total) : '—';
+    document.getElementById('statWifi').textContent = available ? String(wifi) : '—';
+    document.getElementById('statLan').textContent = available ? String(lan) : '—';
 
     const latestSeen = state.devices
         .map(d => toDate(d.lastSeen))
@@ -93,7 +92,7 @@ function renderTable() {
     if (!state.filteredDevices.length) {
         const row = document.createElement('tr');
         row.className = 'empty-row';
-        row.innerHTML = '<td colspan="4">Keine Clients für die aktuelle Filterung gefunden.</td>';
+        row.innerHTML = `<td colspan="4">${state.dataMode === 'unavailable' ? 'Keine bestätigten Gerätedaten verfügbar.' : 'Keine Clients für die aktuelle Filterung gefunden.'}</td>`;
         body.appendChild(row);
         return;
     }
@@ -147,25 +146,15 @@ function applyFilters() {
     state.filteredDevices = filtered.sort((a, b) => bySort(sortBy, a, b));
     renderTable();
 
-    setMessage(`${state.filteredDevices.length} von ${state.devices.length} Clients angezeigt.`);
+    setMessage(state.dataMode === 'unavailable' ? 'Gerätedaten sind derzeit nicht verfügbar.' : `${state.filteredDevices.length} von ${state.devices.length} Clients angezeigt.`);
 }
 
 async function loadDevices() {
     setMessage('Lade Clients ...');
 
     try {
-        const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-        const authHeader = (await account?.getAuthHeader?.()) ?? {};
-        const response = await fetch(ROUTER_API_URL, {
-            headers: { Accept: 'application/json', ...authHeader }
-        });
-
-        if (!response.ok) {
-            throw new Error(`API-Fehler ${response.status}`);
-        }
-
-        const routers = await response.json();
-        const router = Array.isArray(routers) ? routers[0] : null;
+        const router = await NetheraApi.getPrimaryRouter();
+        state.dataMode = router.dataMode;
         const rawDevices = Array.isArray(router?.devices) ? router.devices : [];
 
         state.devices = rawDevices.map(device => ({
@@ -182,8 +171,9 @@ async function loadDevices() {
         updateStats();
         applyFilters();
 
-        setMessage('Geräteübersicht aktualisiert.');
+        setMessage(state.dataMode === 'live' ? 'Geräteübersicht aktualisiert.' : state.dataMode === 'demo' ? 'Beispielgeräte · keine Routerverbindung.' : 'Keine bestätigten Gerätedaten verfügbar.');
     } catch (error) {
+        state.dataMode = 'unavailable';
         state.devices = [];
         state.filteredDevices = [];
         state.updatedAt = null;
@@ -215,4 +205,5 @@ function setupEvents() {
 document.addEventListener('DOMContentLoaded', () => {
     setupEvents();
     loadDevices();
+    NetheraApi.watchSource(loadDevices);
 });

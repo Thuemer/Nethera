@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="nethera-select.css">
   <link rel="stylesheet" href="security.css?v=20261115-router-ui">
   <link rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
+  <link rel="stylesheet" href="data-source.css">
 </head>
 <body>
   <main class="page security-page">
@@ -216,7 +217,7 @@
 
     <section class="tab-panel" id="tab-wifi">
       <app-card title="WLAN-Analyzer">
-        <span class="badge warn">Beispieldaten · kein Live-Scan</span>
+        <span class="badge" id="wifiDataSource">Keine WLAN-Messwerte</span>
         <div class="wifi-toolbar">
           <label class="field">
             <span>Suche</span>

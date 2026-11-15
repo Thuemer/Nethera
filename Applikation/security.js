@@ -4,6 +4,7 @@ const SECURITY_API = `${API_BASE_URL}/api/security`;
 
 const state = {
   loaded: false,
+  dataMode: 'unavailable',
   devices: [],
   groups: [],
   members: [],
@@ -13,12 +14,7 @@ const state = {
   timeLimits: [],
   routerControl: null,
   routerControlError: null,
-  wifiNetworks: [
-    { ssid: 'Nethera', bssid: 'A4:20:11:8C:90:01', type: 'router', signal: -48, channel: 6, frequency: '2.4 GHz', encryption: 'WPA3', known: true },
-    { ssid: 'Nethera-5G', bssid: 'A4:20:11:8C:90:02', type: 'accessPoint', signal: -56, channel: 44, frequency: '5 GHz', encryption: 'WPA3', known: true },
-    { ssid: 'HTL-Gast', bssid: 'D0:C1:23:44:81:10', type: 'accessPoint', signal: -70, channel: 11, frequency: '2.4 GHz', encryption: 'WPA2', known: false },
-    { ssid: 'Nachbar-WLAN', bssid: '74:83:C2:13:AA:90', type: 'router', signal: -78, channel: 1, frequency: '2.4 GHz', encryption: 'WPA2', known: false }
-  ]
+  wifiNetworks: []
 };
 
 function escapeText(value) {
@@ -48,6 +44,7 @@ function setStatus(text, tone = 'info') {
 }
 
 async function apiJson(url, options = {}) {
+  if (options.method && options.method !== 'GET') await NetheraApi.requireLive();
   const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
   const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(url, {
@@ -67,9 +64,12 @@ async function apiJson(url, options = {}) {
 
 async function loadSecurityState() {
   try {
-    const data = await apiJson(`${SECURITY_API}/state`);
+    const router = await NetheraApi.getPrimaryRouter();
+    const data = await NetheraApi.getSecurityState(router);
     Object.assign(state, {
-      loaded: true,
+      loaded: router.dataMode !== 'unavailable',
+      dataMode: router.dataMode,
+      wifiNetworks: router.wifiNetworks || [],
       devices: data.devices || [],
       groups: data.groups || [],
       members: data.members || [],
@@ -79,12 +79,22 @@ async function loadSecurityState() {
       timeLimits: data.timeLimits || []
     });
     renderAll();
-    setStatus('Schutzregeln aktualisiert.', 'success');
+    setStatus(router.dataMode === 'live' ? 'Gespeicherte Schutzregeln aktualisiert.' : router.dataMode === 'demo' ? 'Demo-Geräte · Änderungen sind deaktiviert.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' ? 'success' : 'info');
   } catch (error) {
+    Object.assign(state, { loaded: false, dataMode: 'unavailable', devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
     renderAll();
     setStatus(NetheraApi.userMessage(error), 'error');
   }
   await loadRouterControlStatus();
+  updateReadOnlyControls();
+}
+
+function updateReadOnlyControls() {
+  const readOnly = !NetheraApi.isLive();
+  document.querySelectorAll('form input, form select, form textarea, form button, [data-device-group], [data-device-preset], [data-group-blocklist], [data-save-group], [data-edit-domain], [data-remove-domain]').forEach(control => {
+    if (readOnly && !control.disabled) { control.dataset.sourceDisabled = 'true'; control.disabled = true; }
+    else if (!readOnly && control.dataset.sourceDisabled) { control.disabled = false; delete control.dataset.sourceDisabled; }
+  });
 }
 
 function routerEffect(entry) {
@@ -440,6 +450,9 @@ function filteredWifiNetworks() {
 }
 
 function renderWifi() {
+  const source = document.getElementById('wifiDataSource');
+  if (source) source.textContent = state.dataMode === 'demo' ? 'Beispieldaten · kein Live-Scan'
+    : state.wifiNetworks.length ? 'WLAN-Messwerte vom Router' : 'Keine WLAN-Messwerte';
   const bestBox = document.getElementById('bestWifiBox');
   const list = document.getElementById('wifiList');
   if (!bestBox || !list) return;
@@ -466,7 +479,9 @@ function renderWifi() {
         <span class="muted">${network.signal} dBm · Kanal ${network.channel}</span>
       </div>
     </article>
-  `).join('') || '<empty-state title="Keine Netzwerke" text="Passe Suche oder Filter an."></empty-state>';
+  `).join('') || (state.wifiNetworks.length
+    ? '<empty-state title="Keine Treffer" text="Keine WLAN-Netze entsprechen dem Filter."></empty-state>'
+    : '<empty-state title="Keine WLAN-Messwerte" text="Der Router hat keine WLAN-Analyse geliefert."></empty-state>');
 }
 
 function renderAll() {
@@ -581,6 +596,14 @@ async function savePriority(event) {
 let activeRouterConfig = null;
 async function loadAdProtection() {
   try {
+    const router = await NetheraApi.getPrimaryRouter();
+    if (router.dataMode !== 'live') {
+      activeRouterConfig = null;
+      document.getElementById('adProtectionEnabled').checked = false;
+      document.getElementById('adProtectionEnabled').disabled = true;
+      document.getElementById('saveAdProtection').disabled = true;
+      return;
+    }
     const configs = await apiJson(`${API_BASE_URL}/api/configs/list`);
     activeRouterConfig = configs[0] || null;
     if (!activeRouterConfig) return;
@@ -856,7 +879,7 @@ function setupEvents() {
       button.disabled = true;
       try { await handler(event); }
       catch (error) { setStatus(`Änderung nicht vollständig gespeichert: ${error.message}. Bitte neu laden und prüfen.`, 'error'); }
-      finally { button.disabled = false; }
+      finally { button.disabled = !NetheraApi.isLive(); }
     });
   });
   document.getElementById('groupBlocklistSelect')?.addEventListener('change', renderGroupBlocklistForm);
@@ -952,4 +975,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEvents();
   loadSecurityState();
   loadAdProtection();
+  NetheraApi.watchSource(async () => { await loadSecurityState(); await loadAdProtection(); });
 });
