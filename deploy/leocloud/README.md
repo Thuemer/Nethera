@@ -59,6 +59,47 @@ Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
 ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
 `themes/nethera/README.md`.
 
+### Support-Release #21 vom 16.11.2026
+
+Nicos Supportseite ist unter `/website/html/support.html` erreichbar und von
+Website, Anleitung und App verlinkt. Das Formular bereitet einen GitHub-Issue-
+Entwurf vor; es veroeffentlicht nichts automatisch. Ein GitHub-Konto wird benoetigt.
+
+Ausgerollt wurde nur #21 aus `1dc4b58`, auf der zuvor laufenden Frontend-Basis
+`57be96b` (Frontend bytegleich mit `1d00c4b`). Dazu wurden ausschliesslich
+`Applikation/Dockerfile`, `Applikation/index.html`, die drei Website-HTML-Seiten,
+`Website/css/nethera.css`, `Website/css/support.css`, `Website/js/support.js`
+und die Website-Tests aus Nicos Commit uebernommen. Die `.dockerignore` erlaubt
+zusaetzlich die beiden Support-Assets, damit sie wirklich im Image ankommen.
+Die Supportdateien selbst entsprechen unveraendert Nicos Version.
+
+Der neueste Team-Commit `1886d14` wurde vorher per Fast-forward geholt. Seine
+Dateien mit ` 2` im Namen sind bytegleiche Kopien des Standes vor #21 und wurden
+nicht in das Release aufgenommen. Die zusaetzlichen Konfigurationsaenderungen
+fuer #26 aus `1dc4b58` wurden ausdruecklich nicht ausgerollt: Die laufenden
+Dateien `configuration.html` und `configuration.js` sind vor/nach dem Rollout
+bytegleich. Ein kuenftiger Build direkt von `main` enthaelt diese neuen
+#26-Aenderungen und ist daher nicht identisch mit diesem gezielten #21-Release.
+
+Image: `ghcr.io/denizbernecker/nethera-frontend:20261116-112159`, privat,
+`linux/amd64`; der Digest steht beim Frontend in `stack.yaml`. Nur dieses Image
+wurde im bestehenden Deployment ersetzt. Backend, Broker, Keycloak und beide
+Datenbank-Pods liefen mit unveraenderten Images ohne Neustart weiter.
+Services, Ingress, ConfigMaps, PVCs und Secret-Metadaten sind unveraendert.
+Es gab keine Datenbank-, Account- oder Router-Aenderungen.
+
+Abnahme: 57 JavaScript-Tests und ein Navigationstest erfolgreich; Website,
+Anleitung und Support bei 320, 390, 768 und 1440 Pixeln ohne horizontalen
+Ueberlauf oder fehlende Assets. Pflichtfelder, Leerzeichenvalidierung und
+GitHub-Entwurf getestet, ohne ein Ticket zu veroeffentlichen. App-Verlinkung
+mit isoliertem Auth-Teststub geprueft. Live-Rollout und Registry-/Pod-Digest
+stimmen ueberein; API bleibt ohne Anmeldung geschuetzt.
+
+Rollback: ausschliesslich das Frontend auf
+`ghcr.io/denizbernecker/nethera-frontend:20261116-094614@sha256:9861a4b761e08cb7725e567539ea14d875f7c137c49ce4f8223a720ad608778d`
+zuruecksetzen. Nicht den gesamten Stack anwenden: Der neuere Backend-Rollout
+ist separat auf `leocloud-deployment` dokumentiert und darf nicht ersetzt werden.
+
 ### Keycloak-Theme-Release vom 16.11.2026
 
 Das Login-Theme aus Quellstand `b5c010d` wurde als privates `linux/amd64`-Image
