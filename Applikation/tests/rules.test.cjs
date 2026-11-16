@@ -68,10 +68,33 @@ test('unknown assignments and empty rule views do not pretend there are no rules
   assert.match(h.field('groupDeviceList').innerHTML, /Zuweisung nicht gemeldet/);
   assert.match(h.field('groupDeviceList').innerHTML, /Priorität: Unbekannt/);
   assert.doesNotMatch(h.field('groupDeviceList').innerHTML, /0 Regeln|Keine Vorlage/);
-  assert.match(h.field('manualDomainsList').innerHTML, /Keine gemeldeten Blocklisten/);
+  assert.match(h.field('manualDomainsList').innerHTML, /Keine bestätigten Blocklisten/);
   assert.match(h.field('presetList').innerHTML, /Keine gemeldeten Vorlagen/);
   assert.match(h.field('groupOverviewList').innerHTML, /Keine gemeldeten Gruppen/);
   assert.doesNotMatch(h.field('priorityList').innerHTML, /Normal|Nur gespeichert/);
+});
+
+test('all confirmed DNS lists render their domains and active status without exposing raw markup', () => {
+  const h = securityHarness();
+  h.run(`Object.assign(state, {dataMode:'live', rulesKnown:false, blocklists:[
+    {id:4,name:'Werbung & Tracker',sourceType:'DNS',urlPattern:'ads.example.org',confirmationSource:'ROUTER_ACK'},
+    {id:6,name:'<script>unsafe</script>',sourceType:'DNS',urlPattern:'tracker.example.org',confirmationSource:'ROUTER_ACK'},
+    {id:5,name:'Netzwerk',sourceType:'NETWORK',urlPattern:'youtube.com',confirmationSource:'ROUTER_ACK'}
+  ]}); renderAdDomains();`);
+  const html = h.field('adDomainsList').innerHTML;
+  assert.match(html, /ads.example.org/);
+  assert.match(html, /tracker.example.org/);
+  assert.equal((html.match(/Am Router aktiv/g) || []).length, 2);
+  assert.doesNotMatch(html, /youtube.com|<script>/);
+  assert.match(html, /&lt;script&gt;/);
+});
+
+test('status refresh reloads security lists together with their router confirmation', async () => {
+  const h = securityHarness();
+  h.run('loadSecurityState = async () => { state.blocklists = []; state.routerControl = null; };');
+  await h.run('loadRouterControlStatus()');
+  assert.equal(h.run('state.blocklists.length'), 0);
+  assert.equal(h.run('state.routerControl'), null);
 });
 
 test('device priority copies shared preset and preserves its other settings', async () => {

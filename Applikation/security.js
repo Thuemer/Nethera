@@ -76,6 +76,8 @@ async function loadSecurityState() {
       loaded: router.dataMode !== 'unavailable',
       dataMode: router.dataMode,
       rulesKnown: data.rulesKnown === true,
+      routerControl: data.routerControl || null,
+      routerControlError: data.routerControlError || null,
       wifiNetworks: router.wifiNetworks || [],
       devices: data.devices || [],
       groups: data.groups || [],
@@ -86,13 +88,15 @@ async function loadSecurityState() {
       timeLimits: data.timeLimits || []
     });
     renderAll();
-    setStatus(router.dataMode === 'live' ? state.rulesKnown ? 'Schutzregeln vom Router aktualisiert.' : 'Blocklisten und Zuweisungen sind nicht vollständig vom Router gemeldet. Nur verifizierte Einträge werden angezeigt; Bearbeitung vorerst gesperrt.' : router.dataMode === 'demo' ? 'Demo-Netzwerk mit Beispielregeln · Nur Ansicht.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' && state.rulesKnown ? 'success' : 'info');
+    setStatus(router.dataMode === 'live' ? state.rulesKnown ? 'Schutzregeln vom Router aktualisiert.' : state.blocklists.some(item => item.confirmationSource === 'ROUTER_ACK')
+      ? 'Bestätigte Netzwerksperren geladen. Gerätezuweisungen sind noch unvollständig; Regelbearbeitung vorerst gesperrt.'
+      : 'Regeln und Zuweisungen sind nicht vollständig bestätigt. Nur verifizierte Einträge werden angezeigt; Bearbeitung vorerst gesperrt.' : router.dataMode === 'demo' ? 'Demo-Netzwerk mit Beispielregeln · Nur Ansicht.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' && state.rulesKnown ? 'success' : 'info');
   } catch (error) {
-    Object.assign(state, { loaded: false, rulesKnown: false, dataMode: 'unavailable', devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
+    Object.assign(state, { loaded: false, rulesKnown: false, dataMode: 'unavailable', routerControl: null, routerControlError: error, devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
     renderAll();
     setStatus(NetheraApi.userMessage(error), 'error');
   }
-  await loadRouterControlStatus();
+  renderRouterControlStatus();
   updateReadOnlyControls();
 }
 
@@ -148,7 +152,7 @@ function renderRouterControlStatus() {
   if (blocklistNote) blocklistNote.textContent = state.dataMode === 'demo'
     ? 'Beispiel-Sperrlisten für Geräte, Gruppen und das gesamte Netzwerk. Keine echte Sperrwirkung.'
     : !state.rulesKnown
-    ? 'Nur Blocklisten mit bestätigter Router-Herkunft werden angezeigt. Eine leere Liste bedeutet nicht, dass am Router keine Sperren bestehen.'
+    ? 'Netzwerksperren erscheinen mit der Übernahmebestätigung des Routers. Unbestätigte Geräte- und Gruppenzuweisungen bleiben verborgen.'
     : control?.connection === 'online'
     ? 'Jede Blockliste zeigt ihren bestätigten Routerstatus einzeln an.'
     : 'Sperrlisten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
@@ -168,14 +172,8 @@ function renderRouterControlStatus() {
 }
 
 async function loadRouterControlStatus() {
-  try {
-    state.routerControl = await NetheraApi.getRouterControlStatus();
-    state.routerControlError = null;
-  } catch (error) {
-    state.routerControl = null;
-    state.routerControlError = error;
-  }
-  renderRouterControlStatus();
+  // Reload lists and confirmation together; an old ACK must not survive a status refresh.
+  await loadSecurityState();
 }
 
 async function requestAdblockInstallation() {
@@ -251,7 +249,7 @@ function renderStats() {
   const domainCount = state.blocklists.reduce((sum, blocklist) => sum + blocklistDomains(blocklist).length, 0);
   document.getElementById('statPackages')?.setAttribute('value', String(state.blocklists.length));
   document.getElementById('statManual')?.setAttribute('value', String(domainCount));
-  document.getElementById('statAds')?.setAttribute('value', String(blocklistDomains(state.blocklists.find(item => item.sourceType === 'DNS')).length));
+  document.getElementById('statAds')?.setAttribute('value', String(new Set(state.blocklists.filter(item => item.sourceType === 'DNS').flatMap(blocklistDomains)).size));
   document.getElementById('statPresets')?.setAttribute('value', String(state.presets.length));
   const adPercent = document.getElementById('adPercent');
   if (adPercent) adPercent.textContent = '—';
@@ -361,7 +359,7 @@ function renderManualDomains() {
   const list = document.getElementById('manualDomainsList');
   if (!list) return;
   if (!state.blocklists.length) {
-    list.innerHTML = state.rulesKnown ? '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um Websites zu blockieren."></empty-state>' : '<empty-state title="Keine gemeldeten Blocklisten" text="Es liegen noch keine Sperrlisten mit bestätigter Router-Herkunft vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
+    list.innerHTML = state.rulesKnown ? '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um Websites zu blockieren."></empty-state>' : '<empty-state title="Keine bestätigten Blocklisten" text="Es liegen noch keine verifizierten Sperrlisten oder Übernahmebestätigungen vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
     return;
   }
 
@@ -384,17 +382,17 @@ function renderManualDomains() {
 function renderAdDomains() {
   const list = document.getElementById('adDomainsList');
   if (!list) return;
-  const dns = state.blocklists.find(item => item.sourceType === 'DNS');
-  const domains = blocklistDomains(dns);
-  list.innerHTML = domains.map((domain, index) => `
+  const entries = state.blocklists.filter(item => item.sourceType === 'DNS')
+    .flatMap(blocklist => blocklistDomains(blocklist).map(domain => ({ domain, blocklist })));
+  list.innerHTML = entries.map(({ domain, blocklist }) => `
     <article class="rule-item">
       <div class="rule-main">
         <strong>${escapeText(domain)}</strong>
-        <span>${state.dataMode === 'demo' ? 'Beispiel für eine Werbefilter-Liste' : 'In der Werbefilter-Liste gespeichert'}</span>
+        <span>${state.dataMode === 'demo' ? 'Beispiel für eine Werbefilter-Liste' : escapeText(blocklist.name)}</span>
       </div>
-      <span class="badge">${state.dataMode === 'demo' ? 'Beispiel' : 'Gespeichert'}</span>
+      <span class="badge ${blocklist.confirmationSource === 'ROUTER_ACK' ? 'ok' : ''}">${state.dataMode === 'demo' ? 'Beispiel' : blocklist.confirmationSource === 'ROUTER_ACK' ? 'Am Router aktiv' : routerEffect(state.routerControl?.blocklists?.[blocklist.id])}</span>
     </article>
-  `).join('') || (state.rulesKnown ? '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>' : '<empty-state title="Keine gemeldeten Werbe-Domains" text="Der Router hat keine verifizierte Domain-Liste geliefert. Der Adblock-Status wird separat geprüft."></empty-state>');
+  `).join('') || (state.rulesKnown ? '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>' : '<empty-state title="Keine bestätigten Werbe-Domains" text="Keine aktuell bestätigte Domain-Liste. Der Adblock-Status wird separat angezeigt."></empty-state>');
 }
 
 function renderPresetDeviceOptions() {

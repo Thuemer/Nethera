@@ -33,8 +33,35 @@ Zuweisungen aus der Datenbank ohne Herkunftsnachweis. `sourceType` beschreibt de
 Filtertyp, nicht die Datenquelle. Eine passende Geraete-ID oder `routerId` und ein
 Apply-ACK sind ebenfalls kein Beleg, dass diese Eintraege vom Router gelesen wurden.
 `RouterControlResource` bestaetigt die Uebernahme einer Sollversion, liefert aber
-keinen vollstaendigen Regel-Readback. Deshalb bleiben unmarkierte Datensaetze in der
-Live-Ansicht verborgen. Es werden keine Datenbankzeilen geloescht oder umetikettiert.
+keinen vollstaendigen Regel-Readback. Unmarkierte Geraete-/Gruppenzuweisungen bleiben
+deshalb verborgen. Fuer netzweite DNS-Sperren gilt die folgende bestaetigte Ausnahme.
+Es werden keine Datenbankzeilen geloescht oder umetikettiert.
+
+#### Bestaetigte Netzwerksperren (Korrektur vom 16.11.2026)
+
+Der erste Herkunftsfilter war zu streng: Eine gespeicherte Liste muss nicht vom
+Router stammen, um nach bestaetigter Uebernahme dort aktiv zu sein. Das Frontend
+laedt deshalb `/api/security/state` und `/api/router-control/status` zusammen:
+
+- `NETWORK`-Listen des ausgewaehlten Routers werden bei `connection: "online"`,
+  gueltigem `checkedAt` und `blocklists[id].applied: true` ohne Fehler angezeigt.
+  Das Backend bestaetigt `applied` nur bei ACK der aktuellen Sollversion.
+- `DNS`-Listen brauchen zusaetzlich `adblock.installed`, `enabled` und `applied`
+  jeweils `true`. Sie erscheinen auch unter den gespeicherten Werbe-Domains.
+- Die Legacy-Status-API steuert auf LeoCloud Router 1. Ohne `routerId` gilt ihr ACK
+  ausschliesslich fuer diesen Router; kuenftige Multi-Router-Antworten muessen ihre
+  passende `routerId` liefern. Ein alter ACK-Zeitpunkt allein wird nicht verworfen:
+  aktuelle Verbindung und bestaetigte Sollversion sind entscheidend.
+- Domain-Normalisierung entspricht `DnsDesiredState.domains`. Kategorie-Tokens
+  wie `adult` und ungueltige Domains sind nicht Teil der effektiven DNS-Konfiguration.
+  Namen oder beispielhaft aussehende Domains sind kein Herkunftskriterium.
+- Solche Listen erhalten nur frontendseitig `confirmationSource: "ROUTER_ACK"`,
+  nicht `dataSource: "ROUTER"`. Dies bestaetigt die Uebernahme, keinen unabhaengigen
+  DNS-Funktionstest oder eine vollstaendige Inventarisierung des Routers.
+- Ein pauschales ACK fuer `PRESET`/`GROUP`/`DEVICE` reicht nicht: Die derzeitige
+  Status-API bestaetigt auch ungenutzte Listen. Diese bleiben ohne Readback verborgen.
+  `rulesKnown` bleibt falsch, Regelbearbeitung bleibt bis zur vollstaendigen Sicht
+  gesperrt. Status-Aktualisierung laedt Listen und Bestaetigung gemeinsam neu.
 
 Frontend-Vertrag fuer eine spaetere Backend-Erweiterung von `GET /api/security/state`:
 
@@ -64,12 +91,12 @@ Frontend-Vertrag fuer eine spaetere Backend-Erweiterung von `GET /api/security/s
   Datenbanken bleiben unveraendert. Die Herkunft ist von der Routerwirkung
   (`applied`) getrennt; eine gelesene Regel ist nicht automatisch aktiv.
 
-Gegen das aktuell deployte Backend bleiben Blocklisten/Gruppen/Vorlagen und ihre
-Zuweisungen daher vorerst leer. Das ist **kein Nachweis**, dass am Router keine
-Regeln existieren. Topologie und Internetzeiten kennzeichnen fehlende Vorlagen
-als nicht gemeldet. Diese Frontend-Aenderung aus Commit `da36b43` ist mit Image-Tag
-`20261116-131208` auf LeoCloud ausgerollt. Nur das Frontend wurde aktualisiert;
-die oben beschriebene Backend-Erweiterung steht weiterhin aus.
+Gegen das aktuell deployte Backend bleiben unbestaetigte Gruppen/Vorlagen und ihre
+Zuweisungen vorerst leer. Das ist **kein Nachweis**, dass am Router keine Regeln
+existieren. Topologie und Internetzeiten kennzeichnen fehlende Vorlagen als nicht
+gemeldet. Bestaetigte NETWORK-/DNS-Listen sind von dieser Einschraenkung ausgenommen.
+Die Korrektur ersetzt den zu strengen Filter aus `da36b43` (Image `20261116-131208`).
+Die oben beschriebene Backend-Erweiterung fuer vollstaendigen Readback steht weiter aus.
 Digest, Abnahme und Rollback sind in `deploy/leocloud/README.md` dokumentiert.
 
 ## Noch nicht vorhandene Messungen
