@@ -2,11 +2,12 @@
 
 Stand: am 15.11.2026 auf LeoCloud ausgerollt. Die Image-Digests stehen in `deploy/leocloud/stack.yaml`.
 
-Lokale Erweiterung vom 16.11.2026: Die Schutzseite bietet zusaetzlich editierbare,
+Frontend-Erweiterung vom 16.11.2026: Die Schutzseite bietet zusaetzlich editierbare,
 rein browserlokale Entwuerfe ohne Backend-Schreibzugriffe. Die unten beschriebenen
 Router-Herkunftsregeln bleiben dabei erhalten; lokale Entwuerfe sind keine
 Live-Daten. Abgrenzung, Speicherung und Backend-Uebergabe:
-[`security-local-preview.md`](security-local-preview.md). Noch nicht ausgerollt.
+[`security-local-preview.md`](security-local-preview.md). Als ausschliessliches
+Frontend-Update auf LeoCloud ausgerollt; Backend und Router bleiben unveraendert.
 
 ## Verhalten
 
