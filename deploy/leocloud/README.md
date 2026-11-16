@@ -59,6 +59,52 @@ Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
 ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
 `themes/nethera/README.md`.
 
+### Lokale Schutz-Entwuerfe vom 16.11.2026
+
+Frontend-Quellstand: `c88bfd3bd9e53c78af6ecab48ea6488cac48d6c1`.
+Image: `ghcr.io/denizbernecker/nethera-frontend:20261116-135836`, privat,
+`linux/amd64`, Digest
+`sha256:eb16637af7a5fcf304f9239590c2dc32109afa0129630aaa2be3ae7babc105ee`.
+
+Die Schutzseite ist auch ohne vollstaendigen Router-Readback bearbeitbar.
+Alle Aenderungen auf dieser Seite sind ausschliesslich browserlokale Entwuerfe,
+einschliesslich Werbeschutz und vormerkbarer Installation. Es gibt keine
+Backend-Schreibzugriffe, Routerbefehle oder automatische Synchronisation.
+Entwuerfe sind nach API, Benutzer, Router und Live-/Demo-Modus getrennt und
+bleiben beim Seitenwechsel oder Reload im selben Browser-Tab erhalten.
+Bestaetigte Sperrlisten und der Adblock-Iststatus bleiben separat sichtbar;
+unbestaetigte alte Datenbankeintraege werden nicht als Routerdaten ausgegeben.
+Details und Backend-Uebergabe: `Documentation/security-local-preview.md`.
+
+Vor beiden Pushes wurden alle Team-Branches erneut abgerufen; `main` blieb
+unveraendert. Beim zweiten Abruf kam `feat/router-ownership` mit `3785936` hinzu.
+Dieser separate Account-/Backend-/Migrationsstand wurde nicht uebernommen oder
+ausgerollt. Normale Pushes ohne Force oder Merge waren ausreichend.
+Nur das Frontend-Image wurde mit einem Ressourcen-Version-/Pod-Template-
+gesicherten JSON-Patch ersetzt. Backend, Keycloak, Broker, Datenbank-Pods,
+PVCs, Secrets, Services und Ingress blieben unveraendert, ohne weitere Neustarts.
+Keine Migration, Seeds oder Schreibtests gegen Backend oder Router.
+
+Der Build enthaelt 77 oeffentliche Dateien: `security-draft.js` ist neu;
+`api.js`, `index.html`, `security.css`, `security.html` und `security.js` sind
+geaendert. Alle anderen oeffentlichen Dateien sowie nginx sind bytegleich zum
+vorherigen Image. Unveroeffentlichte Backup-Kopien wurden nicht aufgenommen.
+
+Pruefungen: 92 JavaScript-Tests, ein Python-Navigationstest und jeweils 18
+Browserpruefungen des fertigen Images lokal sowie auf LeoCloud (1440/390/320 px).
+Die Browserpruefungen verwenden isolierte API-Antworten und blockieren jeden
+Backend-Schreibversuch. Keine Schreibversuche, JavaScript-Fehler oder horizontalen
+Ueberlaeufe. Rollout erfolgreich; Registry- und Pod-Digest stimmen ueberein.
+Startseite, Support, Anleitung, Konfiguration und Keycloak-Discovery antworten
+mit 200; die geschuetzte Router-API ohne Anmeldung weiterhin mit 401.
+Alle sechs geaenderten/neuen Frontend-Dateien stimmen per HTTP-Hash mit dem
+geprueften Quellstand ueberein und werden mit `no-cache, must-revalidate` ausgeliefert.
+
+Frontend-Rollback bei Bedarf: ausschliesslich das Frontend-Image auf
+`ghcr.io/denizbernecker/nethera-frontend:20261116-133308@sha256:353d39a037470da2844081dcac8b415c1a7bc7896bda07bd4c9676bd9b5fae60`
+setzen. Nicht den gesamten Stack anwenden: Der Backend-Eintrag in `main` bildet
+den aktuellen Routersteuerungs-Rollout nicht vollstaendig ab.
+
 ### Bestaetigte Sperrlisten und Topologie vom 16.11.2026
 
 Frontend-Quellstand: `c805269b0f079b2e3a4bcdab6af2b343841b7b88`.

@@ -1,6 +1,8 @@
 # Lokale Schutz-Entwuerfe
 
-Stand: 16.11.2026, nur lokal vorbereitet, nicht ausgerollt.
+Stand: 16.11.2026, als reines Frontend-Update auf LeoCloud ausgerollt.
+Quellstand: `c88bfd3bd9e53c78af6ecab48ea6488cac48d6c1`. Image, Pruefungen und
+Rollback stehen in [`deploy/leocloud/README.md`](../deploy/leocloud/README.md).
 
 ## Zweck und Grenzen
 
