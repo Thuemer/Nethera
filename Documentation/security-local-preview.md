@@ -1,7 +1,8 @@
 # Lokale Schutz-Entwuerfe
 
 Stand: 16.11.2026, als reines Frontend-Update auf LeoCloud ausgerollt.
-Quellstand: `c88bfd3bd9e53c78af6ecab48ea6488cac48d6c1`. Image, Pruefungen und
+Schutz-Quellstand: `c88bfd3bd9e53c78af6ecab48ea6488cac48d6c1`;
+Topologie-Erweiterung: `0f3801192c2843b391c320e653a116b0911a90bf`. Image, Pruefungen und
 Rollback stehen in [`deploy/leocloud/README.md`](../deploy/leocloud/README.md).
 
 ## Zweck und Grenzen
@@ -62,7 +63,7 @@ macht die Oberflaeche bedienbar, bestaetigt aber keine QoS-, Kategorie- oder
 Zeitlimit-Durchsetzung. Internetzeiten und andere App-Seiten erhalten diese
 lokalen Entwuerfe nicht als vermeintliche Live-Daten.
 
-## Topologie-Vorschau (lokal vorbereitet)
+## Topologie-Vorschau
 
 Die Topologie liest denselben tablokalen Entwurf mit identischem API-, Benutzer-,
 Router- und Live-/Demo-Schluessel. Gruppen, Vorlagen, Prioritaeten und zugehoerige
@@ -80,7 +81,7 @@ Beim Seitenwechsel wird der Entwurf erneut gelesen. Bereits geoeffnete Frames
 im selben Tab reagieren auf sessionStorage-Aenderungen und Verwerfen. Reload,
 Benutzer-/Routerwechsel und Fehler bleiben getrennt; bei fehlgeschlagenem
 Regelabruf werden keine Entwuerfe auf veraltete Daten gelegt. Diese Erweiterung
-ist noch nicht auf LeoCloud ausgerollt.
+ist seit 16.11.2026 ausschliesslich im Frontend auf LeoCloud ausgerollt.
 
 ## Tests
 
