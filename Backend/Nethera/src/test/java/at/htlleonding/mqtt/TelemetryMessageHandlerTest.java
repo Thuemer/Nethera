@@ -1,6 +1,8 @@
 package at.htlleonding.mqtt;
 
 import at.htlleonding.model.Router;
+import at.htlleonding.telemetry.ControlIngestor;
+import at.htlleonding.telemetry.ControlSample;
 import at.htlleonding.telemetry.CounterSample;
 import at.htlleonding.telemetry.DeviceIngestor;
 import at.htlleonding.telemetry.DnsIngestor;
@@ -32,6 +34,7 @@ class TelemetryMessageHandlerTest {
         handler.speedIngestor = mock(SpeedIngestor.class);
         handler.dnsIngestor = mock(DnsIngestor.class);
         handler.deviceIngestor = mock(DeviceIngestor.class);
+        handler.controlIngestor = mock(ControlIngestor.class);
         handler.freshness = mock(TelemetryFreshness.class);
 
         router = new Router();
@@ -92,6 +95,32 @@ class TelemetryMessageHandlerTest {
 
         verify(handler.metadataIngestor).setOnline(router, false);
         verify(handler.freshness).setStatus(1L, false);
+    }
+
+    @Test
+    void controlAnswerIsStoredButDoesNotProveRouterIsAlive() {
+        handler.handle("nethera/1/telemetry/control",
+                "{\"v\":1,\"ts\":100,\"version\":7,\"applied\":false,\"adblock\":{\"installed\":true,\"enabled\":false},\"error\":\"nft: failed\"}");
+
+        verify(handler.controlIngestor).ingest(router, new ControlSample(100, 7, false, true, false, "nft: failed"));
+        // The answer is retained and also arrives after a backend restart
+        assertNull(router.getLastSeen());
+        verifyNoInteractions(handler.freshness);
+    }
+
+    @Test
+    void controlAnswerWithoutAdblockStateIsRejected() {
+        assertThrows(InvalidPayloadException.class,
+                () -> handler.handle("nethera/1/telemetry/control", "{\"v\":1,\"ts\":100,\"version\":7,\"applied\":true}"));
+
+        verifyNoInteractions(handler.controlIngestor);
+    }
+
+    @Test
+    void ownDesiredStateMessagesAreIgnored() {
+        handler.handle("nethera/1/config/dns", "{\"v\":1,\"version\":7,\"adblock\":true,\"network\":[],\"devices\":{}}");
+
+        verifyNoInteractions(handler.entityManager, handler.controlIngestor, handler.freshness);
     }
 
     @Test

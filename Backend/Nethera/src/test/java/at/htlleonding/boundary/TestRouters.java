@@ -6,12 +6,12 @@ import io.quarkus.narayana.jta.QuarkusTransaction;
 import jakarta.persistence.EntityManager;
 
 // Test helper: make the @TestSecurity user (sub = user name without @JwtSecurity) own a router
-final class TestRouters {
+public final class TestRouters {
 
     private TestRouters() {
     }
 
-    static void own(EntityManager em, String sub, Long routerId) {
+    public static void own(EntityManager em, String sub, Long routerId) {
         QuarkusTransaction.requiringNew().run(() -> {
             Account account = account(em, sub);
             // One router per account and one owner per router: clear both sides first
@@ -23,7 +23,7 @@ final class TestRouters {
         });
     }
 
-    static Account account(EntityManager em, String sub) {
+    public static Account account(EntityManager em, String sub) {
         return em.createNamedQuery(Account.QUERY_FIND_BY_SUB, Account.class)
                 .setParameter("sub", sub)
                 .getResultStream()

@@ -1,0 +1,7 @@
+/usr/bin/nethera-agent
+/etc/init.d/nethera-agent
+/etc/hotplug.d/ntp/50-nethera
+/etc/rc.d/S99nethera-agent
+/etc/rc.d/K10nethera-agent
+/etc/nethera/
+/usr/share/nftables.d/table-post/90-nethera.nft

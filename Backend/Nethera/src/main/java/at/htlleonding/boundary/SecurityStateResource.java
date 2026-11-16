@@ -1,8 +1,10 @@
 package at.htlleonding.boundary;
 
+import at.htlleonding.control.RouterControlChanged;
 import at.htlleonding.model.*;
 import at.htlleonding.services.CurrentRouter;
 import io.quarkus.security.Authenticated;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -20,6 +22,10 @@ public class SecurityStateResource {
 
     @Inject
     EntityManager entityManager;
+
+    // Delivered after the commit; the router then gets the new blocked websites
+    @Inject
+    Event<RouterControlChanged> routerControlChanged;
 
     @Inject
     CurrentRouter currentRouter;
@@ -49,6 +55,7 @@ public class SecurityStateResource {
     @Path("groups")
     @Transactional
     public GroupDto saveGroup(GroupDto dto) {
+        routerControlChanged.fire(new RouterControlChanged());
         RequestValidation.requireBody(dto);
         Router router = currentRouter.require();
         DeviceGroup group = dto.id() == null ? new DeviceGroup() : currentRouter.owned(DeviceGroup.class, dto.id(), "Gruppe nicht gefunden");
@@ -71,6 +78,7 @@ public class SecurityStateResource {
     @Path("groups/{groupId}")
     @Transactional
     public Response deleteGroup(@PathParam("groupId") Long groupId) {
+        routerControlChanged.fire(new RouterControlChanged());
         DeviceGroup group = currentRouter.owned(DeviceGroup.class, groupId, "Gruppe nicht gefunden");
 
         entityManager.createQuery("DELETE FROM DeviceGroupMember m WHERE m.groupId = :groupId")
@@ -84,6 +92,7 @@ public class SecurityStateResource {
     @Path("groups/{groupId}/members/{deviceId}")
     @Transactional
     public MemberDto addMember(@PathParam("groupId") Long groupId, @PathParam("deviceId") Long deviceId) {
+        routerControlChanged.fire(new RouterControlChanged());
         // Both must belong to the caller's router, which also keeps a group to one router
         currentRouter.owned(DeviceGroup.class, groupId, "Gruppe nicht gefunden");
         currentRouter.device(deviceId);
@@ -109,6 +118,7 @@ public class SecurityStateResource {
     @Path("groups/{groupId}/members/{deviceId}")
     @Transactional
     public Response removeMember(@PathParam("groupId") Long groupId, @PathParam("deviceId") Long deviceId) {
+        routerControlChanged.fire(new RouterControlChanged());
         currentRouter.owned(DeviceGroup.class, groupId, "Gruppe nicht gefunden");
         currentRouter.device(deviceId);
         entityManager.createQuery("DELETE FROM DeviceGroupMember m WHERE m.groupId = :groupId AND m.deviceId = :deviceId")
@@ -122,6 +132,7 @@ public class SecurityStateResource {
     @Path("blocklists")
     @Transactional
     public BlocklistDto saveBlocklist(BlocklistDto dto) {
+        routerControlChanged.fire(new RouterControlChanged());
         RequestValidation.requireBody(dto);
         Router router = currentRouter.require();
         BlockList blocklist = dto.id() == null ? new BlockList() : currentRouter.owned(BlockList.class, dto.id(), "Blockliste nicht gefunden");
@@ -144,6 +155,7 @@ public class SecurityStateResource {
     @Path("presets")
     @Transactional
     public PresetDto savePreset(PresetDto dto) {
+        routerControlChanged.fire(new RouterControlChanged());
         RequestValidation.requireBody(dto);
         Router router = currentRouter.require();
         SecurityPreset preset = dto.id() == null ? new SecurityPreset() : currentRouter.owned(SecurityPreset.class, dto.id(), "Preset nicht gefunden");
@@ -170,6 +182,7 @@ public class SecurityStateResource {
     @Path("devices/{deviceId}/preset/{presetId}")
     @Transactional
     public AssignmentDto assignPreset(@PathParam("deviceId") Long deviceId, @PathParam("presetId") Long presetId) {
+        routerControlChanged.fire(new RouterControlChanged());
         currentRouter.device(deviceId);
         currentRouter.owned(SecurityPreset.class, presetId, "Preset nicht gefunden");
 
@@ -194,6 +207,7 @@ public class SecurityStateResource {
     @Path("devices/{deviceId}/preset")
     @Transactional
     public Response removePreset(@PathParam("deviceId") Long deviceId) {
+        routerControlChanged.fire(new RouterControlChanged());
         currentRouter.device(deviceId);
         entityManager.createQuery("DELETE FROM DevicePresetAssignment a WHERE a.deviceId = :deviceId")
                 .setParameter("deviceId", deviceId)

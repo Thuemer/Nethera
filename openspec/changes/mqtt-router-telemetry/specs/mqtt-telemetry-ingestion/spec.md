@@ -38,7 +38,7 @@ MAC addresses SHALL be normalized to lowercase by the backend.
 - **THEN** the message is acknowledged and discarded, a warning naming the topic is logged, and the consumer keeps processing later messages
 
 ### Requirement: Router status via Last Will
-The backend SHALL set `router.isOnline` from the `status` topic. The publishing client (router agent or simulator) is expected to register `offline` as its retained MQTT Last Will and to publish a retained `online` after it connects.
+The backend SHALL set `router.isOnline` from the `status` topic. The publishing client (router agent or simulator) is expected to register `offline` as its retained MQTT Last Will, to publish a retained `online` after it connects, and to publish retained `online` again whenever its status connection receives `offline` on its own status topic while the client is still running (the Last Will fired during a broker restart or outage).
 
 #### Scenario: Agent connects
 - **WHEN** `online` is received on `nethera/1/status`
@@ -91,6 +91,10 @@ The repository SHALL contain `scripts/mqtt-simulate-router.sh <id>`. It publishe
 #### Scenario: Simulating router 1 against the Compose stack
 - **WHEN** the developer runs `scripts/mqtt-simulate-router.sh 1` with the stack running
 - **THEN** `SpeedStat`, `DnsStat` and `ConnectedDevice` rows for router 1 appear in the database within two publish cycles
+
+#### Scenario: Broker restarts while the simulator runs
+- **WHEN** the broker is down longer than 1.5× the keepalive and comes back while the simulator keeps running
+- **THEN** the simulator publishes retained `online` again and `router.isOnline` returns to `true`
 
 #### Scenario: Simulated device goes offline
 - **WHEN** the simulator drops a previously reachable MAC from `reachable`
