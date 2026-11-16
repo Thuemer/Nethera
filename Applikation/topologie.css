@@ -25,6 +25,9 @@ button:disabled { opacity: .45; cursor: default; }
 #group-legend { display: flex; flex-wrap: wrap; gap: 6px; }
 .legend-item { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 5px 10px; background: transparent; border: 1px solid transparent; border-radius: 5px; font-size: 13px; }
 .legend-item[aria-pressed='true'] { border-color: var(--accent); background: rgba(var(--accent-rgb), .08); }
+.online-filter { margin-left: auto; border-color: var(--line); white-space: nowrap; }
+.online-filter:disabled { opacity: .5; cursor: default; }
+.online-dot { width: 9px; height: 9px; border-radius: 50%; background: #5fd08a; }
 .legend-item:hover { background: rgba(var(--text-rgb), .06); }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--group-color); flex: none; }
 .legend-count { color: var(--text-soft); font-variant-numeric: tabular-nums; }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Netzwerk-Topologie</title>
   <link rel="icon" href="nethera_logo.png">
-  <link rel="stylesheet" href="topologie.css?v=20261115-graph">
+  <link rel="stylesheet" href="topologie.css?v=20261116-online">
   <link rel="stylesheet" href="data-source.css">
 </head>
 <body>
@@ -23,6 +23,7 @@
     <div id="network-notice" class="network-notice" role="status" hidden></div>
     <section class="legend-bar" aria-label="Legende und Gruppenfilter">
       <span class="legend-title">Gruppen</span><div id="group-legend"></div>
+      <button type="button" class="legend-item online-filter" id="online-filter" aria-pressed="false" disabled title="Nur Geräte zeigen, die gerade verbunden sind"><span class="online-dot" aria-hidden="true"></span>Nur online<span class="legend-count" id="online-count"></span></button>
     </section>
     <div class="topology-body">
       <section class="graph-surface" aria-label="Netzwerkgraph">
@@ -48,7 +49,7 @@
   <script src="api.js"></script>
   <script src="vendor/cytoscape.min.js"></script>
   <script src="vendor/lucide.min.js"></script>
-  <script src="topology-model.js?v=20261115-graph"></script>
-  <script src="topologie_custom.js?v=20261115-graph"></script>
+  <script src="topology-model.js?v=20261116-online"></script>
+  <script src="topologie_custom.js?v=20261116-online"></script>
 </body>
 </html>

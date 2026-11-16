@@ -4,7 +4,16 @@
   const sameId = (a, b) => a != null && b != null && String(a) === String(b);
   const connection = value => ({ wifi: 'WLAN', wlan: 'WLAN', lan: 'LAN' }[String(value || '').toLowerCase()] || 'Unbekannt');
 
+  // A device counts as online if the router reported it in (nearly) its latest message.
+  // Both times come from the same server clock, so the browser's time zone does not matter.
+  const ONLINE_WINDOW_MS = 120000;
+  const time = value => { const ms = value ? new Date(value).getTime() : NaN; return Number.isNaN(ms) ? null : ms; };
+
   function buildModel(router, security) {
+    const seen = list(router?.devices).map(device => time(device.lastSeen)).filter(ms => ms != null);
+    const reference = time(router?.checkedAt) ?? (seen.length ? Math.max(...seen) : null);
+    const isOnline = device => typeof device.isOnline === 'boolean' ? device.isOnline
+      : reference != null && time(device.lastSeen) != null && time(device.lastSeen) >= reference - ONLINE_WINDOW_MS;
     const known = security != null && security.rulesKnown !== false && ['groups', 'members', 'assignments', 'presets'].every(key => Array.isArray(security[key]));
     const groups = list(security?.groups).slice().sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }))
       .map((group, index) => ({ id: `group-${group.id}`, sourceId: group.id, name: group.name || 'Unbenannte Gruppe', color: colors[index % colors.length] }));
@@ -18,15 +27,23 @@
         id: `device-${device.id}`, sourceId: device.id,
         name: device.hostname || device.ipAddress || `Gerät ${device.id}`,
         ip: device.ipAddress || 'Nicht bekannt', mac: device.macAddress || 'Nicht bekannt',
-        connection: connection(device.connectionType), lastSeen: device.lastSeen,
+        connection: connection(device.connectionType), lastSeen: device.lastSeen, online: isOnline(device),
         groups: assignedGroups.length ? assignedGroups : [fallback],
         preset: preset || null, assignment: assignment || null, rulesKnown: known,
         timeLimit: list(security?.timeLimits).find(item => sameId(item.deviceId, device.id)) || null,
         blocklist: list(security?.blocklists).find(item => sameId(item.id, preset?.blocklistId)) || null
       };
     });
-    const usedGroups = [...groups, fallback].map(group => ({ ...group, count: devices.filter(device => device.groups.some(item => item.id === group.id)).length })).filter(group => group.count);
-    return { router: { name: router?.name || 'Router', model: router?.model || 'Nicht bekannt', dataMode: router?.dataMode }, devices, groups: usedGroups, rulesKnown: known };
+    const allGroups = [...groups, fallback];
+    return { router: { name: router?.name || 'Router', model: router?.model || 'Nicht bekannt', dataMode: router?.dataMode }, devices, groups: countGroups(allGroups, devices), allGroups, rulesKnown: known };
+  }
+
+  const countGroups = (groups, devices) => groups.map(group => ({ ...group, count: devices.filter(device => device.groups.some(item => item.id === group.id)).length })).filter(group => group.count);
+
+  // The same model without the devices that are not connected right now
+  function onlineOnly(model) {
+    const devices = model.devices.filter(device => device.online);
+    return { ...model, devices, groups: countGroups(model.allGroups, devices) };
   }
 
   function graphElements(model, mode = 'groups') {
@@ -38,7 +55,7 @@
       edges.push({ data: { id: `router-${group.id}`, source: 'router', target: group.id } });
     });
     model.devices.forEach(device => {
-      nodes.push({ data: { id: device.id, label: device.name.replaceAll('-', '-\n'), kind: 'device', color: device.groups[0].color } });
+      nodes.push({ data: { id: device.id, label: device.name.replaceAll('-', '-\n'), kind: 'device', color: device.groups[0].color, online: device.online ? 1 : 0 } });
       const parents = mode === 'groups' ? device.groups.map(group => group.id) : [`connection-${device.connection}`];
       parents.forEach(parent => edges.push({ data: { id: `${parent}-${device.id}`, source: parent, target: device.id } }));
     });
@@ -51,7 +68,7 @@
       (!search || [device.name, device.ip, device.mac, device.preset?.name, ...device.groups.map(group => group.name)].some(value => String(value || '').toLocaleLowerCase().includes(search))));
   }
 
-  const api = { buildModel, graphElements, matchingDevices };
+  const api = { buildModel, onlineOnly, graphElements, matchingDevices };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.NetheraTopology = api;
 })(typeof window !== 'undefined' ? window : globalThis);

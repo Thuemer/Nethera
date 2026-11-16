@@ -77,3 +77,30 @@ test('empty networks remain a valid graph', () => {
   assert.deepEqual(model.devices, []);
   assert.equal(graphElements(model).length, 1);
 });
+
+test('online status compares lastSeen with the router check time, not with the browser clock', () => {
+  const { onlineOnly } = require('../topology-model.js');
+  const live = { name: 'Nethera', checkedAt: '2026-11-16T12:00:00', devices: [
+    { id: 1, hostname: 'Jetzt da', lastSeen: '2026-11-16T11:59:40' },
+    { id: 2, hostname: 'Gestern da', lastSeen: '2026-11-15T18:00:00' },
+    { id: 3, hostname: 'Nie gesehen' },
+    { id: 4, hostname: 'Laut API offline', lastSeen: '2026-11-16T12:00:00', isOnline: false }
+  ] };
+  const security = { groups: [{ id: 1, name: 'Kinder' }], members: [{ deviceId: 2, groupId: 1 }], assignments: [], presets: [] };
+  const model = buildModel(live, security);
+  assert.deepEqual(model.devices.map(device => device.online), [true, false, false, false]);
+
+  const online = onlineOnly(model);
+  assert.deepEqual(online.devices.map(device => device.name), ['Jetzt da']);
+  // The group whose only device is offline disappears, and the counts follow
+  assert.deepEqual(online.groups.map(group => [group.name, group.count]), [['Ohne Gruppe', 1]]);
+  assert.equal(model.devices.length, 4, 'the full model stays untouched');
+  assert.equal(graphElements(online).filter(element => element.data.kind === 'device').length, 1);
+});
+
+test('without a router check time the newest device is the reference', () => {
+  const model = buildModel({ devices: [
+    { id: 1, lastSeen: '2026-11-16T12:00:00' }, { id: 2, lastSeen: '2026-11-16T11:59:00' }, { id: 3, lastSeen: '2026-11-16T09:00:00' }
+  ] }, null);
+  assert.deepEqual(model.devices.map(device => device.online), [true, true, false]);
+});
