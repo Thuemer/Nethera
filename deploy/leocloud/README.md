@@ -59,7 +59,60 @@ Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
 ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
 `themes/nethera/README.md`.
 
-### Router-Regelfilter-Release vom 16.11.2026
+### Bestaetigte Sperrlisten und Topologie vom 16.11.2026
+
+Frontend-Quellstand: `c805269b0f079b2e3a4bcdab6af2b343841b7b88`.
+Image: `ghcr.io/denizbernecker/nethera-frontend:20261116-133308`, privat,
+`linux/amd64`, Digest
+`sha256:353d39a037470da2844081dcac8b415c1a7bc7896bda07bd4c9676bd9b5fae60`.
+
+Korrigiert den vorherigen, zu strengen Herkunftsfilter: Gespeicherte NETWORK-Listen
+werden wieder angezeigt, wenn der online erreichbare Router ihre aktuelle
+Sollversion bestaetigt. DNS-Listen benoetigen zusaetzlich bestaetigt aktiven Adblock.
+Alle zugehoerigen Werbe-Domains erscheinen wieder im Werbeschutz. Kategorien und
+ungueltige Domains werden wie im Router-Publisher ausgefiltert. Unbestaetigte
+Vorlagen und Geraete-/Gruppenzuweisungen bleiben verborgen und die unvollstaendige
+Regelsicht schreibgeschuetzt. Die vollstaendige Offline-Demo bleibt erhalten.
+Die Uebernahmebestaetigung ist kein unabhaengiger DNS-Funktionstest.
+Details und verbleibender Backend-Vertrag: `Documentation/router-data-sources.md`.
+
+Moritz' Topologie-Commit `ca1bea8` wurde als `7816b3c` uebernommen; der bisherige
+Umgang mit unbekannten Zuweisungen blieb bei der Integration erhalten. Die Topologie
+bietet nun "Nur online" und stellt getrennte Geraete abgeschwaecht dar.
+Sein weiterer Commit `4b9a3f7` zur mDNS-Namenerkennung ist eine Router-Agent-Aenderung:
+abgerufen, aber nicht mit diesem Frontend-Rollout auf den Cudy installiert.
+
+Alle Team-Branches wurden vor dem Code-Push und erneut vor dem Deployment-Eintrag
+abgerufen. `main` wurde normal ohne Force-Push aktualisiert. Nur das Frontend-Image
+wurde durch einen JSON-Patch mit Ressourcen-Version-/Pod-Template-Pruefung ersetzt.
+Backend, Broker, Keycloak, Datenbank-Pods, PVCs, Secrets, Services und Ingress bleiben
+unveraendert. Keine Migration, Seeds oder Schreibtests gegen Backend/Router.
+
+Der fertige Build behaelt dieselben 76 oeffentlichen Dateien. Ausschliesslich
+`api.js`, `index.html`, `security.js`, `topologie.css`, `topologie_custom.html`,
+`topologie_custom.js` und `topology-model.js` sind geaendert; Website, Supportseite,
+Konfiguration, Login-Code und nginx-Routing sind bytegleich zum vorherigen Image.
+Keine bislang unveroeffentlichten Backup-Dateien wurden in den Build aufgenommen.
+
+Abnahme: 81 JavaScript-Tests und ein Navigationstest erfolgreich. 26 Browser-
+Layoutpruefungen bei 320, 390, 768 und 1440 Pixeln gegen Quellen, Build und Cloud-
+Dateien mit isolierten API-Antworten; aktive Listen, ACK-Verlust, Adblock aus,
+Demo/Reconnect und Topologie-Onlinefilter geprueft. Ein Canvas-Check lief nach dem
+Filterwechsel zunaechst vor dem Zeichnen; erneute Pruefung mit Warten auf gerenderte
+Pixel erfolgreich. Keine JavaScript-Fehler oder horizontalen Ueberlaeufe.
+Read-only-Pruefung der Cloud bestaetigte frischen Routerkontakt, angewendete aktuelle
+Sollversion und aktiven Adblock. Kein direkter DNS-/Router-Schreibtest durchgefuehrt.
+Rollout erfolgreich, Registry-/Pod-Digest identisch. Oeffentliche Dateien per SHA256
+geprueft; Website/Support/Anleitung/Konfiguration HTTP 200, API ohne Anmeldung 401,
+OIDC-Metadaten 200. Cache-Version der App-Seiten wurde erneuert.
+
+Rollback nur am Frontend auf
+`ghcr.io/denizbernecker/nethera-frontend:20261116-131208@sha256:0a905350ccfb584678994c2e82e5befd0f0803b0d1eaf28c59970d1043c110d2`.
+Dieser Vorgaenger enthaelt den zu strengen Filter und blendet die bestaetigten
+Listen wieder aus. Nicht den gesamten Stack anwenden; Backend-Rollouts werden
+separat auf `leocloud-deployment` verwaltet.
+
+### Router-Regelfilter-Release vom 16.11.2026 (historisch, oben korrigiert)
 
 Frontend-Quellstand: `da36b438215e48289905f727171d67ee04cce6a6`.
 Image: `ghcr.io/denizbernecker/nethera-frontend:20261116-131208`, privat,
