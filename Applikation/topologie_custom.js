@@ -1,6 +1,8 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const { buildModel, graphElements, matchingDevices } = window.NetheraTopology;
+  const { buildModel, onlineOnly, graphElements, matchingDevices } = window.NetheraTopology;
+  // fullModel = every stored device; model = what is shown (all, or only the online ones)
+  let fullModel = null, onlyOnline = false;
   let model = null, graph = null, mode = 'groups', groupFilter = '', selectedId = '';
   let initialPositions = null, resizeObserver = null;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -19,13 +21,13 @@
       const router = await NetheraApi.getPrimaryRouter();
       let rules = null;
       try { rules = await NetheraApi.getSecurityState(router); } catch {}
-      model = buildModel(router, rules);
+      fullModel = buildModel(router, rules);
       groupFilter = ''; selectedId = ''; $('device-search').value = '';
-      notice(model.rulesKnown ? '' : 'Gruppen und Vorlagen konnten nicht geladen werden. Verbindungsdaten werden weiterhin angezeigt.');
-      $('network-summary').textContent = `${model.devices.length} Geräte · ${model.groups.length} Gruppen · ${model.router.name}`;
-      renderLegend(); renderGraph(); filterGraph(); showDetails();
+      notice(fullModel.rulesKnown ? '' : 'Gruppen und Vorlagen konnten nicht geladen werden. Verbindungsdaten werden weiterhin angezeigt.');
+      applyOnlineFilter();
     } catch {
-      model = null;
+      model = null; fullModel = null;
+      $('online-filter').disabled = true;
       graph?.destroy(); graph = null;
       $('device-details').innerHTML = '';
       $('group-legend').innerHTML = '';
@@ -34,6 +36,20 @@
       $('network-summary').textContent = model ? 'Letzter geladener Stand' : 'Keine Netzwerkdaten';
       if (!model) { $('graph-empty').textContent = 'Netzwerk nicht verfügbar'; $('graph-empty').hidden = false; }
     } finally { $('reload-network').disabled = false; }
+  }
+
+  // Switches between all stored devices and the ones connected right now
+  function applyOnlineFilter() {
+    if (!fullModel) return;
+    const online = fullModel.devices.filter(device => device.online).length;
+    model = onlyOnline ? onlineOnly(fullModel) : fullModel;
+    if (!model.groups.some(group => group.id === groupFilter)) groupFilter = '';
+    if (!model.devices.some(device => device.id === selectedId)) selectedId = '';
+    $('online-filter').disabled = false;
+    $('online-filter').setAttribute('aria-pressed', String(onlyOnline));
+    $('online-count').textContent = online;
+    $('network-summary').textContent = `${fullModel.devices.length} Geräte · ${online} online · ${model.groups.length} Gruppen · ${model.router.name}`;
+    renderLegend(); renderGraph(); filterGraph(); showDetails();
   }
 
   function renderLegend() {
@@ -84,6 +100,7 @@
         { selector: 'node[kind = "router"]', style: { width: 86, height: 86, 'background-image': 'router.png', 'background-fit': 'contain', 'background-width': '80%', 'background-height': '80%', 'border-width': 2, 'border-color': '#69c5b6', 'font-weight': 600 } },
         { selector: 'node[kind = "group"]', style: { width: 32, height: 32, 'background-opacity': .18, 'border-color': 'data(color)', 'border-width': 2, 'font-weight': 600 } },
         { selector: 'edge', style: { width: 1.4, 'line-color': '#617078', 'curve-style': 'bezier', 'overlay-opacity': 0 } },
+        { selector: 'node[kind = "device"][online = 0]', style: { 'background-opacity': .3, 'border-style': 'dashed', 'border-color': '#617078', color: '#9aa8b0' } },
         { selector: '.muted', style: { opacity: .13 } },
         { selector: 'node:selected', style: { 'border-color': '#ffffff', 'border-width': 4 } },
         { selector: 'edge.highlighted', style: { 'line-color': '#9cd6cd', width: 2 } }
@@ -142,7 +159,7 @@
     if (!matches.some(device => device.id === selectedId)) selectedId = '';
     $('device-picker').value = selectedId;
     $('graph-empty').hidden = matches.length > 0;
-    $('graph-empty').textContent = model.devices.length ? 'Keine passenden Geräte' : 'Noch keine Geräte vorhanden';
+    $('graph-empty').textContent = model.devices.length ? 'Keine passenden Geräte' : onlyOnline && fullModel.devices.length ? 'Gerade ist kein Gerät online' : 'Noch keine Geräte vorhanden';
     if (!selectedId) { graph.nodes().unselect(); graph.edges().removeClass('highlighted'); }
     showDetails();
   }
@@ -164,7 +181,7 @@
     const demo = model.router.dataMode === 'demo';
     const device = model.devices.find(item => item.id === selectedId);
     if (!device) {
-      $('device-details').innerHTML = `<p class="detail-kicker">Netzwerkübersicht</p><h2>${escape(model.router.name)}</h2><p class="overview-count">${model.devices.length}</p><p class="detail-note">${demo ? 'Geräte im Beispiel-Netzwerk' : 'Geräte im gespeicherten Netzwerk'}</p><section class="detail-section"><h3>Gruppen</h3>${model.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span><span>${escape(group.name)}</span><span class="legend-count">${group.count}</span></div>`).join('')}</section><section class="detail-section"><h3>Router</h3><dl>${row('Modell', model.router.model)}</dl></section>`;
+      $('device-details').innerHTML = `<p class="detail-kicker">Netzwerkübersicht</p><h2>${escape(model.router.name)}</h2><p class="overview-count">${model.devices.length}</p><p class="detail-note">${onlyOnline ? 'Geräte gerade online' : demo ? 'Geräte im Beispiel-Netzwerk' : 'Geräte im gespeicherten Netzwerk'}</p><section class="detail-section"><h3>Gruppen</h3>${model.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span><span>${escape(group.name)}</span><span class="legend-count">${group.count}</span></div>`).join('')}</section><section class="detail-section"><h3>Router</h3><dl>${row('Modell', model.router.model)}</dl></section>`;
       return;
     }
     const preset = device.preset;
@@ -177,10 +194,11 @@
       <section class="detail-section"><h3>Zugewiesene Vorlage</h3><strong>${escape(presetName)}</strong>${device.assignment ? `<div><span class="assignment-state">${demo ? 'Beispiel' : paused ? 'Zuweisung pausiert' : 'Gespeichert'}${demo && paused ? ' · pausiert' : ''}</span></div>` : ''}
       <p class="detail-note">${demo ? 'Keine Wirkung auf deinen Router.' : 'Die Routerwirkung ist hier nicht bestätigt.'}</p></section>
       <section class="detail-section"><h3>Gespeicherte Regeln</h3><dl>${row('Priorität', !device.rulesKnown || (device.assignment && !preset) ? 'Nicht verfügbar' : paused ? 'Vorlage pausiert' : preset?.priorityMode ? 'Bevorzugt' : 'Normal')}${row('Sperrzeit', limitText)}${row('Tagesbudget', !device.rulesKnown ? 'Nicht verfügbar' : limit?.dailyLimitMinutes ? `${limit.dailyLimitMinutes} Minuten` : 'Kein Tagesbudget')}${row('Vorlagen-Blockliste', device.blocklist?.name || (!device.rulesKnown || preset?.blocklistId ? 'Nicht verfügbar' : 'Keine'))}</dl></section>
-      <section class="detail-section"><h3>Verbindung</h3><dl>${row('Typ', device.connection)}${row('IP-Adresse', device.ip)}${row('MAC-Adresse', device.mac)}${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section>`;
+      <section class="detail-section"><h3>Verbindung</h3><dl>${row('Status', device.online ? 'Online' : 'Offline')}${row('Typ', device.connection)}${row('IP-Adresse', device.ip)}${row('MAC-Adresse', device.mac)}${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section>`;
   }
 
   $('reload-network').addEventListener('click', load);
+  $('online-filter').addEventListener('click', () => { onlyOnline = !onlyOnline; applyOnlineFilter(); });
   $('back-to-graph').addEventListener('click', () => document.querySelector('.topology-header').scrollIntoView({ block: 'start', behavior: 'smooth' }));
   $('device-search').addEventListener('input', filterGraph);
   $('device-picker').addEventListener('change', event => {
