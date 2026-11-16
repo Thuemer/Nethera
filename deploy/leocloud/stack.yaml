@@ -140,9 +140,11 @@ spec:
       labels:
         app: nethera-keycloak
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:26.6.1
+          image: ghcr.io/denizbernecker/nethera-keycloak:20261116-102646@sha256:215d8434704c5e2e0a252eb98970c87b38ee782a84e74a4c14ee8d845a2c1b70
           args: ["start", "--import-realm"]
           ports:
             - containerPort: 8080
@@ -184,21 +186,10 @@ spec:
             - name: realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
-            - name: theme
-              mountPath: /opt/keycloak/themes/nethera/login
-              readOnly: true
       volumes:
         - name: realm
           secret:
             secretName: nethera-realm
-        - name: theme
-          configMap:
-            name: nethera-theme
-            items:
-              - key: theme.properties
-                path: theme.properties
-              - key: nethera-login.css
-                path: resources/css/nethera-login.css
 ---
 apiVersion: v1
 kind: Service
