@@ -75,32 +75,42 @@ function fillForm(config) {
 async function loadConfigs() {
   const saveButton = document.querySelector('app-hero button[data-action="hero-button"]');
   try {
-    await NetheraApi.requireLive();
-    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
-    const authHeader = (await account?.getAuthHeader?.()) ?? {};
-    const response = await fetch(CONFIG_API_URL, { headers: { Accept: 'application/json', ...authHeader }, cache: 'no-store' });
-    if (!response.ok) throw new Error(`API ${response.status}`);
-    const data = await response.json();
-    const configs = Array.isArray(data) ? data.map(normalizeConfig) : [];
-    if (configs[0]) {
-      fillForm(configs[0]);
+    const router = await NetheraApi.getPrimaryRouter();
+    const config = await NetheraApi.getConfiguration(router);
+    if (config) {
+      fillForm(normalizeConfig(config));
       savedConfig = readForm();
     } else {
       activeConfigId = null;
       savedConfig = null;
+      clearForm();
     }
-    document.getElementById('configFields').disabled = !configs.length;
+    document.getElementById('configFields').disabled = !config || router.dataMode !== 'live';
     updateChangeState();
 
-    setStatus(configs.length ? 'Konfiguration aktualisiert.' : 'Noch keine Konfiguration vorhanden.', configs.length ? 'success' : 'warning');
+    setStatus(router.dataMode === 'demo' ? 'Beispiel-Konfiguration · Nur Ansicht.'
+      : router.dataMode === 'unavailable' ? 'Keine bestätigten Routerdaten verfügbar.'
+        : config ? 'Konfiguration aktualisiert.' : 'Noch keine Konfiguration vorhanden.',
+    router.dataMode === 'live' && config ? 'success' : 'info');
   } catch (error) {
     activeConfigId = null;
     savedConfig = null;
+    clearForm();
     document.getElementById('configFields').disabled = true;
     updateChangeState();
     if (saveButton) saveButton.disabled = true;
     setStatus(NetheraApi.userMessage(error), 'error');
   }
+}
+
+function clearForm() {
+  document.querySelectorAll('#configFields input').forEach(input => {
+    if (input.type === 'checkbox') input.checked = false;
+    else input.value = '';
+  });
+  const select = document.getElementById('securityMode');
+  select.value = '';
+  select.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 async function saveConfig() {

@@ -12,7 +12,11 @@ function harness() {
   const calls = [];
   const context = vm.createContext({
     window: {}, Event, NetheraApi: { userMessage: () => 'Laden fehlgeschlagen', requireLive: async () => {}, isLive: () => true },
-    document: { getElementById: field, querySelector: () => field('save'), addEventListener() {} },
+    document: { getElementById: field, querySelector: () => field('save'),
+      querySelectorAll: () => ['routerName', 'lanIp', 'gatewayIp', 'updates', 'dnsBlocking', 'guestNetwork', 'profiling'].map(id => {
+        field(id).type = ['routerName', 'lanIp', 'gatewayIp'].includes(id) ? 'text' : 'checkbox';
+        return field(id);
+      }), addEventListener() {} },
     fetch: async (url, options) => { calls.push(options); return { ok: true }; }
   });
   vm.runInContext(readFileSync(`${__dirname}/../configuration.js`, 'utf8'), context);
@@ -56,4 +60,22 @@ test('failed save preserves edits and allows retry or discard', async () => {
   assert.equal(h.field('lanIp').value, '192.168.1.1');
   h.run('discardChanges()');
   assert.equal(h.field('lanIp').value, '192.168.0.1');
+});
+
+test('demo configuration is visible but read-only; missing data clears old demo values', async () => {
+  const h = harness();
+  h.run(`NetheraApi.isLive=()=>false;
+    NetheraApi.getPrimaryRouter=async()=>({dataMode:'demo'});
+    NetheraApi.getConfiguration=async()=>({id:-1,routerName:'Demo-Netzwerk',mode:'GATEWAY',lanIp:'192.0.2.1',gatewayIp:'192.0.2.1',dnsBlocking:true});`);
+  await h.run('loadConfigs()');
+  assert.equal(h.field('routerName').value, 'Demo-Netzwerk');
+  assert.equal(h.field('dnsBlocking').checked, true);
+  assert.equal(h.field('configFields').disabled, true);
+  assert.equal(h.field('save').disabled, true);
+  assert.equal(h.calls.length, 0);
+  h.run(`NetheraApi.getPrimaryRouter=async()=>({dataMode:'unavailable'}); NetheraApi.getConfiguration=async()=>null;`);
+  await h.run('loadConfigs()');
+  assert.equal(h.field('routerName').value, '');
+  assert.equal(h.field('dnsBlocking').checked, false);
+  assert.equal(h.field('configFields').disabled, true);
 });

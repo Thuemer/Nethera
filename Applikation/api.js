@@ -6,20 +6,60 @@ const NetheraApi = (() => {
   let sourceWatcher = null;
 
   function demoRouter(router = {}) {
-    const timestamp = new Date().toISOString();
+    const now = Date.now();
+    const timestamp = new Date(now).toISOString();
     return {
-      id: router.id ?? null, name: 'Demo-Netzwerk', model: 'Beispielrouter', firmware: null,
+      id: router.id ?? null, name: 'Demo-Netzwerk', model: 'Beispielrouter', firmware: 'Demo',
       ipAddress: '192.0.2.1', isOnline: false, connection: 'offline', dataMode: 'demo',
       checkedAt: router.checkedAt ?? null, lastSeen: null,
       devices: [
-        { id: -1, hostname: 'Demo-Laptop', macAddress: '02:00:00:00:00:01', ipAddress: '192.0.2.10', connectionType: 'wifi', lastSeen: timestamp },
-        { id: -2, hostname: 'Demo-Smartphone', macAddress: '02:00:00:00:00:02', ipAddress: '192.0.2.11', connectionType: 'wifi', lastSeen: timestamp },
-        { id: -3, hostname: 'Demo-TV', macAddress: '02:00:00:00:00:03', ipAddress: '192.0.2.12', connectionType: 'lan', lastSeen: timestamp }
+        ['Laptop', 'wifi'], ['Smartphone', 'wifi'], ['TV', 'lan'], ['Tablet', 'wifi'],
+        ['Gaming-PC', 'lan'], ['Lautsprecher', 'wifi'], ['Drucker', 'wifi'], ['NAS', 'lan']
+      ].map(([name, connectionType], i) => ({ id: -(i + 1), hostname: `Demo-${name}`,
+        macAddress: `02:00:00:00:00:0${i + 1}`, ipAddress: `192.0.2.${10 + i}`, connectionType, lastSeen: timestamp })),
+      speedStats: [18, 23, 20, 28, 25, 32, 29, 37, 35, 40, 43].map((downloadSpeed, i) => ({
+        timestamp: new Date(now - (10 - i) * 60000).toISOString(), downloadSpeed, uploadSpeed: [3, 4, 3, 5, 4, 6, 5, 7, 6, 7, 8][i] })),
+      dnsStats: [{ timestamp, totalQueries: 17910, blockedQueries: 1627, trackersDetected: 567 }],
+      activityLogs: ['Demo-Laptop', 'Demo-Gaming-PC', 'Demo-Tablet', 'Demo-NAS'].map((name, i) => ({
+        timestamp: new Date(now - i * 180000).toISOString(), eventType: 'CONNECTED', details: `${name} verbunden` })),
+      wifiNetworks: [
+        { ssid: 'Demo-WLAN', bssid: '02:00:00:00:01:01', type: 'router', signal: -48, channel: 36, frequency: '5 GHz', encryption: 'WPA3', known: true },
+        { ssid: 'Demo-Gastnetz', bssid: '02:00:00:00:01:02', type: 'router', signal: -56, channel: 6, frequency: '2.4 GHz', encryption: 'WPA2', known: true },
+        { ssid: 'Demo-Arbeitszimmer', bssid: '02:00:00:00:01:03', type: 'accessPoint', signal: -68, channel: 11, frequency: '2.4 GHz', encryption: 'WPA3', known: true }
+      ]
+    };
+  }
+
+  // One relational fixture for every demo page. Negative IDs never refer to database rows.
+  function demoSecurity(router) {
+    return {
+      dataMode: 'demo', devices: router.devices,
+      groups: [
+        { id: -1, name: 'Familie', description: 'Smartphone und Tablet', blocklistId: -1, color: '#69c5b6' },
+        { id: -2, name: 'Arbeit & Schule', description: 'Arbeitsplatz und Drucker', blocklistId: -2, color: '#6c9fdf' },
+        { id: -3, name: 'Unterhaltung', description: 'TV, Gaming und Musik', blocklistId: -3, color: '#d6ad67' }
       ],
-      speedStats: [18, 23, 20, 28, 25].map((downloadSpeed, i) => ({ timestamp: new Date(Date.now() - (4 - i) * 60000).toISOString(), downloadSpeed, uploadSpeed: 3 + i })),
-      dnsStats: [{ timestamp, totalQueries: 1200, blockedQueries: 85, trackersDetected: 12 }],
-      activityLogs: [{ timestamp, eventType: 'CONNECTED', details: 'Demo-Laptop verbunden' }],
-      wifiNetworks: [{ ssid: 'Demo-WLAN', bssid: '02:00:00:00:01:01', type: 'router', signal: -48, channel: 6, frequency: '2.4 GHz', encryption: 'WPA3', known: true }]
+      members: [{ deviceId: -1, groupId: -2 }, { deviceId: -2, groupId: -1 }, { deviceId: -3, groupId: -3 },
+        { deviceId: -4, groupId: -1 }, { deviceId: -5, groupId: -3 }, { deviceId: -6, groupId: -3 }, { deviceId: -7, groupId: -2 }],
+      blocklists: [
+        { id: -1, name: 'Social-Media-Pause', sourceType: 'CUSTOM', urlPattern: 'tiktok.com|instagram.com|snapchat.com' },
+        { id: -2, name: 'Lernzeit', sourceType: 'CUSTOM', urlPattern: 'youtube.com|twitch.tv|discord.com' },
+        { id: -3, name: 'Werbung & Tracker', sourceType: 'DNS', urlPattern: 'ads.example.net|tracker.example.com' },
+        { id: -4, name: 'Netzwerkfilter', sourceType: 'NETWORK', urlPattern: 'blocked.example.org' }
+      ],
+      presets: [
+        { id: -1, name: 'Abendruhe', description: 'Beispiel für Smartphone und Tablet', blocklistId: -1, timeLimitMinutes: 120, blockedFrom: '20:30', blockedUntil: '06:30', parentalMode: true, priorityMode: false },
+        { id: -2, name: 'Schultag', description: 'Beispiel für konzentriertes Arbeiten', blocklistId: -2, timeLimitMinutes: 180, blockedFrom: '21:00', blockedUntil: '07:00', parentalMode: false, priorityMode: false },
+        { id: -3, name: 'Gaming', description: 'Beispiel für ein bevorzugtes Gerät', blocklistId: -3, timeLimitMinutes: 240, blockedFrom: '23:00', blockedUntil: '08:00', parentalMode: false, priorityMode: true }
+      ],
+      assignments: [{ deviceId: -1, presetId: -2, status: 'active' }, { deviceId: -2, presetId: -1, status: 'active' },
+        { deviceId: -4, presetId: -1, status: 'paused' }, { deviceId: -5, presetId: -3, status: 'active' }],
+      timeLimits: [
+        { id: -1, deviceId: -1, dailyLimitMinutes: 180, usedMinutesToday: 65, blockedFrom: '21:00', blockedUntil: '07:00', status: 'active', note: 'Beispiel: Schultag' },
+        { id: -2, deviceId: -2, dailyLimitMinutes: 120, usedMinutesToday: 45, blockedFrom: '20:30', blockedUntil: '06:30', status: 'active', note: 'Beispiel: Abendruhe' },
+        { id: -3, deviceId: -4, dailyLimitMinutes: 120, usedMinutesToday: 20, blockedFrom: '20:30', blockedUntil: '06:30', status: 'paused', note: 'Beispiel: pausierte Regel' },
+        { id: -4, deviceId: -5, dailyLimitMinutes: 240, usedMinutesToday: 90, blockedFrom: '23:00', blockedUntil: '08:00', status: 'active', note: 'Beispiel: Gaming' }
+      ]
     };
   }
 
@@ -119,6 +159,7 @@ const NetheraApi = (() => {
 
   async function getSecurityState(router) {
     router ||= await getPrimaryRouter();
+    if (router.dataMode === 'demo') return demoSecurity(router);
     if (router.dataMode !== 'live') return { devices: router.devices, groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], dataMode: router.dataMode };
     const data = await readJson('/api/security/state');
     const ids = new Set(router.devices.map(device => Number(device.id)));
@@ -131,11 +172,21 @@ const NetheraApi = (() => {
 
   async function getConnections(router) {
     router ||= await getPrimaryRouter();
-    if (router.dataMode === 'demo') return router.devices.map((device, i) => ({ client: device.hostname, ip: device.ipAddress, protocol: 'HTTPS', download: 4 + i, upload: 1 }));
+    if (router.dataMode === 'demo') return router.devices.map((device, i) => ({ client: device.hostname, ip: device.ipAddress,
+      protocol: i === 7 ? 'SMB' : 'HTTPS', download: [9, 3, 12, 2, 10, 1, 0, 6][i], upload: [2, .5, .2, .4, 1.5, .1, 0, 3.3][i] }));
     if (router.dataMode !== 'live') return [];
     const rows = await readJson('/api/connections/list');
     // The existing endpoint has no router/source metadata yet, so its old rows stay hidden.
     return Array.isArray(rows) ? rows.filter(row => row.dataSource === 'ROUTER' && String(row.routerId) === String(router.id)) : [];
+  }
+
+  async function getConfiguration(router) {
+    router ||= await getPrimaryRouter();
+    if (router.dataMode === 'demo') return { id: -1, routerName: router.name, mode: 'GATEWAY', updates: true,
+      dnsBlocking: true, lanIp: router.ipAddress, gatewayIp: router.ipAddress, guestNetwork: true, profiling: false };
+    if (router.dataMode !== 'live') return null;
+    const configs = await readJson('/api/configs/list');
+    return Array.isArray(configs) ? configs[0] || null : null;
   }
 
   function watchSource(reload) {
@@ -183,5 +234,5 @@ const NetheraApi = (() => {
   }
 
   return { getRouters, getPrimaryRouter, getRouterControlStatus, installAdblock, getAuthHeader, routerUrl, userMessage,
-    getSecurityState, getConnections, selectDataSource, isLive, requireLive, watchSource };
+    getSecurityState, getConnections, getConfiguration, selectDataSource, isLive, requireLive, watchSource };
 })();

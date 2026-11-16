@@ -79,7 +79,7 @@ async function loadSecurityState() {
       timeLimits: data.timeLimits || []
     });
     renderAll();
-    setStatus(router.dataMode === 'live' ? 'Gespeicherte Schutzregeln aktualisiert.' : router.dataMode === 'demo' ? 'Demo-Geräte · Änderungen sind deaktiviert.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' ? 'success' : 'info');
+    setStatus(router.dataMode === 'live' ? 'Gespeicherte Schutzregeln aktualisiert.' : router.dataMode === 'demo' ? 'Demo-Netzwerk mit Beispielregeln · Nur Ansicht.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' ? 'success' : 'info');
   } catch (error) {
     Object.assign(state, { loaded: false, dataMode: 'unavailable', devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
     renderAll();
@@ -91,13 +91,14 @@ async function loadSecurityState() {
 
 function updateReadOnlyControls() {
   const readOnly = !NetheraApi.isLive();
-  document.querySelectorAll('form input, form select, form textarea, form button, [data-device-group], [data-device-preset], [data-group-blocklist], [data-save-group], [data-edit-domain], [data-remove-domain]').forEach(control => {
+  document.querySelectorAll('form input, form select, form textarea, form button, [data-device-group], [data-device-preset], [data-group-name], [data-group-blocklist], [data-save-group], [data-edit-domain], [data-remove-domain]').forEach(control => {
     if (readOnly && !control.disabled) { control.dataset.sourceDisabled = 'true'; control.disabled = true; }
     else if (!readOnly && control.dataset.sourceDisabled) { control.disabled = false; delete control.dataset.sourceDisabled; }
   });
 }
 
 function routerEffect(entry) {
+  if (state.dataMode === 'demo') return 'Beispiel';
   if (state.routerControl?.connection === 'online' && entry?.applied === true) return 'Am Router bestätigt';
   if (entry?.error) return 'Routerfehler';
   return 'Nur gespeichert';
@@ -107,7 +108,9 @@ function renderRouterControlStatus() {
   const control = state.routerControl;
   const connection = control?.connection;
   const summary = document.getElementById('routerControlStatus');
-  if (summary) summary.textContent = state.routerControlError
+  if (summary) summary.textContent = state.dataMode === 'demo'
+    ? 'Demo-Netzwerk: Alle Regeln sind Beispiele und wirken nicht auf deinen Router.'
+    : state.routerControlError
     ? 'Routerstatus konnte nicht geladen werden. Gespeicherte Regeln sind nicht als wirksam bestätigt.'
     : !control
       ? 'Routerbestätigung noch nicht verfügbar. Regeln werden zunächst nur gespeichert.'
@@ -117,7 +120,9 @@ function renderRouterControlStatus() {
 
   const adblock = control?.adblock;
   const adblockText = document.getElementById('adblockActual');
-  if (adblockText) adblockText.textContent = connection !== 'online'
+  if (adblockText) adblockText.textContent = state.dataMode === 'demo'
+    ? 'Beispiel: Werbefilter eingeschaltet. Keine Installation oder Aktivierung am echten Router.'
+    : connection !== 'online'
     ? 'Installation und Aktivierung am Router können derzeit nicht bestätigt werden.'
     : adblock?.installed === false
       ? 'Adblock ist am Router nicht installiert.'
@@ -133,17 +138,22 @@ function renderRouterControlStatus() {
   if (install) install.disabled = connection !== 'online' || !control?.capabilities?.adblockInstall || adblock?.installed !== false;
 
   const blocklistNote = document.getElementById('blocklistActual');
-  if (blocklistNote) blocklistNote.textContent = control?.connection === 'online'
+  if (blocklistNote) blocklistNote.textContent = state.dataMode === 'demo'
+    ? 'Beispiel-Sperrlisten für Geräte, Gruppen und das gesamte Netzwerk. Keine echte Sperrwirkung.'
+    : control?.connection === 'online'
     ? 'Jede Blockliste zeigt ihren bestätigten Routerstatus einzeln an.'
     : 'Sperrlisten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
   const priorityNote = document.getElementById('priorityActual');
-  if (priorityNote) priorityNote.textContent = control?.connection === 'online'
+  if (priorityNote) priorityNote.textContent = state.dataMode === 'demo'
+    ? 'Beispiel-Prioritäten · Keine Änderung am Router.'
+    : control?.connection === 'online'
     ? 'Die Übernahme wird für jedes Gerät getrennt bestätigt.'
     : 'Prioritäten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
 
   renderManualDomains();
   renderPriorityList();
   updatePriorityPreview();
+  updateReadOnlyControls();
 }
 
 async function loadRouterControlStatus() {
@@ -291,6 +301,7 @@ function renderGroupDevices() {
       </article>
     `;
   }).join('') || '<empty-state title="Keine passenden Geräte" text="Keine Treffer für diese Suche."></empty-state>';
+  updateReadOnlyControls();
 }
 
 function devicesForGroup(groupId) {
@@ -368,9 +379,9 @@ function renderAdDomains() {
     <article class="rule-item">
       <div class="rule-main">
         <strong>${escapeText(domain)}</strong>
-        <span>In der Werbefilter-Liste gespeichert</span>
+        <span>${state.dataMode === 'demo' ? 'Beispiel für eine Werbefilter-Liste' : 'In der Werbefilter-Liste gespeichert'}</span>
       </div>
-      <span class="badge">Gespeichert</span>
+      <span class="badge">${state.dataMode === 'demo' ? 'Beispiel' : 'Gespeichert'}</span>
     </article>
   `).join('') || '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>';
 }
@@ -497,6 +508,7 @@ function renderAll() {
   renderDomainTargets();
   renderPriorityControls();
   updateApplyPresetPreview();
+  updateReadOnlyControls();
 }
 
 function updateApplyPresetPreview() {
@@ -566,7 +578,7 @@ function renderPriorityList() {
     const desired = presetForDevice(device.id)?.priorityMode ? 'high' : 'normal';
     const actual = state.routerControl?.priority?.[device.id];
     const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
-    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${confirmed ? 'Am Router bestätigt' : 'Nur gespeichert'}</span></div>`;
+    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Nur gespeichert'}</span></div>`;
   }).join('');
 }
 
@@ -583,7 +595,7 @@ function updatePriorityPreview() {
   const high = document.getElementById('priorityMode').value === 'high';
   const actual = state.routerControl?.priority?.[device?.id];
   const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === (high ? 'high' : 'normal');
-  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · ${confirmed ? 'Am Router bestätigt' : 'Routerbestätigung ausstehend'}`;
+  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · ${state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerbestätigung ausstehend'}`;
 }
 
 async function savePriority(event) {
@@ -597,20 +609,17 @@ let activeRouterConfig = null;
 async function loadAdProtection() {
   try {
     const router = await NetheraApi.getPrimaryRouter();
-    if (router.dataMode !== 'live') {
-      activeRouterConfig = null;
-      document.getElementById('adProtectionEnabled').checked = false;
-      document.getElementById('adProtectionEnabled').disabled = true;
-      document.getElementById('saveAdProtection').disabled = true;
-      return;
-    }
-    const configs = await apiJson(`${API_BASE_URL}/api/configs/list`);
-    activeRouterConfig = configs[0] || null;
-    if (!activeRouterConfig) return;
-    document.getElementById('adProtectionEnabled').checked = Boolean(activeRouterConfig.dnsBlocking ?? activeRouterConfig.dns_blocking);
-    document.getElementById('adProtectionEnabled').disabled = false;
-    document.getElementById('saveAdProtection').disabled = false;
+    activeRouterConfig = await NetheraApi.getConfiguration(router);
+    document.getElementById('adProtectionEnabled').checked = Boolean(activeRouterConfig?.dnsBlocking ?? activeRouterConfig?.dns_blocking);
+    const readOnly = router.dataMode !== 'live' || !activeRouterConfig;
+    document.getElementById('adProtectionEnabled').disabled = readOnly;
+    document.getElementById('saveAdProtection').disabled = readOnly;
+    document.getElementById('saveAdProtection').textContent = 'Einstellung speichern';
   } catch {
+    activeRouterConfig = null;
+    document.getElementById('adProtectionEnabled').checked = false;
+    document.getElementById('adProtectionEnabled').disabled = true;
+    document.getElementById('saveAdProtection').disabled = true;
     document.getElementById('saveAdProtection').textContent = 'Werbeschutz nicht geladen';
   }
 }

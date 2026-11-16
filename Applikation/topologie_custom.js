@@ -118,7 +118,8 @@
       }
     });
     resizeObserver.observe($('network-graph'));
-    $('graph-caption').textContent = mode === 'groups' ? 'Gespeicherte Gruppenzuordnung' : 'Verbindungstyp laut Gerätedaten';
+    $('graph-caption').textContent = model.router.dataMode === 'demo' ? 'Beispiel-Netzwerk · Nur Ansicht'
+      : mode === 'groups' ? 'Gespeicherte Gruppenzuordnung' : 'Verbindungstyp laut Gerätedaten';
     $('network-graph').setAttribute('aria-label', `Netzwerkgraph mit ${model.devices.length} Geräten. Auswahl auch unter Gerät auswählen.`);
   }
 
@@ -160,9 +161,10 @@
 
   function showDetails() {
     if (!model) return;
+    const demo = model.router.dataMode === 'demo';
     const device = model.devices.find(item => item.id === selectedId);
     if (!device) {
-      $('device-details').innerHTML = `<p class="detail-kicker">Netzwerkübersicht</p><h2>${escape(model.router.name)}</h2><p class="overview-count">${model.devices.length}</p><p class="detail-note">Geräte im gespeicherten Netzwerk</p><section class="detail-section"><h3>Gruppen</h3>${model.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span><span>${escape(group.name)}</span><span class="legend-count">${group.count}</span></div>`).join('')}</section><section class="detail-section"><h3>Router</h3><dl>${row('Modell', model.router.model)}</dl></section>`;
+      $('device-details').innerHTML = `<p class="detail-kicker">Netzwerkübersicht</p><h2>${escape(model.router.name)}</h2><p class="overview-count">${model.devices.length}</p><p class="detail-note">${demo ? 'Geräte im Beispiel-Netzwerk' : 'Geräte im gespeicherten Netzwerk'}</p><section class="detail-section"><h3>Gruppen</h3>${model.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span><span>${escape(group.name)}</span><span class="legend-count">${group.count}</span></div>`).join('')}</section><section class="detail-section"><h3>Router</h3><dl>${row('Modell', model.router.model)}</dl></section>`;
       return;
     }
     const preset = device.preset;
@@ -172,8 +174,8 @@
     const limitText = !device.rulesKnown ? 'Nicht verfügbar' : !limit ? 'Keine Zeitregel gespeichert' : limit.status === 'paused' ? 'Pausiert' : limit.blockedFrom && limit.blockedUntil ? `${limit.blockedFrom}–${limit.blockedUntil}` : 'Kein Sperrzeitraum';
     $('device-details').innerHTML = `<p class="detail-kicker">Gerät</p><h2>${escape(device.name)}</h2>
       <section class="detail-section"><h3>Gruppenzuordnung</h3>${device.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span>${escape(group.name)}</div>`).join('')}</section>
-      <section class="detail-section"><h3>Zugewiesene Vorlage</h3><strong>${escape(presetName)}</strong>${device.assignment ? `<div><span class="assignment-state">${paused ? 'Zuweisung pausiert' : 'Gespeichert'}</span></div>` : ''}
-      <p class="detail-note">Die Routerwirkung ist hier nicht bestätigt.</p></section>
+      <section class="detail-section"><h3>Zugewiesene Vorlage</h3><strong>${escape(presetName)}</strong>${device.assignment ? `<div><span class="assignment-state">${demo ? 'Beispiel' : paused ? 'Zuweisung pausiert' : 'Gespeichert'}${demo && paused ? ' · pausiert' : ''}</span></div>` : ''}
+      <p class="detail-note">${demo ? 'Keine Wirkung auf deinen Router.' : 'Die Routerwirkung ist hier nicht bestätigt.'}</p></section>
       <section class="detail-section"><h3>Gespeicherte Regeln</h3><dl>${row('Priorität', !device.rulesKnown || (device.assignment && !preset) ? 'Nicht verfügbar' : paused ? 'Vorlage pausiert' : preset?.priorityMode ? 'Bevorzugt' : 'Normal')}${row('Sperrzeit', limitText)}${row('Tagesbudget', !device.rulesKnown ? 'Nicht verfügbar' : limit?.dailyLimitMinutes ? `${limit.dailyLimitMinutes} Minuten` : 'Kein Tagesbudget')}${row('Vorlagen-Blockliste', device.blocklist?.name || (!device.rulesKnown || preset?.blocklistId ? 'Nicht verfügbar' : 'Keine'))}</dl></section>
       <section class="detail-section"><h3>Verbindung</h3><dl>${row('Typ', device.connection)}${row('IP-Adresse', device.ip)}${row('MAC-Adresse', device.mac)}${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section>`;
   }

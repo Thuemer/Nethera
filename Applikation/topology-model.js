@@ -26,7 +26,7 @@
       };
     });
     const usedGroups = [...groups, fallback].map(group => ({ ...group, count: devices.filter(device => device.groups.some(item => item.id === group.id)).length })).filter(group => group.count);
-    return { router: { name: router?.name || 'Router', model: router?.model || 'Nicht bekannt' }, devices, groups: usedGroups, rulesKnown: known };
+    return { router: { name: router?.name || 'Router', model: router?.model || 'Nicht bekannt', dataMode: router?.dataMode }, devices, groups: usedGroups, rulesKnown: known };
   }
 
   function graphElements(model, mode = 'groups') {

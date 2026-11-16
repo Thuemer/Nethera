@@ -7,10 +7,11 @@ function harness(routers = []) {
   const calls = [];
   const context = vm.createContext({
     window: { NETHERA_CONFIG: { API_BASE_URL: 'http://backend', ROUTERS_PATH: '/api/routers/list' } },
-    routers, security: {}, connections: [], status: 200,
+    routers, security: {}, connections: [], configs: [], status: 200,
     fetch: async (url, options) => {
       calls.push({ url, options });
-      const value = url.endsWith('/routers/list') ? context.routers : url.endsWith('/security/state') ? context.security : context.connections;
+      const value = url.endsWith('/routers/list') ? context.routers : url.endsWith('/security/state') ? context.security
+        : url.endsWith('/configs/list') ? context.configs : context.connections;
       return { ok: context.status === 200, status: context.status, json: async () => value };
     }
   });
@@ -91,9 +92,96 @@ test('security endpoint cannot reintroduce seed devices or their assignments', a
 
 test('demo security does not fetch or expose real rule assignments', async () => {
   const h = harness([offline]);
+  h.context.security = { assignments: [{ deviceId: 99, presetId: 100 }] };
   const state = await h.run('NetheraApi.getSecurityState()');
-  assert.equal(state.assignments.length, 0);
+  assert.equal(state.assignments.length, 4);
+  assert.equal(state.assignments.every(item => item.deviceId < 0 && item.presetId < 0), true);
   assert.equal(h.calls.some(call => call.url.endsWith('/security/state')), false);
+});
+
+test('complete demo has consistent groups, presets, blocklists, schedules and topology', async () => {
+  const h = harness([offline]);
+  const state = await h.run('NetheraApi.getSecurityState()');
+  assert.equal(state.devices.length, 8);
+  assert.equal(state.groups.length, 3);
+  assert.equal(state.presets.length, 3);
+  assert.equal(state.blocklists.length, 4);
+  assert.equal(state.timeLimits.length, 4);
+  const ids = name => new Set(state[name].map(item => item.id));
+  for (const name of ['devices', 'groups', 'presets', 'blocklists', 'timeLimits']) {
+    assert.equal(ids(name).size, state[name].length);
+    assert.ok(state[name].every(item => item.id < 0));
+  }
+  for (const member of state.members) {
+    assert.ok(ids('devices').has(member.deviceId));
+    assert.ok(ids('groups').has(member.groupId));
+  }
+  for (const item of [...state.groups, ...state.presets]) assert.ok(ids('blocklists').has(item.blocklistId));
+  for (const item of state.assignments) {
+    assert.ok(ids('devices').has(item.deviceId));
+    assert.ok(ids('presets').has(item.presetId));
+    const preset = state.presets.find(preset => preset.id === item.presetId);
+    const limit = state.timeLimits.find(limit => limit.deviceId === item.deviceId);
+    assert.equal(limit.status, item.status);
+    assert.equal(limit.blockedFrom, preset.blockedFrom);
+    assert.equal(limit.blockedUntil, preset.blockedUntil);
+    assert.equal(limit.dailyLimitMinutes, preset.timeLimitMinutes);
+  }
+  const { buildModel } = require('../topology-model.js');
+  const model = buildModel({ id: 1, name: 'Demo', devices: state.devices }, state);
+  assert.equal(model.devices.length, 8);
+  assert.equal(model.devices.filter(device => device.preset).length, 4);
+});
+
+test('demo measurements are ordered and device rates match the network total', async () => {
+  const h = harness([offline]);
+  const router = await h.run('NetheraApi.getPrimaryRouter()');
+  const connections = await h.run('NetheraApi.getConnections()');
+  assert.equal(connections.length, router.devices.length);
+  const latest = router.speedStats.at(-1);
+  assert.equal(connections.reduce((sum, item) => sum + item.download, 0), latest.downloadSpeed);
+  assert.ok(Math.abs(connections.reduce((sum, item) => sum + item.upload, 0) - latest.uploadSpeed) < 1e-9);
+  router.speedStats.forEach((point, i) => {
+    assert.ok(Number.isFinite(point.downloadSpeed) && Number.isFinite(point.uploadSpeed));
+    if (i) assert.ok(new Date(point.timestamp) > new Date(router.speedStats[i - 1].timestamp));
+  });
+  assert.ok(router.activityLogs.length > 1);
+  assert.ok(router.wifiNetworks.length > 1);
+});
+
+test('demo configuration never fetches stored settings or certifies router effects', async () => {
+  const h = harness([offline]);
+  h.context.configs = [{ id: 100, routerName: 'Real network' }];
+  const config = await h.run('NetheraApi.getConfiguration()');
+  assert.equal(config.id, -1);
+  assert.equal(config.dnsBlocking, true);
+  assert.equal(config.lanIp, '192.0.2.1');
+  assert.equal((await h.run('NetheraApi.getRouterControlStatus()')).connection, 'offline');
+  assert.equal(h.calls.every(call => call.url.endsWith('/routers/list')), true);
+});
+
+test('demo fixtures cannot be mutated across page loads and disappear completely on reconnect', async () => {
+  const h = harness([offline]);
+  let state = await h.run('NetheraApi.getSecurityState()');
+  state.presets[0].name = 'Mutated';
+  state.members.length = 0;
+  state = await h.run('NetheraApi.getSecurityState()');
+  assert.notEqual(state.presets[0].name, 'Mutated');
+  assert.ok(state.members.length > 0);
+  h.context.routers = [live];
+  h.context.security = { groups: [], presets: [], blocklists: [], assignments: [], members: [], timeLimits: [] };
+  state = await h.run('NetheraApi.getSecurityState()');
+  assert.equal(state.devices[0].id, 20);
+  for (const key of ['groups', 'presets', 'blocklists', 'assignments', 'members', 'timeLimits']) assert.equal(state[key].length, 0);
+  assert.equal(await h.run('NetheraApi.getConfiguration()'), null);
+  h.context.routers = [{ id: 1 }];
+  state = await h.run('NetheraApi.getSecurityState()');
+  assert.equal(state.dataMode, 'unavailable');
+  assert.equal(state.presets.length, 0);
+  assert.equal(await h.run('NetheraApi.getConfiguration()'), null);
+  h.context.status = 503;
+  await assert.rejects(h.run('NetheraApi.getSecurityState()'));
+  await assert.rejects(h.run('NetheraApi.getConfiguration()'));
 });
 
 test('demo and unknown modes block install and guarded mutations before any POST', async () => {

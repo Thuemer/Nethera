@@ -59,6 +59,11 @@ async function loadBackendLimits() {
     throw new Error('Zeitlimit-Antwort ist keine Liste');
   }
 
+  setLimitRows(data);
+  state.storageMode = 'backend';
+}
+
+function setLimitRows(data) {
   state.limits = {};
   data.forEach(limit => {
     const normalized = normalizeLimit(limit);
@@ -66,7 +71,6 @@ async function loadBackendLimits() {
       state.limits[String(normalized.deviceId)] = normalized;
     }
   });
-  state.storageMode = 'backend';
 }
 
 async function saveBackendLimit(deviceId, limit) {
@@ -114,6 +118,10 @@ async function loadSecurityState() {
   state.presets = data.presets || [];
   state.assignments = data.assignments || [];
   state.securityDevices = data.devices || [];
+  if (state.dataMode !== 'live') {
+    setLimitRows(data.timeLimits || []);
+    state.storageMode = state.dataMode;
+  }
 }
 
 function escapeText(value) {
@@ -179,7 +187,9 @@ function setStatus(text, tone = 'info') {
 
 function renderRouterControlStatus() {
   const summary = document.getElementById('routerControlStatus');
-  if (summary) summary.textContent = state.routerControlError
+  if (summary) summary.textContent = state.dataMode === 'demo'
+    ? 'Beispiel-Zeitpläne · Kein Gerät wird tatsächlich gesperrt.'
+    : state.routerControlError
     ? 'Routerstatus konnte nicht geladen werden. Zeitregeln sind nicht als wirksam bestätigt.'
     : !state.routerControl
       ? 'Routerbestätigung noch nicht verfügbar. Zeitregeln werden zunächst nur gespeichert.'
@@ -234,6 +244,9 @@ function renderDeviceOptions() {
 
   const saveButton = document.getElementById('saveLimitButton');
   if (saveButton) saveButton.disabled = !state.devices.length || state.storageMode !== 'backend';
+  document.querySelectorAll('#limitForm input, #limitForm select:not(#deviceSelect)').forEach(control => {
+    control.disabled = state.storageMode !== 'backend';
+  });
 
   if (!state.devices.length) {
     select.innerHTML = '<option value="">Keine Geräte verfügbar</option>';
@@ -266,7 +279,7 @@ function loadSelectedLimit() {
   document.getElementById('blockedUntil').value = limit.until || '07:00';
   document.getElementById('limitNote').value = limit.note || '';
   document.querySelector('.advanced-settings').open = Number(limit.dailyLimit) > 0;
-  document.getElementById('clearLimitButton').disabled = !state.limits[key];
+  document.getElementById('clearLimitButton').disabled = !state.limits[key] || state.storageMode !== 'backend';
   updateSchedulePreview();
 }
 
@@ -309,6 +322,8 @@ function renderList() {
     const cardState = blocked ? 'is-blocked' : paused ? 'is-paused' : '';
     const statusBadge = !limit
       ? '<span class="badge">Keine Regel</span>'
+      : state.dataMode === 'demo'
+        ? `<span class="badge">Beispiel · ${paused ? 'pausiert' : 'eingeschaltet'}</span>`
       : blocked
         ? '<span class="badge danger">Am Router gesperrt</span>'
         : paused
@@ -327,7 +342,7 @@ function renderList() {
           <p class="limit-summary">${limit
             ? `Sperrzeit ${escapeText(limit.from)}–${escapeText(limit.until)}${limit.dailyLimit > 0 ? ` · ${formatMinutes(limit.dailyLimit)} pro Tag` : ''}`
             : 'Noch keine Internetzeiten festgelegt.'}</p>
-          ${limit && !paused && !confirmed && blockedBySchedule ? '<p class="limit-summary">Zeitfenster läuft rechnerisch; Routerwirkung nicht bestätigt.</p>' : ''}
+          ${limit && !paused && !confirmed && blockedBySchedule && state.dataMode !== 'demo' ? '<p class="limit-summary">Zeitfenster läuft rechnerisch; Routerwirkung nicht bestätigt.</p>' : ''}
           ${limit?.dailyLimit > 0 ? `<div class="budget-bar" role="progressbar" aria-label="Tageslimit genutzt" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"><span style="--budget: ${percent}%"></span></div>` : ''}
           <details class="limit-details"><summary>Gerätedetails</summary><div class="limit-meta">
             <span>IP: ${escapeText(device.ipAddress || '–')}</span>
@@ -338,8 +353,8 @@ function renderList() {
           </div></details>
         </div>
         <div class="limit-side">
-          <button class="small-btn" type="button" data-action="edit" data-key="${escapeText(key)}">${limit ? 'Bearbeiten' : 'Einrichten'}</button>
-          ${limit ? `<button class="small-btn ghost" type="button" data-action="toggle" data-key="${escapeText(key)}">${paused ? 'Regel einschalten' : 'Regel ausschalten'}</button>` : ''}
+          <button class="small-btn" type="button" data-action="edit" data-key="${escapeText(key)}">${state.storageMode !== 'backend' ? 'Ansehen' : limit ? 'Bearbeiten' : 'Einrichten'}</button>
+          ${limit ? `<button class="small-btn ghost" type="button" data-action="toggle" data-key="${escapeText(key)}" ${state.storageMode !== 'backend' ? 'disabled' : ''}>${paused ? 'Regel einschalten' : 'Regel ausschalten'}</button>` : ''}
         </div>
       </article>
     `;
@@ -381,7 +396,6 @@ async function loadDevices() {
     await loadSecurityState();
     try {
       if (state.dataMode === 'live') await loadBackendLimits();
-      else { state.limits = {}; state.storageMode = state.dataMode; }
     } catch {
       state.limits = {};
       state.storageMode = 'unavailable';
@@ -403,13 +417,16 @@ async function loadDevices() {
     applyFilters();
     setStatus(state.storageMode === 'backend'
       ? `${state.devices.length} Geräte · Internetzeiten aktualisiert.`
-      : state.storageMode === 'demo' ? 'Demo-Geräte · Änderungen sind deaktiviert.'
+      : state.storageMode === 'demo' ? 'Demo-Netzwerk mit Beispiel-Zeitplänen · Nur Ansicht.'
         : 'Internetzeiten konnten nicht geladen werden. Speichern ist derzeit nicht möglich.',
     state.storageMode === 'backend' ? 'success' : 'warning');
   } catch (error) {
     state.loaded = false;
+    state.dataMode = 'unavailable';
+    state.storageMode = 'unavailable';
     state.devices = [];
     state.limits = {};
+    document.getElementById('clearLimitButton').disabled = true;
     renderDeviceOptions();
     applyFilters();
     setStatus(NetheraApi.userMessage(error), 'error');
