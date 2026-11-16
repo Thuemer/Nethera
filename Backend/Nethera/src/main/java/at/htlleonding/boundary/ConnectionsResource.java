@@ -2,6 +2,7 @@ package at.htlleonding.boundary;
 
 import at.htlleonding.model.Connection;
 import at.htlleonding.repository.ConnectionsRepository;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -10,6 +11,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
 
+@Authenticated
 @Path("api/connections")
 public class ConnectionsResource {
 

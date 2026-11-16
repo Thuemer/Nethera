@@ -38,6 +38,8 @@ class ApiAuthenticationIT {
             "PUT,    /api/security/devices/1/preset/1",
             "DELETE, /api/security/devices/1/preset",
             "PUT,    /api/settings/account.theme",
+            "POST,   /api/routers/claim",
+            "DELETE, /api/routers/mine",
     })
     void anonymousRequestIsRejected(String method, String path) {
         given().contentType(ContentType.JSON).body("{}")

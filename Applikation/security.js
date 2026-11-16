@@ -704,7 +704,6 @@ async function saveGroupBlocklist(event) {
     method: 'POST',
     body: JSON.stringify({
       id: null,
-      routerId: 1,
       name: `${group.name} Blockliste`,
       sourceType: 'GROUP',
       urlPattern: [...new Set(parts)].join('|')
@@ -763,7 +762,7 @@ async function addManualDomain(event) {
   const target = scope === 'network' ? 'Gesamtes Netzwerk' : scope === 'group' ? group.name : device.hostname;
   const blocklist = await apiJson(`${SECURITY_API}/blocklists`, {
     method: 'POST',
-    body: JSON.stringify({ id: scope === 'network' ? previous?.id : null, routerId: previous?.routerId || 1,
+    body: JSON.stringify({ id: scope === 'network' ? previous?.id : null,
       name: `Websites · ${target}`, sourceType: scope === 'network' ? 'NETWORK' : scope === 'group' ? 'GROUP' : 'DEVICE',
       urlPattern: [...new Set([...blocklistDomains(previous), domain])].join('|') })
   });
@@ -784,7 +783,7 @@ async function addAdDomain(event) {
   const domains = [...new Set([...blocklistDomains(dns), domain])];
   await apiJson(`${SECURITY_API}/blocklists`, {
     method: 'POST',
-    body: JSON.stringify({ id: dns?.id, routerId: 1, name: dns?.name || 'Werbung & Tracker', sourceType: 'DNS', urlPattern: domains.join('|') })
+    body: JSON.stringify({ id: dns?.id, name: dns?.name || 'Werbung & Tracker', sourceType: 'DNS', urlPattern: domains.join('|') })
   });
   input.value = '';
   await loadSecurityState();

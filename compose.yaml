@@ -84,6 +84,7 @@ services:
       NETHERA_MQTT_PORT: "1883"
       NETHERA_MQTT_USERNAME: nethera-backend
       NETHERA_MQTT_PASSWORD: ${NETHERA_MQTT_BACKEND_PASSWORD:-nethera-backend}
+      NETHERA_ROUTER_PAIRING_CODE: ${NETHERA_ROUTER_PAIRING_CODE:-NETHERA-DEMO}
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:

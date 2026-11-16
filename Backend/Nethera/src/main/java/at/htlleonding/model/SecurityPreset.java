@@ -5,13 +5,16 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "security_preset")
 @NamedQuery(name = SecurityPreset.QUERY_FIND_ALL, query = "SELECT p FROM SecurityPreset p ORDER BY p.name")
-public class SecurityPreset {
+public class SecurityPreset implements RouterScoped {
 
     public static final String QUERY_FIND_ALL = "SecurityPreset.findAll";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "router_id")
+    private Long routerId;
 
     private String name;
 
@@ -106,5 +109,13 @@ public class SecurityPreset {
 
     public void setParentalMode(Boolean parentalMode) {
         this.parentalMode = parentalMode;
+    }
+
+    public Long getRouterId() {
+        return routerId;
+    }
+
+    public void setRouterId(Long routerId) {
+        this.routerId = routerId;
     }
 }

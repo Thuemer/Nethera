@@ -20,6 +20,15 @@ public class DeviceTimeLimitsRepository {
         return entityManager.createNamedQuery(DeviceTimeLimit.QUERY_FIND_ALL, DeviceTimeLimit.class).getResultList();
     }
 
+    public List<DeviceTimeLimit> findByDeviceIds(List<Long> deviceIds) {
+        if (deviceIds.isEmpty()) {
+            return List.of();
+        }
+        return entityManager.createQuery("SELECT l FROM DeviceTimeLimit l WHERE l.device.id IN :ids", DeviceTimeLimit.class)
+                .setParameter("ids", deviceIds)
+                .getResultList();
+    }
+
     public Optional<DeviceTimeLimit> findByDeviceId(Long deviceId) {
         return entityManager.createNamedQuery(DeviceTimeLimit.QUERY_FIND_BY_DEVICE, DeviceTimeLimit.class)
                 .setParameter("deviceId", deviceId)
@@ -28,13 +37,8 @@ public class DeviceTimeLimitsRepository {
     }
 
     @Transactional
-    public DeviceTimeLimit save(Long deviceId, DeviceTimeLimit input) {
-        ConnectedDevice device = entityManager.find(ConnectedDevice.class, deviceId);
-        if (device == null) {
-            return null;
-        }
-
-        DeviceTimeLimit limit = findByDeviceId(deviceId).orElseGet(DeviceTimeLimit::new);
+    public DeviceTimeLimit save(ConnectedDevice device, DeviceTimeLimit input) {
+        DeviceTimeLimit limit = findByDeviceId(device.getId()).orElseGet(DeviceTimeLimit::new);
         limit.setDevice(device);
         limit.setDailyLimitMinutes(input.getDailyLimitMinutes());
         limit.setUsedMinutesToday(input.getUsedMinutesToday() == null ? 0 : input.getUsedMinutesToday());
