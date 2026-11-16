@@ -249,3 +249,98 @@ ergaenzen, in `docker/mosquitto/entrypoint.sh` eine `mosquitto_passwd`-Zeile mit
 einer neuen Umgebungsvariable, diese in `stack.yaml` aus einem neuen Key im
 Secret befuellen, dann die ConfigMap wie in Schritt 3 aktualisieren. In der
 Datenbank muss die `Router`-Zeile mit dieser ID existieren.
+
+## Routersteuerung ausrollen (#23 AdBlocker, #25 Websites sperren)
+
+Stand 16.11.2026, Quellstand `leocloud-deployment`. Das Backend schickt jedem
+Router seinen Soll-Zustand als gemerkte Nachricht auf `nethera/<id>/config/dns`
+und liest die Antwort von `nethera/<id>/telemetry/control`. Dafuer braucht die
+Cloud drei Dinge: eine Datenbank-Migration, die neue Broker-ACL und ein neues
+Backend-Image. Ein neues Frontend-Image ist fuer diese Aenderung nicht noetig.
+
+Reihenfolge einhalten. Das Backend prueft das Schema beim Start (`validate`):
+ohne Schritt 2 startet das neue Image nicht
+(`Schema validation: missing table [router_control_state]`).
+
+Lokal geprueft: Die Migration wurde gegen eine nachgestellte alte Datenbank
+zweimal hintereinander ausgefuehrt, danach startet das Backend mit `validate`.
+In `student-it220208` selbst ist nichts davon ausgefuehrt.
+
+**1. Stand holen**
+
+```bash
+git switch leocloud-deployment && git pull
+kubectl config current-context
+```
+
+**2. Datenbank sichern und Migration einspielen**
+
+```bash
+kubectl --context leocloud -n student-it220208 exec deployment/nethera-db -- pg_dump -U nethera -d nethera > nethera-backup-$(date -u +%Y%m%d-%H%M%S).sql
+kubectl --context leocloud -n student-it220208 exec -i deployment/nethera-db -- psql -v ON_ERROR_STOP=1 -U nethera -d nethera < Backend/Nethera/migrations/20261116_router_control.sql
+```
+
+Die Migration legt die Tabelle `router_control_state` an, macht
+`blocklists.urlpattern` zur Textspalte und fuegt eine Zeile in `config` ein,
+falls die Tabelle leer ist (ohne sie bleibt der Werbeschutz-Schalter grau). Sie
+loescht nichts und kann wiederholt werden. Die Sicherung nicht committen.
+
+**3. Broker-ACL aktualisieren**
+
+Der Router darf jetzt `nethera/1/config/#` lesen, das Backend darf dorthin
+schreiben.
+
+```bash
+kubectl --context leocloud -n student-it220208 create configmap nethera-mosquitto --from-file=docker/mosquitto/ --dry-run=client -o yaml \
+  | kubectl --context leocloud -n student-it220208 apply -f -
+kubectl --context leocloud -n student-it220208 rollout restart deployment/nethera-mosquitto
+kubectl --context leocloud -n student-it220208 rollout status deployment/nethera-mosquitto
+```
+
+**4. Neues Backend-Image bauen und ausrollen**
+
+Wie unter "Aenderungen deployen": neuer UTC-Zeitstempel-Tag, `linux/amd64`,
+nie einen alten Tag wiederverwenden.
+
+```bash
+TAG=$(date -u +%Y%m%d-%H%M%S)
+docker buildx build --platform linux/amd64 -t ghcr.io/denizbernecker/nethera-backend:$TAG --push Backend/Nethera
+kubectl --context leocloud -n student-it220208 set image deployment/nethera-backend backend=ghcr.io/denizbernecker/nethera-backend:$TAG
+kubectl --context leocloud -n student-it220208 rollout status deployment/nethera-backend
+```
+
+Danach den neuen Tag samt Digest bei `image:` in `stack.yaml` eintragen.
+
+**5. Pruefen**
+
+Backend ist gestartet und hat den Soll-Zustand geschickt:
+
+```bash
+kubectl --context leocloud -n student-it220208 logs deployment/nethera-backend | grep -i -E "started in|Schema|Router control|Subscription"
+kubectl --context leocloud -n student-it220208 exec deployment/nethera-mosquitto -- sh -c '
+  mosquitto_sub -h 127.0.0.1 -u nethera-backend -P "$NETHERA_MQTT_BACKEND_PASSWORD" -t "nethera/1/config/dns" -v -C 1 -W 5
+  mosquitto_sub -h 127.0.0.1 -u router-1 -P "$NETHERA_MQTT_ROUTER1_PASSWORD" -t "nethera/1/config/dns" -C 1 -W 5 >/dev/null && echo "router-1 darf lesen"
+  mosquitto_pub -h 127.0.0.1 -u router-1 -P "$NETHERA_MQTT_ROUTER1_PASSWORD" -t nethera/1/config/dns -m x -q 1; sleep 1
+  mosquitto_sub -h 127.0.0.1 -u nethera-backend -P "$NETHERA_MQTT_BACKEND_PASSWORD" -t "nethera/1/config/dns" -C 1 -W 5 | grep -q version && echo "router-1 darf nicht schreiben"'
+```
+
+Erwartet: eine Zeile `nethera/1/config/dns {"v":1,"version":...,"adblock":false,...}`,
+dann `router-1 darf lesen` und `router-1 darf nicht schreiben`.
+
+Der Router antwortet (nur wenn der Cudy online ist und den Agent ab `6fb46ea` hat):
+
+```bash
+kubectl --context leocloud -n student-it220208 exec deployment/nethera-mosquitto -- sh -c '
+  mosquitto_sub -h 127.0.0.1 -u nethera-backend -P "$NETHERA_MQTT_BACKEND_PASSWORD" -t "nethera/1/telemetry/control" -v -C 1 -W 10'
+```
+
+Erwartet: `"applied":true` mit derselben `version` wie oben. In der App zeigt
+"Schutz" dann nach dem Speichern "Am Router bestaetigt".
+
+**Wirkung beim ersten Start:** Das Backend schickt sofort den Zustand aus der
+Datenbank. Dort ist der Werbeschutz anfangs aus und keine Website gesperrt. Ein
+Router mit anderem Zustand (z.B. Testsperren) wird dadurch zurueckgesetzt.
+
+**Rueckgaengig:** nur das vorherige Backend-Image wiederherstellen
+(`kubectl set image ... backend=<altes Image aus stack.yaml>`). Tabelle, Spalte
+und ACL koennen bestehen bleiben; das alte Backend ignoriert sie.
