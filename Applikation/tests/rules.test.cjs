@@ -97,6 +97,19 @@ test('status refresh reloads security lists together with their router confirmat
   assert.equal(h.run('state.routerControl'), null);
 });
 
+test('local preview intercepts writes before live checks or fetch and keeps router ACK separate', async () => {
+  const h = securityHarness();
+  h.context.NetheraSecurityDraft = require('../security-draft.js');
+  h.run(`draftBase = {devices:state.devices, groups:[], members:[], presets:[], assignments:[], timeLimits:[], blocklists:[]};
+    localDraft = NetheraSecurityDraft.create({getItem:()=>null,setItem(){},removeItem(){}}, 'preview');
+    Object.assign(state, {preview:true, loaded:true, rulesKnown:false});
+    NetheraApi.requireLive = async () => {throw new Error('must not request router writes')};`);
+  await h.run(`apiJson(SECURITY_API + '/groups', {method:'POST',body:'{"name":"Local"}'})`);
+  assert.equal(h.run('localDraft.snapshot(draftBase).groups[0].name'), 'Local');
+  await assert.rejects(h.run(`apiJson(API_BASE_URL + '/api/unsupported', {method:'POST'})`), /lokalen Vorschau/);
+  assert.equal(h.calls.length, 0);
+});
+
 test('device priority copies shared preset and preserves its other settings', async () => {
   const h = securityHarness();
   await h.run('saveDeviceProfile(1, {priorityMode:true})');

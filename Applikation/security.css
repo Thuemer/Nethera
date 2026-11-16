@@ -8,6 +8,15 @@
 }
 
 .security-page app-card { min-width: 0; }
+.draft-strip { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.draft-strip > div { display: grid; gap: 4px; min-width: 0; }
+.draft-strip strong { font-size: 14px; }
+.draft-strip span { color: var(--text-soft); font-size: 13px; line-height: 1.5; }
+.draft-strip button { display: inline-flex; align-items: center; gap: 8px; }
+.draft-strip svg { width: 16px; height: 16px; flex: none; }
+.confirmed-rules { display: grid; gap: 8px; margin: 12px 0 0; font-size: 14px; }
+.confirmed-rules dt { font-weight: 600; }
+.confirmed-rules dd { margin: 0 0 12px; color: var(--text-soft); overflow-wrap: anywhere; }
 .security-summary { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
 .security-summary summary { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; color: var(--text-soft); font-size: 14px; list-style: none; }
 .security-summary summary::-webkit-details-marker { display: none; }

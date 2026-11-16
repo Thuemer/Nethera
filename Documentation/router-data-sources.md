@@ -2,6 +2,12 @@
 
 Stand: am 15.11.2026 auf LeoCloud ausgerollt. Die Image-Digests stehen in `deploy/leocloud/stack.yaml`.
 
+Lokale Erweiterung vom 16.11.2026: Die Schutzseite bietet zusaetzlich editierbare,
+rein browserlokale Entwuerfe ohne Backend-Schreibzugriffe. Die unten beschriebenen
+Router-Herkunftsregeln bleiben dabei erhalten; lokale Entwuerfe sind keine
+Live-Daten. Abgrenzung, Speicherung und Backend-Uebergabe:
+[`security-local-preview.md`](security-local-preview.md). Noch nicht ausgerollt.
+
 ## Verhalten
 
 - `live` / `online`: nur durch MQTT- oder SSH-Ingestoren als `ROUTER` markierte Telemetrie. Fehlende Streams bleiben leer; kein Auffuellen durch Demo-Werte.

@@ -90,7 +90,9 @@ const NetheraApi = (() => {
     }
     notice.dataset.mode = router?.dataMode || 'unavailable';
     notice.textContent = router?.dataMode === 'live' ? 'Routerdaten · Verbunden'
-      : router?.dataMode === 'demo' ? 'Demo · Kein Router verbunden. Beispieldaten, nur Ansicht.'
+      : router?.dataMode === 'demo' ? document.body?.dataset.localDraft === 'true'
+        ? 'Demo-Geräte · Kein Router verbunden. Lokale Vorschau.'
+        : 'Demo · Kein Router verbunden. Beispieldaten, nur Ansicht.'
         : 'Routerstatus unbekannt · Keine bestätigten Routerdaten verfügbar.';
   }
 

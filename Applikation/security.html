@@ -7,11 +7,11 @@
   <link rel="icon" href="nethera_logo.png">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="nethera-select.css">
-  <link rel="stylesheet" href="security.css?v=20261115-router-ui">
+  <link rel="stylesheet" href="security.css?v=20261116-local-draft">
   <link rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
   <link rel="stylesheet" href="data-source.css">
 </head>
-<body>
+<body data-local-draft="true">
   <main class="page security-page">
     <app-hero title="Schutz &amp; Regeln" text="Internetregeln für ein Gerät, eine Gruppe oder das ganze Netzwerk." button="Neu laden"></app-hero>
     <nav class="security-tabs" role="tablist" aria-label="Schutzbereiche">
@@ -22,11 +22,19 @@
       <button type="button" data-tab="priority" role="tab"><i data-lucide="gauge"></i><span>Priorität</span></button>
       <button type="button" data-tab="wifi" role="tab"><i data-lucide="wifi"></i><span>WLAN-Analyse</span></button>
     </nav>
+    <section class="draft-strip" aria-label="Lokale Bearbeitung">
+      <div><strong>Lokaler Entwurf</strong><span id="draftNotice">Nur in diesem Browser-Tab. Keine Übertragung an den Router.</span></div>
+      <button id="discardDraft" class="small-btn ghost" type="button" disabled><i data-lucide="rotate-ccw" aria-hidden="true"></i>Entwurf verwerfen</button>
+    </section>
     <data-status id="statusBox" role="status" aria-live="polite" text="Lade Regeln ..."></data-status>
     <div class="router-control-strip" role="status" aria-live="polite">
       <span id="routerControlStatus">Routerwirkung wird geprüft ...</span>
       <button id="refreshRouterControl" class="small-btn ghost" type="button">Status prüfen</button>
     </div>
+    <details class="security-summary" id="confirmedRules" hidden>
+      <summary><i data-lucide="chevron-right" aria-hidden="true"></i>Am Router bestätigte Sperrlisten</summary>
+      <dl id="confirmedRulesList" class="confirmed-rules"></dl>
+    </details>
 
     <details class="security-summary">
     <summary><i data-lucide="chevron-right"></i>Regelübersicht</summary>
@@ -122,7 +130,7 @@
       <section class="grid two-grid">
         <app-card title="Werbeschutz">
           <p id="adblockActual" class="router-effect-note" role="status" aria-live="polite">Installations- und Routerstatus werden geprüft ...</p>
-          <button id="installAdblock" class="small-btn ghost" type="button" disabled>Adblock installieren</button>
+          <button id="installAdblock" class="small-btn ghost" type="button" disabled>Installation vormerken</button>
           <form id="adProtectionForm" class="stack-form">
             <label class="security-toggle"><span><strong>Werbung &amp; Tracker filtern</strong><small>Gewünschte Einstellung für das ganze Netzwerk</small></span><input id="adProtectionEnabled" type="checkbox" disabled></label>
             <button class="refresh-btn" id="saveAdProtection" type="submit" disabled>Einstellung speichern</button>
@@ -245,6 +253,7 @@
   <script src="components.js"></script>
   <script src="nethera-select.js"></script>
   <script src="vendor/lucide.min.js"></script>
-  <script src="security.js?v=20261115-router-ui"></script>
+  <script src="security-draft.js?v=20261116-local-draft"></script>
+  <script src="security.js?v=20261116-local-draft"></script>
 </body>
 </html>
