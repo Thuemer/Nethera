@@ -1,0 +1,14 @@
+**
+!Dockerfile
+!.dockerignore
+!login/
+!login/theme.properties
+!login/messages/
+!login/messages/messages_de.properties
+!login/messages/messages_en.properties
+!login/resources/
+!login/resources/css/
+!login/resources/css/nethera-login.css
+!login/resources/img/
+!login/resources/img/nethera-logo.png
+!login/resources/img/favicon.ico
