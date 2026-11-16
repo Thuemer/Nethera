@@ -24,7 +24,50 @@ Stand: am 15.11.2026 auf LeoCloud ausgerollt. Die Image-Digests stehen in `deplo
 
 Offline- und Unknown-Antworten enthalten keine Telemetrie-Arrays mit alten echten oder Beispielwerten. Die Demo wird nur bei explizitem `demo` + `offline` oder einer erfolgreich geladenen leeren Routerliste im Frontend erzeugt. Die Demo erzeugt keine DB-Zeilen.
 
-Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Router-Snapshot, nicht die ungetrennte Geraeteliste aus `/api/security/state`. Zuordnungen und Zeitlimits anderer/alter Beispielgeraete bleiben verborgen. Gespeicherte Gruppen, Vorlagen und Sperrlisten bleiben Konfiguration, keine Bestaetigung der Routerwirkung; sie werden nicht geloescht.
+Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Router-Snapshot, nicht die ungetrennte Geraeteliste aus `/api/security/state`. Zuordnungen und Zeitlimits anderer/alter Beispielgeraete bleiben verborgen. Gespeicherte Gruppen, Vorlagen und Sperrlisten bleiben Konfiguration, keine Bestaetigung der Routerwirkung; sie werden nicht geloescht. Die folgende lokale Erweiterung blendet solche unbestaetigten Regeln auch aus der Live-Ansicht aus.
+
+### Herkunft der Schutzregeln (lokal vorbereitet, 16.11.2026)
+
+Der bisherige `SecurityStateResource` liest Gruppen, Vorlagen, Blocklisten und
+Zuweisungen aus der Datenbank ohne Herkunftsnachweis. `sourceType` beschreibt den
+Filtertyp, nicht die Datenquelle. Eine passende Geraete-ID oder `routerId` und ein
+Apply-ACK sind ebenfalls kein Beleg, dass diese Eintraege vom Router gelesen wurden.
+`RouterControlResource` bestaetigt die Uebernahme einer Sollversion, liefert aber
+keinen vollstaendigen Regel-Readback. Deshalb bleiben unmarkierte Datensaetze in der
+Live-Ansicht verborgen. Es werden keine Datenbankzeilen geloescht oder umetikettiert.
+
+Frontend-Vertrag fuer eine spaetere Backend-Erweiterung von `GET /api/security/state`:
+
+- Jede Blockliste, Gruppe, Vorlage, Mitgliedschaft und Vorlagenzuweisung braucht
+  `dataSource: "ROUTER"` und die passende positive `routerId`. Erst ein echter,
+  routerbezogener Readback darf diese Felder setzen, nicht SQL-Seeds oder ein
+  pauschales Update bestehender Zeilen. Bei veralteten/ungeprueften Daten muss die
+  API die Markierung entziehen bzw. die Zeilen weglassen.
+- IDs entsprechen den vorhandenen DB-IDs (positive Ganzzahlen oder dezimale Strings).
+  Gruppen/Vorlagen liefern `blocklistId: null` fuer bestaetigt keine Blockliste oder
+  eine ID aus den verifizierten Blocklisten. Unvollstaendige Referenzen bleiben
+  verborgen; Mitgliedschaften/Zuweisungen brauchen verifizierte Gruppen/Vorlagen
+  und ein Geraet aus dem ausgewaehlten Router-Snapshot.
+- Nur fuer einen **vollstaendigen** Readback setzt die Antwort zusaetzlich oben
+  `dataSource: "ROUTER", routerId: 1, rulesComplete: true` und liefert alle fuenf
+  Arrays (`blocklists`, `groups`, `presets`, `members`, `assignments`), auch leere.
+  `1` ist nur ein Beispiel; es muss die ID des ausgewaehlten Routers sein.
+  Erst dann darf das Frontend aus fehlenden Eintraegen "keine Zuweisung" ableiten.
+  Gemischte oder unvollstaendige Antworten zeigen die verifizierten Eintraege,
+  behandeln fehlende Angaben aber als unbekannt.
+- Solange keine vollstaendige Sicht vorliegt, sind Regel-Schreibaktionen gesperrt,
+  damit ausgeblendete bestehende Zuordnungen nicht versehentlich ueberschrieben
+  werden. Dies gilt auch fuer Prioritaetsprofile und das Anwenden von Vorlagen.
+  Adblock-Installation/-Aktivierung mit dem bestehenden Router-Control-Vertrag
+  und unabhaengige Internetzeiten behalten ihren bisherigen Ablauf.
+- Offline-Demo, Router-Telemetrie, Konten, Backend, Routereinstellungen und
+  Datenbanken bleiben unveraendert. Die Herkunft ist von der Routerwirkung
+  (`applied`) getrennt; eine gelesene Regel ist nicht automatisch aktiv.
+
+Gegen das aktuell deployte Backend bleiben Blocklisten/Gruppen/Vorlagen und ihre
+Zuweisungen daher vorerst leer. Das ist **kein Nachweis**, dass am Router keine
+Regeln existieren. Topologie und Internetzeiten kennzeichnen fehlende Vorlagen
+als nicht gemeldet. Diese lokale Frontend-Aenderung ist noch nicht ausgerollt.
 
 ## Noch nicht vorhandene Messungen
 

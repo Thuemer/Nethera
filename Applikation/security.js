@@ -4,6 +4,7 @@ const SECURITY_API = `${API_BASE_URL}/api/security`;
 
 const state = {
   loaded: false,
+  rulesKnown: false,
   dataMode: 'unavailable',
   devices: [],
   groups: [],
@@ -44,7 +45,12 @@ function setStatus(text, tone = 'info') {
 }
 
 async function apiJson(url, options = {}) {
-  if (options.method && options.method !== 'GET') await NetheraApi.requireLive();
+  if (options.method && options.method !== 'GET') {
+    await NetheraApi.requireLive();
+    if (!state.rulesKnown && (url.startsWith(`${SECURITY_API}/`) || url.startsWith(`${API_BASE_URL}/api/device-time-limits/`))) {
+      throw new Error('Regeln wurden noch nicht vollständig vom Router gemeldet. Bestehende Einstellungen bleiben unverändert.');
+    }
+  }
   const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
   const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(url, {
@@ -69,6 +75,7 @@ async function loadSecurityState() {
     Object.assign(state, {
       loaded: router.dataMode !== 'unavailable',
       dataMode: router.dataMode,
+      rulesKnown: data.rulesKnown === true,
       wifiNetworks: router.wifiNetworks || [],
       devices: data.devices || [],
       groups: data.groups || [],
@@ -79,9 +86,9 @@ async function loadSecurityState() {
       timeLimits: data.timeLimits || []
     });
     renderAll();
-    setStatus(router.dataMode === 'live' ? 'Gespeicherte Schutzregeln aktualisiert.' : router.dataMode === 'demo' ? 'Demo-Netzwerk mit Beispielregeln · Nur Ansicht.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' ? 'success' : 'info');
+    setStatus(router.dataMode === 'live' ? state.rulesKnown ? 'Schutzregeln vom Router aktualisiert.' : 'Blocklisten und Zuweisungen sind nicht vollständig vom Router gemeldet. Nur verifizierte Einträge werden angezeigt; Bearbeitung vorerst gesperrt.' : router.dataMode === 'demo' ? 'Demo-Netzwerk mit Beispielregeln · Nur Ansicht.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' && state.rulesKnown ? 'success' : 'info');
   } catch (error) {
-    Object.assign(state, { loaded: false, dataMode: 'unavailable', devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
+    Object.assign(state, { loaded: false, rulesKnown: false, dataMode: 'unavailable', devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
     renderAll();
     setStatus(NetheraApi.userMessage(error), 'error');
   }
@@ -90,8 +97,8 @@ async function loadSecurityState() {
 }
 
 function updateReadOnlyControls() {
-  const readOnly = !NetheraApi.isLive();
   document.querySelectorAll('form input, form select, form textarea, form button, [data-device-group], [data-device-preset], [data-group-name], [data-group-blocklist], [data-save-group], [data-edit-domain], [data-remove-domain]').forEach(control => {
+    const readOnly = !NetheraApi.isLive() || (!state.rulesKnown && !control.closest('#adProtectionForm'));
     if (readOnly && !control.disabled) { control.dataset.sourceDisabled = 'true'; control.disabled = true; }
     else if (!readOnly && control.dataset.sourceDisabled) { control.disabled = false; delete control.dataset.sourceDisabled; }
   });
@@ -140,12 +147,16 @@ function renderRouterControlStatus() {
   const blocklistNote = document.getElementById('blocklistActual');
   if (blocklistNote) blocklistNote.textContent = state.dataMode === 'demo'
     ? 'Beispiel-Sperrlisten für Geräte, Gruppen und das gesamte Netzwerk. Keine echte Sperrwirkung.'
+    : !state.rulesKnown
+    ? 'Nur Blocklisten mit bestätigter Router-Herkunft werden angezeigt. Eine leere Liste bedeutet nicht, dass am Router keine Sperren bestehen.'
     : control?.connection === 'online'
     ? 'Jede Blockliste zeigt ihren bestätigten Routerstatus einzeln an.'
     : 'Sperrlisten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
   const priorityNote = document.getElementById('priorityActual');
   if (priorityNote) priorityNote.textContent = state.dataMode === 'demo'
     ? 'Beispiel-Prioritäten · Keine Änderung am Router.'
+    : !state.rulesKnown
+    ? 'Gerätezuweisungen sind nicht vollständig vom Router gemeldet. Bestehende Prioritäten bleiben unverändert.'
     : control?.connection === 'online'
     ? 'Die Übernahme wird für jedes Gerät getrennt bestätigt.'
     : 'Prioritäten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
@@ -211,27 +222,27 @@ function presetForDevice(deviceId) {
 
 function groupOptions(selectedId = '') {
   return [
-    '<option value="">Keine Gruppe</option>',
+    `<option value="">${state.rulesKnown ? 'Keine Gruppe' : 'Nicht gemeldet'}</option>`,
     ...state.groups.map(group => `<option value="${group.id}" ${Number(group.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(group.name)}</option>`)
   ].join('');
 }
 
 function presetOptions(selectedId = '') {
   return [
-    '<option value="">Keine Vorlage</option>',
+    `<option value="">${state.rulesKnown ? 'Keine Vorlage' : 'Nicht gemeldet'}</option>`,
     ...state.presets.map(preset => `<option value="${preset.id}" ${Number(preset.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(preset.name)}</option>`)
   ].join('');
 }
 
 function blocklistOptions(selectedId = '') {
   return [
-    '<option value="">Keine Blockliste</option>',
+    `<option value="">${state.rulesKnown ? 'Keine Blockliste' : 'Nicht gemeldet'}</option>`,
     ...state.blocklists.map(blocklist => `<option value="${blocklist.id}" ${Number(blocklist.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(blocklist.name)}</option>`)
   ].join('');
 }
 
 function renderStats() {
-  if (!state.loaded) {
+  if (!state.loaded || !state.rulesKnown) {
     ['statPackages', 'statManual', 'statAds', 'statPresets'].forEach(id => {
       document.getElementById(id)?.setAttribute('value', '—');
     });
@@ -282,7 +293,7 @@ function renderGroupDevices() {
     const presetBlocklist = state.blocklists.find(item => Number(item.id) === Number(preset?.blocklistId));
     const ruleCount = new Set([...blocklistDomains(groupBlocklist), ...blocklistDomains(presetBlocklist),
       ...state.blocklists.filter(item => item.sourceType === 'NETWORK').flatMap(blocklistDomains)]).size;
-    const presetState = preset ? (assignment?.status === 'paused' ? 'Vorlage pausiert' : 'Vorlage zugewiesen') : 'Keine Vorlage';
+    const presetState = preset ? (assignment?.status === 'paused' ? 'Vorlage pausiert' : 'Vorlage zugewiesen') : state.rulesKnown ? 'Keine Vorlage' : 'Zuweisung nicht gemeldet';
     const presetClass = assignment?.status === 'paused' ? 'warn' : '';
     return `
       <article class="device-group-item">
@@ -291,8 +302,8 @@ function renderGroupDevices() {
             <strong>${escapeText(device.hostname || 'Unbekanntes Gerät')}</strong>
             <span class="badge ${presetClass}">${escapeText(presetState)}</span>
           </div>
-          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(device.connectionType || 'unbekannt')} · Gruppe: ${escapeText(group?.name || 'Keine')}</span>
-          <span class="preset-line">Vorlage: <b>${escapeText(preset?.name || 'Keine')}</b> · ${ruleCount} Regeln · Priorität: ${preset?.priorityMode ? 'Bevorzugt' : 'Normal'}</span>
+          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(device.connectionType || 'unbekannt')} · Gruppe: ${escapeText(group?.name || (state.rulesKnown ? 'Keine' : 'Nicht gemeldet'))}</span>
+          <span class="preset-line">Vorlage: <b>${escapeText(preset?.name || (state.rulesKnown ? 'Keine' : 'Nicht gemeldet'))}</b> · ${state.rulesKnown ? ruleCount : '—'} Regeln · Priorität: ${!preset && !state.rulesKnown ? 'Unbekannt' : preset?.priorityMode ? 'Bevorzugt' : 'Normal'}</span>
         </div>
         <div class="device-group-actions">
           <label><span>Gruppe</span><select aria-label="Gruppe für ${escapeText(device.hostname)}" data-device-group="${device.id}">${groupOptions(group?.id)}</select></label>
@@ -315,7 +326,7 @@ function renderGroupOverview() {
   const list = document.getElementById('groupOverviewList');
   if (!list) return;
   if (!state.groups.length) {
-    list.innerHTML = '<empty-state title="Keine Gruppen" text="Lege zuerst eine Gruppe an."></empty-state>';
+    list.innerHTML = state.rulesKnown ? '<empty-state title="Keine Gruppen" text="Lege zuerst eine Gruppe an."></empty-state>' : '<empty-state title="Keine gemeldeten Gruppen" text="Der Router hat noch keine verifizierten Gruppen geliefert."></empty-state>';
     return;
   }
 
@@ -337,9 +348,9 @@ function renderGroupOverview() {
           <button class="small-btn" type="button" data-save-group="${group.id}">Name speichern</button>
         </div>
         <div class="group-summary-line">
-          <span class="badge ok">${devices.length} Geräte</span>
+          <span class="badge">${devices.length} ${state.rulesKnown ? 'Geräte' : 'gemeldete Geräte'}</span>
           <span class="badge">${rules.length} Regeln</span>
-          <span class="muted">${escapeText(devices.map(device => device.hostname).filter(Boolean).join(', ') || 'Noch keine Geräte')}</span>
+          <span class="muted">${escapeText(devices.map(device => device.hostname).filter(Boolean).join(', ') || (state.rulesKnown ? 'Noch keine Geräte' : 'Zuweisungen nicht gemeldet'))}</span>
         </div>
       </article>
     `;
@@ -350,7 +361,7 @@ function renderManualDomains() {
   const list = document.getElementById('manualDomainsList');
   if (!list) return;
   if (!state.blocklists.length) {
-    list.innerHTML = '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um Websites zu blockieren."></empty-state>';
+    list.innerHTML = state.rulesKnown ? '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um Websites zu blockieren."></empty-state>' : '<empty-state title="Keine gemeldeten Blocklisten" text="Es liegen noch keine Sperrlisten mit bestätigter Router-Herkunft vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
     return;
   }
 
@@ -383,7 +394,7 @@ function renderAdDomains() {
       </div>
       <span class="badge">${state.dataMode === 'demo' ? 'Beispiel' : 'Gespeichert'}</span>
     </article>
-  `).join('') || '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>';
+  `).join('') || (state.rulesKnown ? '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>' : '<empty-state title="Keine gemeldeten Werbe-Domains" text="Der Router hat keine verifizierte Domain-Liste geliefert. Der Adblock-Status wird separat geprüft."></empty-state>');
 }
 
 function renderPresetDeviceOptions() {
@@ -398,7 +409,7 @@ function renderPresetDeviceOptions() {
     applyPresetDevice.innerHTML = state.devices.map(device => `<option value="${device.id}">${escapeText(device.hostname || 'Unbekanntes Gerät')}</option>`).join('');
   }
   if (applyPresetSelect) {
-    applyPresetSelect.innerHTML = state.presets.map(preset => `<option value="${preset.id}">${escapeText(preset.name)}</option>`).join('') || '<option value="">Noch keine Vorlage vorhanden</option>';
+    applyPresetSelect.innerHTML = state.presets.map(preset => `<option value="${preset.id}">${escapeText(preset.name)}</option>`).join('') || `<option value="">${state.rulesKnown ? 'Noch keine Vorlage vorhanden' : 'Keine gemeldete Vorlage'}</option>`;
   }
   if (blocklistSelect) {
     blocklistSelect.innerHTML = blocklistOptions();
@@ -409,7 +420,7 @@ function renderPresets() {
   const list = document.getElementById('presetList');
   if (!list) return;
   if (!state.presets.length) {
-    list.innerHTML = '<empty-state title="Keine Vorlagen" text="Noch keine Vorlage gespeichert."></empty-state>';
+    list.innerHTML = state.rulesKnown ? '<empty-state title="Keine Vorlagen" text="Noch keine Vorlage gespeichert."></empty-state>' : '<empty-state title="Keine gemeldeten Vorlagen" text="Es liegen noch keine Vorlagen mit bestätigter Router-Herkunft vor."></empty-state>';
     return;
   }
 
@@ -429,10 +440,10 @@ function renderPresets() {
     return `
       <article class="preset-item">
         <div class="preset-main">
-          <div class="preset-heading"><strong>${escapeText(preset.name)}</strong><span class="badge">${devices.length} ${devices.length === 1 ? 'Gerät' : 'Geräte'}</span></div>
+          <div class="preset-heading"><strong>${escapeText(preset.name)}</strong><span class="badge">${devices.length} ${state.rulesKnown ? '' : 'gemeldete '}${devices.length === 1 && state.rulesKnown ? 'Gerät' : 'Geräte'}</span></div>
           <span class="preset-settings">${escapeText(tags)}</span>
           <span>Blockliste: ${escapeText(blocklist?.name || 'Keine')}</span>
-          <span>Zugewiesen: ${escapeText(devices.join(', ') || 'keinem Gerät')}</span>
+          <span>Zugewiesen: ${escapeText(devices.join(', ') || (state.rulesKnown ? 'keinem Gerät' : 'Nicht gemeldet'))}</span>
         </div>
       </article>
     `;
@@ -512,6 +523,10 @@ function renderAll() {
 }
 
 function updateApplyPresetPreview() {
+  if (!state.rulesKnown) {
+    document.getElementById('applyPresetPreview').textContent = 'Zuweisungen sind noch nicht vollständig vom Router gemeldet. Keine Änderung möglich.';
+    return;
+  }
   const preset = state.presets.find(item => Number(item.id) === Number(document.getElementById('applyPresetSelect').value));
   const device = state.devices.find(item => Number(item.id) === Number(document.getElementById('applyPresetDevice').value));
   const current = device ? presetForDevice(device.id) : null;
@@ -525,7 +540,7 @@ function blocklistScope(blocklist) {
   const presets = state.presets.filter(preset => Number(preset.blocklistId) === Number(blocklist.id));
   const devices = state.assignments.filter(a => presets.some(p => Number(p.id) === Number(a.presetId)))
     .map(a => state.devices.find(d => Number(d.id) === Number(a.deviceId))?.hostname).filter(Boolean);
-  return [...groups.map(name => `Gruppe: ${name}`), ...devices].join(', ') || 'Noch nicht zugewiesen';
+  return [...groups.map(name => `Gruppe: ${name}`), ...devices].join(', ') || (state.rulesKnown ? 'Noch nicht zugewiesen' : 'Zuweisung nicht gemeldet');
 }
 
 function renderDomainTargets() {
@@ -575,6 +590,9 @@ function renderPriorityList() {
   const list = document.getElementById('priorityList');
   if (!list) return;
   list.innerHTML = state.devices.map(device => {
+    if (!state.rulesKnown && !presetForDevice(device.id)) {
+      return `<div class="priority-row"><span>${escapeText(device.hostname)}</span><span class="badge">Priorität nicht gemeldet</span></div>`;
+    }
     const desired = presetForDevice(device.id)?.priorityMode ? 'high' : 'normal';
     const actual = state.routerControl?.priority?.[device.id];
     const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
@@ -591,6 +609,10 @@ function updatePrioritySelection() {
 }
 
 function updatePriorityPreview() {
+  if (!state.rulesKnown) {
+    document.getElementById('priorityPreview').textContent = 'Zuweisungen sind noch nicht vollständig vom Router gemeldet. Keine Änderung möglich.';
+    return;
+  }
   const device = state.devices.find(item => Number(item.id) === Number(document.getElementById('priorityDevice').value));
   const high = document.getElementById('priorityMode').value === 'high';
   const actual = state.routerControl?.priority?.[device?.id];

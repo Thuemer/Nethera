@@ -8,6 +8,7 @@ const state = {
   devices: [],
   limits: {},
   presets: [],
+  rulesKnown: false,
   assignments: [],
   filteredDevices: [],
   storageMode: 'local',
@@ -115,6 +116,7 @@ async function deleteBackendLimit(deviceId) {
 async function loadSecurityState() {
   const data = await NetheraApi.getSecurityState();
   state.dataMode = data.dataMode;
+  state.rulesKnown = data.rulesKnown === true;
   state.presets = data.presets || [];
   state.assignments = data.assignments || [];
   state.securityDevices = data.devices || [];
@@ -347,7 +349,7 @@ function renderList() {
           <details class="limit-details"><summary>Gerätedetails</summary><div class="limit-meta">
             <span>IP: ${escapeText(device.ipAddress || '–')}</span>
             <span>MAC: ${escapeText(device.macAddress || '–')}</span>
-            <span>Preset: ${escapeText(preset?.name || 'Keines')}</span>
+            <span>Vorlage: ${escapeText(preset?.name || (state.rulesKnown ? 'Keine' : 'Nicht vom Router gemeldet'))}</span>
             ${limit?.note ? `<span>Notiz: ${escapeText(limit.note)}</span>` : ''}
             ${limit?.dailyLimit > 0 ? `<span>${Number(limit.usedMinutesToday) || 0} Minuten heute erfasst</span>` : ''}
           </div></details>

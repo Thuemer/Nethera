@@ -26,7 +26,7 @@ test('topology joins real groups and assignments without confusing them with WLA
 });
 
 test('missing or incomplete rule data never means no preset or no group', () => {
-  for (const rules of [null, {}]) {
+  for (const rules of [null, {}, { groups: [], members: [], assignments: [], presets: [], rulesKnown: false }]) {
     const device = buildModel(router, rules).devices[0];
     assert.equal(device.rulesKnown, false);
     assert.equal(device.groups[0].name, 'Gruppe unbekannt');
@@ -37,6 +37,14 @@ test('group colors are stable when the API changes ordering', () => {
   const a = buildModel(router, rules);
   const b = buildModel(router, { ...rules, groups: rules.groups.slice().reverse() });
   assert.deepEqual(a.groups, b.groups);
+});
+
+test('partial readback preserves verified relationships but marks missing assignments unknown', () => {
+  const model = buildModel(router, { ...rules, rulesKnown: false });
+  assert.equal(model.rulesKnown, false);
+  assert.equal(model.devices[0].preset.name, 'Abendruhe');
+  assert.equal(model.devices[0].groups[0].name, 'Familie');
+  assert.equal(model.devices[1].groups[0].name, 'Gruppe unbekannt');
 });
 
 test('search and group filter combine, including secondary membership and presets', () => {

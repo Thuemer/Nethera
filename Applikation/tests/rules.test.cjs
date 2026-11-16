@@ -30,6 +30,7 @@ function harness(file) {
 function securityHarness() {
   const h = harness('security.js');
   h.run(`Object.assign(state, {
+    rulesKnown: true,
     devices: [{id:1,hostname:'Tablet'}, {id:2,hostname:'Laptop'}],
     groups: [{id:3,name:'Kinder',blocklistId:5}],
     presets: [{id:7,name:'Shared',blocklistId:5,priorityMode:false,blockedFrom:'22:00',blockedUntil:'06:00',timeLimitMinutes:60}],
@@ -46,6 +47,31 @@ test('domain parsing accepts URLs but rejects credentials, ports and invalid dom
   for (const input of ['bad domain', 'https://user:pass@example.com', 'javascript:alert(1)', 'localhost', 'example.com:8080']) {
     assert.equal(h.run(`sanitizeDomain(${JSON.stringify(input)})`), '');
   }
+});
+
+test('unverified rule views block writes before they can overwrite hidden assignments', async () => {
+  const h = securityHarness();
+  h.run('state.rulesKnown = false');
+  await assert.rejects(h.run('saveDeviceProfile(1, {priorityMode:true})'), /vollständig vom Router/);
+  await assert.rejects(h.run('applyPresetToDevice(1, state.presets[0])'), /vollständig vom Router/);
+  await assert.rejects(h.run(`apiJson(SECURITY_API + '/devices/1/preset', {method:'DELETE'})`), /vollständig vom Router/);
+  assert.equal(h.calls.length, 0);
+  await h.run(`apiJson(API_BASE_URL + '/api/configs/1', {method:'PUT',body:'{"dnsBlocking":true}'})`);
+  assert.equal(h.calls.length, 1);
+  assert.match(h.calls[0].url, /api\/configs\/1$/);
+});
+
+test('unknown assignments and empty rule views do not pretend there are no rules', () => {
+  const h = securityHarness();
+  h.run(`Object.assign(state, {loaded:true, dataMode:'live', rulesKnown:false, groups:[], members:[], presets:[], assignments:[], blocklists:[]});
+    renderGroupDevices(); renderManualDomains(); renderPresets(); renderGroupOverview(); renderPriorityList();`);
+  assert.match(h.field('groupDeviceList').innerHTML, /Zuweisung nicht gemeldet/);
+  assert.match(h.field('groupDeviceList').innerHTML, /Priorität: Unbekannt/);
+  assert.doesNotMatch(h.field('groupDeviceList').innerHTML, /0 Regeln|Keine Vorlage/);
+  assert.match(h.field('manualDomainsList').innerHTML, /Keine gemeldeten Blocklisten/);
+  assert.match(h.field('presetList').innerHTML, /Keine gemeldeten Vorlagen/);
+  assert.match(h.field('groupOverviewList').innerHTML, /Keine gemeldeten Gruppen/);
+  assert.doesNotMatch(h.field('priorityList').innerHTML, /Normal|Nur gespeichert/);
 });
 
 test('device priority copies shared preset and preserves its other settings', async () => {

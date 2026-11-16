@@ -84,10 +84,11 @@ test('security endpoint cannot reintroduce seed devices or their assignments', a
   const state = await h.run('NetheraApi.getSecurityState()');
   assert.equal(state.devices.length, 1);
   assert.equal(state.devices[0].id, 20);
-  assert.equal(state.members.length, 1);
+  assert.equal(state.members.length, 0);
   assert.equal(state.assignments.length, 0);
   assert.equal(state.timeLimits.length, 0);
-  assert.equal(state.presets.length, 1);
+  assert.equal(state.presets.length, 0);
+  assert.equal(state.rulesKnown, false);
 });
 
 test('demo security does not fetch or expose real rule assignments', async () => {
@@ -97,6 +98,99 @@ test('demo security does not fetch or expose real rule assignments', async () =>
   assert.equal(state.assignments.length, 4);
   assert.equal(state.assignments.every(item => item.deviceId < 0 && item.presetId < 0), true);
   assert.equal(h.calls.some(call => call.url.endsWith('/security/state')), false);
+});
+
+function routerRules() {
+  const origin = { dataSource: 'ROUTER', routerId: 1 };
+  return { ...origin, rulesComplete: true,
+    blocklists: [{ ...origin, id: 1, name: 'Router list', sourceType: 'CUSTOM', urlPattern: 'example.org' }],
+    groups: [{ ...origin, id: 2, name: 'Router group', blocklistId: 1 }],
+    presets: [{ ...origin, id: 3, name: 'Router preset', blocklistId: 1 }],
+    members: [{ ...origin, groupId: 2, deviceId: 20 }],
+    assignments: [{ ...origin, deviceId: 20, presetId: 3, status: 'active' }]
+  };
+}
+
+test('live rules require explicit origin on every record, not an apply ACK or matching router ID', async () => {
+  for (const origin of [{}, { routerId: 1 }, { routerId: 1, applied: true },
+    { routerId: 1, dataSource: 'UNKNOWN' }, { routerId: 2, dataSource: 'ROUTER' },
+    { routerId: null, dataSource: 'ROUTER' }, { routerId: true, dataSource: 'ROUTER' }]) {
+    const h = harness([live]);
+    const security = routerRules();
+    for (const key of ['blocklists', 'groups', 'presets', 'members', 'assignments']) {
+      security[key] = security[key].map(({ routerId, dataSource, ...record }) => ({ ...record, ...origin }));
+    }
+    h.context.security = security;
+    const state = await h.run('NetheraApi.getSecurityState()');
+    for (const key of ['blocklists', 'groups', 'presets', 'members', 'assignments']) assert.equal(state[key].length, 0);
+    assert.equal(state.rulesKnown, false);
+    assert.equal(state.devices[0].id, 20);
+  }
+});
+
+test('verified rules survive filtering with number or string IDs without mutating API data', async () => {
+  const h = harness([live]);
+  h.context.security = routerRules();
+  h.context.security.presets[0].routerId = '1';
+  h.context.security.assignments[0].deviceId = '20';
+  const before = JSON.stringify(h.context.security);
+  const state = await h.run('NetheraApi.getSecurityState()');
+  for (const key of ['blocklists', 'groups', 'presets', 'members', 'assignments']) assert.equal(state[key].length, 1);
+  assert.equal(state.rulesKnown, true);
+  assert.equal(JSON.stringify(h.context.security), before);
+});
+
+test('mixed sources preserve only verified records and never certify completeness', async () => {
+  const h = harness([live]);
+  h.context.security = routerRules();
+  h.context.security.blocklists.push({ id: 8, name: 'Seed list', routerId: 1 });
+  h.context.security.groups.push({ dataSource: 'ROUTER', routerId: 1, id: 9, blocklistId: 8 });
+  h.context.security.presets.push({ dataSource: 'ROUTER', routerId: 1, id: 10, blocklistId: 8 });
+  h.context.security.members.push({ dataSource: 'ROUTER', routerId: 1, deviceId: 20, groupId: 9 });
+  h.context.security.assignments.push({ dataSource: 'ROUTER', routerId: 1, deviceId: 20, presetId: 10 });
+  h.context.security.assignments.push({ dataSource: 'ROUTER', routerId: 1, deviceId: 99, presetId: 3 });
+  const state = await h.run('NetheraApi.getSecurityState()');
+  for (const key of ['blocklists', 'groups', 'presets', 'members', 'assignments']) assert.equal(state[key].length, 1);
+  assert.equal(state.rulesKnown, false);
+});
+
+test('a missing blocklist reference is unknown; explicit null means no blocklist', async () => {
+  const h = harness([live]);
+  h.context.security = routerRules();
+  delete h.context.security.groups[0].blocklistId;
+  h.context.security.presets[0].blocklistId = null;
+  const state = await h.run('NetheraApi.getSecurityState()');
+  assert.equal(state.groups.length, 0);
+  assert.equal(state.members.length, 0);
+  assert.equal(state.presets.length, 1);
+  assert.equal(state.assignments.length, 1);
+  assert.equal(state.rulesKnown, false);
+});
+
+test('only a complete router snapshot can certify absence of rules', async () => {
+  const empty = { blocklists: [], groups: [], presets: [], members: [], assignments: [] };
+  for (const metadata of [{}, { rulesComplete: true }, { dataSource: 'ROUTER', routerId: 1 },
+    { dataSource: 'ROUTER', routerId: 2, rulesComplete: true }]) {
+    const h = harness([live]); h.context.security = { ...empty, ...metadata };
+    assert.equal((await h.run('NetheraApi.getSecurityState()')).rulesKnown, false);
+  }
+  const h = harness([live]);
+  h.context.security = { ...empty, dataSource: 'ROUTER', routerId: 1, rulesComplete: true };
+  assert.equal((await h.run('NetheraApi.getSecurityState()')).rulesKnown, true);
+});
+
+test('malformed and incomplete rule responses do not leak previous or demo data', async () => {
+  const h = harness([live]);
+  for (const security of [null, [], {}, { ...routerRules(), blocklists: [null, false, { id: true }] },
+    { ...routerRules(), groups: 'bad', presets: null, assignments: {} }]) {
+    h.context.security = security;
+    const state = await h.run('NetheraApi.getSecurityState()');
+    assert.equal(state.rulesKnown, false);
+    assert.equal(state.dataMode, 'live');
+    assert.ok(state.blocklists.every(row => row.dataSource === 'ROUTER'));
+  }
+  h.context.status = 503;
+  await assert.rejects(h.run('NetheraApi.getSecurityState()'));
 });
 
 test('complete demo has consistent groups, presets, blocklists, schedules and topology', async () => {

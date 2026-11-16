@@ -33,7 +33,7 @@ const NetheraApi = (() => {
   // One relational fixture for every demo page. Negative IDs never refer to database rows.
   function demoSecurity(router) {
     return {
-      dataMode: 'demo', devices: router.devices,
+      dataMode: 'demo', rulesKnown: true, devices: router.devices,
       groups: [
         { id: -1, name: 'Familie', description: 'Smartphone und Tablet', blocklistId: -1, color: '#69c5b6' },
         { id: -2, name: 'Arbeit & Schule', description: 'Arbeitsplatz und Drucker', blocklistId: -2, color: '#6c9fdf' },
@@ -160,14 +160,32 @@ const NetheraApi = (() => {
   async function getSecurityState(router) {
     router ||= await getPrimaryRouter();
     if (router.dataMode === 'demo') return demoSecurity(router);
-    if (router.dataMode !== 'live') return { devices: router.devices, groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], dataMode: router.dataMode };
+    if (router.dataMode !== 'live') return { devices: router.devices, groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], dataMode: router.dataMode, rulesKnown: false };
     const data = await readJson('/api/security/state');
-    const ids = new Set(router.devices.map(device => Number(device.id)));
-    // Keep saved configuration, but never reintroduce seeded devices through another endpoint.
-    return { ...data, dataMode: 'live', devices: router.devices,
-      members: (data.members || []).filter(item => ids.has(Number(item.deviceId))),
-      assignments: (data.assignments || []).filter(item => ids.has(Number(item.deviceId))),
-      timeLimits: (data.timeLimits || []).filter(item => ids.has(Number(item.deviceId))) };
+    const validId = value => (typeof value === 'number' && Number.isSafeInteger(value) && value > 0)
+      || (typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value)));
+    const fromRouter = row => row?.dataSource === 'ROUTER' && validId(row.routerId)
+      && validId(router.id) && String(row.routerId) === String(router.id);
+    const rows = key => Array.isArray(data?.[key]) ? data[key] : [];
+    const ids = items => new Set(items.filter(item => validId(item?.id)).map(item => String(item.id)));
+    const deviceIds = ids(router.devices);
+    const blocklists = rows('blocklists').filter(item => fromRouter(item) && validId(item.id));
+    const blocklistIds = ids(blocklists);
+    const hasBlocklist = item => item.blocklistId === null || (validId(item.blocklistId) && blocklistIds.has(String(item.blocklistId)));
+    const groups = rows('groups').filter(item => fromRouter(item) && validId(item.id) && hasBlocklist(item));
+    const presets = rows('presets').filter(item => fromRouter(item) && validId(item.id) && hasBlocklist(item));
+    const groupIds = ids(groups);
+    const presetIds = ids(presets);
+    const members = rows('members').filter(item => fromRouter(item)
+      && validId(item.deviceId) && validId(item.groupId) && deviceIds.has(String(item.deviceId)) && groupIds.has(String(item.groupId)));
+    const assignments = rows('assignments').filter(item => fromRouter(item)
+      && validId(item.deviceId) && validId(item.presetId) && deviceIds.has(String(item.deviceId)) && presetIds.has(String(item.presetId)));
+    const rules = { blocklists, groups, presets, members, assignments };
+    // Online, routerId and an apply ACK do not prove rule origin. Absence requires a complete readback.
+    const rulesKnown = fromRouter(data) && data.rulesComplete === true
+      && Object.keys(rules).every(key => Array.isArray(data[key]) && data[key].length === rules[key].length);
+    return { ...rules, rulesKnown, dataMode: 'live', devices: router.devices,
+      timeLimits: rows('timeLimits').filter(item => item && deviceIds.has(String(item.deviceId))) };
   }
 
   async function getConnections(router) {

@@ -5,7 +5,7 @@
   const connection = value => ({ wifi: 'WLAN', wlan: 'WLAN', lan: 'LAN' }[String(value || '').toLowerCase()] || 'Unbekannt');
 
   function buildModel(router, security) {
-    const known = security != null && ['groups', 'members', 'assignments', 'presets'].every(key => Array.isArray(security[key]));
+    const known = security != null && security.rulesKnown !== false && ['groups', 'members', 'assignments', 'presets'].every(key => Array.isArray(security[key]));
     const groups = list(security?.groups).slice().sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }))
       .map((group, index) => ({ id: `group-${group.id}`, sourceId: group.id, name: group.name || 'Unbenannte Gruppe', color: colors[index % colors.length] }));
     const fallback = { id: known ? 'ungrouped' : 'unknown', name: known ? 'Ohne Gruppe' : 'Gruppe unbekannt', color: '#9aa8b0' };

@@ -21,8 +21,8 @@
       try { rules = await NetheraApi.getSecurityState(router); } catch {}
       model = buildModel(router, rules);
       groupFilter = ''; selectedId = ''; $('device-search').value = '';
-      notice(model.rulesKnown ? '' : 'Gruppen und Vorlagen konnten nicht geladen werden. Verbindungsdaten werden weiterhin angezeigt.');
-      $('network-summary').textContent = `${model.devices.length} Geräte · ${model.groups.length} Gruppen · ${model.router.name}`;
+      notice(model.rulesKnown ? '' : 'Gruppen und Vorlagen sind nicht vollständig vom Router gemeldet. Verbindungsdaten werden weiterhin angezeigt.');
+      $('network-summary').textContent = `${model.devices.length} Geräte · ${model.rulesKnown ? `${model.groups.length} Gruppen` : 'Gruppenzuordnung unvollständig'} · ${model.router.name}`;
       renderLegend(); renderGraph(); filterGraph(); showDetails();
     } catch {
       model = null;
@@ -119,7 +119,7 @@
     });
     resizeObserver.observe($('network-graph'));
     $('graph-caption').textContent = model.router.dataMode === 'demo' ? 'Beispiel-Netzwerk · Nur Ansicht'
-      : mode === 'groups' ? 'Gespeicherte Gruppenzuordnung' : 'Verbindungstyp laut Gerätedaten';
+      : mode === 'groups' ? model.rulesKnown ? 'Gruppenzuordnung vom Router' : 'Nur verifizierte Gruppenzuordnungen' : 'Verbindungstyp laut Gerätedaten';
     $('network-graph').setAttribute('aria-label', `Netzwerkgraph mit ${model.devices.length} Geräten. Auswahl auch unter Gerät auswählen.`);
   }
 
@@ -169,14 +169,14 @@
     }
     const preset = device.preset;
     const limit = device.timeLimit;
-    const presetName = !device.rulesKnown ? 'Nicht verfügbar' : preset?.name || (device.assignment ? 'Vorlagendetails fehlen' : 'Keine Vorlage zugewiesen');
+    const presetName = preset?.name || (!device.rulesKnown ? 'Nicht vom Router gemeldet' : device.assignment ? 'Vorlagendetails fehlen' : 'Keine Vorlage zugewiesen');
     const paused = device.assignment?.status === 'paused';
-    const limitText = !device.rulesKnown ? 'Nicht verfügbar' : !limit ? 'Keine Zeitregel gespeichert' : limit.status === 'paused' ? 'Pausiert' : limit.blockedFrom && limit.blockedUntil ? `${limit.blockedFrom}–${limit.blockedUntil}` : 'Kein Sperrzeitraum';
+    const limitText = !limit ? 'Keine Zeitregel geladen' : limit.status === 'paused' ? 'Pausiert' : limit.blockedFrom && limit.blockedUntil ? `${limit.blockedFrom}–${limit.blockedUntil}` : 'Kein Sperrzeitraum';
     $('device-details').innerHTML = `<p class="detail-kicker">Gerät</p><h2>${escape(device.name)}</h2>
       <section class="detail-section"><h3>Gruppenzuordnung</h3>${device.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span>${escape(group.name)}</div>`).join('')}</section>
       <section class="detail-section"><h3>Zugewiesene Vorlage</h3><strong>${escape(presetName)}</strong>${device.assignment ? `<div><span class="assignment-state">${demo ? 'Beispiel' : paused ? 'Zuweisung pausiert' : 'Gespeichert'}${demo && paused ? ' · pausiert' : ''}</span></div>` : ''}
       <p class="detail-note">${demo ? 'Keine Wirkung auf deinen Router.' : 'Die Routerwirkung ist hier nicht bestätigt.'}</p></section>
-      <section class="detail-section"><h3>Gespeicherte Regeln</h3><dl>${row('Priorität', !device.rulesKnown || (device.assignment && !preset) ? 'Nicht verfügbar' : paused ? 'Vorlage pausiert' : preset?.priorityMode ? 'Bevorzugt' : 'Normal')}${row('Sperrzeit', limitText)}${row('Tagesbudget', !device.rulesKnown ? 'Nicht verfügbar' : limit?.dailyLimitMinutes ? `${limit.dailyLimitMinutes} Minuten` : 'Kein Tagesbudget')}${row('Vorlagen-Blockliste', device.blocklist?.name || (!device.rulesKnown || preset?.blocklistId ? 'Nicht verfügbar' : 'Keine'))}</dl></section>
+      <section class="detail-section"><h3>Gespeicherte Regeln</h3><dl>${row('Priorität', (!device.rulesKnown || device.assignment) && !preset ? 'Nicht verfügbar' : paused ? 'Vorlage pausiert' : preset?.priorityMode ? 'Bevorzugt' : 'Normal')}${row('Sperrzeit', limitText)}${row('Tagesbudget', !limit ? 'Nicht verfügbar' : limit.dailyLimitMinutes ? `${limit.dailyLimitMinutes} Minuten` : 'Kein Tagesbudget')}${row('Vorlagen-Blockliste', device.blocklist?.name || (preset?.blocklistId === null ? 'Keine' : !device.rulesKnown || preset?.blocklistId ? 'Nicht verfügbar' : 'Keine'))}</dl></section>
       <section class="detail-section"><h3>Verbindung</h3><dl>${row('Typ', device.connection)}${row('IP-Adresse', device.ip)}${row('MAC-Adresse', device.mac)}${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section>`;
   }
 
