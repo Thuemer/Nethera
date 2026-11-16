@@ -59,6 +59,46 @@ Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
 ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
 `themes/nethera/README.md`.
 
+### Konfigurations-Release #26 vom 16.11.2026
+
+Nicos neue Konfigurationsseite aus `1dc4b58` (enthalten in `main` bei `d5fdf80`)
+ist jetzt ebenfalls online. Vorher wurden alle Remote-Branches abgerufen:
+`main` war aktuell; der neue Merge `ac29b02` auf `leocloud-deployment` wurde
+nicht in diesen gezielten Frontend-Build integriert. Nicos drei
+Konfigurationsdateien sind in beiden Branches identisch.
+
+Image: `ghcr.io/denizbernecker/nethera-frontend:20261116-122732`, privat,
+`linux/amd64`; der Digest steht beim Frontend in `stack.yaml`. Der Build nutzt
+die schon ausgerollten #21-Dateien plus unveraendert Nicos `configuration.html`,
+`configuration.js` und `configuration.css`. Unbenutzte Dateikopien mit ` 2`
+im Namen bleiben wie beim #21-Release ausserhalb des Images.
+
+Der Vergleich aller 76 ausgelieferten Dateien bestaetigt: Nur diese drei
+Konfigurationsdateien unterscheiden sich vom vorherigen Image. Website,
+Supportseite, App-Navigation, API-Helfer und die anderen App-Seiten sind
+bytegleich. Das Server-Routing ist ebenfalls unveraendert.
+
+Geaendert wurde nur das Frontend-Image, mit atomarer Vorher-Pruefung des
+Pod-Templates. Backend, Broker, Keycloak und beide Datenbank-Pods liefen ohne
+Neustart mit unveraenderten Images weiter. Services, Ingress, ConfigMaps, PVCs
+und Secret-Metadaten sind identisch. Keine Migration, Account-Aenderung oder
+Aenderung echter Routereinstellungen wurde ausgefuehrt.
+
+Abnahme: 62 JavaScript-Tests und ein Navigationstest erfolgreich. Die Seite
+wurde lokal und auf LeoCloud bei 320, 390, 768, 1024 und 1440 Pixeln mit offenen
+und geschlossenen erweiterten Einstellungen geprueft. Validierung, Verwerfen,
+Speicher-Payload, Fehlerbehandlung, erneutes Laden sowie schreibgeschuetzter
+Demo-/Unbekannt-Status wurden mit vollstaendig abgefangenen API-Antworten
+getestet; kein Test speicherte echte Daten. Live-Dateien stimmen mit Nicos
+Quellstand ueberein, Registry-/Pod-Digest passen, Website und Login-Endpunkt
+antworten mit HTTP 200, die API ohne Anmeldung weiterhin mit HTTP 401.
+
+Die neue Seite bestaetigt weiterhin nur das Speichern in Nethera, nicht die
+tatsaechliche Router-Uebernahme aller Konfigurationsfelder.
+Rollback nur durch Zuruecksetzen des Frontend-Images auf
+`ghcr.io/denizbernecker/nethera-frontend:20261116-112159@sha256:64b1d348c45c27da1e1804aa03ef1a329768a8edf7096f3b716691bea84b6071`.
+Nicht den gesamten Stack anwenden oder andere Dienste zuruecksetzen.
+
 ### Support-Release #21 vom 16.11.2026
 
 Nicos Supportseite ist unter `/website/html/support.html` erreichbar und von
