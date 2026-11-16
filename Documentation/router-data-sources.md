@@ -24,9 +24,9 @@ Stand: am 15.11.2026 auf LeoCloud ausgerollt. Die Image-Digests stehen in `deplo
 
 Offline- und Unknown-Antworten enthalten keine Telemetrie-Arrays mit alten echten oder Beispielwerten. Die Demo wird nur bei explizitem `demo` + `offline` oder einer erfolgreich geladenen leeren Routerliste im Frontend erzeugt. Die Demo erzeugt keine DB-Zeilen.
 
-Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Router-Snapshot, nicht die ungetrennte Geraeteliste aus `/api/security/state`. Zuordnungen und Zeitlimits anderer/alter Beispielgeraete bleiben verborgen. Gespeicherte Gruppen, Vorlagen und Sperrlisten bleiben Konfiguration, keine Bestaetigung der Routerwirkung; sie werden nicht geloescht. Die folgende lokale Erweiterung blendet solche unbestaetigten Regeln auch aus der Live-Ansicht aus.
+Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Router-Snapshot, nicht die ungetrennte Geraeteliste aus `/api/security/state`. Zuordnungen und Zeitlimits anderer/alter Beispielgeraete bleiben verborgen. Gespeicherte Gruppen, Vorlagen und Sperrlisten bleiben Konfiguration, keine Bestaetigung der Routerwirkung; sie werden nicht geloescht. Die folgende Frontend-Erweiterung blendet solche unbestaetigten Regeln auch aus der Live-Ansicht aus.
 
-### Herkunft der Schutzregeln (lokal vorbereitet, 16.11.2026)
+### Herkunft der Schutzregeln (Frontend ausgerollt, 16.11.2026)
 
 Der bisherige `SecurityStateResource` liest Gruppen, Vorlagen, Blocklisten und
 Zuweisungen aus der Datenbank ohne Herkunftsnachweis. `sourceType` beschreibt den
@@ -67,7 +67,10 @@ Frontend-Vertrag fuer eine spaetere Backend-Erweiterung von `GET /api/security/s
 Gegen das aktuell deployte Backend bleiben Blocklisten/Gruppen/Vorlagen und ihre
 Zuweisungen daher vorerst leer. Das ist **kein Nachweis**, dass am Router keine
 Regeln existieren. Topologie und Internetzeiten kennzeichnen fehlende Vorlagen
-als nicht gemeldet. Diese lokale Frontend-Aenderung ist noch nicht ausgerollt.
+als nicht gemeldet. Diese Frontend-Aenderung aus Commit `da36b43` ist mit Image-Tag
+`20261116-131208` auf LeoCloud ausgerollt. Nur das Frontend wurde aktualisiert;
+die oben beschriebene Backend-Erweiterung steht weiterhin aus.
+Digest, Abnahme und Rollback sind in `deploy/leocloud/README.md` dokumentiert.
 
 ## Noch nicht vorhandene Messungen
 

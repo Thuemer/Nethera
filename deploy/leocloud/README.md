@@ -59,6 +59,49 @@ Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
 ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
 `themes/nethera/README.md`.
 
+### Router-Regelfilter-Release vom 16.11.2026
+
+Frontend-Quellstand: `da36b438215e48289905f727171d67ee04cce6a6`.
+Image: `ghcr.io/denizbernecker/nethera-frontend:20261116-131208`, privat,
+`linux/amd64`, Digest
+`sha256:0a905350ccfb584678994c2e82e5befd0f0803b0d1eaf28c59970d1043c110d2`.
+
+Bei Live-Verbindung werden Blocklisten, Gruppen, Vorlagen und Zuweisungen nur
+mit explizitem Router-Herkunftsnachweis angezeigt. Die derzeitige API liefert
+diesen Nachweis noch nicht: Die betreffenden Listen bleiben vorerst leer,
+fehlende Zuweisungen werden als unbekannt bezeichnet. Regel-Schreibaktionen
+bleiben bis zu einem vollstaendigen Readback gesperrt, damit ausgeblendete
+Einstellungen nicht versehentlich ueberschrieben werden. Adblock-Status und
+die vollstaendige, schreibgeschuetzte Offline-Demo bleiben erhalten.
+Backend-Vertrag und Abgrenzung zur Routerwirkung: `Documentation/router-data-sources.md`.
+
+Der Build-Kontext verwendet die bereits ausgelieferte Dateimenge des #26-Releases
+mit den Dateien aus dem neuen Quellstand. Nicht ausgelieferte Backup-Kopien
+(` 2` im Dateinamen) wurden nicht nachtraeglich veroeffentlicht. Alle 76 oeffentlichen
+Dateien im fertigen Image wurden mit dem vorherigen Image verglichen. Ausschliesslich
+`api.js`, `index.html`, `security.js`, `time-limits.js`, `topologie_custom.js` und
+`topology-model.js` unterscheiden sich. Die uebrigen Dateien einschliesslich Website,
+Supportseite, Konfiguration, Login-Code und nginx-Routing sind bytegleich.
+
+Ausgerollt wurde nur ein JSON-Patch auf das Frontend-Image. Ein Vergleich des bisherigen
+Pod-Templates und der Ressourcen-Version schuetzt vor parallelen Deployment-Aenderungen.
+Backend, Broker, Keycloak und beide Datenbank-Pods liefen ohne Neustart weiter.
+Services, Ingress, ConfigMaps, PVCs und Secret-Metadaten sind unveraendert.
+Keine Migration, keine Seeds, kein Datenbank- oder Router-Schreibtest.
+
+Abnahme: 71 JavaScript-Tests, ein Navigationstest und 20 Browser-Layoutpruefungen
+bei 320, 390, 768 und 1440 Pixeln erfolgreich. Herkunftsfilter, partielle/komplette
+Readbacks, gesperrte Schreibaktionen, Demo und Reconnect mit isolierten API-Antworten
+gegen das Build-Image und die oeffentlich ausgelieferten Dateien geprueft.
+Topologie auf Desktop/Mobilgeraet nicht leer und ohne Ueberlauf. Registry-Digest
+und laufender Pod stimmen ueberein. Website, Support, Anleitung und Konfiguration
+liefern HTTP 200, die API ohne Anmeldung HTTP 401, OIDC-Metadaten HTTP 200.
+
+Rollback: ausschliesslich das Frontend-Image auf
+`ghcr.io/denizbernecker/nethera-frontend:20261116-122732@sha256:e91b53f405c31573351d7c928d65fa8de94ed49bc74477a352acc3a937deb6c3`
+zuruecksetzen. Nicht den gesamten Stack anwenden: Backend-Rollouts werden separat
+auf `leocloud-deployment` verwaltet.
+
 ### Konfigurations-Release #26 vom 16.11.2026
 
 Nicos neue Konfigurationsseite aus `1dc4b58` (enthalten in `main` bei `d5fdf80`)
