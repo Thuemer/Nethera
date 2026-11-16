@@ -47,7 +47,7 @@ In diesem Moment taucht wie selbstverständlich ein Nethera-Teammitglied auf und
 
 Das Teammitglied verlässt zufrieden das Zimmer – und geht in scheinbar einem durchgehenden Gang (unsichtbarer Schnitt) direkt zu einem frei im Dunkeln stehenden Entwickler-Schreibtisch. Die Kamera beginnt zu kreisen: Mit jedem Speed-Ramp-Schnitt sitzt ein anderes Teammitglied am Schreibtisch, Name und Zuständigkeit werden als Text eingeblendet.
 
-Zum Abschluss wieder die Haus-Totale vom Anfang: Statt des flackernden Bildschirmlichts leuchtet das Fenster jetzt warm und ruhig – dann dimmt das Licht aus. Nethera-Logo, Abspann mit Projekttitel, Team, Schule und Musiknachweis.
+Zum Abschluss wieder die Haus-Totale vom Anfang: Statt des flackernden Bildschirmlichts leuchtet das Fenster jetzt warm und ruhig – dann geht das Licht mit einem Klick aus. Nethera-Logo, Abspann mit Projekttitel, Team, Schule und Musiknachweis.
 
 *(Detaillierter Szenenablauf mit Timecodes: siehe [konzept.md](konzept.md).)*
 

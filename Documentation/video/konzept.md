@@ -46,7 +46,7 @@ In diesem Moment taucht wie selbstverständlich ein Nethera-Teammitglied auf und
 
 Das Teammitglied verlässt zufrieden das Zimmer – und geht in scheinbar einem durchgehenden Gang (unsichtbarer Schnitt) direkt zu einem frei im Dunkeln stehenden Entwickler-Schreibtisch. Die Kamera beginnt zu kreisen: Mit jedem Speed-Ramp-Schnitt sitzt ein anderes Teammitglied am Schreibtisch, Name und Zuständigkeit werden als Text eingeblendet, Nethera-Türkis als Kantenlicht.
 
-Zum Abschluss wieder die Haus-Totale vom Anfang: Statt des flackernden Bildschirmlichts leuchtet das Fenster jetzt warm und ruhig – dann dimmt das Licht aus. Nethera-Logo, Abspann.
+Zum Abschluss wieder die Haus-Totale vom Anfang: Statt des flackernden Bildschirmlichts leuchtet das Fenster jetzt warm und ruhig – dann geht das Licht mit einem Klick aus. Nethera-Logo, Abspann.
 
 ## Treatment
 
@@ -96,7 +96,7 @@ Licht: warmes Key (Softbox, ~3200 K), Monitor-Glow als Gesichtslicht, Schreibtis
 
 ### Teil 3 – Abschluss + Abspann (ca. 0:55–1:00)
 
-Gleiche Haus-Totale wie Szene 1 – jetzt leuchtet das Fenster warm und ruhig (Nachtlicht statt Flacker-Glow: visueller Reim Unruhe → Ruhe). Licht dimmt aus. Auf dem dunklen Schlussbild: Nethera-Logo, danach/darunter Abspann-Einblendungen: Projekttitel, Team, Schule, Danksagung, **Musiknachweis**.
+Gleiche Haus-Totale wie Szene 1 – jetzt leuchtet das Fenster warm und ruhig (Nachtlicht statt Flacker-Glow: visueller Reim Unruhe → Ruhe). Licht geht hart mit einem Klick aus – Schalter-Klick im Ton als Schlusspunkt, zitiert den „Ein-Klick"-Gedanken. Auf dem dunklen Schlussbild: Nethera-Logo, danach/darunter Abspann-Einblendungen: Projekttitel, Team, Schule, Danksagung, **Musiknachweis**.
 
 ## Offene Punkte
 
