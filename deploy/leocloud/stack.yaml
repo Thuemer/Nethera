@@ -319,7 +319,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: backend
-          image: ghcr.io/denizbernecker/nethera-backend:20261115-183240@sha256:733345807ec8d3b6493a6693e27462705d6251a151eda4baa7a45554534778e3
+          image: ghcr.io/denizbernecker/nethera-backend:20261116-105202@sha256:59bd548afa9f1174cd4f345870f583e71e1e8cab61eccceea23e9c886d320ea0
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

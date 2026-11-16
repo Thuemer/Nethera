@@ -264,7 +264,38 @@ ohne Schritt 2 startet das neue Image nicht
 
 Lokal geprueft: Die Migration wurde gegen eine nachgestellte alte Datenbank
 zweimal hintereinander ausgefuehrt, danach startet das Backend mit `validate`.
-In `student-it220208` selbst ist nichts davon ausgefuehrt.
+
+### Ausgerollt am 16.11.2026
+
+In `student-it220208` ist Quellstand `6065a40` als privates `linux/amd64`-Backend
+mit Tag `20261116-105202` aktiv. Der genaue Digest steht beim Backend in
+`stack.yaml`. Reihenfolge: Datenbanksicherung, Migration, Broker-ACL und
+Broker-Neustart, danach neues Backend-Image. Nicht den gesamten Stack angewendet.
+
+- Beide Datenbanken wurden ausserhalb des Repositories gesichert und die Dumps
+  auf Lesbarkeit geprueft. Die Migration wurde zuvor zweimal gegen eine isolierte
+  Kopie des echten Backups getestet; die 14 bisherigen Datentabellen blieben
+  dabei unveraendert. Die leere `config`-Tabelle erhielt genau eine Einstellungszeile.
+- 76 Backend-/Integrationstests erfolgreich, einschliesslich Routersteuerung,
+  MQTT-Telemetrie und Router-/Demo-Datentrennung. Die ACL wurde isoliert geprueft:
+  Backend darf senden, Router darf lesen und Telemetrie senden, aber keine
+  Soll-Konfiguration schreiben. Broker-Image und Passwortwerte blieben gleich.
+- Der neue Backend-Pod laeuft mit dem verifizierten Digest und `validate`.
+  Der echte Cudy bestaetigte Version `1794826560300` mit `applied: true`, ohne
+  Fehler, um `2026-11-16T10:56:00Z`. AdBlocker ist installiert und ausgeschaltet;
+  die gesendete Konfiguration enthaelt keine Netzwerk- oder Geraete-Domainsperren.
+- Website, App, Keycloak, sieben Konten samt gespeicherten Anmeldedaten, Secrets
+  und PVCs blieben unveraendert. Die neue Status-API antwortet ohne Login mit 401.
+
+Das bestaetigt den Rollout und die Uebernahme des aktuellen Zustands, nicht einen
+neuen DNS-Sperrtest auf Endgeraeten. Priorisierung (#24) und Zeitlimits (#27)
+sind nicht Bestandteil dieses Backend-Releases.
+
+Dieser Branch enthaelt aeltere Frontend-/Keycloak-Eintraege als `main` bzw. die
+laufende Cloud. Deshalb fuer diesen Release nur das Backend gezielt aktualisieren,
+niemals `kubectl apply -f deploy/leocloud/stack.yaml` fuer den gesamten Stack.
+
+### Schritte fuer einen weiteren Rollout
 
 **1. Stand holen**
 
@@ -319,13 +350,19 @@ Backend ist gestartet und hat den Soll-Zustand geschickt:
 kubectl --context leocloud -n student-it220208 logs deployment/nethera-backend | grep -i -E "started in|Schema|Router control|Subscription"
 kubectl --context leocloud -n student-it220208 exec deployment/nethera-mosquitto -- sh -c '
   mosquitto_sub -h 127.0.0.1 -u nethera-backend -P "$NETHERA_MQTT_BACKEND_PASSWORD" -t "nethera/1/config/dns" -v -C 1 -W 5
-  mosquitto_sub -h 127.0.0.1 -u router-1 -P "$NETHERA_MQTT_ROUTER1_PASSWORD" -t "nethera/1/config/dns" -C 1 -W 5 >/dev/null && echo "router-1 darf lesen"
-  mosquitto_pub -h 127.0.0.1 -u router-1 -P "$NETHERA_MQTT_ROUTER1_PASSWORD" -t nethera/1/config/dns -m x -q 1; sleep 1
-  mosquitto_sub -h 127.0.0.1 -u nethera-backend -P "$NETHERA_MQTT_BACKEND_PASSWORD" -t "nethera/1/config/dns" -C 1 -W 5 | grep -q version && echo "router-1 darf nicht schreiben"'
+  mosquitto_sub -h 127.0.0.1 -u router-1 -P "$NETHERA_MQTT_ROUTER1_PASSWORD" -t "nethera/1/config/dns" -C 1 -W 5 >/dev/null && echo "router-1 darf lesen"'
 ```
 
 Erwartet: eine Zeile `nethera/1/config/dns {"v":1,"version":...,"adblock":false,...}`,
-dann `router-1 darf lesen` und `router-1 darf nicht schreiben`.
+dann `router-1 darf lesen`. Der Adblock-Wert haengt von der gespeicherten
+Einstellung ab.
+
+Schreibverbote nur in einem isolierten Testbroker mit derselben ACL testen,
+nicht mit Testnachrichten auf dem echten Steuerungstopic. Ein unveraenderter
+Retained-Wert allein beweist kein Schreibverbot bei einem nicht-retained Publish.
+Mit MQTT 5 liefert die Ablehnung PUBACK `RC:135` (Not authorized); der Client
+kann dabei trotzdem Exitcode 0 melden. Zusaetzlich pruefen, dass der vorherige
+Retained-Inhalt unveraendert bleibt.
 
 Der Router antwortet (nur wenn der Cudy online ist und den Agent ab `6fb46ea` hat):
 
@@ -342,5 +379,8 @@ Datenbank. Dort ist der Werbeschutz anfangs aus und keine Website gesperrt. Ein
 Router mit anderem Zustand (z.B. Testsperren) wird dadurch zurueckgesetzt.
 
 **Rueckgaengig:** nur das vorherige Backend-Image wiederherstellen
-(`kubectl set image ... backend=<altes Image aus stack.yaml>`). Tabelle, Spalte
-und ACL koennen bestehen bleiben; das alte Backend ignoriert sie.
+(`kubectl set image ... backend=<vorher gesichertes Image>`). Vor diesem Release
+war das `ghcr.io/denizbernecker/nethera-backend:20261115-183240@sha256:733345807ec8d3b6493a6693e27462705d6251a151eda4baa7a45554534778e3`.
+Tabelle, Spalte und ACL koennen bestehen bleiben; das alte Backend ignoriert sie.
+Ein Image-Rollback setzt bereits uebernommene Routerregeln nicht automatisch
+zurueck. Keine Datenbank zuruecksetzen und keine PVCs loeschen.
