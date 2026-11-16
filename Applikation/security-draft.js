@@ -8,6 +8,9 @@
     blocklists: ['id', 'routerId', 'name', 'sourceType', 'urlPattern'],
     presets: ['id', 'name', 'description', 'blocklistId', 'timeLimitMinutes', 'blockedFrom', 'blockedUntil', 'parentalMode', 'priorityMode']
   };
+  function keyFor(apiBaseUrl, ownerId, router) {
+    return `nethera.security-draft.v1:${encodeURIComponent(apiBaseUrl)}:${encodeURIComponent(ownerId || 'local-preview')}:${router.id ?? 'none'}:${router.dataMode}`;
+  }
   function create(storage, key) {
     let changes = empty();
     const raw = storage.getItem(key);
@@ -31,6 +34,10 @@
       result.members = result.members.filter(item => devices.has(Number(item.deviceId)) && item.groupId != null);
       result.assignments = result.assignments.filter(item => devices.has(Number(item.deviceId)) && item.presetId != null);
       result.timeLimits = result.timeLimits.filter(item => devices.has(Number(item.deviceId)));
+      // Keep explicit removals distinguishable from missing router readback.
+      result.draftDeviceIds = Object.fromEntries(['members', 'assignments'].map(name =>
+        [name, changes[name].map(item => Number(item.deviceId)).filter(id => devices.has(id))]));
+      result.hasLocalDraft = tables.some(name => changes[name].length > 0);
       return result;
     }
     function commit(mutate) {
@@ -110,7 +117,7 @@
       reset() { storage.removeItem(key); changes = empty(); }
     };
   }
-  const api = { create };
+  const api = { create, keyFor };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.NetheraSecurityDraft = api;
 })(globalThis);

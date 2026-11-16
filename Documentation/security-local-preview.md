@@ -59,8 +59,28 @@ sessionStorage-Inhalte automatisch als Produktionsdaten hochladen.
 
 Bestehende fehlende Router-Funktionen und Readbacks bleiben offen. Diese Aenderung
 macht die Oberflaeche bedienbar, bestaetigt aber keine QoS-, Kategorie- oder
-Zeitlimit-Durchsetzung. Internetzeiten, Topologie und andere App-Seiten erhalten
-diese lokalen Entwuerfe nicht als vermeintliche Live-Daten.
+Zeitlimit-Durchsetzung. Internetzeiten und andere App-Seiten erhalten diese
+lokalen Entwuerfe nicht als vermeintliche Live-Daten.
+
+## Topologie-Vorschau (lokal vorbereitet)
+
+Die Topologie liest denselben tablokalen Entwurf mit identischem API-, Benutzer-,
+Router- und Live-/Demo-Schluessel. Gruppen, Vorlagen, Prioritaeten und zugehoerige
+Regeln erscheinen als lokale Vorschau in Graph, Legende, Filter und Geraetedetails.
+Die Meldung ueber unvollstaendigen Router-Readback wird dadurch nicht aufgehoben;
+nicht zugewiesene, unbestaetigte Geraete bleiben unbekannt. Explizites Entfernen
+einer Gruppe oder Vorlage wird als lokale Entfernung dargestellt.
+
+Geraeteinventar, Online-/Offline-Status, WLAN/LAN, IP, MAC und zuletzt gesehen
+stammen unveraendert aus dem Router-Snapshot (offline aus der getrennten Demo).
+Ein Entwurf kann keine Geraete erfinden oder online schalten. Auch "Nur online"
+verwendet ausschliesslich den Verbindungsstatus. Es gibt keine Schreibzugriffe.
+
+Beim Seitenwechsel wird der Entwurf erneut gelesen. Bereits geoeffnete Frames
+im selben Tab reagieren auf sessionStorage-Aenderungen und Verwerfen. Reload,
+Benutzer-/Routerwechsel und Fehler bleiben getrennt; bei fehlgeschlagenem
+Regelabruf werden keine Entwuerfe auf veraltete Daten gelegt. Diese Erweiterung
+ist noch nicht auf LeoCloud ausgerollt.
 
 ## Tests
 

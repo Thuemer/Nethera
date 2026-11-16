@@ -16,26 +16,31 @@
       : reference != null && time(device.lastSeen) != null && time(device.lastSeen) >= reference - ONLINE_WINDOW_MS;
     const known = security != null && security.rulesKnown !== false && ['groups', 'members', 'assignments', 'presets'].every(key => Array.isArray(security[key]));
     const groups = list(security?.groups).slice().sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }))
-      .map((group, index) => ({ id: `group-${group.id}`, sourceId: group.id, name: group.name || 'Unbenannte Gruppe', color: colors[index % colors.length] }));
+      .map((group, index) => ({ id: `group-${group.id}`, sourceId: group.id, name: group.name || 'Unbenannte Gruppe', color: colors[index % colors.length], localDraft: group.localDraft === true }));
     const fallback = { id: known ? 'ungrouped' : 'unknown', name: known ? 'Ohne Gruppe' : 'Gruppe unbekannt', color: '#9aa8b0' };
+    const draftFallback = { id: 'draft-ungrouped', name: 'Ohne Gruppe (Entwurf)', color: '#9aa8b0', localDraft: true };
     const devices = list(router?.devices).map(device => {
       const memberships = list(security?.members).filter(member => sameId(member.deviceId, device.id));
       const assignedGroups = groups.filter(group => memberships.some(member => sameId(member.groupId, group.sourceId)));
       const assignment = list(security?.assignments).find(item => sameId(item.deviceId, device.id));
       const preset = list(security?.presets).find(item => sameId(item.id, assignment?.presetId));
+      const groupDraft = memberships.some(item => item.localDraft) || assignedGroups.some(item => item.localDraft)
+        || list(security?.draftDeviceIds?.members).some(id => sameId(id, device.id));
+      const presetDraft = preset?.localDraft === true || assignment?.localDraft === true
+        || list(security?.draftDeviceIds?.assignments).some(id => sameId(id, device.id));
       return {
         id: `device-${device.id}`, sourceId: device.id,
         name: device.hostname || device.ipAddress || `Gerät ${device.id}`,
         ip: device.ipAddress || 'Nicht bekannt', mac: device.macAddress || 'Nicht bekannt',
         connection: connection(device.connectionType), lastSeen: device.lastSeen, online: isOnline(device),
-        groups: assignedGroups.length ? assignedGroups : [fallback],
-        preset: preset || null, assignment: assignment || null, rulesKnown: known,
+        groups: assignedGroups.length ? assignedGroups : [groupDraft ? draftFallback : fallback],
+        preset: preset || null, assignment: assignment || null, rulesKnown: known, groupDraft, presetDraft,
         timeLimit: list(security?.timeLimits).find(item => sameId(item.deviceId, device.id)) || null,
         blocklist: list(security?.blocklists).find(item => sameId(item.id, preset?.blocklistId)) || null
       };
     });
-    const allGroups = [...groups, fallback];
-    return { router: { name: router?.name || 'Router', model: router?.model || 'Nicht bekannt', dataMode: router?.dataMode }, devices, groups: countGroups(allGroups, devices), allGroups, rulesKnown: known };
+    const allGroups = [...groups, fallback, draftFallback];
+    return { router: { name: router?.name || 'Router', model: router?.model || 'Nicht bekannt', dataMode: router?.dataMode }, devices, groups: countGroups(allGroups, devices), allGroups, rulesKnown: known, hasLocalDraft: security?.hasLocalDraft === true };
   }
 
   const countGroups = (groups, devices) => groups.map(group => ({ ...group, count: devices.filter(device => device.groups.some(item => item.id === group.id)).length })).filter(group => group.count);

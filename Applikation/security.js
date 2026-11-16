@@ -124,7 +124,7 @@ async function loadSecurityState(refresh = false) {
     });
     const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
     const owner = account?.keycloak?.tokenParsed?.sub || 'local-preview';
-    const key = `nethera.security-draft.v1:${encodeURIComponent(API_BASE_URL)}:${encodeURIComponent(owner)}:${router.id ?? 'none'}:${router.dataMode}`;
+    const key = NetheraSecurityDraft.keyFor(API_BASE_URL, owner, router);
     draftBase = { ...data, loaded: router.dataMode !== 'unavailable', wifiNetworks: router.wifiNetworks || [] };
     if (key !== draftKey || !localDraft) {
       draftKey = key;
