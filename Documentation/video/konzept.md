@@ -18,8 +18,11 @@ Interne Aufteilung: ca. 30–35 s Story (Projektvorstellung), ca. 25–30 s Team
 
 ## Technische Eckwerte
 
-- Dreh in 50 fps (für Speed-Ramps), Auslieferung in 25 fps (PAL)
-- Belichtungszeit 1/100 beim Dreh (Faustregel 1/(2×fps))
+- Timeline/Auslieferung: 25 fps (PAL)
+- Story-Shots (S1–S10): 25 fps bei 1/50 – dunkle, statische Szenen brauchen den vollen Stop Licht und den natürlichen Motion Blur (180°-Regel)
+- Übergang + Team-Orbit: 50 fps bei 1/100 – für Speed-Ramps; Lichtverlust im Turnsaal-Setup mit mehr Licht kompensieren; Naht des unsichtbaren Schnitts liegt im Fast-Schwarzen, Blur-Unterschied unsichtbar
+- S10 als zwei Setups drehen: statischer Türrahmen-Shot (25 fps) und Follow-Out (50 fps)
+- LED-Leuchten vorab auf PWM-Flackern testen (1/50 und 1/100 sind bei 50-Hz-Netz flickersicher)
 - Neutral/LOG aufnehmen, Look im Grading
 - Abnahme durch Prof. Sivak via Microsoft Teams vor Abgabe
 
