@@ -53,6 +53,9 @@ fi
 rm -rf "$SRC"
 
 command -v iw >/dev/null || apk add iw >/dev/null 2>&1 || echo "warning: could not install iw (no internet?); devices are reported without Wi-Fi information"
+# umdns collects the names devices announce themselves (e.g. "MacBook Air von Moritz")
+[ -x /etc/init.d/umdns ] || apk add umdns >/dev/null 2>&1 || echo "warning: could not install umdns (no internet?); devices keep their DHCP names"
+[ -x /etc/init.d/umdns ] && { /etc/init.d/umdns enable; /etc/init.d/umdns running >/dev/null 2>&1 || /etc/init.d/umdns start; }
 
 /etc/init.d/nethera-agent enable
 echo "3/3 Installed $(/usr/bin/nethera-agent -version)"

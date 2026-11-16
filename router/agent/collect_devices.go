@@ -29,6 +29,9 @@ func collectDevices(src Sources) (devicesPayload, error) {
 		payload.Leases = append(payload.Leases, lease{MAC: strings.ToLower(fields[1]), IP: fields[2], Hostname: fields[3]})
 	}
 
+	// The name a device announces itself is better than its DHCP name
+	applyNames(payload.Leases, collectNames(src), src.KnownNames)
+
 	// Ping every lease once, so devices that are present show up in the ARP table
 	var sweep sync.WaitGroup
 	for _, l := range payload.Leases {

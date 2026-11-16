@@ -15,6 +15,9 @@ type Sources struct {
 	// NTPFlag is created by /etc/hotplug.d/ntp/50-nethera once the clock is synchronized
 	NTPFlag string
 
+	// KnownNames remembers the last announced name per MAC address (collect_names.go)
+	KnownNames map[string]mdnsName
+
 	// DNS control (control_dns.go)
 	DnsmasqDirGlob string // dnsmasq's include directory, its name has a random part
 	NftDir         string // fw4 includes these files inside "table inet fw4"
@@ -51,6 +54,8 @@ func RouterSources() Sources {
 		DHCPLeases: "/tmp/dhcp.leases",
 		ProcNetARP: "/proc/net/arp",
 		NTPFlag:    "/var/run/nethera-ntp-synced",
+
+		KnownNames: map[string]mdnsName{},
 
 		DnsmasqDirGlob: "/tmp/dnsmasq*.d",
 		NftDir:         "/usr/share/nftables.d/table-post",
