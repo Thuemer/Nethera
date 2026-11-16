@@ -7,9 +7,13 @@ import java.util.Set;
 
 @Entity
 @NamedQuery(name = Router.QUERY_FIND_ALL, query = "SELECT r FROM Router r")
+@NamedQuery(name = Router.QUERY_FIND_BY_OWNER, query = "SELECT r FROM Router r WHERE r.owner = :owner")
+@NamedQuery(name = Router.QUERY_FIND_BY_PAIRING_CODE, query = "SELECT r FROM Router r WHERE r.pairingCode = :code")
 public class Router extends TelemetryRecord {
 
     public final static String QUERY_FIND_ALL = "Router.findAll";
+    public final static String QUERY_FIND_BY_OWNER = "Router.findByOwner";
+    public final static String QUERY_FIND_BY_PAIRING_CODE = "Router.findByPairingCode";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +29,25 @@ public class Router extends TelemetryRecord {
 
     @Column(name = "connection_checked_at")
     private LocalDateTime connectionCheckedAt;
+
+    // One router per account: the unique FK lives here so Account stays identity-only
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_account_id", unique = true)
+    private Account owner;
+
+    // Stored trimmed and upper-case; see normalizePairingCode
+    @Column(name = "pairing_code", unique = true)
+    private String pairingCode;
+
+    public Account getOwner() { return owner; }
+    public void setOwner(Account owner) { this.owner = owner; }
+
+    public String getPairingCode() { return pairingCode; }
+    public void setPairingCode(String pairingCode) { this.pairingCode = normalizePairingCode(pairingCode); }
+
+    public static String normalizePairingCode(String code) {
+        return code == null || code.isBlank() ? null : code.trim().toUpperCase(java.util.Locale.ROOT);
+    }
 
     public LocalDateTime getConnectionCheckedAt() { return connectionCheckedAt; }
     public void setConnectionCheckedAt(LocalDateTime value) { connectionCheckedAt = value; }

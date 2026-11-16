@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "blocklists")
-public class BlockList {
+public class BlockList implements RouterScoped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

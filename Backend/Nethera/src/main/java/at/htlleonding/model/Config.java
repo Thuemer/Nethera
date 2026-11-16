@@ -5,13 +5,16 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "config")
 @NamedQuery(name = Config.QUERY_FIND_ALL, query = "SELECT c FROM Config c")
-public class Config {
+public class Config implements RouterScoped {
 
     public static final String QUERY_FIND_ALL = "Config.findAll";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "router_id", unique = true)
+    private Long routerId;
 
     @Column(name = "router_name")
     private String routerName;
@@ -107,5 +110,13 @@ public class Config {
 
     public void setProfiling(Boolean profiling) {
         this.profiling = profiling;
+    }
+
+    public Long getRouterId() {
+        return routerId;
+    }
+
+    public void setRouterId(Long routerId) {
+        this.routerId = routerId;
     }
 }

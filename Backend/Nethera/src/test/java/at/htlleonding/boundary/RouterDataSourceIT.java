@@ -76,6 +76,7 @@ class RouterDataSourceIT {
     }
 
     private at.htlleonding.dto.RouterDto read(Long id) {
+        TestRouters.own(em, "source-test", id);
         return given().when().get("/api/routers/list").then().statusCode(200).extract().jsonPath()
                 .getList("", at.htlleonding.dto.RouterDto.class).stream().filter(row -> row.id().equals(id)).findFirst().orElseThrow();
     }
