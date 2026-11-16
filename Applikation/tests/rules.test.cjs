@@ -16,7 +16,7 @@ function harness(file) {
     NetheraApi: { requireLive: async () => {}, isLive: () => true },
     window: { NETHERA_CONFIG: { API_BASE_URL: 'http://test' } },
     localStorage: { getItem: () => null, setItem() {} },
-    document: { addEventListener() {}, getElementById: field, querySelector: () => null },
+    document: { addEventListener() {}, getElementById: field, querySelector: () => null, querySelectorAll: () => [] },
     fetch: async (url, options = {}) => {
       const body = options.body ? JSON.parse(options.body) : null;
       calls.push({ url, method: options.method || 'GET', body });
@@ -180,6 +180,28 @@ test('router effect is only confirmed by an explicit applied flag', () => {
   assert.equal(h.run('routerEffect({applied:true})'), 'Nur gespeichert');
   h.run(`state.routerControl={connection:'online'};`);
   assert.equal(h.run('routerEffect({applied:true})'), 'Am Router bestätigt');
+});
+
+test('demo rules are examples rather than stored or applied settings', () => {
+  const h = securityHarness();
+  h.run(`state.dataMode='demo'; renderPriorityList(); renderAdDomains();`);
+  assert.equal(h.run('routerEffect({applied:true})'), 'Beispiel');
+  assert.match(h.field('priorityList').innerHTML, /Beispiel/);
+  assert.doesNotMatch(h.field('priorityList').innerHTML, /Nur gespeichert|Am Router bestätigt/);
+});
+
+test('offline time schedules load from the shared fixture without a limits request', async () => {
+  const h = harness('time-limits.js');
+  h.run(`NetheraApi.getSecurityState=async()=>({dataMode:'demo',devices:[{id:-1}],presets:[{id:-2}],assignments:[{deviceId:-1,presetId:-2}],timeLimits:[{id:-3,deviceId:-1,dailyLimitMinutes:120,blockedFrom:'20:30',blockedUntil:'06:30',status:'paused'}]});`);
+  await h.run('loadSecurityState()');
+  assert.equal(h.run(`state.limits['-1'].from`), '20:30');
+  assert.equal(h.run(`state.limits['-1'].dailyLimit`), 120);
+  assert.equal(h.run(`state.limits['-1'].status`), 'paused');
+  assert.equal(h.run('state.storageMode'), 'demo');
+  assert.equal(h.calls.length, 0);
+  h.run(`NetheraApi.getSecurityState=async()=>({dataMode:'unavailable',devices:[]});`);
+  await h.run('loadSecurityState()');
+  assert.equal(h.run('Object.keys(state.limits).length'), 0);
 });
 
 test('priority list confirms only the matching device and mode', () => {

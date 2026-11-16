@@ -1,0 +1,18 @@
+.support-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 36px 0; }
+.support-options .availability { margin: 0; }
+.support-options h2 { font-size: 26px; }
+#supportForm { display: grid; gap: 12px; max-width: 720px; }
+#supportForm label { margin-top: 12px; font-weight: 600; }
+#supportForm label span, #supportForm small, .muted { color: var(--muted); }
+#supportForm input, #supportForm textarea, #supportForm select { width: 100%; min-height: 48px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; }
+#supportForm textarea { resize: vertical; }
+#supportForm :is(input, textarea, select, button):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+#supportForm button { justify-self: start; border: 0; cursor: pointer; font: inherit; }
+#supportStatus:empty { display: none; }
+.support-direct { margin-top: 24px; }
+@media (max-width: 600px) {
+    .support-options { grid-template-columns: 1fr; gap: 16px; }
+    #headlineHead { flex-wrap: wrap; height: auto; gap: 12px; }
+    #headlineHead nav { flex-wrap: wrap; gap: 12px; }
+    #supportForm button { width: 100%; }
+}

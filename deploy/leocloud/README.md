@@ -6,13 +6,14 @@ Die Instanz liegt unter https://it220208.cloud.htl-leonding.ac.at/ im Namespace
 zwei PostgreSQL-Datenbanken mit eigenen PersistentVolumeClaims. Der einmalige
 Seed-Job fuegt Demo-Daten nur in leere Tabellen ein.
 
-Frontend und Backend werden als private `linux/amd64`-Images aus diesem Projekt
+Frontend, Backend und Keycloak mit Nethera-Theme werden als private `linux/amd64`-Images aus diesem Projekt
 nach `ghcr.io/denizbernecker/` gepusht. Kubernetes zieht sie ueber das Secret
 `ghcr-pull`. Datenbank-, Admin- und Demo-Passwoerter liegen ausschliesslich im
 Kubernetes-Secret `nethera-runtime`, nicht in diesem Repository. Der Cloud-Realm
 liegt als `nethera-realm`-Secret vor. Seine Login-URLs und das Demo-Passwort
-wurden fuer diese Instanz angepasst. Die Konfiguration und der Demo-Seed liegen
-in den ConfigMaps `nethera-theme` und `nethera-seed`.
+wurden fuer diese Instanz angepasst. Das aktive Login-Theme liegt im Keycloak-Image;
+die bisherige ConfigMap `nethera-theme` bleibt fuer einen Rollback erhalten, ist
+aber nicht mehr eingebunden. Der Demo-Seed liegt in `nethera-seed`.
 
 ## Zugang und Status
 
@@ -53,10 +54,66 @@ nur das betroffene Deployment gezielt aktualisieren, z.B. mit `kubectl set image
 nicht fuer einen Code-Rollout den kompletten Stack samt Seed-Job erneut anwenden.
 Danach die Rollouts sowie Image-Digests pruefen. Nie einen alten Tag erneut verwenden.
 
+Fuer das Login-Theme wird ausschliesslich `themes/nethera/` mit dem dortigen
+Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
+ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
+`themes/nethera/README.md`.
+
+### Keycloak-Theme-Release vom 16.11.2026
+
+Das Login-Theme aus Quellstand `b5c010d` wurde als privates `linux/amd64`-Image
+mit Tag `20261116-102646` ausgerollt. Der exakte Digest steht beim Keycloak-Image
+in `stack.yaml`. Die Basis ist unveraendert Keycloak 26.6.1 mit demselben
+Basis-Image-Digest; hinzugefuegt wurden nur sechs Theme-Dateien. Standard-Templates
+und Anmeldeablaeufe werden weiterhin von `keycloak.v2` geerbt.
+
+Geaendert wurde nur das Keycloak-Deployment: neues Image, Verweis auf das
+bestehende Pull-Secret und Entfernung des alten Theme-ConfigMap-Mounts. Der
+Realm-Import-Mount blieb unveraendert. Keycloak meldete beim Start, dass der
+Realm bereits existiert und der Import uebersprungen wurde.
+
+Vorher wurde die Keycloak-Datenbank ausserhalb des Repositories gesichert;
+das Backup wurde mit `pg_restore --list` auf Lesbarkeit geprueft. Vorher-/Nachher-
+Pruefsummen aller sieben Konten und sieben Credential-Datensaetze sowie der
+Realm- und Client-Einstellungen sind identisch. Secrets, ConfigMaps, PVCs und
+die uebrigen Deployments und Pods blieben unveraendert. Ausgelieferte Website-,
+App-Dateien und die OpenID-Konfiguration sind ebenfalls bytegleich geblieben.
+
+Abnahme: Rollout, Image-Digest und Theme-Dateien auf LeoCloud geprueft;
+Login-Seite auf Desktop und Mobilgeraet ohne Ueberlauf oder Ladefehler,
+Passwortanzeige funktioniert. Erfolgreiche und fehlgeschlagene Anmeldung sowie
+Passwortwechsel wurden separat mit isolierten Testkonten geprueft. Auf LeoCloud
+wurden keine echten Zugangsdaten automatisiert eingegeben oder geaendert.
+
+Ein Rollback stellt das vorher gesicherte Keycloak-Pod-Template inklusive
+altem Image und Theme-ConfigMap-Mount wieder her, nicht die Datenbank.
+Weder den kompletten Stack erneut anwenden noch Konten, Secrets oder PVCs ersetzen.
+
+### Frontend-Demo-Release vom 16.11.2026
+
+Nur das Frontend aus Quellstand `1d00c4b` wurde ausgerollt. Das private
+`linux/amd64`-Image traegt den Tag `20261116-094614`; der exakte Digest steht
+beim Frontend in `stack.yaml`. Aktualisiert wurde ausschliesslich das Image im
+bestehenden Frontend-Deployment, nicht der gesamte Stack. Backend, MQTT,
+Keycloak, Konten, Secrets und Datenbanken wurden nicht geaendert. Die uebrigen
+Pods liefen ohne Neustart weiter; Konfigurationen und PVCs blieben unveraendert.
+
+Bei bestaetigtem Offline-Status zeigt die schreibgeschuetzte Demo jetzt acht
+Geraete, drei Gruppen, drei Vorlagen, vier Sperrlisten und vier Zeitlimits
+sowie zusammenpassende Beispieldaten fuer Dashboard, Topologie und Konfiguration.
+Bei bestaetigter Routerverbindung verschwinden die Beispieldaten vollstaendig.
+Ein unbekannter Status oder API-Fehler aktiviert weiterhin keine Demo.
+
+Abnahme: Rollout und Image-Digest geprueft, ausgelieferte HTML-/JS-/CSS-Dateien
+mit dem Quellstand verglichen, Website und Keycloak erreichbar, API ohne Login
+weiterhin geschuetzt. Alle 56 Frontend-Tests erfolgreich. Online-/Offline-Wechsel
+zusaetzlich mit dem ausgelieferten API-Code und isolierten Testantworten geprueft;
+der echte Router wurde nicht getrennt und lieferte weiterhin frische Daten.
+
 ### Routerdaten-Release vom 15.11.2026
 
-Backend und Frontend aus Quellstand `5008dcf` sind ausgerollt. Die genauen Images
-sind in `stack.yaml` mit unveraenderlichen Digests festgehalten. Vor dem Backend
+Backend und Frontend aus Quellstand `5008dcf` wurden ausgerollt. Das Backend-Image
+steht weiterhin unveraendert mit Digest in `stack.yaml`. Vor dem Backend
 wurde die additive Migration `Backend/Nethera/migrations/20261115_telemetry_source.sql`
 nach Sicherung beider Datenbanken eingespielt. Das Backend verwendet jetzt
 Schema-Validierung statt automatischer Schema-Aenderungen. `Recreate` verhindert

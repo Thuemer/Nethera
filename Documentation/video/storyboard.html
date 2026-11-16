@@ -1,0 +1,393 @@
+<title>Storyboard „Gute Nacht, Internet"</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Produktions-Dokument — Panel-Grid in Abschnitten, Film-Slate-Metadaten in Mono */
+:root{
+  --bg:#f2f5f3; --card:#ffffff; --fg:#19231f; --soft:#5a6a63; --line:#d5ded9;
+  --accent:#139e82; --warm:#b4712a; --panel-edge:#19231f;
+  --display:'Archivo',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0d1210; --card:#141b18; --fg:#e5ebe7; --soft:#93a39c; --line:#243029;
+  --accent:#63e5c5; --warm:#f2b36a; --panel-edge:#000; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1210; --card:#141b18; --fg:#e5ebe7; --soft:#93a39c; --line:#243029;
+  --accent:#63e5c5; --warm:#f2b36a; --panel-edge:#000; color-scheme:dark;
+}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--display);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 64px; line-height:1.5;
+}
+.wrap{max-width:1180px; margin:0 auto}
+header.top{padding:40px 0 8px; border-bottom:1px solid var(--line); margin-bottom:8px}
+.eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+h1{font-size:clamp(26px,4.5vw,40px); font-weight:800; margin:.3em 0 .15em; text-wrap:balance}
+.sub{color:var(--soft); max-width:62ch; margin:0 0 18px}
+.specs{display:flex; flex-wrap:wrap; gap:8px 18px; font-family:var(--mono); font-size:12px; color:var(--soft); padding:12px 0 20px}
+.specs b{color:var(--fg); font-weight:600}
+h2{font-size:20px; font-weight:800; margin:40px 0 4px; display:flex; align-items:baseline; gap:12px}
+h2 .tc{font-family:var(--mono); font-size:12px; font-weight:400; color:var(--accent)}
+.secnote{color:var(--soft); font-size:14px; margin:0 0 18px; max-width:72ch}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px}
+.panel{background:var(--card); border:1px solid var(--line); border-radius:6px; overflow:hidden; display:flex; flex-direction:column}
+.frame{background:var(--panel-edge); border-bottom:1px solid var(--line)}
+.frame svg{display:block; width:100%; height:auto; max-width:100%}
+.pm{display:flex; align-items:baseline; gap:10px; padding:10px 14px 0; font-family:var(--mono); font-size:12px}
+.shot{background:var(--accent); color:var(--bg); font-weight:600; padding:1px 7px; border-radius:3px}
+.pm .t{color:var(--soft)}
+.pm .cam{margin-left:auto; color:var(--soft); text-align:right}
+.panel h3{font-size:15px; font-weight:600; margin:6px 14px 2px}
+.panel p{font-size:13px; color:var(--soft); margin:2px 14px 12px}
+.panel p b{color:var(--fg); font-weight:600}
+.dlg{font-family:var(--mono); font-size:12px; color:var(--fg); background:color-mix(in srgb,var(--accent) 9%,transparent); border-left:3px solid var(--accent); margin:0 14px 12px; padding:6px 9px; border-radius:0 4px 4px 0}
+footer{margin-top:48px; border-top:1px solid var(--line); padding-top:14px; font-family:var(--mono); font-size:12px; color:var(--soft)}
+/* SVG-Zeichenstil: Nachtszenen bleiben in beiden Themes dunkel (Filmstills) */
+svg{font-family:var(--mono)}
+svg .lbl{fill:#8fa29a; font-size:9px; letter-spacing:.08em}
+svg .cue{stroke:#dfe8e4; stroke-width:1.6; fill:none; stroke-dasharray:5 4; marker-end:url(#arr)}
+svg text.dial{fill:#dfe8e4; font-size:10px}
+</style>
+
+<div class="wrap">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gBlue"><stop offset="0" stop-color="#8ab4ff" stop-opacity=".95"/><stop offset="1" stop-color="#8ab4ff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gWarm"><stop offset="0" stop-color="#f2b36a" stop-opacity=".95"/><stop offset="1" stop-color="#f2b36a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gTeal"><stop offset="0" stop-color="#63e5c5" stop-opacity=".9"/><stop offset="1" stop-color="#63e5c5" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gPool" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2d9a0" stop-opacity=".5"/><stop offset="1" stop-color="#f2d9a0" stop-opacity=".04"/></linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#dfe8e4"/></marker>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="eyebrow">Nethera · Project Award · Videoplanung</div>
+  <h1>Storyboard „Gute Nacht, Internet"</h1>
+  <p class="sub">15 Panels zu Treatment und Konzept. Skizzen zeigen Bildaufbau, Lichtquellen und Kamerabewegung — Kadrage, Blocking und Staging sind nicht final.</p>
+  <div class="specs">
+    <span><b>16:9</b> FullHD</span><span><b>~60 s</b> gesamt</span><span>Story <b>25 fps · 1/50</b></span><span>Orbit/Übergang <b>50 fps · 1/100</b></span><span>Timeline <b>25 fps</b></span>
+    <span>Akzent <b>#63E5C5</b> (Nethera-UI)</span><span>Musik <b>lizenzfrei</b></span>
+  </div>
+</header>
+
+<h2>Teil 1 — Story <span class="tc">0:00–0:34</span></h2>
+<p class="secnote">Nacht, warme Lichtinseln. Konflikt: Eltern gegen altes Router-Interface. Wenig Dialog, Mimik trägt.</p>
+<div class="grid">
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Haus-Totale bei Nacht, ein Fenster flackert blau">
+  <rect width="320" height="180" fill="#070b12"/>
+  <circle cx="40" cy="26" r="1.2" fill="#cdd8e8"/><circle cx="90" cy="14" r="1" fill="#cdd8e8"/><circle cx="250" cy="20" r="1.3" fill="#cdd8e8"/><circle cx="300" cy="38" r="1" fill="#cdd8e8"/><circle cx="180" cy="10" r="1" fill="#cdd8e8"/>
+  <circle cx="276" cy="32" r="11" fill="#dfe6f0" opacity=".85"/><circle cx="271" cy="29" r="10" fill="#070b12"/>
+  <rect x="0" y="138" width="320" height="42" fill="#0c1310"/>
+  <rect x="18" y="104" width="54" height="34" fill="#10161f"/><polygon points="18,104 45,88 72,104" fill="#141b26"/>
+  <rect x="236" y="100" width="60" height="38" fill="#10161f"/><polygon points="236,100 266,82 296,100" fill="#141b26"/>
+  <rect x="110" y="84" width="92" height="54" fill="#161e2a"/><polygon points="110,84 156,62 202,84" fill="#1b2433"/>
+  <rect x="122" y="96" width="16" height="14" fill="#0a0f16"/><rect x="172" y="118" width="16" height="14" fill="#0a0f16"/>
+  <circle cx="180" cy="103" r="26" fill="url(#gBlue)" opacity=".8"/>
+  <rect x="172" y="96" width="16" height="14" fill="#9cc0ff"/>
+  <path d="M196 92 l7 -5 M198 103 l9 0 M196 114 l7 5" stroke="#8ab4ff" stroke-width="1.4" opacity=".8"/>
+  <text x="10" y="172" class="lbl">STATIC · TOTALE · BLAUE STUNDE</text>
+</svg></div>
+<div class="pm"><span class="shot">S1</span><span class="t">0:00–0:04</span><span class="cam">Totale · statisch</span></div>
+<h3>Hook: Haus-Totale, Nacht</h3>
+<p>Dunkle Siedlung, ein einziges Fenster <b>flackert bläulich</b> (Bildschirm-Glow). Musik setzt ruhig-gespannt ein. In der blauen Stunde drehen.</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Kind am Monitor im Screen-Glow">
+  <rect width="320" height="180" fill="#0a0d0f"/>
+  <rect x="24" y="130" width="272" height="10" fill="#131a17"/>
+  <rect x="196" y="58" width="76" height="52" rx="3" fill="#10161f" stroke="#2a3642" stroke-width="2"/>
+  <rect x="200" y="62" width="68" height="44" fill="#9cc0ff" opacity=".9"/>
+  <rect x="228" y="110" width="10" height="16" fill="#1b2430"/><rect x="214" y="126" width="38" height="5" fill="#1b2430"/>
+  <circle cx="160" cy="92" r="52" fill="url(#gBlue)" opacity=".5"/>
+  <circle cx="128" cy="82" r="16" fill="#1d2622"/>
+  <path d="M112 132 q16 -36 32 -34 q16 2 20 34 z" fill="#1d2622"/>
+  <path d="M141 80 q4 3 4 8" stroke="#9cc0ff" stroke-width="2" fill="none"/>
+  <rect x="150" y="122" width="56" height="7" rx="2" fill="#1b2430"/>
+  <text x="10" y="172" class="lbl">HALBNAH · SCREEN-GLOW ALS KEY</text>
+</svg></div>
+<div class="pm"><span class="shot">S2</span><span class="t">0:04–0:07</span><span class="cam">Halbnah · statisch</span></div>
+<h3>Kind am Bildschirm</h3>
+<p>Profil im kalten Screen-Glow, Rest des Zimmers dunkel. Ton: Game-/Klick-Geräusche leise.</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Eltern im hellen Türrahmen, Kind im Vordergrund">
+  <rect width="320" height="180" fill="#0a0d0f"/>
+  <rect x="196" y="22" width="86" height="136" fill="#241a0e"/>
+  <rect x="202" y="28" width="74" height="130" fill="url(#gWarm)" opacity=".55"/>
+  <rect x="202" y="28" width="74" height="130" fill="#3a2a14" opacity=".6"/>
+  <circle cx="226" cy="62" r="11" fill="#0f0c08"/><path d="M212 158 q2 -56 14 -58 q12 2 14 58 z" fill="#0f0c08"/>
+  <path d="M214 96 l-8 18 M238 96 l8 18" stroke="#0f0c08" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="258" cy="70" r="10" fill="#0f0c08"/><path d="M246 158 q2 -50 12 -52 q10 2 12 52 z" fill="#0f0c08"/>
+  <rect x="24" y="96" width="60" height="42" fill="#9cc0ff" opacity=".85"/>
+  <circle cx="106" cy="104" r="13" fill="#1d2622"/><path d="M92 158 q6 -30 14 -30 q10 0 14 30 z" fill="#1d2622"/>
+  <text x="10" y="172" class="lbl">HALBTOTALE · WARMES FLURLICHT HINTER ELTERN</text>
+</svg></div>
+<div class="pm"><span class="shot">S3</span><span class="t">0:07–0:10</span><span class="cam">Halbtotale · statisch</span></div>
+<h3>Eltern in der Tür</h3>
+<p>Eltern als Silhouetten im warmen Flurlicht, Arme verschränkt — Kind reagiert nicht. 2–3 schnelle Schnitte für Eskalation (Blick, Kopfschütteln, Seufzer).</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Elternteil droht, Internet abzudrehen">
+  <rect width="320" height="180" fill="#0d0b08"/>
+  <circle cx="96" cy="110" r="70" fill="url(#gWarm)" opacity=".3"/>
+  <circle cx="96" cy="74" r="22" fill="#241d14"/>
+  <path d="M58 180 q10 -62 38 -62 q28 0 38 62 z" fill="#241d14"/>
+  <path d="M126 122 l34 -16" stroke="#241d14" stroke-width="10" stroke-linecap="round"/>
+  <rect x="168" y="34" width="134" height="44" rx="6" fill="#f0ede6"/>
+  <polygon points="176,78 190,78 170,92" fill="#f0ede6"/>
+  <text x="178" y="52" fill="#19231f" font-size="10" font-weight="600">„Dann dreh ich jetzt</text>
+  <text x="178" y="66" fill="#19231f" font-size="10" font-weight="600">das Internet ab!“</text>
+  <text x="10" y="172" class="lbl">HALBNAH · LEICHTE UNTERSICHT (ENTSCHLOSSEN)</text>
+</svg></div>
+<div class="pm"><span class="shot">S4</span><span class="t">0:10–0:12</span><span class="cam">Halbnah · statisch</span></div>
+<h3>Die Drohung</h3>
+<p>Einziger lauter Dialogmoment der Eltern. Leichte Untersicht: kurz mächtig — gleich umso hilfloser.</p>
+<div class="dlg">ELTERNTEIL: „Dann dreh ich jetzt das Internet ab!"</div>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Altes Router-Interface auf Laptop, Cursor irrt umher">
+  <rect width="320" height="180" fill="#0a0d0f"/>
+  <rect x="36" y="18" width="248" height="140" rx="4" fill="#d7d3c8"/>
+  <rect x="36" y="18" width="248" height="18" fill="#8a867c"/>
+  <rect x="36" y="36" width="64" height="122" fill="#b8b4a8"/>
+  <rect x="42" y="44" width="52" height="7" fill="#8a867c"/><rect x="42" y="56" width="52" height="7" fill="#8a867c"/><rect x="42" y="68" width="52" height="7" fill="#8a867c"/><rect x="42" y="80" width="52" height="7" fill="#8a867c"/><rect x="42" y="92" width="52" height="7" fill="#8a867c"/><rect x="42" y="104" width="52" height="7" fill="#8a867c"/><rect x="42" y="116" width="52" height="7" fill="#8a867c"/><rect x="42" y="128" width="52" height="7" fill="#8a867c"/>
+  <rect x="108" y="44" width="80" height="8" fill="#9b978c"/><rect x="108" y="58" width="168" height="6" fill="#c3bfb2"/><rect x="108" y="68" width="168" height="6" fill="#c3bfb2"/><rect x="108" y="78" width="150" height="6" fill="#c3bfb2"/>
+  <rect x="108" y="92" width="80" height="8" fill="#9b978c"/><rect x="108" y="106" width="168" height="6" fill="#c3bfb2"/><rect x="108" y="116" width="168" height="6" fill="#c3bfb2"/><rect x="108" y="126" width="140" height="6" fill="#c3bfb2"/>
+  <path d="M150 100 q30 -34 60 -8 q24 20 -12 34" class="cue"/>
+  <polygon points="214,128 214,142 219,138 223,146 226,144 222,136 228,135" fill="#19231f"/>
+  <text x="246" y="56" fill="#7a2f22" font-size="22" font-weight="700">?</text>
+  <text x="10" y="172" class="lbl">DETAIL (INSERT) · CURSOR IRRT DURCH MENÜ-WUST</text>
+</svg></div>
+<div class="pm"><span class="shot">S5</span><span class="t">0:12–0:16</span><span class="cam">Detail · statisch</span></div>
+<h3>Scheitern am alten Interface</h3>
+<p>Graues, überladenes Router-UI. Hilfloses Scrollen, ratlose Gesichter im Gegenschnitt. Kind-Zeile trocken aus dem Off.</p>
+<div class="dlg">KIND (o.&#8202;S.): „Du findest die Einstellung eh nie."</div>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Teammitglied reicht Tablet mit türkis leuchtender Nethera-Oberfläche">
+  <rect width="320" height="180" fill="#0a0d0f"/>
+  <circle cx="70" cy="80" r="12" fill="#1d2622"/><path d="M56 158 q4 -56 14 -58 q10 2 14 58 z" fill="#1d2622"/>
+  <circle cx="102" cy="84" r="11" fill="#1d2622"/><path d="M90 158 q4 -52 12 -54 q9 2 12 54 z" fill="#1d2622"/>
+  <circle cx="252" cy="66" r="13" fill="#20282a"/><path d="M236 158 q4 -66 16 -68 q12 2 16 68 z" fill="#20282a"/>
+  <path d="M240 104 l-52 10" stroke="#20282a" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="172" cy="116" r="40" fill="url(#gTeal)" opacity=".55"/>
+  <rect x="152" y="104" width="40" height="26" rx="3" fill="#07211c" stroke="#63e5c5" stroke-width="1.6"/>
+  <rect x="157" y="109" width="18" height="4" fill="#63e5c5"/><rect x="157" y="117" width="30" height="3" fill="#2e6e5f"/><rect x="157" y="123" width="30" height="3" fill="#2e6e5f"/>
+  <path d="M292 60 l16 0" class="cue"/>
+  <text x="10" y="172" class="lbl">HALBTOTALE · TEAMMITGLIED TRITT VON RECHTS EIN</text>
+</svg></div>
+<div class="pm"><span class="shot">S6</span><span class="t">0:16–0:19</span><span class="cam">Halbtotale · statisch</span></div>
+<h3>Auftritt Nethera</h3>
+<p>Teammitglied tritt wie selbstverständlich ins Bild (Deus-ex-machina-Gag) und hält das Tablet hin. <b>Türkis-Glow</b> trifft die Gesichter der Eltern.</p>
+<div class="dlg">TEAMMITGLIED: „Gruppe ‚Kinder' — ein Klick."</div>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Nethera-UI: Gerät der Gruppe Kinder wird offline geschaltet">
+  <rect width="320" height="180" fill="#001818"/>
+  <rect x="44" y="20" width="232" height="140" rx="8" fill="#0d1a17" stroke="#144659" stroke-width="2"/>
+  <rect x="58" y="34" width="90" height="10" rx="2" fill="#63e5c5"/>
+  <text x="58" y="62" fill="#93a39c" font-size="9">GRUPPE · KINDER</text>
+  <rect x="58" y="70" width="204" height="30" rx="5" fill="#122520"/>
+  <circle cx="74" cy="85" r="7" fill="#1e3a33"/>
+  <text x="88" y="89" fill="#e5ebe7" font-size="9">Konsole-Kind</text>
+  <rect x="212" y="77" width="40" height="16" rx="8" fill="#2a3a36"/><circle cx="222" cy="85" r="6" fill="#93a39c"/>
+  <text x="58" y="120" fill="#93a39c" font-size="9">STATUS</text>
+  <rect x="58" y="128" width="88" height="14" rx="3" fill="#13302a"/>
+  <text x="64" y="138" fill="#63e5c5" font-size="9" font-weight="600">OFFLINE ✓</text>
+  <circle cx="232" cy="85" r="14" fill="none" stroke="#dfe8e4" stroke-width="1.6" stroke-dasharray="4 3"/>
+  <text x="10" y="172" class="lbl">DETAIL (INSERT) · ECHTE UI, FIKTIVE GERÄTENAMEN</text>
+</svg></div>
+<div class="pm"><span class="shot">S7</span><span class="t">0:19–0:23</span><span class="cam">Detail · statisch</span></div>
+<h3>Ein Klick: offline</h3>
+<p>Screen-Insert der echten Nethera-UI: Toggle kippt, Gerät offline. <b>Demodaten anonymisiert</b> (fiktive Gerätenamen) — Pflichtvorgabe.</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Bildschirm wird schwarz, Kind geht ins Bett">
+  <rect width="320" height="180" fill="#0a0d0f"/>
+  <rect x="30" y="62" width="64" height="44" rx="3" fill="#05070a" stroke="#2a3642" stroke-width="2"/>
+  <text x="46" y="88" fill="#3a4a55" font-size="8">— — —</text>
+  <rect x="52" y="106" width="9" height="14" fill="#1b2430"/>
+  <circle cx="140" cy="84" r="12" fill="#1d2622"/>
+  <path d="M128 150 q4 -46 12 -48 q9 2 12 48 z" fill="#1d2622"/>
+  <path d="M158 96 q36 -4 66 10" class="cue"/>
+  <rect x="216" y="112" width="84" height="26" rx="4" fill="#1a2420"/>
+  <rect x="216" y="104" width="22" height="12" rx="4" fill="#232e29"/>
+  <rect x="210" y="136" width="96" height="6" fill="#131a17"/>
+  <text x="10" y="172" class="lbl">HALBTOTALE · MONITOR TOT → KIND KAPITULIERT</text>
+</svg></div>
+<div class="pm"><span class="shot">S8</span><span class="t">0:23–0:26</span><span class="cam">Halbtotale · statisch</span></div>
+<h3>Bildschirm schwarz, ab ins Bett</h3>
+<p>Screen fällt auf Schwarz (Raum wird merklich dunkler — Lichtquelle weg). Kind gibt auf, trottet Richtung Bett. Komik über Körpersprache.</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Nethera-UI: Wochen-Zeitplan wird angelegt">
+  <rect width="320" height="180" fill="#001818"/>
+  <rect x="44" y="20" width="232" height="140" rx="8" fill="#0d1a17" stroke="#144659" stroke-width="2"/>
+  <text x="58" y="42" fill="#93a39c" font-size="9">ZEITPLAN · GRUPPE KINDER</text>
+  <text x="58" y="66" fill="#e5ebe7" font-size="8">MO</text><rect x="86" y="58" width="112" height="10" rx="3" fill="#63e5c5"/>
+  <text x="58" y="86" fill="#e5ebe7" font-size="8">DI</text><rect x="86" y="78" width="112" height="10" rx="3" fill="#63e5c5"/>
+  <text x="58" y="106" fill="#e5ebe7" font-size="8">MI</text><rect x="86" y="98" width="130" height="10" rx="3" fill="#63e5c5"/>
+  <text x="58" y="126" fill="#e5ebe7" font-size="8">SA</text><rect x="86" y="118" width="170" height="10" rx="3" fill="#2e6e5f"/>
+  <text x="200" y="66" fill="#93a39c" font-size="8">bis 20:30</text>
+  <rect x="58" y="138" width="74" height="14" rx="3" fill="#63e5c5"/>
+  <text x="66" y="148" fill="#001818" font-size="9" font-weight="600">Speichern</text>
+  <path d="M262 40 q10 50 0 104" class="cue"/>
+  <text x="10" y="172" class="lbl">DETAIL · KURZER TILT/SCROLL ÜBER WEITERE FEATURES</text>
+</svg></div>
+<div class="pm"><span class="shot">S9</span><span class="t">0:26–0:29</span><span class="cam">Detail · leichter Tilt</span></div>
+<h3>Zeitplan für die Zukunft</h3>
+<p>Eltern legen Wochen-Zeitplan an. Beim Scroll streifen weitere Features (Adblocker, Priorisierung) sichtbar vorbei — Projektumfang nebenbei gezeigt.</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Kind schläft beim Nachtlicht, Teammitglied geht aus dem Türrahmen">
+  <rect width="320" height="180" fill="#0a0d0f"/>
+  <rect x="20" y="30" width="190" height="128" fill="#0e1412"/>
+  <rect x="34" y="104" width="104" height="30" rx="5" fill="#1a2420"/>
+  <rect x="36" y="96" width="26" height="14" rx="5" fill="#232e29"/>
+  <circle cx="49" cy="100" r="7" fill="#20282a"/>
+  <circle cx="156" cy="118" r="20" fill="url(#gWarm)" opacity=".8"/>
+  <rect x="151" y="116" width="9" height="12" rx="2" fill="#f2b36a"/>
+  <rect x="216" y="26" width="78" height="136" fill="#120e08"/>
+  <circle cx="252" cy="64" r="13" fill="#20282a"/>
+  <path d="M236 162 q4 -68 16 -70 q12 2 16 70 z" fill="#20282a"/>
+  <path d="M262 52 q6 6 0 10" stroke="#63e5c5" stroke-width="1.4" fill="none" opacity=".7"/>
+  <path d="M272 92 l34 0" class="cue"/>
+  <text x="10" y="172" class="lbl">HALBTOTALE · NACHTLICHT EINZIGE QUELLE · ABGANG RECHTS →</text>
+</svg></div>
+<div class="pm"><span class="shot">S10</span><span class="t">0:29–0:34</span><span class="cam">Halbtotale → Kamera folgt</span></div>
+<h3>Ruhe. Abgang.</h3>
+<p>Kind schläft, warmes Nachtlicht. Teammitglied im Türrahmen, zufriedenes Lächeln, dreht ab und <b>geht rechts aus dem Bild</b> — Kamera nimmt die Bewegung auf.</p>
+</article>
+
+</div>
+
+<h2>Übergang — „Keynote-Gang" <span class="tc">unsichtbarer Schnitt</span></h2>
+<p class="secnote">Kamera folgt am Gimbal, beide Naht-Shots in 50 fps (Ramp-Option in den Orbit; Blur-Unterschied im Fast-Schwarzen unsichtbar). Match: gleiche Laufrichtung, Tempo (Schritte zählen), Kamerahöhe, Brennweite. Fallback: harter Match Cut — Shot A länger laufen lassen. S10 als zwei Setups: statischer Türrahmen (25 fps), Follow-Out (50 fps).</p>
+<div class="grid">
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Rücken füllt den Frame, verstecker Schnitt im Dunkel">
+  <rect width="320" height="180" fill="#07090b"/>
+  <path d="M60 180 q10 -120 50 -140 q20 -10 44 0 q40 20 50 140 z" fill="#101513"/>
+  <circle cx="156" cy="34" r="26" fill="#101513"/>
+  <rect x="236" y="0" width="84" height="180" fill="#030405"/>
+  <line x1="236" y1="0" x2="236" y2="180" stroke="#63e5c5" stroke-width="1.6" stroke-dasharray="6 5"/>
+  <text x="244" y="96" fill="#63e5c5" font-size="9" transform="rotate(90 244 96)">CUT HIER — FRAME DUNKEL</text>
+  <path d="M30 90 l20 0" class="cue"/>
+  <text x="10" y="172" class="lbl">KAMERA FOLGT · RÜCKEN/TÜRSTOCK FÜLLT FRAME</text>
+</svg></div>
+<div class="pm"><span class="shot">T1</span><span class="t">Naht A</span><span class="cam">Follow · Gimbal</span></div>
+<h3>Frame läuft zu</h3>
+<p>Rücken bzw. Türstock schiebt sich durchs Bild, bis es (fast) schwarz ist. Dort sitzt der versteckte Schnitt — in Post evtl. 2–3 Frames blenden.</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Aus dem Dunkel in die Lichtinsel zum Schreibtisch">
+  <rect width="320" height="180" fill="#030405"/>
+  <polygon points="208,0 272,0 304,150 176,150" fill="url(#gPool)"/>
+  <rect x="196" y="112" width="92" height="8" fill="#1a1f1d"/>
+  <rect x="206" y="120" width="7" height="34" fill="#151917"/><rect x="268" y="120" width="7" height="34" fill="#151917"/>
+  <rect x="226" y="86" width="34" height="24" rx="2" fill="#07211c" stroke="#63e5c5" stroke-width="1.4"/>
+  <rect x="240" y="110" width="5" height="4" fill="#151917"/>
+  <circle cx="70" cy="74" r="12" fill="#14181a"/>
+  <path d="M56 160 q4 -62 14 -64 q10 2 14 64 z" fill="#14181a"/>
+  <path d="M96 100 q44 -6 86 6" class="cue"/>
+  <text x="10" y="172" class="lbl">GLEICHE BEWEGUNG LÄUFT WEITER · ER TRITT IN DIE LICHTINSEL</text>
+</svg></div>
+<div class="pm"><span class="shot">T2</span><span class="t">Naht B</span><span class="cam">Follow · Gimbal</span></div>
+<h3>Ankunft am Setup</h3>
+<p>Turnsaal, schwarz. Er geht aus dem Dunkel in die Lichtinsel, setzt sich — die Folgebewegung der Kamera <b>mündet direkt in den Orbit</b>.</p>
+</article>
+
+</div>
+
+<h2>Teil 2 — Team <span class="tc">0:34–0:55</span></h2>
+<p class="secnote">Schreibtisch frei im schwarzen Raum. Teil-Orbits à 90–120°, Speed-Ramp-Schnitt an der Seite, pro Person ~4–5 s. Vorstellung per Text-Einblendung: Name + Zuständigkeit. 5 Personen: Deniz Bernecker, Manuel Freihaut, Nico Hofer, Moritz Kapeller, Tobias Huemer.</p>
+<div class="grid">
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Draufsicht: Kamerabogen um den Schreibtisch mit Schnittpunkten">
+  <rect width="320" height="180" fill="#0b0e0d"/>
+  <rect x="138" y="76" width="44" height="22" rx="2" fill="#1a2420" stroke="#2e3a34" stroke-width="1.4"/>
+  <circle cx="160" cy="112" r="7" fill="#20282a"/>
+  <path d="M68 150 A 100 72 0 0 1 252 150" fill="none" stroke="#dfe8e4" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+  <circle cx="68" cy="150" r="5" fill="#63e5c5"/><circle cx="252" cy="150" r="5" fill="#63e5c5"/>
+  <text x="40" y="168" fill="#63e5c5" font-size="9">CUT</text><text x="246" y="168" fill="#63e5c5" font-size="9">CUT</text>
+  <rect x="150" y="146" width="20" height="12" rx="2" fill="#dfe8e4"/><polygon points="150,152 142,148 142,156" fill="#dfe8e4"/>
+  <text x="178" y="156" class="lbl">KAMERA · GIMBAL</text>
+  <circle cx="92" cy="40" r="4" fill="#f2b36a"/><text x="100" y="43" class="lbl">KEY (WARM)</text>
+  <circle cx="236" cy="40" r="4" fill="#63e5c5"/><text x="244" y="43" class="lbl">RGB (TÜRKIS)</text>
+  <text x="10" y="20" class="lbl">DRAUFSICHT · BOGEN 90–120° · LICHTER AUSSERHALB DES BOGENS</text>
+</svg></div>
+<div class="pm"><span class="shot">T3</span><span class="t">Setup-Plan</span><span class="cam">Draufsicht (Schema)</span></div>
+<h3>Orbit-Schema</h3>
+<p>Teil-Orbit vorne herum, Schnittpunkte seitlich (Bodenmarkierung!). Key warm von links oben, Türkis-Kante von rechts hinten — beide außerhalb des Kamerabogens.</p>
+</article>
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Teammitglied am Schreibtisch, Name als Einblendung, Orbit-Pfeil">
+  <rect width="320" height="180" fill="#050607"/>
+  <circle cx="160" cy="70" r="64" fill="url(#gTeal)" opacity=".16"/>
+  <rect x="96" y="104" width="128" height="7" fill="#1a1f1d"/>
+  <rect x="106" y="111" width="6" height="36" fill="#151917"/><rect x="208" y="111" width="6" height="36" fill="#151917"/>
+  <rect x="128" y="72" width="44" height="30" rx="2" fill="#07211c" stroke="#63e5c5" stroke-width="1.6"/>
+  <rect x="133" y="78" width="20" height="4" fill="#63e5c5"/><rect x="133" y="86" width="32" height="3" fill="#2e6e5f"/><rect x="133" y="92" width="32" height="3" fill="#2e6e5f"/>
+  <rect x="178" y="92" width="22" height="12" rx="2" fill="#151917"/>
+  <circle cx="196" cy="58" r="13" fill="#232c28"/>
+  <path d="M182 104 q4 -34 14 -36 q11 2 14 36 z" fill="#232c28"/>
+  <path d="M208 50 q5 -8 -2 -12" stroke="#63e5c5" stroke-width="1.4" fill="none" opacity=".8"/>
+  <path d="M44 150 q116 26 232 0" class="cue"/>
+  <rect x="96" y="124" width="150" height="24" rx="3" fill="#0d1a17" stroke="#144659" stroke-width="1.2"/>
+  <text x="104" y="134" fill="#e5ebe7" font-size="9" font-weight="600">VORNAME NACHNAME</text>
+  <text x="104" y="144" fill="#63e5c5" font-size="8">ZUSTÄNDIGKEIT</text>
+  <rect x="270" y="16" width="38" height="18" rx="3" fill="#63e5c5"/><text x="278" y="29" fill="#050607" font-size="10" font-weight="700">× 5</text>
+  <text x="10" y="172" class="lbl">HALBNAH · ORBIT + SPEED-RAMP AN DER SEITE · 50 FPS</text>
+</svg></div>
+<div class="pm"><span class="shot">S11</span><span class="t">0:34–0:55</span><span class="cam">Orbit · Speed-Ramp</span></div>
+<h3>Teamvorstellung im Orbit</h3>
+<p>Pro Umdrehung ein Teammitglied, kleine natürliche Aktion (tippen, zunicken). Lower Third: <b>Name + Zuständigkeit</b>. Monitor zeigt Nethera-UI → Türkis motiviert.</p>
+</article>
+
+</div>
+
+<h2>Teil 3 — Abschluss <span class="tc">0:55–1:00</span></h2>
+<div class="grid">
+
+<article class="panel">
+<div class="frame"><svg viewBox="0 0 320 180" role="img" aria-label="Haus-Totale, Fenster leuchtet warm und dimmt aus, Logo">
+  <rect width="320" height="180" fill="#070b12"/>
+  <circle cx="40" cy="26" r="1.2" fill="#cdd8e8"/><circle cx="90" cy="14" r="1" fill="#cdd8e8"/><circle cx="250" cy="20" r="1.3" fill="#cdd8e8"/><circle cx="300" cy="38" r="1" fill="#cdd8e8"/>
+  <circle cx="276" cy="32" r="11" fill="#dfe6f0" opacity=".85"/><circle cx="271" cy="29" r="10" fill="#070b12"/>
+  <rect x="0" y="138" width="320" height="42" fill="#0c1310"/>
+  <rect x="18" y="104" width="54" height="34" fill="#10161f"/><polygon points="18,104 45,88 72,104" fill="#141b26"/>
+  <rect x="236" y="100" width="60" height="38" fill="#10161f"/><polygon points="236,100 266,82 296,100" fill="#141b26"/>
+  <rect x="110" y="84" width="92" height="54" fill="#161e2a"/><polygon points="110,84 156,62 202,84" fill="#1b2433"/>
+  <circle cx="180" cy="103" r="22" fill="url(#gWarm)" opacity=".75"/>
+  <rect x="172" y="96" width="16" height="14" fill="#f2b36a"/>
+  <text x="128" y="42" fill="#63e5c5" font-size="17" font-weight="700" letter-spacing="3">NETHERA</text>
+  <text x="124" y="56" fill="#8fa29a" font-size="7">TEAM · SCHULE · MUSIKNACHWEIS</text>
+  <text x="10" y="172" class="lbl">TOTALE WIE S1 · LICHT GEHT PER KLICK AUS → ABSPANN AUF SCHWARZ</text>
+</svg></div>
+<div class="pm"><span class="shot">S12</span><span class="t">0:55–1:00</span><span class="cam">Totale · statisch</span></div>
+<h3>Klammer: Ruhe im Haus</h3>
+<p>Gleiche Kadrage wie S1 — statt Flackern jetzt <b>warmes, ruhiges Nachtlicht</b>, das hart mit einem Klick ausgeht (Schalter-Klick im Ton als Schlusspunkt — zitiert den „Ein-Klick“-Gedanken). Visueller Reim Unruhe → Ruhe. Logo + Abspann (Titel, Team, Schule, Musiknachweis) auf dem dunklen Schlussbild.</p>
+</article>
+
+</div>
+
+<footer>Nethera · Storyboard v1 · 16.11.2026 · Details: Documentation/video/konzept.md + treatment.md</footer>
+</div>

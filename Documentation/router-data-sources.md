@@ -28,6 +28,29 @@ Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Ro
 
 ## Noch nicht vorhandene Messungen
 
+### Vollstaendige Offline-Demo (lokale Erweiterung vom 16.11.2026)
+
+Die Frontend-Fixtures in `Applikation/api.js` enthalten acht Geraete, drei Gruppen,
+drei Vorlagen, vier Sperrlisten, vier zugewiesene Zeitplaene (davon einen pausierten),
+WLAN-Beispiele, DNS-, Aktivitaets- und Geschwindigkeitsdaten sowie eine Beispiel-Konfiguration.
+Schutz, Internetzeiten und Topologie verwenden dieselben Zuordnungen. Die Summe der
+Beispiel-Geraeteraten stimmt mit dem letzten Netzwerk-Messpunkt ueberein.
+
+Alle Beispiel-Entitaeten verwenden negative IDs. Demo-Daten werden weder aus der
+Produktivdatenbank gelesen noch dorthin geschrieben. Die Konfigurations- und
+Regel-Endpunkte werden offline nicht abgefragt. Beispiele sind nur zur Ansicht;
+Installation, Speichern, Entfernen und Umschalten bleiben gesperrt. Suchfelder,
+Filter und Detailansichten bleiben bedienbar. Es wird keine echte Routerwirkung
+simuliert oder als bestaetigt dargestellt.
+
+Die API-Herkunftsregeln bleiben unveraendert: Bei `live` werden keine leeren Streams
+oder Regeln mit Beispielen aufgefuellt; bei unbekanntem Status und API-Fehlern gibt
+es keine Demo. Die Erweiterung benoetigt keine Backend- oder Datenbankaenderung.
+Die lokal gestartete und die spaeter ausgerollte Version verwenden denselben
+Fixture-Code, unabhaengig von SQL-Seeds in der jeweiligen Datenbank.
+
+### Ausstehende Live-Daten
+
 - WLAN-Analyse: die bisher fest eingebauten Netzwerke werden nur noch als ausdrueckliche Demo gezeigt. Live erwartet optional `wifiNetworks` im Router-Snapshot; bis es ein echtes Scan-Backend gibt, erscheint ein Leerzustand.
 - `/api/connections/list` hat bisher keine Herkunft/Router-Zuordnung. Live werden nur Eintraege mit `dataSource: "ROUTER"` und passender `routerId` akzeptiert. Diese Erweiterung/Erfassung muss das Backend-Team fuer echte Einzelverbindungen liefern. Die Router-Gesamtgeschwindigkeit bleibt separat verfuegbar.
 - Die konfigurierte Router-IP ist kein Messwert und wird nicht mehr als live ermittelte IP dargestellt. Fuer diese Anzeige ist ein vom Backend geliefertes `ipAddress` erforderlich.
