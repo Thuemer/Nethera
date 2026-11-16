@@ -1,13 +1,12 @@
 const appConfig = window.NETHERA_CONFIG || {};
 const API_BASE_URL = appConfig.API_BASE_URL || 'http://localhost:8080';
-const CONFIG_API_URL = `${API_BASE_URL}/api/configs/list`;
 let activeConfigId = null;
 let savedConfig = null;
 let saving = false;
 
 function readForm() {
   return {
-    routerName: document.getElementById('routerName').value.trim() || 'Nethera Router',
+    routerName: document.getElementById('routerName').value.trim(),
     mode: document.getElementById('securityMode').value,
     updates: document.getElementById('updates').checked,
     dnsBlocking: document.getElementById('dnsBlocking').checked,
@@ -24,7 +23,7 @@ function hasUnsavedChanges() {
 
 function updateChangeState() {
   const dirty = hasUnsavedChanges();
-  const saveButton = document.querySelector('app-hero button[data-action="hero-button"]');
+  const saveButton = document.getElementById('saveConfig');
   if (saveButton) saveButton.disabled = !dirty || saving || !NetheraApi.isLive();
   document.getElementById('discardChanges').disabled = !dirty || saving;
   document.getElementById('changeState').textContent = saving
@@ -42,15 +41,31 @@ function discardChanges() {
 function normalizeConfig(config) {
   return {
     id: config.id,
-    routerName: config.routerName ?? config.router_name ?? 'Unbenannter Router',
-    mode: config.mode ?? '—',
+    routerName: config.routerName ?? config.router_name ?? '',
+    mode: config.mode ?? '',
     updates: Boolean(config.updates),
     dnsBlocking: Boolean(config.dnsBlocking ?? config.dns_blocking),
-    lanIp: config.lanIp ?? config.lan_ip ?? '—',
-    gatewayIp: config.gatewayIp ?? config.gateway_ip ?? '—',
+    lanIp: config.lanIp ?? config.lan_ip ?? '',
+    gatewayIp: config.gatewayIp ?? config.gateway_ip ?? '',
     guestNetwork: Boolean(config.guestNetwork ?? config.guest_network),
     profiling: Boolean(config.profiling ?? config.profimetric)
   };
+}
+
+function isRouterAddress(value) {
+  const parts = value.split('.');
+  return parts.length === 4 && parts.every(part => /^(0|[1-9]\d{0,2})$/.test(part) && Number(part) <= 255)
+    && Number(parts[0]) > 0 && Number(parts[0]) < 224 && Number(parts[0]) !== 127;
+}
+
+function configErrors(config) {
+  const errors = {};
+  if (!config.routerName || config.routerName.length > 100) errors.routerName = 'Bitte gib einen Routernamen mit 1 bis 100 Zeichen ein.';
+  if (!['GATEWAY', 'REPEATER', 'BRIDGE'].includes(config.mode)) errors.securityMode = 'Bitte wähle einen Betriebsmodus aus.';
+  for (const field of ['lanIp', 'gatewayIp']) {
+    if (!isRouterAddress(config[field])) errors[field] = 'Bitte gib eine gültige IPv4-Adresse ein, zum Beispiel 192.168.1.1.';
+  }
+  return errors;
 }
 
 function setStatus(text, tone = 'info') {
@@ -58,7 +73,15 @@ function setStatus(text, tone = 'info') {
   document.getElementById('statusBox')?.setAttribute('state', tone);
 }
 
+function clearErrors() {
+  for (const id of ['routerName', 'securityMode', 'lanIp', 'gatewayIp']) {
+    document.getElementById(id).removeAttribute('aria-invalid');
+    document.getElementById(`${id}Error`).textContent = '';
+  }
+}
+
 function fillForm(config) {
+  clearErrors();
   activeConfigId = config.id;
   document.getElementById('routerName').value = config.routerName;
   const modeSelect = document.getElementById('securityMode');
@@ -73,10 +96,11 @@ function fillForm(config) {
 }
 
 async function loadConfigs() {
-  const saveButton = document.querySelector('app-hero button[data-action="hero-button"]');
+  const saveButton = document.getElementById('saveConfig');
   try {
     const router = await NetheraApi.getPrimaryRouter();
     const config = await NetheraApi.getConfiguration(router);
+    document.getElementById('retryConfig').hidden = true;
     if (config) {
       fillForm(normalizeConfig(config));
       savedConfig = readForm();
@@ -85,6 +109,7 @@ async function loadConfigs() {
       savedConfig = null;
       clearForm();
     }
+    document.getElementById('configName').textContent = config?.routerName || config?.router_name || 'Noch kein Router eingerichtet.';
     document.getElementById('configFields').disabled = !config || router.dataMode !== 'live';
     updateChangeState();
 
@@ -93,6 +118,8 @@ async function loadConfigs() {
         : config ? 'Konfiguration aktualisiert.' : 'Noch keine Konfiguration vorhanden.',
     router.dataMode === 'live' && config ? 'success' : 'info');
   } catch (error) {
+    document.getElementById('retryConfig').hidden = false;
+    document.getElementById('configName').textContent = 'Konfiguration nicht verfügbar.';
     activeConfigId = null;
     savedConfig = null;
     clearForm();
@@ -117,6 +144,17 @@ async function saveConfig() {
   if (!activeConfigId) return setStatus('Keine Konfiguration zum Speichern geladen.', 'error');
   if (saving || !hasUnsavedChanges()) return;
   const payload = readForm();
+  clearErrors();
+  const errors = configErrors(payload);
+  for (const [id, message] of Object.entries(errors)) {
+    document.getElementById(id).setAttribute('aria-invalid', 'true');
+    document.getElementById(`${id}Error`).textContent = message;
+  }
+  if (Object.keys(errors).length) {
+    if (errors.lanIp || errors.gatewayIp) document.getElementById('advancedSettings').open = true;
+    document.getElementById(Object.keys(errors)[0]).focus();
+    return setStatus('Bitte korrigiere die markierten Eingaben. Es wurde nichts gespeichert.', 'error');
+  }
   saving = true;
   document.getElementById('configFields').disabled = true;
   updateChangeState();
@@ -131,7 +169,8 @@ async function saveConfig() {
     });
     if (!response.ok) throw new Error(`API ${response.status}`);
     savedConfig = payload;
-    setStatus('Konfiguration gespeichert.', 'success');
+    document.getElementById('configName').textContent = payload.routerName;
+    setStatus('In Nethera gespeichert. Die Übernahme am Router wird hier noch nicht bestätigt.', 'success');
   } finally {
     saving = false;
     document.getElementById('configFields').disabled = !NetheraApi.isLive();
@@ -139,11 +178,14 @@ async function saveConfig() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelector('app-hero').addEventListener('hero-click', () => {
+if (typeof module !== 'undefined') module.exports = { normalizeConfig, isRouterAddress, configErrors };
+if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('configForm').addEventListener('submit', event => {
+    event.preventDefault();
     saveConfig().catch(error => setStatus(`Speichern fehlgeschlagen: ${error.message}`, 'error'));
   });
 
+  document.getElementById('retryConfig').addEventListener('click', loadConfigs);
   const fields = document.getElementById('configFields');
   fields.addEventListener('input', updateChangeState);
   fields.addEventListener('change', updateChangeState);
