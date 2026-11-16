@@ -312,7 +312,7 @@ spec:
         - name: ghcr-pull
       containers:
         - name: frontend
-          image: ghcr.io/denizbernecker/nethera-frontend:20261115-183517@sha256:92ea6cd566c76e92b4293f5f228c7549b90e9a5f72e8af01d2c0318ff21e3ee4
+          image: ghcr.io/denizbernecker/nethera-frontend:20261116-094614@sha256:9861a4b761e08cb7725e567539ea14d875f7c137c49ce4f8223a720ad608778d
           imagePullPolicy: Always
           ports:
             - containerPort: 80

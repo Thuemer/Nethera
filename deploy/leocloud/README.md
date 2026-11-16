@@ -53,10 +53,31 @@ nur das betroffene Deployment gezielt aktualisieren, z.B. mit `kubectl set image
 nicht fuer einen Code-Rollout den kompletten Stack samt Seed-Job erneut anwenden.
 Danach die Rollouts sowie Image-Digests pruefen. Nie einen alten Tag erneut verwenden.
 
+### Frontend-Demo-Release vom 16.11.2026
+
+Nur das Frontend aus Quellstand `1d00c4b` wurde ausgerollt. Das private
+`linux/amd64`-Image traegt den Tag `20261116-094614`; der exakte Digest steht
+beim Frontend in `stack.yaml`. Aktualisiert wurde ausschliesslich das Image im
+bestehenden Frontend-Deployment, nicht der gesamte Stack. Backend, MQTT,
+Keycloak, Konten, Secrets und Datenbanken wurden nicht geaendert. Die uebrigen
+Pods liefen ohne Neustart weiter; Konfigurationen und PVCs blieben unveraendert.
+
+Bei bestaetigtem Offline-Status zeigt die schreibgeschuetzte Demo jetzt acht
+Geraete, drei Gruppen, drei Vorlagen, vier Sperrlisten und vier Zeitlimits
+sowie zusammenpassende Beispieldaten fuer Dashboard, Topologie und Konfiguration.
+Bei bestaetigter Routerverbindung verschwinden die Beispieldaten vollstaendig.
+Ein unbekannter Status oder API-Fehler aktiviert weiterhin keine Demo.
+
+Abnahme: Rollout und Image-Digest geprueft, ausgelieferte HTML-/JS-/CSS-Dateien
+mit dem Quellstand verglichen, Website und Keycloak erreichbar, API ohne Login
+weiterhin geschuetzt. Alle 56 Frontend-Tests erfolgreich. Online-/Offline-Wechsel
+zusaetzlich mit dem ausgelieferten API-Code und isolierten Testantworten geprueft;
+der echte Router wurde nicht getrennt und lieferte weiterhin frische Daten.
+
 ### Routerdaten-Release vom 15.11.2026
 
-Backend und Frontend aus Quellstand `5008dcf` sind ausgerollt. Die genauen Images
-sind in `stack.yaml` mit unveraenderlichen Digests festgehalten. Vor dem Backend
+Backend und Frontend aus Quellstand `5008dcf` wurden ausgerollt. Das Backend-Image
+steht weiterhin unveraendert mit Digest in `stack.yaml`. Vor dem Backend
 wurde die additive Migration `Backend/Nethera/migrations/20261115_telemetry_source.sql`
 nach Sicherung beider Datenbanken eingespielt. Das Backend verwendet jetzt
 Schema-Validierung statt automatischer Schema-Aenderungen. `Recreate` verhindert
