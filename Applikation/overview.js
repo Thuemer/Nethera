@@ -1,3 +1,7 @@
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+}
+
 // Basis Card-Komponente
 let primaryRouterPromise = null;
 
@@ -5,7 +9,7 @@ function formatDateTime(value) {
     if (!value) return '—';
 
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+    if (Number.isNaN(date.getTime())) return '—';
 
     return date.toLocaleString('de-DE', {
         year: 'numeric',
@@ -19,11 +23,8 @@ function formatDateTime(value) {
 function formatTime(value) {
     if (!value) return '--:--';
 
-    const localTime = String(value).match(/T(\d{2}:\d{2})/);
-    if (localTime) return localTime[1];
-
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+    if (Number.isNaN(date.getTime())) return '—';
 
     return date.toLocaleTimeString('de-DE', {
         hour: '2-digit',
@@ -64,8 +65,8 @@ class DashboardCard extends HTMLElement {
         
         let headerHTML = `
             <div class="card-header">
-                <h2>${title}</h2>
-                ${icon ? `<span class="icon">${icon}</span>` : ''}
+                <h2>${escapeHtml(title)}</h2>
+                ${icon ? `<span class="icon">${escapeHtml(icon)}</span>` : ''}
             </div>
         `;
         
@@ -124,8 +125,8 @@ class RouterCard extends HTMLElement {
                         <span class="card-kpi-value">${devices}</span>
                     </div>
                 </div>
-                <div class="card-detail-row"><span class="card-detail-label">Zuletzt gesehen</span><span class="card-detail-value">${lastSeen}</span></div>
-                <div class="card-detail-row"><span class="card-detail-label">Firmware</span><span class="card-detail-value">${firmware}</span></div>
+                <div class="card-detail-row"><span class="card-detail-label">Zuletzt gesehen</span><span class="card-detail-value">${escapeHtml(lastSeen)}</span></div>
+                <div class="card-detail-row"><span class="card-detail-label">Firmware</span><span class="card-detail-value">${escapeHtml(firmware)}</span></div>
             </div>
         `;
     }
@@ -166,9 +167,9 @@ class FeaturesCard extends HTMLElement {
                 <h2>Allgemein</h2>
             </div>
             <ul class="feature-list content-list">
-                <li><span class="feature-line"><span class="feature-name">Router-Name</span><span class="feature-value">${routerName}</span></span></li>
-                <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${model}</span></span></li>
-                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">${this.router?.ipAddress || '—'}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">Router-Name</span><span class="feature-value">${escapeHtml(routerName)}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${escapeHtml(model)}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">${escapeHtml(this.router?.ipAddress || '—')}</span></span></li>
             </ul>
         `;
     }
@@ -260,7 +261,7 @@ class SpeedCard extends HTMLElement {
             const relX = Math.min(Math.max(event.clientX - rect.left, this.padding.left), width - this.padding.right);
             const index = this.labels.length === 1 ? 0 : Math.round(((relX - this.padding.left) / plotWidth) * (this.labels.length - 1));
             const safeIndex = Math.min(Math.max(index, 0), this.labels.length - 1);
-            tooltip.innerHTML = `${this.labels[safeIndex]} · ↓ ${formatSpeed(this.download[safeIndex])} · ↑ ${formatSpeed(this.upload[safeIndex])}`;
+            tooltip.textContent = `${this.labels[safeIndex]} · ↓ ${formatSpeed(this.download[safeIndex])} · ↑ ${formatSpeed(this.upload[safeIndex])}`;
             tooltip.style.left = `${event.clientX - rect.left}px`;
             tooltip.style.top = `${event.clientY - rect.top}px`;
             tooltip.classList.add('visible');
@@ -466,7 +467,7 @@ class ActivityCard extends HTMLElement {
                             <span class="activity-time">${formatDateTime(log.timestamp)}</span>
                         </div>
                         <div class="activity-text">
-                            <span class="activity-message">${log.details || 'Keine Details vorhanden'}</span>
+                            <span class="activity-message">${escapeHtml(log.details || 'Keine Details vorhanden')}</span>
                         </div>
                     </div>
                 `)
@@ -529,14 +530,14 @@ class DnsCard extends HTMLElement {
 
         this.innerHTML = `
             <div class="card-header">
-                <h2>DNS Heute</h2>
+                <h2>DNS-Übersicht</h2>
             </div>
             <div class="dns_all">
                 <div class="dns dns-list">
-                    <div class="dns-row"><span class="dns-label">Werbung blockiert</span><strong class="dns-value">${blocked}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Blockierte Anfragen</span><strong class="dns-value">${blocked}</strong></div>
                     <div class="dns-row"><span class="dns-label">Tracker verhindert</span><strong class="dns-value">${trackers}</strong></div>
                     <div class="dns-row"><span class="dns-label">Anfragen gesamt</span><strong class="dns-value">${total}</strong></div>
-                    <div class="dns-row"><span class="dns-label">Letztes Update</span><strong class="dns-value">${timestamp}</strong></div>
+                    <div class="dns-row"><span class="dns-label">Letztes Update</span><strong class="dns-value">${escapeHtml(timestamp)}</strong></div>
                 </div>
             </div>
         `;
@@ -578,8 +579,8 @@ class ClientsCard extends HTMLElement {
         const deviceList = latest.length
             ? latest.map(device => `
                 <div class="client-row">
-                    <span class="client-name">${device.hostname || 'Unbekannter Client'}</span>
-                    <strong class="client-type">${String(device.connectionType || '—').toUpperCase()}</strong>
+                    <span class="client-name">${escapeHtml(device.hostname || 'Unbekannter Client')}</span>
+                    <strong class="client-type">${escapeHtml(String(device.connectionType || '—').toUpperCase())}</strong>
                 </div>
             `).join('')
             : '<div class="client-row"><span class="client-name">Keine Clients gefunden</span><strong class="client-type">—</strong></div>';
@@ -664,6 +665,8 @@ class LayoutControls extends HTMLElement {
         if (btn) {
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-pressed', String(isActive));
+            btn.querySelector('span').textContent = isActive ? 'Fertig' : 'Dashboard anpassen';
+            btn.setAttribute('aria-expanded', String(isActive));
         }
     }
 }
@@ -830,9 +833,9 @@ class DashboardContainer extends HTMLElement {
         const oldOrder = card.style.order;
         card.style.order = neighbor.style.order;
         neighbor.style.order = oldOrder;
-        localStorage.setItem('dashboardMobileOrder', JSON.stringify(
+        try { localStorage.setItem('dashboardMobileOrder', JSON.stringify(
             [...this.cards].sort((a, b) => Number(a.style.order) - Number(b.style.order)).map(item => item.dataset.section)
-        ));
+        )); } catch { /* Keep the in-memory order. */ }
     }
 
     loadMobileOrder() {
@@ -921,15 +924,14 @@ class DashboardContainer extends HTMLElement {
                 top: card.style.top
             };
         });
-        localStorage.setItem('dashboardLayout', JSON.stringify(layout));
+        try { localStorage.setItem('dashboardLayout', JSON.stringify(layout)); } catch { /* Layout remains usable without browser storage. */ }
     }
 
     loadLayout() {
         if ((this.querySelector('.dashboard') || this).clientWidth < 900) return;
-        const saved = localStorage.getItem('dashboardLayout');
-        if (!saved) return;
-
-        const layout = JSON.parse(saved);
+        let layout;
+        try { layout = JSON.parse(localStorage.getItem('dashboardLayout') || 'null'); } catch { return; }
+        if (!layout || typeof layout !== 'object' || Array.isArray(layout)) return;
         this.cards.forEach(card => {
             const l = layout[card.dataset.section];
             if (!l) return;
@@ -941,8 +943,7 @@ class DashboardContainer extends HTMLElement {
     }
 
     resetLayout() {
-        localStorage.removeItem('dashboardLayout');
-        localStorage.removeItem('dashboardMobileOrder');
+        try { localStorage.removeItem('dashboardLayout'); localStorage.removeItem('dashboardMobileOrder'); } catch { /* Reset the visible layout even if storage is disabled. */ }
 
         this.editMode = false;
         document.body.classList.remove('edit-mode');

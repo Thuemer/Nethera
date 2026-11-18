@@ -80,7 +80,7 @@
     }
     @media (max-width: 380px) { .nav-list { grid-template-columns: 1fr; } }
   </style>
-  <link id="nethera-theme" rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
+  <link id="nethera-theme" rel="stylesheet" href="nethera-theme.css?v=20261118-polish2">
 </head>
 <body class="app-shell">
   <div id="auth-loading" role="status" aria-live="polite">Anmeldung wird geprüft...</div>
@@ -124,23 +124,25 @@
           <a class="nav-item" href="/website/html/support.html" target="_blank" rel="noopener" aria-label="Hilfe und Kontakt (neuer Tab)" title="Hilfe und Kontakt (neuer Tab)"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4m0 3h.01"/></svg></span><span class="label">Hilfe &amp; Kontakt ↗</span></a>
         </div>
         <div class="nav-account">
+          <button id="demo-preview-toggle" class="nav-item demo-preview-toggle" type="button" hidden aria-pressed="false"><span class="icon" aria-hidden="true">◌</span><span class="label">Demo ansehen</span></button>
           <a class="nav-item" href="index.html?screen=account" data-src="account.html" aria-label="Mein Account" title="Mein Account"><span class="icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><span class="label">Mein Account</span></a>
         </div>
       </div>
     </nav>
 
     <main id="screen">
-      <iframe id="screen-frame" title="Nethera Dashboard"></iframe>
+      <iframe id="screen-frame" title="Nethera Dashboard" allow="fullscreen" allowfullscreen></iframe>
       <div id="account-root" aria-live="polite"></div>
     </main>
   </div>
 
   <script src="config.js"></script>
-  <script src="nethera-select.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.5/dist/keycloak.min.js"></script>
-  <script src="account.js?v=20261011-brand"></script>
+  <script src="nethera-select.js?v=20261118-polish2"></script>
+  <script src="vendor/keycloak.min.js"></script>
+  <script src="account.js?v=20261118-demo"></script>
   <script>
-    const APP_VERSION = '20261116-complete-demo';
+    window.NETHERA_DEMO_PREVIEW = false;
+    const APP_VERSION = '20261118-fullscreen2';
     const nav = document.getElementById('nav-bar');
     const items = document.querySelectorAll('.nav-item[data-src]');
     const screen = document.getElementById('screen');
@@ -149,7 +151,7 @@
     const toggle = document.getElementById('nav-toggle');
     const brand = document.querySelector('.brand');
 
-    if (localStorage.getItem('nav-collapsed') === '1') nav.classList.add('collapsed');
+    try { if (localStorage.getItem('nav-collapsed') === '1') nav.classList.add('collapsed'); } catch { /* Navigation works without saved preferences. */ }
 
     function updateToggleLabel() {
       const mobile = window.matchMedia('(max-width: 900px)').matches;
@@ -218,7 +220,7 @@
         return;
       }
       const collapsed = nav.classList.toggle('collapsed');
-      localStorage.setItem('nav-collapsed', collapsed ? '1' : '0');
+      try { localStorage.setItem('nav-collapsed', collapsed ? '1' : '0'); } catch { /* Keep this tab's navigation state. */ }
       updateToggleLabel();
     });
 
@@ -239,6 +241,25 @@
         return;
       }
 
+      const demoToggle = document.getElementById('demo-preview-toggle');
+      const demoAccount = window.NetheraAccount.keycloak?.tokenParsed?.preferred_username === 'demo';
+      if (demoAccount) {
+        demoToggle.hidden = false;
+        let enabled = true;
+        try { enabled = new URLSearchParams(location.search).get('demo') === '1' || sessionStorage.getItem('nethera-demo-preview') !== 'off'; } catch {}
+        const setPreview = (active, reload = true) => {
+          window.NETHERA_DEMO_PREVIEW = active;
+          try { sessionStorage.setItem('nethera-demo-preview', active ? 'on' : 'off'); } catch {}
+          demoToggle.setAttribute('aria-pressed', String(active));
+          demoToggle.title = active ? 'Temporäre Beispieldaten entfernen' : 'Temporäre Beispieldaten ansehen';
+          demoToggle.querySelector('.label').textContent = active ? 'Demo beenden' : 'Demo ansehen';
+          if (reload && frame.src) frame.contentWindow.location.reload();
+        };
+        setPreview(enabled, false);
+        demoToggle.addEventListener('click', () => setPreview(!window.NETHERA_DEMO_PREVIEW));
+        // Temporary preview data is generated in memory and never saved to an API.
+        window.setTimeout(() => setPreview(false), 30 * 60 * 1000);
+      }
       document.getElementById('auth-loading').hidden = true;
       document.getElementById('home').hidden = false;
       const params = new URLSearchParams(window.location.search);

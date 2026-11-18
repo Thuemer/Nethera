@@ -12,8 +12,8 @@
             styleLink.href = `overview.css?v=${Date.now()}`;
         }
     </script>
-  <link rel="stylesheet" href="nethera-theme.css?v=20261012-polish">
-  <link rel="stylesheet" href="data-source.css">
+  <link rel="stylesheet" href="nethera-theme.css?v=20261118-polish2">
+  <link rel="stylesheet" href="data-source.css?v=20261118-polish2">
 </head>
 <body>
 
@@ -24,13 +24,13 @@
             <p class="subline">Status, Speed und aktuelle Ereignisse deines Netzwerks.</p>
         </div>
         <layout-controls class="layout-controls">
-            <button id="editToggle" class="control-btn" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 3 3M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/></svg><span>Layout bearbeiten</span></button>
+            <button id="editToggle" class="control-btn" type="button" aria-pressed="false" aria-controls="dashboard-settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 3 3M4 20l4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/></svg><span>Dashboard anpassen</span></button>
             <button id="resetLayout" class="control-btn danger" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Zurücksetzen</span></button>
             <p id="layoutHint" class="layout-hint">Nur die Dashboard-Karten lassen sich verschieben.</p>
         </layout-controls>
     </section>
 
-    <section class="dashboard-toolbar card" aria-label="Dashboard Anzeige">
+    <section id="dashboard-settings" class="dashboard-toolbar card" aria-label="Dashboard Anzeige">
         <div class="toolbar-copy">
             <strong>Angezeigte Bereiche</strong>
             <span>Boxen ein- und ausblenden.</span>
@@ -74,8 +74,8 @@
 </dashboard-container>
 
 <script src="config.js"></script>
-<script src="api.js"></script>
-<script src="overview.js?v=20261009-responsive"></script>
+<script src="api.js?v=20261118-demo"></script>
+<script src="overview.js?v=20261118-polish2"></script>
 <script>
 NetheraApi.watchSource(() => {
   primaryRouterPromise = null;

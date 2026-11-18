@@ -2,7 +2,7 @@
   const $ = id => document.getElementById(id);
   const { buildModel, graphElements, matchingDevices } = window.NetheraTopology;
   let model = null, graph = null, mode = 'groups', groupFilter = '', selectedId = '';
-  let initialPositions = null, resizeObserver = null;
+  let initialPositions = null, resizeObserver = null, loadVersion = 0;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const row = (name, value) => `<div><dt>${escape(name)}</dt><dd>${escape(value)}</dd></div>`;
   const date = value => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' }) : 'Nicht bekannt';
@@ -13,18 +13,22 @@
   }
 
   async function load() {
+    const version = ++loadVersion;
     $('reload-network').disabled = true;
     $('network-summary').textContent = 'Netzwerk wird geladen …';
     try {
       const router = await NetheraApi.getPrimaryRouter();
       let rules = null;
       try { rules = await NetheraApi.getSecurityState(router); } catch {}
+      if (version !== loadVersion) return;
       model = buildModel(router, rules);
       groupFilter = ''; selectedId = ''; $('device-search').value = '';
       notice(model.rulesKnown ? '' : 'Gruppen und Vorlagen konnten nicht geladen werden. Verbindungsdaten werden weiterhin angezeigt.');
       $('network-summary').textContent = `${model.devices.length} Geräte · ${model.groups.length} Gruppen · ${model.router.name}`;
       renderLegend(); renderGraph(); filterGraph(); showDetails();
     } catch {
+      if (version !== loadVersion) return;
+      resizeObserver?.disconnect();
       model = null;
       graph?.destroy(); graph = null;
       $('device-details').innerHTML = '';
@@ -33,7 +37,7 @@
       notice('Netzwerk konnte nicht geladen werden. Bitte Anmeldung und Backend prüfen und erneut laden.');
       $('network-summary').textContent = model ? 'Letzter geladener Stand' : 'Keine Netzwerkdaten';
       if (!model) { $('graph-empty').textContent = 'Netzwerk nicht verfügbar'; $('graph-empty').hidden = false; }
-    } finally { $('reload-network').disabled = false; }
+    } finally { if (version === loadVersion) $('reload-network').disabled = false; }
   }
 
   function renderLegend() {
@@ -60,7 +64,7 @@
     graph.resize();
     graph.nodes().style({ 'font-size': 12, 'text-max-width': 110, width: 42, height: 42 });
     graph.nodes('[kind = "group"]').style({ width: 32, height: 32 });
-    graph.nodes('[kind = "router"]').style({ width: 86, height: 86 });
+    graph.nodes('[kind = "router"]').style({ width: 86, height: 86, label: graph.width() < 600 ? '' : 'data(label)' });
     graph.fit(graph.elements(), 48);
     // Keep labels readable when a full graph is fitted into a narrow viewport.
     for (let pass = 0; pass < 3; pass++) {
@@ -78,23 +82,39 @@
     graph?.destroy(); resizeObserver?.disconnect();
     graph = cytoscape({
       container: $('network-graph'), elements: graphElements(model, mode),
-      minZoom: .02, maxZoom: 2.5, wheelSensitivity: .25, selectionType: 'single', boxSelectionEnabled: false,
+      minZoom: .02, maxZoom: 2.5, selectionType: 'single', boxSelectionEnabled: false,
       style: [
-        { selector: 'node', style: { label: 'data(label)', 'background-color': 'data(color)', width: 42, height: 42, 'border-width': 2, 'border-color': '#1c2226', color: '#e4e9eb', 'font-family': 'Avenir Next, Segoe UI, sans-serif', 'font-size': 12, 'text-valign': 'bottom', 'text-margin-y': 9, 'text-wrap': 'wrap', 'text-max-width': 110, 'text-background-color': '#1c2226', 'text-background-opacity': .85, 'text-background-padding': 3, 'overlay-opacity': 0 } },
-        { selector: 'node[kind = "router"]', style: { width: 86, height: 86, 'background-image': 'router.png', 'background-fit': 'contain', 'background-width': '80%', 'background-height': '80%', 'border-width': 2, 'border-color': '#69c5b6', 'font-weight': 600 } },
+        { selector: 'node', style: { label: 'data(label)', 'background-color': 'data(color)', width: 42, height: 42, 'border-width': 2, 'border-color': '#001818', color: '#e4e9eb', 'font-family': 'Avenir Next, Segoe UI, sans-serif', 'font-size': 12, 'text-valign': 'bottom', 'text-margin-y': 9, 'text-wrap': 'wrap', 'text-max-width': 110, 'text-background-color': '#001818', 'text-background-opacity': .85, 'text-background-padding': 3, 'overlay-opacity': 0 } },
+        { selector: 'node[kind = "router"]', style: { width: 86, height: 86, 'background-image': 'router.png', 'background-fit': 'contain', 'background-width': '80%', 'background-height': '80%', 'border-width': 2, 'border-color': '#63e5c5', 'underlay-color': '#63e5c5', 'underlay-padding': 14, 'underlay-shape': 'ellipse', 'underlay-opacity': .08, 'font-weight': 600 } },
         { selector: 'node[kind = "group"]', style: { width: 32, height: 32, 'background-opacity': .18, 'border-color': 'data(color)', 'border-width': 2, 'font-weight': 600 } },
         { selector: 'edge', style: { width: 1.4, 'line-color': '#617078', 'curve-style': 'bezier', 'overlay-opacity': 0 } },
         { selector: '.muted', style: { opacity: .13 } },
-        { selector: 'node:selected', style: { 'border-color': '#ffffff', 'border-width': 4 } },
+        { selector: 'node:selected', style: { 'border-color': '#63e5c5', 'border-width': 4 } },
         { selector: 'edge.highlighted', style: { 'line-color': '#9cd6cd', width: 2 } }
       ],
-      layout: { name: 'grid', padding: 60 }
+      layout: { name: 'preset', padding: 60 }
     });
-    // Keep positions stable except when switching between wide and compact screens.
-    const layout = { name: 'cose', randomize: false, animate: false, fit: false, nodeDimensionsIncludeLabels: true, nodeRepulsion: () => 16000, idealEdgeLength: () => 115, edgeElasticity: () => 90, gravity: .3, numIter: 1000 };
-    graph.layout(layout).run();
-    fit();
-    if (graph.width() < 600) { graph.layout(layout).run(); fit(); }
+    // Stable rings keep groups apart and prevent the narrow, overlapping mobile layout.
+    function arrange() {
+      const hubs = graph.nodes('[kind = "group"]');
+      const devices = graph.nodes('[kind = "device"]');
+      graph.getElementById('router').position({ x: 0, y: 0 });
+      const slots = devices.length + hubs.length * 1.5;
+      let offset = -Math.PI / 2;
+      hubs.forEach(hub => {
+        const children = devices.filter(node => node.connectedEdges()[0]?.source().id() === hub.id());
+        const arc = (children.length + 1.5) / Math.max(1, slots) * Math.PI * 2;
+        const angle = offset + arc / 2;
+        const radius = Math.max(320, devices.length * 26);
+        hub.position({ x: Math.cos(angle) * radius * .58, y: Math.sin(angle) * radius * .58 });
+        children.forEach((node, index) => {
+          const theta = offset + arc * (index + 1) / (children.length + 1);
+          node.position({ x: Math.cos(theta) * radius, y: Math.sin(theta) * radius });
+        });
+        offset += arc;
+      });
+    }
+    arrange(); fit();
     initialPositions = new Map(graph.nodes().map(node => [node.id(), { ...node.position() }]));
     graph.on('tap', 'node', event => {
       const node = event.target;
@@ -103,7 +123,7 @@
         if (window.matchMedia('(max-width: 700px)').matches) document.querySelector('.network-inspector').scrollIntoView({ block: 'start', behavior: 'smooth' });
       }
       else if (node.data('kind') === 'group' && mode === 'groups') { groupFilter = groupFilter === node.id() ? '' : node.id(); renderLegend(); filterGraph(); }
-      else { selectedId = ''; showDetails(); $('device-picker').value = ''; }
+      else { selectedId = ''; graph.nodes().unselect(); graph.edges().removeClass('highlighted'); showDetails(); $('device-picker').value = ''; }
     });
     graph.on('tap', event => { if (event.target === graph) { selectedId = ''; graph.nodes().unselect(); graph.edges().removeClass('highlighted'); showDetails(); $('device-picker').value = ''; } });
     let compactLayout = graph.width() < 600;
@@ -113,7 +133,7 @@
       fit();
       if (compact !== compactLayout) {
         compactLayout = compact;
-        graph.layout(layout).run(); fit();
+        arrange(); fit();
         initialPositions = new Map(graph.nodes().map(node => [node.id(), { ...node.position() }]));
       }
     });
@@ -193,7 +213,28 @@
     document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
     renderGraph(); filterGraph(); if (selectedId) selectDevice(selectedId);
   }));
-  $('fit-network').addEventListener('click', fit);
+  const workspace = document.querySelector('.topology-workspace');
+  const fullscreenButton = $('fullscreen-network');
+  function updateFullscreen() {
+    const active = document.fullscreenElement === workspace;
+    fullscreenButton.setAttribute('aria-pressed', String(active));
+    fullscreenButton.setAttribute('aria-label', active ? 'Vollbild beenden' : 'Vollbild öffnen');
+    fullscreenButton.title = active ? 'Vollbild beenden' : 'Vollbild öffnen';
+    fullscreenButton.innerHTML = `<i data-lucide="${active ? 'minimize' : 'maximize'}"></i>`;
+    window.lucide?.createIcons({ attrs: { 'aria-hidden': 'true', 'stroke-width': 1.8 } });
+    requestAnimationFrame(fit);
+  }
+  fullscreenButton.addEventListener('click', async () => {
+    fullscreenButton.disabled = true;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (workspace.requestFullscreen) await workspace.requestFullscreen();
+      else throw new Error('Fullscreen unavailable');
+    } catch {
+      notice('Vollbild konnte nicht geöffnet werden. Bitte prüfe, ob dein Browser Vollbild für diese Seite erlaubt.');
+    } finally { fullscreenButton.disabled = false; }
+  });
+  document.addEventListener('fullscreenchange', updateFullscreen);
   $('reset-network').addEventListener('click', () => { if (graph && initialPositions) { graph.nodes().positions(node => initialPositions.get(node.id())); fit(); } });
   ['zoom-in', 'zoom-out'].forEach(id => $(id).addEventListener('click', () => {
     if (graph) graph.zoom({ level: graph.zoom() * (id === 'zoom-in' ? 1.2 : 1 / 1.2), renderedPosition: { x: graph.width() / 2, y: graph.height() / 2 } });

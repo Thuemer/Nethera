@@ -89,7 +89,7 @@ const NetheraApi = (() => {
       (document.querySelector('main') || document.body).prepend(notice);
     }
     notice.dataset.mode = router?.dataMode || 'unavailable';
-    notice.textContent = router?.dataMode === 'live' ? 'Routerdaten · Verbunden'
+    notice.textContent = isTemporaryDemo() ? 'Temporäre Demo · Beispieldaten nur in diesem Tab. Beenden über die Seitenleiste.' : router?.dataMode === 'live' ? 'Routerdaten · Verbunden'
       : router?.dataMode === 'demo' ? 'Demo · Kein Router verbunden. Beispieldaten, nur Ansicht.'
         : 'Routerstatus unbekannt · Keine bestätigten Routerdaten verfügbar.';
   }
@@ -103,7 +103,16 @@ const NetheraApi = (() => {
     return (await account?.getAuthHeader?.()) ?? {};
   }
 
+  function isTemporaryDemo() {
+    try {
+      const host = window.parent || window;
+      return host.NETHERA_DEMO_PREVIEW === true && host.NetheraAccount?.authenticated === true
+        && host.NetheraAccount.keycloak?.tokenParsed?.preferred_username === 'demo';
+    } catch { return false; }
+  }
+
   async function getRouters() {
+    if (isTemporaryDemo()) return [demoRouter()];
     const authHeader = await getAuthHeader();
     const response = await fetch(routerUrl(), {
       headers: { Accept: 'application/json', ...authHeader },

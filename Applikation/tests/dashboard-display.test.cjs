@@ -44,3 +44,30 @@ test('speed chart releases its resize observer when removed', () => {
     card.chartResizeObserver={disconnect(){disconnected=true}};
     card.disconnectedCallback(); disconnected;`), true);
 });
+
+test('router names, firmware and client names are rendered as text', () => {
+  const run = harness();
+  const value = '<img src=x onerror=alert(1)>';
+  const routerHtml = run(`const routerCard=new RouterCard();routerCard.router={firmware:${JSON.stringify(value)}};routerCard.render();routerCard.innerHTML`);
+  assert.doesNotMatch(routerHtml, /<img/);
+  assert.match(routerHtml, /&lt;img/);
+  const clientHtml = run(`const clientsCard=new ClientsCard();clientsCard.devices=[{hostname:${JSON.stringify(value)}}];clientsCard.render();clientsCard.innerHTML`);
+  assert.doesNotMatch(clientHtml, /<img/);
+});
+
+test('chart timestamps use the same local timezone as the other dates', () => {
+  const run = harness();
+  const timestamp='2026-11-18T10:00:00Z';
+  assert.equal(run(`formatTime('${timestamp}')`), new Date(timestamp).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
+  assert.equal(run(`formatDateTime('<invalid>')`), '—');
+});
+
+test('corrupted or disabled layout storage does not crash the dashboard', () => {
+  const run = harness();
+  for (const value of ['{bad json', 'null', '42', '[]']) {
+    run(`{ globalThis.localStorage={getItem:()=>${JSON.stringify(value)}};
+      const dashboard${value.length}=new DashboardContainer();dashboard${value.length}.querySelector=()=>({clientWidth:1200});dashboard${value.length}.loadLayout(); }`);
+  }
+  run(`globalThis.localStorage={getItem(){throw new Error('disabled')},setItem(){throw new Error('disabled')}};
+    const dashboard=new DashboardContainer();dashboard.querySelector=()=>({clientWidth:1200});dashboard.loadLayout();dashboard.saveLayout();`);
+});

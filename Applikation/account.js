@@ -273,6 +273,8 @@
     document.getElementById('netheraLogoutButton')?.addEventListener('click', () => {
       if (!keycloak) return;
       try { sessionStorage.removeItem('nethera-website-visited'); } catch (_) { /* session storage can be disabled */ }
+      try { sessionStorage.removeItem('nethera-demo-preview'); } catch {}
+      window.NETHERA_DEMO_PREVIEW = false;
       keycloak.logout({ redirectUri: `${window.location.origin}${window.location.pathname}?screen=account` });
     });
 

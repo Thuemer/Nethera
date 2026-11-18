@@ -38,7 +38,7 @@
       edges.push({ data: { id: `router-${group.id}`, source: 'router', target: group.id } });
     });
     model.devices.forEach(device => {
-      nodes.push({ data: { id: device.id, label: device.name.replaceAll('-', '-\n'), kind: 'device', color: device.groups[0].color } });
+      nodes.push({ data: { id: device.id, label: device.name, kind: 'device', color: device.groups[0].color } });
       const parents = mode === 'groups' ? device.groups.map(group => group.id) : [`connection-${device.connection}`];
       parents.forEach(parent => edges.push({ data: { id: `${parent}-${device.id}`, source: parent, target: device.id } }));
     });

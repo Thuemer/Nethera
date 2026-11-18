@@ -54,7 +54,10 @@
 .security-tabs button:last-child { grid-column: auto; }
 
 html { color-scheme: dark; }
-body, .account-view { background: var(--bg-main); -webkit-font-smoothing: antialiased; }
+body, .account-view {
+    background: radial-gradient(ellipse 800px 400px at 10% 0%, rgba(var(--accent-rgb), .07), transparent 70%), var(--bg-main);
+    -webkit-font-smoothing: antialiased;
+}
 *, *::before, *::after { letter-spacing: 0; }
 button, input, select, textarea { font-family: inherit; }
 h1, .hero h1, .account-hero h1 { font-size: 30px; line-height: 1.2; font-weight: 650; }
@@ -64,7 +67,7 @@ h2, .card-header h2 { font-size: 18px; font-weight: 600; }
 .card, .account-card {
     background: color-mix(in srgb, var(--bg-main) 88%, var(--accent-2));
     border-color: rgba(var(--text-rgb), .10);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
 }
 .hero.card, .account-hero { background: transparent; box-shadow: none; }
@@ -146,3 +149,26 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* One spacing rhythm across the standalone screens and the dashboard. */
+body:not(.app-shell):not(.account-view) { padding: 24px; }
+.hero.card, .account-hero { border: 0; padding: 8px 0 16px; }
+.hero .eyebrow, .account-eyebrow { font-size: 11px; color: var(--accent); margin-bottom: 8px; }
+.subline { max-width: 65ch; }
+.card-header { gap: 12px; }
+.page > .stats-grid, .traffic-page > .stats-grid { border-radius: 12px; }
+.stat p { text-transform: none; font-weight: 500; line-height: 1.4; }
+.app-card { height: 100%; }
+.field > span { font-size: 13px; font-weight: 500; }
+small, .helper-text, .detail-note { line-height: 1.6; }
+input[type="search"] { min-width: 0; }
+button, summary, a { -webkit-tap-highlight-color: transparent; }
+select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 700px) {
+    body:not(.app-shell):not(.account-view) { padding: 16px; }
+    .hero.card { align-items: flex-start; flex-wrap: wrap; }
+    .hero.card h1 { font-size: 26px; }
+}
+
+.demo-preview-toggle { width: 100%; border: 1px solid var(--line); background: transparent; font: inherit; text-align: left; margin-bottom: 8px; }
+.demo-preview-toggle[aria-pressed="true"] { border-color: rgba(var(--accent-rgb), .3); color: var(--accent); }
