@@ -23,6 +23,7 @@
     <div id="network-notice" class="network-notice" role="status" hidden></div>
     <section class="legend-bar" aria-label="Legende und Gruppenfilter">
       <span class="legend-title">Gruppen</span><div id="group-legend"></div>
+      <button type="button" class="legend-item online-filter" id="online-filter" aria-pressed="false" disabled title="Nur Geräte zeigen, die gerade verbunden sind"><span class="online-dot" aria-hidden="true"></span>Nur online<span class="legend-count" id="online-count"></span></button>
     </section>
     <div class="topology-body">
       <section class="graph-surface" aria-label="Netzwerkgraph">
@@ -48,6 +49,7 @@
   <script src="api.js?v=20261118-demo"></script>
   <script src="vendor/cytoscape.min.js"></script>
   <script src="vendor/lucide.min.js"></script>
+  <script src="security-draft.js?v=20261116-topology-draft"></script>
   <script src="topology-model.js?v=20261118-fullscreen2"></script>
   <script src="topologie_custom.js?v=20261118-fullscreen2"></script>
 </body>

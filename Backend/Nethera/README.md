@@ -36,6 +36,28 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/routers/list
 
 > **Note**: The root Compose stack imports the realm and demo user automatically into a new Keycloak database. Existing Keycloak data is kept; the import does not overwrite it.
 
+### Connecting a router to an account
+
+Every account sees only the router it owns (one router per account). A new account starts without a router: the dashboard shows "Noch kein Router verbunden" and all rule lists are empty.
+
+Claim the router once with its pairing code, either on the **Account** page ("Router verbinden") or via the API:
+
+```shell script
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"pairingCode":"NETHERA-DEMO"}' http://localhost:8080/api/routers/claim
+```
+
+| Environment | Pairing code of router `nethera.router.id` |
+| --- | --- |
+| Compose stack | `NETHERA-DEMO` (override with `NETHERA_ROUTER_PAIRING_CODE`) |
+| `quarkus:dev` | `NETHERA-DEMO` |
+| Tests | `NETHERA-TEST` |
+| LeoCloud | env var `NETHERA_ROUTER_PAIRING_CODE` |
+
+`DELETE /api/routers/mine` releases the router again (its rules are kept). The code is case-insensitive.
+
+> **Existing databases**: `update`/`validate` schemas need `migrations/20261116_router_control.sql` (if not applied yet) and then `migrations/20261116_router_ownership.sql` once, in that order. It adds the columns and attaches existing groups, presets and the config to the oldest router; without it they are invisible to every account.
+
 ## Router telemetry over MQTT
 
 Router data (metadata, WAN speed, DNS stats, devices) arrives over two transports that write identical rows:
@@ -56,7 +78,7 @@ Router data (metadata, WAN speed, DNS stats, devices) arrives over two transport
 | Topic | Payload | Retained |
 |---|---|---|
 | `nethera/<id>/status` | `online` / `offline` (Last Will) | yes |
-| `nethera/<id>/telemetry/metadata` | `{"v":1,"ts":1759579200,"model":"GL.iNet GL-MT3000","firmware":"OpenWrt 23.05.3"}` | yes |
+| `nethera/<id>/telemetry/metadata` | `{"v":1,"ts":1759579200,"model":"Cudy WR3000S","firmware":"OpenWrt 25.12.5"}` | yes |
 | `nethera/<id>/telemetry/speed` | `{"v":1,"ts":1759579200,"iface":"wan","rxBytes":123456789,"txBytes":9876543}` | no |
 | `nethera/<id>/telemetry/dns` | `{"v":1,"ts":1759579200,"forwarded":1200,"answeredLocally":340}` | no |
 | `nethera/<id>/telemetry/devices` | `{"v":1,"ts":1759579200,"leases":[{"mac":"aa:bb:cc:dd:ee:ff","ip":"192.168.1.20","hostname":"laptop"}],"reachable":["aa:bb:cc:dd:ee:ff"],"wifi":[]}` | no |

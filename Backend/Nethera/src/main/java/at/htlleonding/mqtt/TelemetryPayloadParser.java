@@ -1,5 +1,6 @@
 package at.htlleonding.mqtt;
 
+import at.htlleonding.telemetry.ControlSample;
 import at.htlleonding.telemetry.CounterSample;
 import at.htlleonding.telemetry.DeviceSnapshot;
 import at.htlleonding.telemetry.DnsSample;
@@ -50,6 +51,22 @@ public final class TelemetryPayloadParser {
                     lease.path("hostname").asText(null)));
         }
         return new DeviceSnapshot(leases, macs(root, "reachable"), macs(root, "wifi"));
+    }
+
+    public static ControlSample control(String payload) {
+        JsonNode root = read(payload);
+        JsonNode adblock = root.get("adblock");
+        if (adblock == null || !adblock.isObject()) {
+            throw new InvalidPayloadException("missing or non-object field 'adblock'");
+        }
+        String error = optionalText(root, "error");
+        return new ControlSample(
+                requiredLong(root, "ts"),
+                requiredLong(root, "version"),
+                requiredBoolean(root, "applied"),
+                requiredBoolean(adblock, "installed"),
+                requiredBoolean(adblock, "enabled"),
+                error == null || error.isBlank() ? null : error);
     }
 
     private static JsonNode read(String payload) {
@@ -106,6 +123,14 @@ public final class TelemetryPayloadParser {
             throw new InvalidPayloadException("missing or non-integer field '" + field + "'");
         }
         return value.asLong();
+    }
+
+    private static boolean requiredBoolean(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || !value.isBoolean()) {
+            throw new InvalidPayloadException("missing or non-boolean field '" + field + "'");
+        }
+        return value.asBoolean();
     }
 
     private static JsonNode requiredArray(JsonNode node, String field) {

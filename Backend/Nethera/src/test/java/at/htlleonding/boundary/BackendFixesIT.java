@@ -14,6 +14,7 @@ import io.quarkus.test.security.jwt.JwtSecurity;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -33,6 +34,12 @@ class BackendFixesIT {
 
     @Inject
     EntityManager entityManager;
+
+    // Endpoints only show the caller's router; "demo" owns the seeded router 1
+    @BeforeEach
+    void demoOwnsRouterOne() {
+        TestRouters.own(entityManager, "demo", 1L);
+    }
 
     // #1: accounts are keyed by the token's sub, not by the (reusable) username
 

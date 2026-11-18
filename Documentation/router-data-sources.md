@@ -2,6 +2,13 @@
 
 Stand: am 15.11.2026 auf LeoCloud ausgerollt. Die Image-Digests stehen in `deploy/leocloud/stack.yaml`.
 
+Frontend-Erweiterung vom 16.11.2026: Die Schutzseite bietet zusaetzlich editierbare,
+rein browserlokale Entwuerfe ohne Backend-Schreibzugriffe. Die unten beschriebenen
+Router-Herkunftsregeln bleiben dabei erhalten; lokale Entwuerfe sind keine
+Live-Daten. Abgrenzung, Speicherung und Backend-Uebergabe:
+[`security-local-preview.md`](security-local-preview.md). Als ausschliessliches
+Frontend-Update auf LeoCloud ausgerollt; Backend und Router bleiben unveraendert.
+
 ## Verhalten
 
 - `live` / `online`: nur durch MQTT- oder SSH-Ingestoren als `ROUTER` markierte Telemetrie. Fehlende Streams bleiben leer; kein Auffuellen durch Demo-Werte.
@@ -24,7 +31,80 @@ Stand: am 15.11.2026 auf LeoCloud ausgerollt. Die Image-Digests stehen in `deplo
 
 Offline- und Unknown-Antworten enthalten keine Telemetrie-Arrays mit alten echten oder Beispielwerten. Die Demo wird nur bei explizitem `demo` + `offline` oder einer erfolgreich geladenen leeren Routerliste im Frontend erzeugt. Die Demo erzeugt keine DB-Zeilen.
 
-Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Router-Snapshot, nicht die ungetrennte Geraeteliste aus `/api/security/state`. Zuordnungen und Zeitlimits anderer/alter Beispielgeraete bleiben verborgen. Gespeicherte Gruppen, Vorlagen und Sperrlisten bleiben Konfiguration, keine Bestaetigung der Routerwirkung; sie werden nicht geloescht.
+Schutz/Internetzeiten verwenden ausschliesslich Geraete aus dem ausgewaehlten Router-Snapshot, nicht die ungetrennte Geraeteliste aus `/api/security/state`. Zuordnungen und Zeitlimits anderer/alter Beispielgeraete bleiben verborgen. Gespeicherte Gruppen, Vorlagen und Sperrlisten bleiben Konfiguration, keine Bestaetigung der Routerwirkung; sie werden nicht geloescht. Die folgende Frontend-Erweiterung blendet solche unbestaetigten Regeln auch aus der Live-Ansicht aus.
+
+### Herkunft der Schutzregeln (Frontend ausgerollt, 16.11.2026)
+
+Der bisherige `SecurityStateResource` liest Gruppen, Vorlagen, Blocklisten und
+Zuweisungen aus der Datenbank ohne Herkunftsnachweis. `sourceType` beschreibt den
+Filtertyp, nicht die Datenquelle. Eine passende Geraete-ID oder `routerId` und ein
+Apply-ACK sind ebenfalls kein Beleg, dass diese Eintraege vom Router gelesen wurden.
+`RouterControlResource` bestaetigt die Uebernahme einer Sollversion, liefert aber
+keinen vollstaendigen Regel-Readback. Unmarkierte Geraete-/Gruppenzuweisungen bleiben
+deshalb verborgen. Fuer netzweite DNS-Sperren gilt die folgende bestaetigte Ausnahme.
+Es werden keine Datenbankzeilen geloescht oder umetikettiert.
+
+#### Bestaetigte Netzwerksperren (Korrektur vom 16.11.2026)
+
+Der erste Herkunftsfilter war zu streng: Eine gespeicherte Liste muss nicht vom
+Router stammen, um nach bestaetigter Uebernahme dort aktiv zu sein. Das Frontend
+laedt deshalb `/api/security/state` und `/api/router-control/status` zusammen:
+
+- `NETWORK`-Listen des ausgewaehlten Routers werden bei `connection: "online"`,
+  gueltigem `checkedAt` und `blocklists[id].applied: true` ohne Fehler angezeigt.
+  Das Backend bestaetigt `applied` nur bei ACK der aktuellen Sollversion.
+- `DNS`-Listen brauchen zusaetzlich `adblock.installed`, `enabled` und `applied`
+  jeweils `true`. Sie erscheinen auch unter den gespeicherten Werbe-Domains.
+- Die Legacy-Status-API steuert auf LeoCloud Router 1. Ohne `routerId` gilt ihr ACK
+  ausschliesslich fuer diesen Router; kuenftige Multi-Router-Antworten muessen ihre
+  passende `routerId` liefern. Ein alter ACK-Zeitpunkt allein wird nicht verworfen:
+  aktuelle Verbindung und bestaetigte Sollversion sind entscheidend.
+- Domain-Normalisierung entspricht `DnsDesiredState.domains`. Kategorie-Tokens
+  wie `adult` und ungueltige Domains sind nicht Teil der effektiven DNS-Konfiguration.
+  Namen oder beispielhaft aussehende Domains sind kein Herkunftskriterium.
+- Solche Listen erhalten nur frontendseitig `confirmationSource: "ROUTER_ACK"`,
+  nicht `dataSource: "ROUTER"`. Dies bestaetigt die Uebernahme, keinen unabhaengigen
+  DNS-Funktionstest oder eine vollstaendige Inventarisierung des Routers.
+- Ein pauschales ACK fuer `PRESET`/`GROUP`/`DEVICE` reicht nicht: Die derzeitige
+  Status-API bestaetigt auch ungenutzte Listen. Diese bleiben ohne Readback verborgen.
+  `rulesKnown` bleibt falsch, Regelbearbeitung bleibt bis zur vollstaendigen Sicht
+  gesperrt. Status-Aktualisierung laedt Listen und Bestaetigung gemeinsam neu.
+
+Frontend-Vertrag fuer eine spaetere Backend-Erweiterung von `GET /api/security/state`:
+
+- Jede Blockliste, Gruppe, Vorlage, Mitgliedschaft und Vorlagenzuweisung braucht
+  `dataSource: "ROUTER"` und die passende positive `routerId`. Erst ein echter,
+  routerbezogener Readback darf diese Felder setzen, nicht SQL-Seeds oder ein
+  pauschales Update bestehender Zeilen. Bei veralteten/ungeprueften Daten muss die
+  API die Markierung entziehen bzw. die Zeilen weglassen.
+- IDs entsprechen den vorhandenen DB-IDs (positive Ganzzahlen oder dezimale Strings).
+  Gruppen/Vorlagen liefern `blocklistId: null` fuer bestaetigt keine Blockliste oder
+  eine ID aus den verifizierten Blocklisten. Unvollstaendige Referenzen bleiben
+  verborgen; Mitgliedschaften/Zuweisungen brauchen verifizierte Gruppen/Vorlagen
+  und ein Geraet aus dem ausgewaehlten Router-Snapshot.
+- Nur fuer einen **vollstaendigen** Readback setzt die Antwort zusaetzlich oben
+  `dataSource: "ROUTER", routerId: 1, rulesComplete: true` und liefert alle fuenf
+  Arrays (`blocklists`, `groups`, `presets`, `members`, `assignments`), auch leere.
+  `1` ist nur ein Beispiel; es muss die ID des ausgewaehlten Routers sein.
+  Erst dann darf das Frontend aus fehlenden Eintraegen "keine Zuweisung" ableiten.
+  Gemischte oder unvollstaendige Antworten zeigen die verifizierten Eintraege,
+  behandeln fehlende Angaben aber als unbekannt.
+- Solange keine vollstaendige Sicht vorliegt, sind Regel-Schreibaktionen gesperrt,
+  damit ausgeblendete bestehende Zuordnungen nicht versehentlich ueberschrieben
+  werden. Dies gilt auch fuer Prioritaetsprofile und das Anwenden von Vorlagen.
+  Adblock-Installation/-Aktivierung mit dem bestehenden Router-Control-Vertrag
+  und unabhaengige Internetzeiten behalten ihren bisherigen Ablauf.
+- Offline-Demo, Router-Telemetrie, Konten, Backend, Routereinstellungen und
+  Datenbanken bleiben unveraendert. Die Herkunft ist von der Routerwirkung
+  (`applied`) getrennt; eine gelesene Regel ist nicht automatisch aktiv.
+
+Gegen das aktuell deployte Backend bleiben unbestaetigte Gruppen/Vorlagen und ihre
+Zuweisungen vorerst leer. Das ist **kein Nachweis**, dass am Router keine Regeln
+existieren. Topologie und Internetzeiten kennzeichnen fehlende Vorlagen als nicht
+gemeldet. Bestaetigte NETWORK-/DNS-Listen sind von dieser Einschraenkung ausgenommen.
+Die Korrektur ersetzt den zu strengen Filter aus `da36b43` (Image `20261116-131208`).
+Die oben beschriebene Backend-Erweiterung fuer vollstaendigen Readback steht weiter aus.
+Digest, Abnahme und Rollback sind in `deploy/leocloud/README.md` dokumentiert.
 
 ## Noch nicht vorhandene Messungen
 

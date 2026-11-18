@@ -5,13 +5,16 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "device_group")
 @NamedQuery(name = DeviceGroup.QUERY_FIND_ALL, query = "SELECT g FROM DeviceGroup g ORDER BY g.name")
-public class DeviceGroup {
+public class DeviceGroup implements RouterScoped {
 
     public static final String QUERY_FIND_ALL = "DeviceGroup.findAll";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "router_id")
+    private Long routerId;
 
     private String name;
 
@@ -62,5 +65,13 @@ public class DeviceGroup {
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    public Long getRouterId() {
+        return routerId;
+    }
+
+    public void setRouterId(Long routerId) {
+        this.routerId = routerId;
     }
 }

@@ -2,6 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { buildModel, graphElements, matchingDevices } = require('../topology-model.js');
 const cytoscape = require('../vendor/cytoscape.min.js');
+const { create, keyFor } = require('../security-draft.js');
 
 const router = { name: 'Nethera', devices: [
   { id: 1, hostname: 'Telefon', ipAddress: '192.168.1.2', macAddress: 'aa:bb:cc:dd:ee:ff', connectionType: 'wifi' },
@@ -26,7 +27,7 @@ test('topology joins real groups and assignments without confusing them with WLA
 });
 
 test('missing or incomplete rule data never means no preset or no group', () => {
-  for (const rules of [null, {}]) {
+  for (const rules of [null, {}, { groups: [], members: [], assignments: [], presets: [], rulesKnown: false }]) {
     const device = buildModel(router, rules).devices[0];
     assert.equal(device.rulesKnown, false);
     assert.equal(device.groups[0].name, 'Gruppe unbekannt');
@@ -37,6 +38,14 @@ test('group colors are stable when the API changes ordering', () => {
   const a = buildModel(router, rules);
   const b = buildModel(router, { ...rules, groups: rules.groups.slice().reverse() });
   assert.deepEqual(a.groups, b.groups);
+});
+
+test('partial readback preserves verified relationships but marks missing assignments unknown', () => {
+  const model = buildModel(router, { ...rules, rulesKnown: false });
+  assert.equal(model.rulesKnown, false);
+  assert.equal(model.devices[0].preset.name, 'Abendruhe');
+  assert.equal(model.devices[0].groups[0].name, 'Familie');
+  assert.equal(model.devices[1].groups[0].name, 'Gruppe unbekannt');
 });
 
 test('search and group filter combine, including secondary membership and presets', () => {
@@ -68,4 +77,77 @@ test('empty networks remain a valid graph', () => {
   const model = buildModel({}, null);
   assert.deepEqual(model.devices, []);
   assert.equal(graphElements(model).length, 1);
+});
+
+test('online status compares lastSeen with the router check time, not with the browser clock', () => {
+  const { onlineOnly } = require('../topology-model.js');
+  const live = { name: 'Nethera', checkedAt: '2026-11-16T12:00:00', devices: [
+    { id: 1, hostname: 'Jetzt da', lastSeen: '2026-11-16T11:59:40' },
+    { id: 2, hostname: 'Gestern da', lastSeen: '2026-11-15T18:00:00' },
+    { id: 3, hostname: 'Nie gesehen' },
+    { id: 4, hostname: 'Laut API offline', lastSeen: '2026-11-16T12:00:00', isOnline: false }
+  ] };
+  const security = { groups: [{ id: 1, name: 'Kinder' }], members: [{ deviceId: 2, groupId: 1 }], assignments: [], presets: [] };
+  const model = buildModel(live, security);
+  assert.deepEqual(model.devices.map(device => device.online), [true, false, false, false]);
+
+  const online = onlineOnly(model);
+  assert.deepEqual(online.devices.map(device => device.name), ['Jetzt da']);
+  // The group whose only device is offline disappears, and the counts follow
+  assert.deepEqual(online.groups.map(group => [group.name, group.count]), [['Ohne Gruppe', 1]]);
+  assert.equal(model.devices.length, 4, 'the full model stays untouched');
+  assert.equal(graphElements(online).filter(element => element.data.kind === 'device').length, 1);
+});
+
+test('without a router check time the newest device is the reference', () => {
+  const model = buildModel({ devices: [
+    { id: 1, lastSeen: '2026-11-16T12:00:00' }, { id: 2, lastSeen: '2026-11-16T11:59:00' }, { id: 3, lastSeen: '2026-11-16T09:00:00' }
+  ] }, null);
+  assert.deepEqual(model.devices.map(device => device.online), [true, true, false]);
+});
+
+test('topology overlays local groups and presets but keeps router telemetry and online filtering', () => {
+  const entries = new Map();
+  const storage = { getItem: key => entries.get(key), setItem: (key, value) => entries.set(key, value), removeItem: key => entries.delete(key) };
+  const live = { ...router, id: 1, dataMode: 'live', devices: router.devices.map((device, i) => ({ ...device, isOnline: i === 0 })) };
+  const base = { ...rules, devices: live.devices, rulesKnown: false };
+  const before = JSON.stringify({ live, base });
+  const key = keyFor('http://localhost:8080', 'userA', live), draft = create(storage, key);
+  const post = (kind, body) => draft.request(base, `/api/security/${kind}`, { method: 'POST', body: JSON.stringify(body) });
+  const group = post('groups', { name: 'Gaming' });
+  draft.assignGroup(base, 2, group.id);
+  const preset = post('presets', { name: 'Spielen', priorityMode: true, timeLimitMinutes: 120 });
+  draft.request(base, `/api/security/devices/2/preset/${preset.id}`, { method: 'PUT' });
+  const model = buildModel(live, create(storage, key).snapshot(base));
+  assert.equal(model.hasLocalDraft, true);
+  assert.equal(model.rulesKnown, false);
+  assert.equal(model.devices[1].groups[0].name, 'Gaming');
+  assert.equal(model.devices[1].groupDraft, true);
+  assert.equal(model.devices[1].presetDraft, true);
+  assert.equal(model.devices[1].preset.priorityMode, true);
+  assert.equal(model.devices[0].groupDraft, false);
+  assert.equal(model.devices[2].groups[0].name, 'Gruppe unbekannt');
+  assert.equal(matchingDevices(model, 'spielen', `group-${group.id}`).length, 1);
+  const baseline = buildModel(live, base);
+  const telemetry = model => model.devices.map(({ id, name, online, connection, ip, mac, lastSeen }) => ({ id, name, online, connection, ip, mac, lastSeen }));
+  assert.deepEqual(telemetry(model), telemetry(baseline));
+  assert.deepEqual(require('../topology-model.js').onlineOnly(model).devices.map(d => d.sourceId), [1]);
+  assert.equal(graphElements(model).some(e => e.data.target === 'device-2' && e.data.source === `group-${group.id}`), true);
+  assert.equal(JSON.stringify({ live, base }), before);
+  draft.reset();
+  assert.deepEqual(buildModel(live, create(storage, key).snapshot(base)), baseline);
+});
+
+test('clearing a local group or preset is explicit, other unreported devices stay unknown', () => {
+  const storage = { getItem: () => null, setItem() {} };
+  const base = { ...rules, devices: router.devices, rulesKnown: false };
+  const draft = create(storage, 'live');
+  draft.assignGroup(base, 1, null);
+  draft.request(base, '/api/security/devices/1/preset', { method: 'DELETE' });
+  const model = buildModel(router, draft.snapshot(base));
+  assert.equal(model.devices[0].groups[0].name, 'Ohne Gruppe (Entwurf)');
+  assert.equal(model.devices[0].preset, null);
+  assert.equal(model.devices[0].presetDraft, true);
+  assert.equal(model.devices[1].groups[0].name, 'Gruppe unbekannt');
+  assert.equal(model.devices[1].presetDraft, false);
 });

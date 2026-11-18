@@ -16,4 +16,10 @@ public class ConfigsRepository {
     public List<Config> getAllConfigs() {
         return this.entityManager.createNamedQuery(Config.QUERY_FIND_ALL, Config.class).getResultList();
     }
+
+    public List<Config> findByRouter(Long routerId) {
+        return entityManager.createQuery("SELECT c FROM Config c WHERE c.routerId = :routerId", Config.class)
+                .setParameter("routerId", routerId)
+                .getResultList();
+    }
 }

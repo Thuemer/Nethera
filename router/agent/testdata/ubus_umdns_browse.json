@@ -1,0 +1,69 @@
+{
+	"_airplay._tcp": {
+		"MacBook Air von Test": {
+			"iface": "br-lan",
+			"host": "MacBook-Air-von-Test.local",
+			"domain": "local",
+			"port": 7000,
+			"ttl": 4500,
+			"last_update": "2026-11-16T12:44:11Z",
+			"priority": 0,
+			"weight": 0,
+			"txt": "act=2",
+			"txt": "acl=0",
+			"txt": "model=Mac16,12",
+			"ipv4": "192.168.1.132",
+			"ipv6": "fe80::2",
+			"ipv6": "fd00::2"
+		}
+	},
+	"_asquic._udp": {
+		"00000000-0000-0000-0000-000000000001": {
+			"iface": "br-lan",
+			"host": "MacBook-Air-von-Test.local",
+			"domain": "local",
+			"port": 61774,
+			"ttl": 4500,
+			"last_update": "2026-11-16T12:44:11Z",
+			"priority": 0,
+			"weight": 0,
+			"ipv4": "192.168.1.132",
+			"ipv6": "fe80::2",
+			"ipv6": "fd00::2"
+		}
+	},
+	"_companion-link._tcp": {
+		"MacBook Air von Test": {
+			"iface": "br-lan",
+			"host": "MacBook-Air-von-Test.local",
+			"domain": "local",
+			"port": 51167,
+			"ttl": 4500,
+			"last_update": "2026-11-16T12:44:11Z",
+			"priority": 0,
+			"weight": 0,
+			"txt": "rpFl=0x20000",
+			"txt": "rpVr=715.2",
+			"ipv4": "192.168.1.132",
+			"ipv6": "fe80::2",
+			"ipv6": "fd00::2"
+		}
+	},
+	"_raop._tcp": {
+		"000000000001@MacBook Air von Test": {
+			"iface": "br-lan",
+			"host": "MacBook-Air-von-Test.local",
+			"domain": "local",
+			"port": 7000,
+			"ttl": 4500,
+			"last_update": "2026-11-16T12:44:11Z",
+			"priority": 0,
+			"weight": 0,
+			"txt": "cn=0,1,2,3",
+			"txt": "tp=UDP",
+			"ipv4": "192.168.1.132",
+			"ipv6": "fe80::2",
+			"ipv6": "fd00::2"
+		}
+	}
+}

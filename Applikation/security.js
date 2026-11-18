@@ -4,6 +4,7 @@ const SECURITY_API = `${API_BASE_URL}/api/security`;
 
 const state = {
   loaded: false,
+  rulesKnown: false,
   dataMode: 'unavailable',
   devices: [],
   groups: [],
@@ -16,6 +17,34 @@ const state = {
   routerControlError: null,
   wifiNetworks: []
 };
+let localDraft = null, draftBase = null, draftKey = null;
+const canEditRules = () => state.preview || state.rulesKnown;
+
+function renderDraft() {
+  const discard = document.getElementById('discardDraft');
+  if (discard) discard.disabled = !localDraft?.dirty && !state.draftError;
+  const confirmed = (draftBase?.blocklists || []).filter(item => item.confirmationSource === 'ROUTER_ACK');
+  const section = document.getElementById('confirmedRules');
+  if (section) section.hidden = !confirmed.length || state.dataMode !== 'live';
+  const list = document.getElementById('confirmedRulesList');
+  if (list) list.innerHTML = confirmed.map(item => `<dt>${escapeText(item.name)}</dt><dd>${blocklistDomains(item).map(escapeText).join(', ')}</dd>`).join('');
+}
+
+function useDraft() {
+  Object.assign(state, localDraft.snapshot(draftBase), { preview: true });
+  renderAll();
+  renderRouterControlStatus();
+  renderDraft();
+}
+
+async function discardDraft() {
+  if (!window.confirm('Lokale Änderungen in diesem Tab verwerfen? Der Router bleibt unverändert.')) return;
+  window.sessionStorage.removeItem(draftKey);
+  localDraft = null;
+  await loadSecurityState(true);
+  await loadAdProtection();
+  setStatus('Lokaler Entwurf verworfen. Routereinstellungen unverändert.', 'info');
+}
 
 function escapeText(value) {
   return String(value ?? '')
@@ -38,13 +67,23 @@ function sanitizeDomain(value) {
 }
 
 function setStatus(text, tone = 'info') {
+  if (state.preview && tone === 'success') text = 'Im lokalen Entwurf gespeichert. Nicht an den Router gesendet.';
   const status = document.getElementById('statusBox');
   status?.setAttribute('text', text);
   status?.setAttribute('state', tone);
 }
 
 async function apiJson(url, options = {}) {
-  if (options.method && options.method !== 'GET') await NetheraApi.requireLive();
+  if (options.method && options.method !== 'GET') {
+    if (state.preview) {
+      if (!state.loaded || !localDraft) throw new Error('Lokaler Entwurf nicht geladen.');
+      return localDraft.request(draftBase, new URL(url).pathname, options);
+    }
+    await NetheraApi.requireLive();
+    if (!state.rulesKnown && (url.startsWith(`${SECURITY_API}/`) || url.startsWith(`${API_BASE_URL}/api/device-time-limits/`))) {
+      throw new Error('Regeln wurden noch nicht vollständig vom Router gemeldet. Bestehende Einstellungen bleiben unverändert.');
+    }
+  }
   const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
   const authHeader = (await account?.getAuthHeader?.()) ?? {};
   const response = await fetch(url, {
@@ -62,13 +101,18 @@ async function apiJson(url, options = {}) {
   return response.json();
 }
 
-async function loadSecurityState() {
+async function loadSecurityState(refresh = false) {
+  if (!refresh && localDraft && state.preview && state.loaded) { useDraft(); return; }
   try {
     const router = await NetheraApi.getPrimaryRouter();
     const data = await NetheraApi.getSecurityState(router);
     Object.assign(state, {
       loaded: router.dataMode !== 'unavailable',
       dataMode: router.dataMode,
+      rulesKnown: data.rulesKnown === true,
+      draftError: false,
+      routerControl: data.routerControl || null,
+      routerControlError: data.routerControlError || null,
       wifiNetworks: router.wifiNetworks || [],
       devices: data.devices || [],
       groups: data.groups || [],
@@ -78,20 +122,30 @@ async function loadSecurityState() {
       assignments: data.assignments || [],
       timeLimits: data.timeLimits || []
     });
-    renderAll();
-    setStatus(router.dataMode === 'live' ? 'Gespeicherte Schutzregeln aktualisiert.' : router.dataMode === 'demo' ? 'Demo-Netzwerk mit Beispielregeln · Nur Ansicht.' : 'Keine bestätigten Routerdaten verfügbar.', router.dataMode === 'live' ? 'success' : 'info');
+    const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
+    const owner = account?.keycloak?.tokenParsed?.sub || 'local-preview';
+    const key = NetheraSecurityDraft.keyFor(API_BASE_URL, owner, router);
+    draftBase = { ...data, loaded: router.dataMode !== 'unavailable', wifiNetworks: router.wifiNetworks || [] };
+    if (key !== draftKey || !localDraft) {
+      draftKey = key;
+      localDraft = NetheraSecurityDraft.create(window.sessionStorage, key);
+    }
+    useDraft();
+    setStatus(router.dataMode === 'unavailable' ? 'Gerätedaten nicht verfügbar. Lokale Entwürfe bleiben erhalten.'
+      : localDraft.dirty ? 'Lokaler Entwurf geladen. Routereinstellungen unverändert.' : 'Gerätedaten geladen. Änderungen werden nur in diesem Tab gespeichert.', 'info');
   } catch (error) {
-    Object.assign(state, { loaded: false, dataMode: 'unavailable', devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
+    Object.assign(state, { loaded: false, preview: true, draftError: true, rulesKnown: false, dataMode: 'unavailable', routerControl: null, routerControlError: error, devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
     renderAll();
-    setStatus(NetheraApi.userMessage(error), 'error');
+    setStatus(`Vorschau nicht geladen: ${error.message}. Bereits gespeicherte Entwürfe bleiben erhalten.`, 'error');
   }
-  await loadRouterControlStatus();
+  renderRouterControlStatus();
+  renderDraft();
   updateReadOnlyControls();
 }
 
 function updateReadOnlyControls() {
-  const readOnly = !NetheraApi.isLive();
   document.querySelectorAll('form input, form select, form textarea, form button, [data-device-group], [data-device-preset], [data-group-name], [data-group-blocklist], [data-save-group], [data-edit-domain], [data-remove-domain]').forEach(control => {
+    const readOnly = state.preview ? !state.loaded : !NetheraApi.isLive() || (!state.rulesKnown && !control.closest('#adProtectionForm'));
     if (readOnly && !control.disabled) { control.dataset.sourceDisabled = 'true'; control.disabled = true; }
     else if (!readOnly && control.dataset.sourceDisabled) { control.disabled = false; delete control.dataset.sourceDisabled; }
   });
@@ -113,7 +167,7 @@ function renderRouterControlStatus() {
     : state.routerControlError
     ? 'Routerstatus konnte nicht geladen werden. Gespeicherte Regeln sind nicht als wirksam bestätigt.'
     : !control
-      ? 'Routerbestätigung noch nicht verfügbar. Regeln werden zunächst nur gespeichert.'
+      ? 'Routerbestätigung derzeit nicht verfügbar. Keine bestätigte Routerwirkung.'
       : connection === 'online'
         ? `Router erreichbar · zuletzt geprüft: ${control.checkedAt ? new Date(control.checkedAt).toLocaleString('de-AT') : 'gerade eben'}`
         : 'Router nicht erreichbar oder Status unbekannt. Regeln sind nicht als wirksam bestätigt.';
@@ -135,17 +189,27 @@ function renderRouterControlStatus() {
             : 'Adblock ist installiert; die Aktivierung ist noch nicht bestätigt.';
 
   const install = document.getElementById('installAdblock');
-  if (install) install.disabled = connection !== 'online' || !control?.capabilities?.adblockInstall || adblock?.installed !== false;
+  if (install) {
+    install.disabled = state.preview ? !state.loaded || adblock?.installed === true || localDraft?.adblock.installRequested === true
+      : connection !== 'online' || !control?.capabilities?.adblockInstall || adblock?.installed !== false;
+    if (state.preview) install.textContent = localDraft?.adblock.installRequested ? 'Installation lokal vorgemerkt' : 'Installation vormerken';
+  }
 
   const blocklistNote = document.getElementById('blocklistActual');
-  if (blocklistNote) blocklistNote.textContent = state.dataMode === 'demo'
+  if (blocklistNote) blocklistNote.textContent = state.preview
+    ? 'Entwurf für Websitesperren. Bestätigte Routerregeln bleiben unverändert.' : state.dataMode === 'demo'
     ? 'Beispiel-Sperrlisten für Geräte, Gruppen und das gesamte Netzwerk. Keine echte Sperrwirkung.'
+    : !state.rulesKnown
+    ? 'Netzwerksperren erscheinen mit der Übernahmebestätigung des Routers. Unbestätigte Geräte- und Gruppenzuweisungen bleiben verborgen.'
     : control?.connection === 'online'
     ? 'Jede Blockliste zeigt ihren bestätigten Routerstatus einzeln an.'
     : 'Sperrlisten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
   const priorityNote = document.getElementById('priorityActual');
-  if (priorityNote) priorityNote.textContent = state.dataMode === 'demo'
+  if (priorityNote) priorityNote.textContent = state.preview
+    ? 'Lokale Prioritätswünsche. Keine Änderung an der Bandbreite oder am Router.' : state.dataMode === 'demo'
     ? 'Beispiel-Prioritäten · Keine Änderung am Router.'
+    : !state.rulesKnown
+    ? 'Gerätezuweisungen sind nicht vollständig vom Router gemeldet. Bestehende Prioritäten bleiben unverändert.'
     : control?.connection === 'online'
     ? 'Die Übernahme wird für jedes Gerät getrennt bestätigt.'
     : 'Prioritäten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
@@ -157,18 +221,22 @@ function renderRouterControlStatus() {
 }
 
 async function loadRouterControlStatus() {
-  try {
-    state.routerControl = await NetheraApi.getRouterControlStatus();
-    state.routerControlError = null;
-  } catch (error) {
-    state.routerControl = null;
-    state.routerControlError = error;
-  }
-  renderRouterControlStatus();
+  // Reload lists and confirmation together; an old ACK must not survive a status refresh.
+  await loadSecurityState(true);
 }
 
 async function requestAdblockInstallation() {
   const button = document.getElementById('installAdblock');
+  if (state.preview) {
+    if (!localDraft || !state.loaded) return;
+    try {
+      localDraft.setAdblock(true, true);
+      await loadAdProtection();
+      renderRouterControlStatus(); renderDraft();
+      setStatus('Installation nur lokal vorgemerkt. Es wurde kein Installationsbefehl gesendet.', 'info');
+    } catch (error) { setStatus(`Nicht vorgemerkt: ${error.message}`, 'error'); }
+    return;
+  }
   if (state.routerControl?.connection !== 'online' || !state.routerControl.capabilities?.adblockInstall || state.routerControl.adblock?.installed !== false) return;
   button.disabled = true;
   try {
@@ -211,27 +279,27 @@ function presetForDevice(deviceId) {
 
 function groupOptions(selectedId = '') {
   return [
-    '<option value="">Keine Gruppe</option>',
+    `<option value="">${canEditRules() ? 'Keine Gruppe im Entwurf' : 'Nicht gemeldet'}</option>`,
     ...state.groups.map(group => `<option value="${group.id}" ${Number(group.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(group.name)}</option>`)
   ].join('');
 }
 
 function presetOptions(selectedId = '') {
   return [
-    '<option value="">Keine Vorlage</option>',
+    `<option value="">${canEditRules() ? 'Keine Vorlage' : 'Nicht gemeldet'}</option>`,
     ...state.presets.map(preset => `<option value="${preset.id}" ${Number(preset.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(preset.name)}</option>`)
   ].join('');
 }
 
 function blocklistOptions(selectedId = '') {
   return [
-    '<option value="">Keine Blockliste</option>',
+    `<option value="">${canEditRules() ? 'Keine Blockliste' : 'Nicht gemeldet'}</option>`,
     ...state.blocklists.map(blocklist => `<option value="${blocklist.id}" ${Number(blocklist.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(blocklist.name)}</option>`)
   ].join('');
 }
 
 function renderStats() {
-  if (!state.loaded) {
+  if (!state.loaded || !canEditRules()) {
     ['statPackages', 'statManual', 'statAds', 'statPresets'].forEach(id => {
       document.getElementById(id)?.setAttribute('value', '—');
     });
@@ -240,7 +308,7 @@ function renderStats() {
   const domainCount = state.blocklists.reduce((sum, blocklist) => sum + blocklistDomains(blocklist).length, 0);
   document.getElementById('statPackages')?.setAttribute('value', String(state.blocklists.length));
   document.getElementById('statManual')?.setAttribute('value', String(domainCount));
-  document.getElementById('statAds')?.setAttribute('value', String(blocklistDomains(state.blocklists.find(item => item.sourceType === 'DNS')).length));
+  document.getElementById('statAds')?.setAttribute('value', String(new Set(state.blocklists.filter(item => item.sourceType === 'DNS').flatMap(blocklistDomains)).size));
   document.getElementById('statPresets')?.setAttribute('value', String(state.presets.length));
   const adPercent = document.getElementById('adPercent');
   if (adPercent) adPercent.textContent = '—';
@@ -282,7 +350,7 @@ function renderGroupDevices() {
     const presetBlocklist = state.blocklists.find(item => Number(item.id) === Number(preset?.blocklistId));
     const ruleCount = new Set([...blocklistDomains(groupBlocklist), ...blocklistDomains(presetBlocklist),
       ...state.blocklists.filter(item => item.sourceType === 'NETWORK').flatMap(blocklistDomains)]).size;
-    const presetState = preset ? (assignment?.status === 'paused' ? 'Vorlage pausiert' : 'Vorlage zugewiesen') : 'Keine Vorlage';
+    const presetState = state.preview ? 'Lokaler Entwurf' : preset ? (assignment?.status === 'paused' ? 'Vorlage pausiert' : 'Vorlage zugewiesen') : state.rulesKnown ? 'Keine Vorlage' : 'Zuweisung nicht gemeldet';
     const presetClass = assignment?.status === 'paused' ? 'warn' : '';
     return `
       <article class="device-group-item">
@@ -291,8 +359,8 @@ function renderGroupDevices() {
             <strong>${escapeText(device.hostname || 'Unbekanntes Gerät')}</strong>
             <span class="badge ${presetClass}">${escapeText(presetState)}</span>
           </div>
-          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(device.connectionType || 'unbekannt')} · Gruppe: ${escapeText(group?.name || 'Keine')}</span>
-          <span class="preset-line">Vorlage: <b>${escapeText(preset?.name || 'Keine')}</b> · ${ruleCount} Regeln · Priorität: ${preset?.priorityMode ? 'Bevorzugt' : 'Normal'}</span>
+          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(device.connectionType || 'unbekannt')} · Gruppe: ${escapeText(group?.name || (canEditRules() ? 'Nicht zugewiesen' : 'Nicht gemeldet'))}</span>
+          <span class="preset-line">Vorlage: <b>${escapeText(preset?.name || (canEditRules() ? 'Keine' : 'Nicht gemeldet'))}</b> · ${canEditRules() ? ruleCount : '—'} Regeln · Priorität: ${!preset && !canEditRules() ? 'Unbekannt' : preset?.priorityMode ? 'Bevorzugt' : 'Normal'}</span>
         </div>
         <div class="device-group-actions">
           <label><span>Gruppe</span><select aria-label="Gruppe für ${escapeText(device.hostname)}" data-device-group="${device.id}">${groupOptions(group?.id)}</select></label>
@@ -315,7 +383,7 @@ function renderGroupOverview() {
   const list = document.getElementById('groupOverviewList');
   if (!list) return;
   if (!state.groups.length) {
-    list.innerHTML = '<empty-state title="Keine Gruppen" text="Lege zuerst eine Gruppe an."></empty-state>';
+    list.innerHTML = canEditRules() ? '<empty-state title="Noch keine Gruppen im Entwurf" text="Lege eine Gruppe an und ordne deine Geräte zu."></empty-state>' : '<empty-state title="Keine gemeldeten Gruppen" text="Der Router hat noch keine verifizierten Gruppen geliefert."></empty-state>';
     return;
   }
 
@@ -337,9 +405,9 @@ function renderGroupOverview() {
           <button class="small-btn" type="button" data-save-group="${group.id}">Name speichern</button>
         </div>
         <div class="group-summary-line">
-          <span class="badge ok">${devices.length} Geräte</span>
+          <span class="badge">${devices.length} ${canEditRules() ? 'Geräte' : 'gemeldete Geräte'}</span>
           <span class="badge">${rules.length} Regeln</span>
-          <span class="muted">${escapeText(devices.map(device => device.hostname).filter(Boolean).join(', ') || 'Noch keine Geräte')}</span>
+          <span class="muted">${escapeText(devices.map(device => device.hostname).filter(Boolean).join(', ') || (canEditRules() ? 'Noch keine Geräte' : 'Zuweisungen nicht gemeldet'))}</span>
         </div>
       </article>
     `;
@@ -350,7 +418,7 @@ function renderManualDomains() {
   const list = document.getElementById('manualDomainsList');
   if (!list) return;
   if (!state.blocklists.length) {
-    list.innerHTML = '<empty-state title="Keine Blocklisten" text="Erstelle eine Domain-Regel, um Websites zu blockieren."></empty-state>';
+    list.innerHTML = canEditRules() ? '<empty-state title="Keine Blocklisten im Entwurf" text="Füge die erste Website hinzu."></empty-state>' : '<empty-state title="Keine bestätigten Blocklisten" text="Es liegen noch keine verifizierten Sperrlisten oder Übernahmebestätigungen vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
     return;
   }
 
@@ -364,7 +432,7 @@ function renderManualDomains() {
           <span>${escapeText(blocklistScope(blocklist))} · ${domains.length} Einträge${tags.length ? ` · ${escapeText(tags.join(', '))}` : ''}</span>
           <div class="domain-entries">${domains.map(domain => `<div class="priority-row" data-domain-row><span>${escapeText(({adult:'18+ Inhalte',gambling:'Glücksspiele',social:'Social Media',violence:'Gewalt'})[domain] || domain)}</span><div class="domain-actions">${!['adult', 'gambling', 'social', 'violence'].includes(domain) ? `<button class="small-btn ghost" type="button" data-edit-domain="${escapeText(domain)}" data-blocklist="${blocklist.id}" aria-label="${escapeText(domain)} bearbeiten">Bearbeiten</button>` : ''}<button class="small-btn ghost" type="button" data-remove-domain="${escapeText(domain)}" data-blocklist="${blocklist.id}" aria-label="${escapeText(domain)} aus ${escapeText(blocklist.name)} entfernen">Entfernen</button></div></div>`).join('') || '<span>Keine Einträge</span>'}</div>
         </div>
-        <span class="badge ${routerEffect(state.routerControl?.blocklists?.[blocklist.id]) === 'Am Router bestätigt' ? 'ok' : ''}">${routerEffect(state.routerControl?.blocklists?.[blocklist.id])}</span>
+        <span class="badge ${!blocklist.localDraft && routerEffect(state.routerControl?.blocklists?.[blocklist.id]) === 'Am Router bestätigt' ? 'ok' : ''}">${blocklist.localDraft ? 'Lokaler Entwurf' : routerEffect(state.routerControl?.blocklists?.[blocklist.id])}</span>
       </article>
     `;
   }).join('');
@@ -373,17 +441,17 @@ function renderManualDomains() {
 function renderAdDomains() {
   const list = document.getElementById('adDomainsList');
   if (!list) return;
-  const dns = state.blocklists.find(item => item.sourceType === 'DNS');
-  const domains = blocklistDomains(dns);
-  list.innerHTML = domains.map((domain, index) => `
+  const entries = state.blocklists.filter(item => item.sourceType === 'DNS')
+    .flatMap(blocklist => blocklistDomains(blocklist).map(domain => ({ domain, blocklist })));
+  list.innerHTML = entries.map(({ domain, blocklist }) => `
     <article class="rule-item">
       <div class="rule-main">
         <strong>${escapeText(domain)}</strong>
-        <span>${state.dataMode === 'demo' ? 'Beispiel für eine Werbefilter-Liste' : 'In der Werbefilter-Liste gespeichert'}</span>
+        <span>${state.dataMode === 'demo' && !blocklist.localDraft ? 'Beispiel für eine Werbefilter-Liste' : escapeText(blocklist.name)}</span>
       </div>
-      <span class="badge">${state.dataMode === 'demo' ? 'Beispiel' : 'Gespeichert'}</span>
+      <span class="badge ${!blocklist.localDraft && blocklist.confirmationSource === 'ROUTER_ACK' ? 'ok' : ''}">${blocklist.localDraft ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : blocklist.confirmationSource === 'ROUTER_ACK' ? 'Am Router aktiv' : routerEffect(state.routerControl?.blocklists?.[blocklist.id])}</span>
     </article>
-  `).join('') || '<empty-state title="Keine Werbe-Domains" text="Noch keine DNS-Blockliste vorhanden."></empty-state>';
+  `).join('') || (canEditRules() ? '<empty-state title="Keine Werbe-Domains im Entwurf" text="Noch keine DNS-Blockliste vorhanden."></empty-state>' : '<empty-state title="Keine bestätigten Werbe-Domains" text="Keine aktuell bestätigte Domain-Liste. Der Adblock-Status wird separat angezeigt."></empty-state>');
 }
 
 function renderPresetDeviceOptions() {
@@ -398,7 +466,7 @@ function renderPresetDeviceOptions() {
     applyPresetDevice.innerHTML = state.devices.map(device => `<option value="${device.id}">${escapeText(device.hostname || 'Unbekanntes Gerät')}</option>`).join('');
   }
   if (applyPresetSelect) {
-    applyPresetSelect.innerHTML = state.presets.map(preset => `<option value="${preset.id}">${escapeText(preset.name)}</option>`).join('') || '<option value="">Noch keine Vorlage vorhanden</option>';
+    applyPresetSelect.innerHTML = state.presets.map(preset => `<option value="${preset.id}">${escapeText(preset.name)}</option>`).join('') || `<option value="">${canEditRules() ? 'Noch keine Vorlage vorhanden' : 'Keine gemeldete Vorlage'}</option>`;
   }
   if (blocklistSelect) {
     blocklistSelect.innerHTML = blocklistOptions();
@@ -409,7 +477,7 @@ function renderPresets() {
   const list = document.getElementById('presetList');
   if (!list) return;
   if (!state.presets.length) {
-    list.innerHTML = '<empty-state title="Keine Vorlagen" text="Noch keine Vorlage gespeichert."></empty-state>';
+    list.innerHTML = canEditRules() ? '<empty-state title="Keine Vorlagen im Entwurf" text="Noch keine Vorlage gespeichert."></empty-state>' : '<empty-state title="Keine gemeldeten Vorlagen" text="Es liegen noch keine Vorlagen mit bestätigter Router-Herkunft vor."></empty-state>';
     return;
   }
 
@@ -429,10 +497,10 @@ function renderPresets() {
     return `
       <article class="preset-item">
         <div class="preset-main">
-          <div class="preset-heading"><strong>${escapeText(preset.name)}</strong><span class="badge">${devices.length} ${devices.length === 1 ? 'Gerät' : 'Geräte'}</span></div>
+          <div class="preset-heading"><strong>${escapeText(preset.name)}</strong><span class="badge">${devices.length} ${canEditRules() ? '' : 'gemeldete '}${devices.length === 1 && canEditRules() ? 'Gerät' : 'Geräte'}</span></div>
           <span class="preset-settings">${escapeText(tags)}</span>
           <span>Blockliste: ${escapeText(blocklist?.name || 'Keine')}</span>
-          <span>Zugewiesen: ${escapeText(devices.join(', ') || 'keinem Gerät')}</span>
+          <span>Zugewiesen: ${escapeText(devices.join(', ') || (canEditRules() ? 'keinem Gerät' : 'Nicht gemeldet'))}</span>
         </div>
       </article>
     `;
@@ -512,6 +580,10 @@ function renderAll() {
 }
 
 function updateApplyPresetPreview() {
+  if (!canEditRules()) {
+    document.getElementById('applyPresetPreview').textContent = 'Zuweisungen sind noch nicht vollständig vom Router gemeldet. Keine Änderung möglich.';
+    return;
+  }
   const preset = state.presets.find(item => Number(item.id) === Number(document.getElementById('applyPresetSelect').value));
   const device = state.devices.find(item => Number(item.id) === Number(document.getElementById('applyPresetDevice').value));
   const current = device ? presetForDevice(device.id) : null;
@@ -525,7 +597,7 @@ function blocklistScope(blocklist) {
   const presets = state.presets.filter(preset => Number(preset.blocklistId) === Number(blocklist.id));
   const devices = state.assignments.filter(a => presets.some(p => Number(p.id) === Number(a.presetId)))
     .map(a => state.devices.find(d => Number(d.id) === Number(a.deviceId))?.hostname).filter(Boolean);
-  return [...groups.map(name => `Gruppe: ${name}`), ...devices].join(', ') || 'Noch nicht zugewiesen';
+  return [...groups.map(name => `Gruppe: ${name}`), ...devices].join(', ') || (state.rulesKnown ? 'Noch nicht zugewiesen' : 'Zuweisung nicht gemeldet');
 }
 
 function renderDomainTargets() {
@@ -575,10 +647,13 @@ function renderPriorityList() {
   const list = document.getElementById('priorityList');
   if (!list) return;
   list.innerHTML = state.devices.map(device => {
+    if (!canEditRules() && !presetForDevice(device.id)) {
+      return `<div class="priority-row"><span>${escapeText(device.hostname)}</span><span class="badge">Priorität nicht gemeldet</span></div>`;
+    }
     const desired = presetForDevice(device.id)?.priorityMode ? 'high' : 'normal';
     const actual = state.routerControl?.priority?.[device.id];
-    const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
-    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Nur gespeichert'}</span></div>`;
+    const confirmed = !state.preview && state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
+    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${state.preview ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Nur gespeichert'}</span></div>`;
   }).join('');
 }
 
@@ -591,11 +666,15 @@ function updatePrioritySelection() {
 }
 
 function updatePriorityPreview() {
+  if (!canEditRules()) {
+    document.getElementById('priorityPreview').textContent = 'Zuweisungen sind noch nicht vollständig vom Router gemeldet. Keine Änderung möglich.';
+    return;
+  }
   const device = state.devices.find(item => Number(item.id) === Number(document.getElementById('priorityDevice').value));
   const high = document.getElementById('priorityMode').value === 'high';
   const actual = state.routerControl?.priority?.[device?.id];
   const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === (high ? 'high' : 'normal');
-  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · ${state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerbestätigung ausstehend'}`;
+  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · ${state.preview ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerbestätigung ausstehend'}`;
 }
 
 async function savePriority(event) {
@@ -607,6 +686,14 @@ async function savePriority(event) {
 
 let activeRouterConfig = null;
 async function loadAdProtection() {
+  if (state.preview) {
+    const enabled = localDraft?.adblock.enabled ?? state.routerControl?.adblock?.enabled ?? false;
+    document.getElementById('adProtectionEnabled').checked = enabled;
+    document.getElementById('adProtectionEnabled').disabled = !state.loaded;
+    document.getElementById('saveAdProtection').disabled = !state.loaded;
+    document.getElementById('saveAdProtection').textContent = 'Im Entwurf speichern';
+    return;
+  }
   try {
     const router = await NetheraApi.getPrimaryRouter();
     activeRouterConfig = await NetheraApi.getConfiguration(router);
@@ -626,6 +713,13 @@ async function loadAdProtection() {
 
 async function saveAdProtection(event) {
   event.preventDefault();
+  if (state.preview) {
+    if (!localDraft || !state.loaded) throw new Error('Lokaler Entwurf nicht geladen.');
+    localDraft.setAdblock(document.getElementById('adProtectionEnabled').checked);
+    renderDraft();
+    setStatus('Werbeschutz lokal gespeichert.', 'success');
+    return;
+  }
   if (!activeRouterConfig) throw new Error('Router-Einstellung nicht geladen');
   const enabled = document.getElementById('adProtectionEnabled').checked;
   await apiJson(`${API_BASE_URL}/api/configs/${activeRouterConfig.id}`, { method: 'PUT', body: JSON.stringify({ ...activeRouterConfig, dnsBlocking: enabled }) });
@@ -684,7 +778,6 @@ async function saveGroupBlocklist(event) {
     method: 'POST',
     body: JSON.stringify({
       id: null,
-      routerId: 1,
       name: `${group.name} Blockliste`,
       sourceType: 'GROUP',
       urlPattern: [...new Set(parts)].join('|')
@@ -743,7 +836,7 @@ async function addManualDomain(event) {
   const target = scope === 'network' ? 'Gesamtes Netzwerk' : scope === 'group' ? group.name : device.hostname;
   const blocklist = await apiJson(`${SECURITY_API}/blocklists`, {
     method: 'POST',
-    body: JSON.stringify({ id: scope === 'network' ? previous?.id : null, routerId: previous?.routerId || 1,
+    body: JSON.stringify({ id: scope === 'network' ? previous?.id : null,
       name: `Websites · ${target}`, sourceType: scope === 'network' ? 'NETWORK' : scope === 'group' ? 'GROUP' : 'DEVICE',
       urlPattern: [...new Set([...blocklistDomains(previous), domain])].join('|') })
   });
@@ -764,7 +857,7 @@ async function addAdDomain(event) {
   const domains = [...new Set([...blocklistDomains(dns), domain])];
   await apiJson(`${SECURITY_API}/blocklists`, {
     method: 'POST',
-    body: JSON.stringify({ id: dns?.id, routerId: 1, name: dns?.name || 'Werbung & Tracker', sourceType: 'DNS', urlPattern: domains.join('|') })
+    body: JSON.stringify({ id: dns?.id, name: dns?.name || 'Werbung & Tracker', sourceType: 'DNS', urlPattern: domains.join('|') })
   });
   input.value = '';
   await loadSecurityState();
@@ -875,7 +968,8 @@ function setupEvents() {
       item.setAttribute('aria-pressed', String(active));
     });
   }));
-  document.querySelector('app-hero')?.addEventListener('hero-click', async () => { await loadSecurityState(); await loadAdProtection(); });
+  document.querySelector('app-hero')?.addEventListener('hero-click', async () => { await loadSecurityState(true); await loadAdProtection(); });
+  document.getElementById('discardDraft')?.addEventListener('click', () => discardDraft().catch(error => setStatus(error.message, 'error')));
   document.getElementById('refreshRouterControl')?.addEventListener('click', loadRouterControlStatus);
   document.getElementById('installAdblock')?.addEventListener('click', requestAdblockInstallation);
   const forms = { groupForm: addGroup, groupBlocklistForm: saveGroupBlocklist, manualDomainForm: addManualDomain,
@@ -888,7 +982,7 @@ function setupEvents() {
       button.disabled = true;
       try { await handler(event); }
       catch (error) { setStatus(`Änderung nicht vollständig gespeichert: ${error.message}. Bitte neu laden und prüfen.`, 'error'); }
-      finally { button.disabled = !NetheraApi.isLive(); }
+      finally { button.disabled = state.preview ? !state.loaded : !NetheraApi.isLive(); }
     });
   });
   document.getElementById('groupBlocklistSelect')?.addEventListener('change', renderGroupBlocklistForm);
@@ -915,6 +1009,11 @@ function setupEvents() {
     if (groupSelect) {
       const deviceId = Number(groupSelect.dataset.deviceGroup);
       const groupId = Number(groupSelect.value);
+      if (state.preview) {
+        localDraft.assignGroup(draftBase, deviceId, groupId || null);
+        useDraft();
+        return setStatus('Gerätegruppe lokal gespeichert.', 'success');
+      }
       const oldGroup = groupForDevice(deviceId);
       if (oldGroup) await apiJson(`${SECURITY_API}/groups/${oldGroup.id}/members/${deviceId}`, { method: 'DELETE' });
       if (groupId) await apiJson(`${SECURITY_API}/groups/${groupId}/members/${deviceId}`, { method: 'PUT' });
@@ -980,9 +1079,9 @@ function setupEvents() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   setupEvents();
-  loadSecurityState();
-  loadAdProtection();
-  NetheraApi.watchSource(async () => { await loadSecurityState(); await loadAdProtection(); });
+  await loadSecurityState();
+  await loadAdProtection();
+  NetheraApi.watchSource(async () => { await loadSecurityState(true); await loadAdProtection(); });
 });

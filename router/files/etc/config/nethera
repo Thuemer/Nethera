@@ -1,0 +1,26 @@
+# Settings of the Nethera router agent. Change values with
+#   uci set nethera.agent.<option>='<value>'; uci commit nethera; reload_config
+
+config agent 'agent'
+	# The service only starts when this is 1
+	option enabled '0'
+	# Primary key of this router in the Nethera database (required)
+	option router_id ''
+	# Host name or IP of the MQTT broker (required)
+	option broker ''
+	# wss = MQTT over WebSockets with TLS (LeoCloud), ws = WebSockets without TLS, tcp = plain MQTT
+	option transport 'wss'
+	# Empty = 443 for wss, 9001 for ws, 1883 for tcp
+	option port ''
+	# Request path for wss and ws
+	option ws_path '/mqtt'
+	# Empty = router-<router_id>
+	option username ''
+	# MQTT password of this router (required)
+	option password ''
+	# Seconds between two telemetry cycles (minimum 10)
+	option interval '30'
+	# Empty = the device that holds the default route
+	option wan_iface ''
+	# PEM file that replaces the system CA bundle for wss; empty = system bundle
+	option tls_ca ''

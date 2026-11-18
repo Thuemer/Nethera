@@ -6,6 +6,10 @@
 INSERT INTO router (name, model, firmware, is_online, last_seen) VALUES
     ('Nethera Router', 'Unbekannt', 'Unbekannt', FALSE, CURRENT_TIMESTAMP);
 
+-- One settings row: the adblock switch (dns_blocking) needs it; off until the user turns it on
+INSERT INTO config (router_id, router_name, mode, updates, dns_blocking, lan_ip, gateway_ip, guest_network, profiling) VALUES
+    (1, 'Nethera Router', 'Router', TRUE, FALSE, '192.168.1.1', '192.168.1.1', FALSE, FALSE);
+
 -- Blocklisten fuer einfache Presets
 INSERT INTO blocklists (routerid, name, sourcetype, urlpattern) VALUES
     (1, 'Kinder Schutz', 'PRESET', 'adult|gambling|violence'),
@@ -14,16 +18,16 @@ INSERT INTO blocklists (routerid, name, sourcetype, urlpattern) VALUES
     (1, 'Werbung & Tracker', 'DNS', 'ads.example.net|tracker.example.com');
 
 -- Geraetegruppen und Presets (keine Geraete-FKs)
-INSERT INTO device_group (name, description, blocklist_id, color) VALUES
-    ('Kinder', 'Handy, Tablet und Laptop mit Abendruhe und Jugendschutz', 1, '#2fb09a'),
-    ('Arbeit & Schule', 'Geraete mit Fokus-Regeln waehrend Lernzeiten', 3, '#4f8cff'),
-    ('Smart Home', 'Drucker, Lautsprecher und NAS ohne strenge Sperren', 4, '#f59e0b');
+INSERT INTO device_group (router_id, name, description, blocklist_id, color) VALUES
+    (1, 'Kinder', 'Handy, Tablet und Laptop mit Abendruhe und Jugendschutz', 1, '#2fb09a'),
+    (1, 'Arbeit & Schule', 'Geraete mit Fokus-Regeln waehrend Lernzeiten', 3, '#4f8cff'),
+    (1, 'Smart Home', 'Drucker, Lautsprecher und NAS ohne strenge Sperren', 4, '#f59e0b');
 
-INSERT INTO security_preset (name, description, blocklist_id, time_limit_minutes, blocked_from, blocked_until, parental_mode, priority_mode) VALUES
-    ('Schultag', 'Lernen priorisieren, Social Media blockieren, nachts sperren', 3, 180, '21:00', '07:00', true, false),
-    ('Abendruhe', 'Alle Unterhaltungsseiten ueber Nacht blockieren', 2, 120, '20:30', '06:30', true, false),
-    ('Gaming erlaubt', 'Gaming-PC mit Prioritaet, aber ohne Nachtfreigabe', 2, 240, '23:00', '08:00', false, true),
-    ('Nur Schutzfilter', 'Keine Zeitgrenze, aber Werbung und Tracker reduzieren', 4, null, null, null, false, false);
+INSERT INTO security_preset (router_id, name, description, blocklist_id, time_limit_minutes, blocked_from, blocked_until, parental_mode, priority_mode) VALUES
+    (1, 'Schultag', 'Lernen priorisieren, Social Media blockieren, nachts sperren', 3, 180, '21:00', '07:00', true, false),
+    (1, 'Abendruhe', 'Alle Unterhaltungsseiten ueber Nacht blockieren', 2, 120, '20:30', '06:30', true, false),
+    (1, 'Gaming erlaubt', 'Gaming-PC mit Prioritaet, aber ohne Nachtfreigabe', 2, 240, '23:00', '08:00', false, true),
+    (1, 'Nur Schutzfilter', 'Keine Zeitgrenze, aber Werbung und Tracker reduzieren', 4, null, null, null, false, false);
 
 -- User-/UI-Einstellungen
 INSERT INTO user_setting (setting_key, setting_value) VALUES

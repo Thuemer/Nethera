@@ -8,6 +8,7 @@
 - [x] 1.6 Write unit tests for the four ingestors that cover every scenario in `router-dns-sync`, `router-speed-sync`, `router-metadata-sync` and `router-activity-log` (including the transport-switch scenarios)
 - [x] 1.7 Rewire `RouterMetricsSyncService` and `RouterSyncService` to only run SSH commands + parse text into the samples, then call the ingestors; remove the `prevForwarded`/`prevAnsweredLocally` fields
 - [ ] 1.8 Manually verify the SSH sync against the real router: `SpeedStat`, `DnsStat`, devices and activity logs are written as before
+- [ ] 1.9 If the router probe (`router-telemetry-agent` 1.1) confirms finding A: switch the SSH DNS command to `ubus call dnsmasq metrics` with SIGUSR1 + `logread` as fallback, and add a MODIFIED `Collect DNS query stats from dnsmasq via SIGUSR1` requirement to `specs/router-dns-sync/spec.md`
 
 ## 2. Transport mode and freshness
 
@@ -43,8 +44,10 @@
 - [x] 5.2 Run the simulator against `docker compose up` and confirm dashboard data and activity logs update within two cycles
 - [x] 5.3 With the backend in `auto` mode: start the simulator and confirm the scheduler stops SSH per stream; stop it and confirm `isOnline` flips and SSH fallback resumes after `stale-after`
 
+- [ ] 5.4 Fix finding B in the simulator: pipe the Last Will `mosquitto_sub` into a watcher that republishes retained `online` when it reads `offline`, kill it before the final `offline`; verify with `docker compose restart mosquitto` while the simulator runs
+
 ## 6. Documentation
 
 - [x] 6.1 Update the root `README.md` (Mosquitto in the stack, port 1883, new password env vars, simulator usage, telemetry modes)
 - [x] 6.2 Add a short MQTT section to `Backend/Nethera/README.md` (topic table, payload examples, how to switch modes)
-- [ ] 6.3 Hand the topic/payload contract to the router-side owner so they can start the `router-telemetry-agent` change
+- [x] 6.3 Hand the topic/payload contract to the router-side owner so they can start the `router-telemetry-agent` change

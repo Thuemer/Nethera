@@ -33,7 +33,7 @@ const NetheraApi = (() => {
   // One relational fixture for every demo page. Negative IDs never refer to database rows.
   function demoSecurity(router) {
     return {
-      dataMode: 'demo', devices: router.devices,
+      dataMode: 'demo', rulesKnown: true, devices: router.devices,
       groups: [
         { id: -1, name: 'Familie', description: 'Smartphone und Tablet', blocklistId: -1, color: '#69c5b6' },
         { id: -2, name: 'Arbeit & Schule', description: 'Arbeitsplatz und Drucker', blocklistId: -2, color: '#6c9fdf' },
@@ -90,7 +90,9 @@ const NetheraApi = (() => {
     }
     notice.dataset.mode = router?.dataMode || 'unavailable';
     notice.textContent = isTemporaryDemo() ? 'Temporäre Demo · Beispieldaten nur in diesem Tab. Beenden über die Seitenleiste.' : router?.dataMode === 'live' ? 'Routerdaten · Verbunden'
-      : router?.dataMode === 'demo' ? 'Demo · Kein Router verbunden. Beispieldaten, nur Ansicht.'
+      : router?.dataMode === 'demo' ? document.body?.dataset.localDraft === 'true'
+        ? 'Demo-Geräte · Kein Router verbunden. Lokale Vorschau.'
+        : 'Demo · Kein Router verbunden. Beispieldaten, nur Ansicht.'
         : 'Routerstatus unbekannt · Keine bestätigten Routerdaten verfügbar.';
   }
 
@@ -169,14 +171,59 @@ const NetheraApi = (() => {
   async function getSecurityState(router) {
     router ||= await getPrimaryRouter();
     if (router.dataMode === 'demo') return demoSecurity(router);
-    if (router.dataMode !== 'live') return { devices: router.devices, groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], dataMode: router.dataMode };
+    if (router.dataMode !== 'live') return { devices: router.devices, groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], dataMode: router.dataMode, rulesKnown: false };
     const data = await readJson('/api/security/state');
-    const ids = new Set(router.devices.map(device => Number(device.id)));
-    // Keep saved configuration, but never reintroduce seeded devices through another endpoint.
-    return { ...data, dataMode: 'live', devices: router.devices,
-      members: (data.members || []).filter(item => ids.has(Number(item.deviceId))),
-      assignments: (data.assignments || []).filter(item => ids.has(Number(item.deviceId))),
-      timeLimits: (data.timeLimits || []).filter(item => ids.has(Number(item.deviceId))) };
+    let routerControl = null, routerControlError = null;
+    try { routerControl = await getRouterControlStatus(router); }
+    catch (error) { routerControlError = error.message; }
+    const validId = value => (typeof value === 'number' && Number.isSafeInteger(value) && value > 0)
+      || (typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value)));
+    const fromRouter = row => row?.dataSource === 'ROUTER' && validId(row.routerId)
+      && validId(router.id) && String(row.routerId) === String(router.id);
+    const rows = key => Array.isArray(data?.[key]) ? data[key] : [];
+    const ids = items => new Set(items.filter(item => validId(item?.id)).map(item => String(item.id)));
+    const deviceIds = ids(router.devices);
+    // The deployed API confirms the applied desired version, even for lists originally saved in Nethera.
+    // Its legacy status endpoint controls router 1; future multi-router responses must identify their router.
+    const statusRouterId = routerControl?.routerId ?? 1;
+    const confirmedStatus = routerControl?.connection === 'online' && !routerControl.error
+      && validId(statusRouterId) && String(statusRouterId) === String(router.id)
+      && typeof routerControl.checkedAt === 'string' && Number.isFinite(Date.parse(routerControl.checkedAt));
+    const confirmedNetworkList = item => confirmedStatus && validId(item?.id) && validId(item.routerId)
+      && String(item.routerId) === String(router.id) && routerControl.blocklists?.[item.id]?.applied === true
+      && !routerControl.blocklists[item.id].error && (item.sourceType === 'NETWORK'
+        || (item.sourceType === 'DNS' && routerControl.adblock?.installed === true
+          && routerControl.adblock.enabled === true && routerControl.adblock.applied === true));
+    const blocklists = rows('blocklists').flatMap(item => {
+      if (fromRouter(item) && validId(item.id)) return [item];
+      if (!confirmedNetworkList(item)) return [];
+      const domains = routerDomains(item.urlPattern);
+      return domains.length ? [{ ...item, urlPattern: domains.join('|'), confirmationSource: 'ROUTER_ACK' }] : [];
+    });
+    const blocklistIds = ids(blocklists);
+    const hasBlocklist = item => item.blocklistId === null || (validId(item.blocklistId) && blocklistIds.has(String(item.blocklistId)));
+    const groups = rows('groups').filter(item => fromRouter(item) && validId(item.id) && hasBlocklist(item));
+    const presets = rows('presets').filter(item => fromRouter(item) && validId(item.id) && hasBlocklist(item));
+    const groupIds = ids(groups);
+    const presetIds = ids(presets);
+    const members = rows('members').filter(item => fromRouter(item)
+      && validId(item.deviceId) && validId(item.groupId) && deviceIds.has(String(item.deviceId)) && groupIds.has(String(item.groupId)));
+    const assignments = rows('assignments').filter(item => fromRouter(item)
+      && validId(item.deviceId) && validId(item.presetId) && deviceIds.has(String(item.deviceId)) && presetIds.has(String(item.presetId)));
+    const rules = { blocklists, groups, presets, members, assignments };
+    // Applied network lists do not establish complete device/group assignments or absence of other rules.
+    const rulesKnown = fromRouter(data) && data.rulesComplete === true
+      && Object.keys(rules).every(key => Array.isArray(data[key]) && data[key].length === rules[key].length);
+    return { ...rules, rulesKnown, routerControl, routerControlError, dataMode: 'live', devices: router.devices,
+      timeLimits: rows('timeLimits').filter(item => item && deviceIds.has(String(item.deviceId))) };
+  }
+
+  // Match DnsDesiredState.domains: category tokens are not part of the router's DNS rules.
+  function routerDomains(pattern) {
+    const domain = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+    return [...new Set(String(pattern || '').split(/[|,;\s]+/)
+      .map(value => value.toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/[/:?#].*$/, '').replace(/\.$/, ''))
+      .filter(value => value.length <= 253 && domain.test(value)))].sort();
   }
 
   async function getConnections(router) {
@@ -210,8 +257,8 @@ const NetheraApi = (() => {
     window.addEventListener('pagehide', () => clearInterval(sourceWatcher), { once: true });
   }
 
-  async function getRouterControlStatus() {
-    if (currentRouter && currentRouter.dataMode !== 'live') return { connection: currentRouter.connection };
+  async function getRouterControlStatus(router = currentRouter) {
+    if (router && router.dataMode !== 'live') return { connection: router.connection };
     const response = await fetch(`${config.API_BASE_URL}/api/router-control/status`, {
       headers: { Accept: 'application/json', ...await getAuthHeader() },
       cache: 'no-store'

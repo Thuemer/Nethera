@@ -1,7 +1,11 @@
 package at.htlleonding.boundary;
 
+import at.htlleonding.control.RouterControlChanged;
 import at.htlleonding.model.Config;
 import at.htlleonding.repository.ConfigsRepository;
+import at.htlleonding.services.CurrentRouter;
+import io.quarkus.security.Authenticated;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -10,6 +14,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
 
+@Authenticated
 @Path("api/configs")
 public class ConfigsResource {
 
@@ -19,11 +24,20 @@ public class ConfigsResource {
     @Inject
     EntityManager entityManager;
 
+    @Inject
+    CurrentRouter currentRouter;
+
+    @Inject
+    Event<RouterControlChanged> routerControlChanged;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("list")
     public List<Config> getAllConfigs() {
-        return this.configsRepository.getAllConfigs();
+        // One config per router; the list shape is kept for the frontend
+        return currentRouter.router()
+                .map(router -> configsRepository.findByRouter(router.getId()))
+                .orElse(List.of());
     }
 
     @PUT
@@ -33,10 +47,7 @@ public class ConfigsResource {
     @Transactional
     public Config save(@PathParam("id") Long id, Config input) {
         RequestValidation.requireBody(input);
-        Config config = entityManager.find(Config.class, id);
-        if (config == null) {
-            throw new NotFoundException("Konfiguration nicht gefunden");
-        }
+        Config config = currentRouter.owned(Config.class, id, "Konfiguration nicht gefunden");
 
         config.setRouterName(input.getRouterName());
         config.setMode(input.getMode());
@@ -46,6 +57,8 @@ public class ConfigsResource {
         config.setGatewayIp(input.getGatewayIp());
         config.setGuestNetwork(input.getGuestNetwork());
         config.setProfiling(input.getProfiling());
+        // dnsBlocking is the adblock switch the router has to apply
+        routerControlChanged.fire(new RouterControlChanged());
         return entityManager.merge(config);
     }
 }

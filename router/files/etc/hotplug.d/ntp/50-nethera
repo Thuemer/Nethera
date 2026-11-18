@@ -1,0 +1,3 @@
+# Tells the Nethera agent that NTP has set the clock; until then it holds back the
+# speed stream (router-telemetry-agent design D6). The flag is gone after a reboot.
+[ "$ACTION" = stratum ] && touch /var/run/nethera-ntp-synced

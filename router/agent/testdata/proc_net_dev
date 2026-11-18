@@ -1,0 +1,12 @@
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo:    7358      71    0    0    0     0          0         0     7358      71    0    0    0     0       0          0
+  eth0:       0       0    0    0    0     0          0         0     1776      16    0    0    0     0       0          0
+   wan:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  lan1:       0       0    0    0    0     0          0         0        0       0    0    4    0     0       0          0
+  lan2:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  lan3:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  lan4:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+br-lan: 23949043   31256    0    0    0     0          0       114 12904073   33563    0    1    0     0       0          0
+phy0-ap0: 24916249   39794    0    0    0     0          0         0 13010313   34311    0    0    0     0       0          0
+phy1-sta0: 84811546  215267    0 82445    0     0          0         0 18572413   33873    0    0    0     0       0          0

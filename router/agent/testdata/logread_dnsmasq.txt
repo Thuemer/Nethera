@@ -1,0 +1,30 @@
+Mon Oct 12 10:11:32 2026 daemon.info dnsmasq[1]: read /tmp/hosts/dhcp.cfg01411c - 4 names
+Mon Oct 12 10:11:32 2026 daemon.info dnsmasq-dhcp[1]: read /etc/ethers - 0 addresses
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: reading /tmp/resolv.conf.d/resolv.conf.auto
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using nameserver 192.0.2.1#53
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using nameserver 192.0.2.2#53
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using only locally-known addresses for test
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using only locally-known addresses for onion
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using only locally-known addresses for localhost
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using only locally-known addresses for local
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using only locally-known addresses for invalid
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using only locally-known addresses for bind
+Mon Oct 12 10:11:34 2026 daemon.info dnsmasq[1]: using only locally-known addresses for lan
+Tue Oct 13 10:43:16 2026 daemon.info dnsmasq-dhcp[1]: DHCPREQUEST(br-lan) 192.168.1.192 02:00:00:00:00:03
+Tue Oct 13 10:43:16 2026 daemon.info dnsmasq-dhcp[1]: DHCPACK(br-lan) 192.168.1.192 02:00:00:00:00:03 device-2
+Tue Oct 13 11:02:22 2026 daemon.info dnsmasq-dhcp[1]: DHCPREQUEST(br-lan) 192.168.1.132 02:00:00:00:00:01
+Tue Oct 13 11:02:22 2026 daemon.info dnsmasq-dhcp[1]: DHCPACK(br-lan) 192.168.1.132 02:00:00:00:00:01 device-1
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: time 1791890331
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: cache size 1000, 0/1541 cache insertions re-used unexpired cache entries.
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: queries forwarded 723, queries answered locally 263
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: pool memory in use 576, max 1632, allocated 2400
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: child processes for TCP requests: in use 0, highest since last SIGUSR1 0, max allowed 30.
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: server 192.0.2.1#53: queries sent 629, retried 0, failed 0, nxdomain replies 9, avg. latency 9ms
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: server 192.0.2.2#53: queries sent 132, retried 0, failed 0, nxdomain replies 0, avg. latency 13ms
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: time 1791890331
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: cache size 1000, 0/1541 cache insertions re-used unexpired cache entries.
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: queries forwarded 723, queries answered locally 263
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: pool memory in use 576, max 1632, allocated 2400
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: child processes for TCP requests: in use 0, highest since last SIGUSR1 0, max allowed 30.
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: server 192.0.2.1#53: queries sent 629, retried 0, failed 0, nxdomain replies 9, avg. latency 9ms
+Tue Oct 13 11:18:51 2026 daemon.info dnsmasq[1]: server 192.0.2.2#53: queries sent 132, retried 0, failed 0, nxdomain replies 0, avg. latency 13ms

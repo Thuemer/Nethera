@@ -10,6 +10,7 @@
   const API_BASE_URL = config.API_BASE_URL || 'http://localhost:8080';
   const ME_API_URL = `${API_BASE_URL}/api/accounts/me`;
   const SETTINGS_API_URL = `${API_BASE_URL}/api/settings`;
+  const ROUTERS_API_URL = `${API_BASE_URL}/api/routers`;
 
   let keycloak = null;
   let initPromise = null;
@@ -62,6 +63,8 @@
       .account-badge.admin::before { content: ''; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: var(--accent); }
       .account-badge.user { color: var(--text-main); background: rgba(var(--accent-2-rgb), .14); }
       .account-badge.maintainer { color: #fde68a; background: rgba(245,158,11,.14); }
+      .account-router-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+      .account-router-form .account-field { flex: 1 1 220px; }
       .account-status { padding: 12px 14px; border-radius: 12px; color: var(--text-soft); background: rgba(var(--text-rgb), .04); border: 1px solid rgba(var(--text-rgb), .08); }
       .account-status.success { color: var(--accent); background: rgba(var(--accent-rgb), .10); border-color: rgba(var(--accent-rgb), .2); }
       .account-status.error { color: #fecaca; background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.25); }
@@ -202,6 +205,16 @@
             <span class="account-badge ${authenticated ? 'admin' : ''}">${authenticated ? 'Authentifiziert' : 'Gastmodus'}</span>
           </section>
 
+          ${authenticated ? `
+          <section class="account-card account-panel" id="accountRouterPanel">
+            <div class="account-card-header"><h2>Router</h2></div>
+            <p class="account-muted" id="accountRouterInfo">Router wird geladen …</p>
+            <form class="account-router-form" id="accountRouterForm" hidden>
+              <label class="account-field"><span>Kopplungscode</span><input id="accountPairingCode" type="text" autocomplete="off" placeholder="z. B. NETHERA-DEMO" required></label>
+              <button class="account-btn" type="submit">Router verbinden</button>
+            </form>
+          </section>` : ''}
+
           <section class="account-grid account-two-grid">
             <section class="account-card account-panel">
               <div class="account-card-header"><h2>Profil</h2></div>
@@ -234,6 +247,49 @@
         </main>
       </div>
     `;
+  }
+
+  // GET /api/routers/list returns only the caller's router; an empty list means none is connected yet
+  async function loadOwnRouter() {
+    const response = await authFetch(`${ROUTERS_API_URL}/list`);
+    if (!response.ok) throw new Error(`Router API ${response.status}`);
+    const routers = await response.json();
+    return Array.isArray(routers) && routers.length ? routers[0] : null;
+  }
+
+  async function claimRouter(pairingCode) {
+    const response = await authFetch(`${ROUTERS_API_URL}/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pairingCode })
+    });
+    if (response.ok) return response.json();
+    const messages = {
+      400: 'Bitte gib einen Kopplungscode ein.',
+      404: 'Dieser Kopplungscode ist unbekannt.',
+      409: 'Dieser Router ist bereits verbunden, oder dein Konto hat schon einen Router.'
+    };
+    throw new Error(messages[response.status] || `Router konnte nicht verbunden werden (${response.status}).`);
+  }
+
+  function renderRouter(router) {
+    const info = document.getElementById('accountRouterInfo');
+    const form = document.getElementById('accountRouterForm');
+    if (!info || !form) return;
+    info.textContent = router
+      ? `Verbunden mit ${router.name || 'Router'}.`
+      : 'Noch kein Router verbunden. Gib den Kopplungscode deines Routers ein.';
+    form.hidden = Boolean(router);
+  }
+
+  async function refreshRouter() {
+    if (!keycloak?.authenticated) return;
+    try {
+      renderRouter(await loadOwnRouter());
+    } catch (error) {
+      const info = document.getElementById('accountRouterInfo');
+      if (info) info.textContent = 'Router konnte nicht geladen werden. Bitte versuche es erneut.';
+    }
   }
 
   function setStatus(text, state = 'info') {
@@ -278,6 +334,22 @@
       keycloak.logout({ redirectUri: `${window.location.origin}${window.location.pathname}?screen=account` });
     });
 
+    document.getElementById('accountRouterForm')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const input = document.getElementById('accountPairingCode');
+      const button = event.currentTarget.querySelector('button');
+      button.disabled = true;
+      try {
+        renderRouter(await claimRouter(input.value.trim()));
+        input.value = '';
+        setStatus('Router verbunden. Deine Seiten zeigen jetzt seine Daten.', 'success');
+      } catch (error) {
+        setStatus(error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    });
+
     document.querySelectorAll('[data-setting]').forEach(control => {
       control.addEventListener('change', async () => {
         const value = control.type === 'checkbox' ? control.checked : control.value;
@@ -304,7 +376,7 @@
     container.innerHTML = accountMarkup();
     window.NetheraSelect?.enhanceAll(container);
     bindAccountActions();
-    await refreshAccountData();
+    await Promise.all([refreshAccountData(), refreshRouter()]);
   }
 
   window.NetheraAccount = {

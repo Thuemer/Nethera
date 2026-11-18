@@ -3,13 +3,17 @@ package at.htlleonding.boundary;
 import at.htlleonding.dto.DeviceTimeLimitDto;
 import at.htlleonding.model.DeviceTimeLimit;
 import at.htlleonding.repository.DeviceTimeLimitsRepository;
+import at.htlleonding.services.CurrentRouter;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 
+@Authenticated
 @Path("api/device-time-limits")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -18,13 +22,18 @@ public class DeviceTimeLimitsResource {
     @Inject
     DeviceTimeLimitsRepository repository;
 
+    @Inject
+    CurrentRouter currentRouter;
+
     @GET
     public List<DeviceTimeLimitDto> getAll() {
-        return repository.getAll().stream().map(this::toDto).toList();
+        return repository.findByDeviceIds(currentRouter.deviceIds()).stream().map(this::toDto).toList();
     }
 
+    // One transaction so the ownership-checked device is managed by the same session that saves the limit
     @PUT
     @Path("{deviceId}")
+    @Transactional
     public Response save(@PathParam("deviceId") Long deviceId, DeviceTimeLimitDto dto) {
         RequestValidation.requireBody(dto);
         DeviceTimeLimit input = new DeviceTimeLimit();
@@ -35,17 +44,16 @@ public class DeviceTimeLimitsResource {
         input.setStatus(dto.status() == null ? "active" : dto.status());
         input.setNote(dto.note());
 
-        DeviceTimeLimit saved = repository.save(deviceId, input);
-        if (saved == null) {
-            throw new NotFoundException("Geraet nicht gefunden");
-        }
+        DeviceTimeLimit saved = repository.save(currentRouter.device(deviceId), input);
 
         return Response.ok(toDto(saved)).build();
     }
 
     @DELETE
     @Path("{deviceId}")
+    @Transactional
     public Response delete(@PathParam("deviceId") Long deviceId) {
+        currentRouter.device(deviceId);
         if (!repository.deleteByDeviceId(deviceId)) {
             throw new NotFoundException("Zeitlimit nicht gefunden");
         }

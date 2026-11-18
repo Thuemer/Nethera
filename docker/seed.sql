@@ -5,6 +5,11 @@ INSERT INTO router (name, model, firmware, is_online, last_seen)
 SELECT 'Nethera Router', 'CT-Router NG LAN', '1.08.03', true, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM router);
 
+-- One settings row: the adblock switch (dns_blocking) needs it; off until the user turns it on
+INSERT INTO config (router_name, mode, updates, dns_blocking, lan_ip, gateway_ip, guest_network, profiling)
+SELECT 'Nethera Router', 'Router', true, false, '192.168.1.1', '192.168.1.1', false, false
+WHERE NOT EXISTS (SELECT 1 FROM config);
+
 INSERT INTO blocklists (routerid, name, sourcetype, urlpattern)
 SELECT r.id, v.name, v.source_type, v.pattern
 FROM router r

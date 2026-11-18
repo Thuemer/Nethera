@@ -1,0 +1,8 @@
+{
+	"interface": [
+		{ "interface": "lan", "up": true, "device": "br-lan", "l3_device": "br-lan", "proto": "static", "route": [] },
+		{ "interface": "wan", "up": true, "device": "wan", "l3_device": "wan", "proto": "dhcp",
+		  "route": [ { "target": "0.0.0.0", "mask": 0, "nexthop": "192.0.2.254" } ] },
+		{ "interface": "wwan", "up": false, "device": "phy1-sta0", "proto": "dhcp" }
+	]
+}
