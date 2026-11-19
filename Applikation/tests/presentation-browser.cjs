@@ -84,6 +84,7 @@ const base = process.env.NETHERA_TEST_URL || 'http://localhost:5500';
       });
       await topology.locator('#reload-network').click();
       await topology.waitForFunction(() => document.querySelector('#group-legend').textContent.includes('Local family'));
+      await topology.locator('#open-device-search').click();
       await topology.locator('#device-picker').selectOption('device-20');
       assert.match(await topology.locator('#device-details').innerText(), /Priority draft/);
       assert.match(await topology.locator('#device-details').innerText(), /192\.0\.2\.20/);
@@ -91,6 +92,7 @@ const base = process.env.NETHERA_TEST_URL || 'http://localhost:5500';
       await topology.locator('#online-filter').click();
       assert.equal(await topology.locator('#device-picker option').count(), 2);
       await topology.locator('#online-filter').click();
+      await topology.locator('#open-device-search').click();
       await topology.locator('#device-picker').selectOption('device-21');
       assert.match(await topology.locator('#device-details').innerText(), /Offline/);
       for (const width of [390, 320]) {

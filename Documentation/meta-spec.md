@@ -90,7 +90,7 @@ Die Hauptzielgruppe umfasst private Haushalte, insbesondere:
 * **Offline-Modus:** Ist eine Konfiguration im lokalen WLAN ohne Internetverbindung im ersten Prototyp möglich? (muss nachbearbeitet werden).
 
 ## 17. Umsetzungsnachweise
-* **Topologie (19.11.2026):** [Klassisch-/Baum-Ansichten](../openspec/changes/topology-visual-refresh/verification.md) setzen Manuels Entwurf um, erhalten Telemetrie, Gruppen, lokale Entwuerfe und Bedienfunktionen. Dies ist ausschliesslich eine Frontend-Integration; die manuelle Abnahme mit realem Routerkonto bleibt getrennt dokumentiert.
+* **Topologie (19.11.2026):** [Klassisch-/Baum-Ansichten](../openspec/changes/topology-visual-refresh/verification.md) erhalten Telemetrie, Gruppen, lokale Entwuerfe und Bedienfunktionen. Nach dem ersten Rollout folgt die lokal gepruefte und freigegebene Uebernahme der tatsaechlichen Mockup-Gestaltung mit direktem Geometrie-/Stilvergleich. Dies ist ausschliesslich eine Frontend-Integration; die manuelle Abnahme mit realem Routerkonto bleibt getrennt dokumentiert.
 * **Frontend-Qualität, Abschnitte 13 und 14 (19.11.2026):** Der Change [frontend-presentation-polish](../openspec/changes/frontend-presentation-polish/proposal.md) dokumentiert konsistente bestehende Oberflächen, mobile Darstellung und die Unterscheidung zwischen unbekannten Routerdaten, Demodaten und lokalen Entwürfen. Testumfang und offene manuelle Prüfungen stehen im [Prüfprotokoll](../openspec/changes/frontend-presentation-polish/verification.md). Dies ist kein Nachweis einer Router-Umsetzung oder einer vollständigen End-to-End-Abnahme der User Stories.
 
 ---

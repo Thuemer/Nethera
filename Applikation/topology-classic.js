@@ -11,6 +11,8 @@
     const layer = U.element('div', 'classic-layer', stage);
     const lines = U.svg('svg', { class: 'topology-lines', 'aria-hidden': 'true' }, layer);
     const router = U.router(layer, view.model, view.onSelect);
+    const tooltip = U.element('div', 'classic-tooltip', layer);
+    tooltip.hidden = true;
     const items = view.hubs.map(hub => ({ hub, node: U.hub(layer, hub, view), point: {}, devices: [] }));
     const primary = new Map();
     items.forEach(item => {
@@ -29,14 +31,16 @@
         memory.hubs.set(item.hub.id, point); fit();
       }, () => scale, controller.signal);
     });
-    let width = 0, height = 0, scale = 1, selected = view.selectedId;
+    let width = 0, height = 0, scale = 1, selected = view.selectedId, center = {};
     const visible = U.matches(view);
     layer.addEventListener('click', event => { if (event.target === layer) view.onSelect(''); });
     function fit() {
       width = Math.max(stage.clientWidth, 680);
-      height = Math.max(stage.clientHeight, 580);
-      const small = stage.clientWidth < 720;
-      const radius = clamp(95, Math.min(width, height) * .29, 260);
+      height = Math.max(stage.clientHeight, 540);
+      const small = width < 720;
+      center = { x: width / 2, y: height / 2 + (small ? 14 : 0) };
+      const radius = clamp(95, Math.min(width, height - 40) * .30, 260) * 1.04;
+      const hubWidth = small ? 112 : 146, hubHeight = small ? 40 : 44, dotSize = small ? 22 : 26;
       layer.style.width = `${width}px`; layer.style.height = `${height}px`;
       const baseScale = Math.min(stage.clientWidth / width, stage.clientHeight / height);
       scale = baseScale * memory.zoom;
@@ -45,23 +49,29 @@
       layer.style.transform = `scale(${scale})`;
       layer.dataset.zoom = String(memory.zoom);
       lines.setAttribute('width', width); lines.setAttribute('height', height);
-      router.style.left = `${width / 2}px`; router.style.top = `${height / 2}px`;
-      router.style.width = `${clamp(110, Math.min(width, height) * .3, 250)}px`;
+      router.style.left = `${center.x}px`; router.style.top = `${center.y}px`;
+      router.style.width = `${clamp(small ? 110 : 140, width * .2, small ? 170 : 250)}px`;
       items.forEach((item, i) => {
         const angle = Math.PI * 2 * i / Math.max(1, items.length) - Math.PI / 2;
         const offset = memory.hubs.get(item.hub.id) || { x: 0, y: 0 };
-        item.point = { x: width / 2 + radius * Math.cos(angle) + offset.x, y: height / 2 + radius * Math.sin(angle) + offset.y };
-        const deviceRadius = clamp(110, 48 + item.devices.length * (small ? 10 : 14), small ? 128 : 168);
+        item.node.style.width = `${hubWidth}px`; item.node.style.height = `${hubHeight}px`;
+        item.point = { x: clamp(16 + hubWidth / 2, center.x + radius * Math.cos(angle), width - 16 - hubWidth / 2) + offset.x,
+          y: clamp(16 + hubHeight / 2, center.y + radius * Math.sin(angle), height - 70 - hubHeight / 2) + offset.y };
+        const deviceRadius = clamp(small ? 60 : 82, 48 + item.devices.length * (small ? 10 : 14), small ? 112 : 168);
         item.devices.forEach((child, index) => {
-          const theta = Math.PI * 2 * index / Math.max(1, item.devices.length) + angle + (item.devices.length === 2 ? Math.PI / 2 : 0);
-          child.offset = memory.devices.get(child.device.id) || { x: deviceRadius * Math.cos(theta), y: deviceRadius * Math.sin(theta) };
+          const theta = Math.PI * 2 * index / Math.max(1, item.devices.length) - Math.PI / 2;
+          child.offset = memory.devices.get(child.device.id) || { x: Math.round(deviceRadius * Math.cos(theta)), y: Math.round(deviceRadius * Math.sin(theta)) };
+          const ring = child.node.querySelector('.device-ring');
+          ring.style.width = ring.style.height = `${dotSize}px`;
+          child.node.style.padding = `${(44 - dotSize) / 2}px`;
+          child.node.querySelector('.device-name').style.top = `${22 + dotSize / 2 + 4}px`;
         });
       });
       place();
     }
     function line(a, b, color, opacity, highlight = false, secondary = false) {
       U.svg('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: color, opacity,
-        'stroke-width': highlight ? 2 : 1.3, ...(secondary ? { 'stroke-dasharray': '4 4', 'data-secondary': 'true' } : {}) }, lines);
+        'stroke-width': highlight ? 2.2 : 1.3, ...(secondary ? { 'stroke-dasharray': '4 4', 'data-secondary': 'true' } : {}) }, lines);
     }
     function place() {
       lines.replaceChildren();
@@ -69,7 +79,8 @@
         item.node.style.left = `${item.point.x}px`; item.node.style.top = `${item.point.y}px`;
         const faded = !item.hub.devices.some(device => visible.has(device.id));
         item.node.classList.toggle('filtered-out', faded);
-        line({ x: width / 2, y: height / 2 }, item.point, item.hub.color, faded ? .08 : .35);
+        U.svg('line', { x1: center.x, y1: center.y, x2: item.point.x, y2: item.point.y,
+          stroke: '#63e5c5', 'stroke-opacity': faded ? .06 : .32, 'stroke-width': 1.4 }, lines);
         item.devices.forEach(child => {
           child.point = { x: item.point.x + child.offset.x, y: item.point.y + child.offset.y };
           child.node.style.left = `${child.point.x}px`; child.node.style.top = `${child.point.y}px`;
@@ -77,7 +88,7 @@
           child.node.setAttribute('aria-pressed', String(active));
           child.node.classList.toggle('filtered-out', filtered);
           child.node.classList.toggle('selection-muted', Boolean(selected) && !active);
-          line(item.point, child.point, child.device.groups[0].color, filtered ? .08 : active ? 1 : .4, active);
+          line(item.point, child.point, item.hub.color, filtered ? .05 : active ? .9 : child.device.online ? .38 : .16, active);
         });
       });
       items.forEach(item => item.hub.devices.forEach(device => {
@@ -85,21 +96,20 @@
         const child = primary.get(device.id);
         line(item.point, child.point, item.hub.color, visible.has(device.id) ? .35 : .08, device.id === selected, true);
       }));
-      // Keep short labels clear of other labels, pills and the central router.
-      const taken = items.map(item => ({ x: item.point.x - 76, y: item.point.y - item.node.offsetHeight / 2 - 3, w: 152, h: item.node.offsetHeight + 6 }));
-      taken.push({ x: width / 2 - router.offsetWidth / 2, y: height / 2 - router.offsetHeight / 2, w: router.offsetWidth, h: router.offsetHeight });
-      primary.forEach(child => taken.push({ x: child.point.x - 18, y: child.point.y - 18, w: 36, h: 36 }));
-      primary.forEach(child => {
-        const label = child.node.querySelector('.device-name');
-        let box;
-        for (const [dx, dy] of [[-62, 20], [20, -7], [-144, -7], [-62, -32], [20, 20], [-144, 20], [-62, 42], [-62, -50], [20, 42], [-144, 42]]) {
-          box = { x: clamp(4, child.point.x + dx, width - 128), y: child.point.y + dy, w: 124, h: 15 };
-          if (box.y >= 4 && box.y + box.h < height - 4 && !taken.some(item => box.x < item.x + item.w && box.x + box.w > item.x && box.y < item.y + item.h && box.y + box.h > item.y)) break;
-        }
-        label.style.left = `${22 + box.x - child.point.x + 62}px`;
-        label.style.top = `${22 + box.y - child.point.y}px`;
-        taken.push(box);
-      });
+      const current = primary.get(selected);
+      tooltip.hidden = !current;
+      if (current) {
+        tooltip.replaceChildren();
+        U.element('b', '', tooltip, current.device.name);
+        U.element('span', '', tooltip, `${current.device.groups.map(group => group.name).join(', ')} · ${current.device.ip} · ${current.device.online ? 'online' : 'offline'}`);
+        const { x, y } = current.point, off = current.offset;
+        const half = current.node.querySelector('.device-ring').offsetWidth / 2, gap = 10;
+        const bw = tooltip.offsetWidth, bh = tooltip.offsetHeight;
+        const left = x + (off.x >= 0 ? half + gap : -half - gap - bw);
+        const top = y + (Math.abs(off.y) > Math.abs(off.x) ? (off.y >= 0 ? half + gap : -half - gap - bh) : -bh / 2);
+        tooltip.style.left = `${clamp(8, left, width - bw - 8)}px`;
+        tooltip.style.top = `${clamp(8, top, height - bh - 8)}px`;
+      }
     }
     // A zoomed graph can be panned without changing the node arrangement.
     let panStart = null, panned = false;

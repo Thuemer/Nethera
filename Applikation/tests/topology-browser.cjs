@@ -24,15 +24,39 @@ const shots = process.env.NETHERA_SCREENSHOTS || '/tmp/nethera-topology-layouts'
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(base + '/test-topology-host');
       const frame = await page.locator('iframe').elementHandle().then(element => element.contentFrame());
+      const search = async () => {
+        if (!await frame.locator('#device-search-panel').isVisible()) await frame.locator('#open-device-search').click();
+      };
+      const pick = async id => { await search(); await frame.locator('#device-picker').selectOption(id); };
+      const showDetails = async () => {
+        if (!await frame.locator('#device-details-panel').isVisible()) await frame.locator('#device-bar-details').click();
+      };
       await frame.waitForFunction(() => document.querySelector('#device-picker').options.length === 9);
       assert.equal(await frame.locator('#network-graph').getAttribute('data-layout'), layout);
       assert.equal(await frame.locator('.topology-router img').evaluate(image => image.complete && image.naturalWidth > 0), true);
-      await frame.locator('#device-picker').selectOption('device--1');
+      assert.equal(await frame.locator('#device-details-panel').isVisible(), false, 'no permanent inspector');
+      if (layout === 'klassisch') {
+        await frame.locator('#next-device').click();
+        const first = await frame.locator('#device-picker').inputValue();
+        assert.equal(await frame.locator('.classic-tooltip').isVisible(), true);
+        await frame.locator('#previous-device').click();
+        assert.notEqual(await frame.locator('#device-picker').inputValue(), first, 'previous wraps around');
+        await frame.locator('#next-device').click();
+        assert.equal(await frame.locator('#device-picker').inputValue(), first);
+        await showDetails();
+        await frame.locator('#device-details .detail-more summary').click();
+        assert.match(await frame.locator('#device-details').innerText(), /Tagesbudget/);
+        await frame.locator('#close-device-details').click();
+        assert.equal(await frame.locator('.classic-tooltip').isVisible(), false);
+      }
+      await pick('device--1');
       assert.match(await frame.locator('#device-details').innerText(), /Demo-Laptop/);
       await frame.locator('[data-device="device--2"]').first().click();
+      await showDetails();
       assert.match(await frame.locator('#device-details').innerText(), /Demo-Smartphone/);
       await frame.locator('[data-device="device--4"]').first().focus();
       await page.keyboard.press('Enter');
+      await showDetails();
       assert.match(await frame.locator('#device-details').innerText(), /Demo-Tablet/);
       const other = layout === 'baum' ? 'klassisch' : 'baum';
       await frame.locator('[data-layout="' + other + '"]').click();
@@ -43,11 +67,13 @@ const shots = process.env.NETHERA_SCREENSHOTS || '/tmp/nethera-topology-layouts'
       assert.match(await frame.locator('#device-details').innerText(), /Demo-Tablet/);
       assert.equal(await frame.locator('.topology-hub').count(), 2);
       await frame.locator('[data-view="groups"]').click();
+      await search();
       await frame.locator('#device-search').fill('Tablet');
       assert.equal(await frame.locator('#device-picker option').count(), 2);
       await frame.locator('#device-search').fill('does not exist');
       assert.match(await frame.locator('#graph-empty').innerText(), /Keine passenden/);
       await frame.locator('#device-search').fill('');
+      await frame.locator('#close-device-search').click();
       const group = frame.locator('#group-legend [data-group]:not([data-group=""])').first();
       await group.click();
       await frame.locator('[data-layout="' + other + '"]').click();
@@ -63,7 +89,7 @@ const shots = process.env.NETHERA_SCREENSHOTS || '/tmp/nethera-topology-layouts'
         await page.mouse.down(); await page.mouse.move(start.x + start.width / 2 + 30, start.y + start.height / 2 + 20, { steps: 5 }); await page.mouse.up();
         const moved = await node.boundingBox();
         assert.ok(moved.x > start.x + 20, 'device can be dragged');
-        await frame.locator('#device-picker').selectOption('device--2');
+        await pick('device--2');
         assert.ok(Math.abs((await node.boundingBox()).x - moved.x) < 1, 'selection preserves drag position');
         await frame.locator('#zoom-in').click();
         assert.ok(Number(await frame.locator('.classic-layer').getAttribute('data-zoom')) > 1);
@@ -74,21 +100,33 @@ const shots = process.env.NETHERA_SCREENSHOTS || '/tmp/nethera-topology-layouts'
         assert.equal(await frame.locator('#zoom-in').isVisible(), false);
         assert.equal(await frame.locator('#reset-network').isVisible(), false);
       }
-      await frame.locator('#device-picker').selectOption('');
-      const visual = await frame.locator('.topology-device, .topology-hub, .topology-router img').evaluateAll(nodes => nodes.map(node => {
+      await pick('');
+      await frame.locator('#close-device-search').click();
+      const visual = await frame.locator('.topology-device, .topology-hub').evaluateAll(nodes => nodes.map(node => {
         const css = getComputedStyle(node); return [css.boxShadow, css.filter, css.animationName];
       }));
-      assert.ok(visual.every(values => values.every(value => value === 'none')), 'no glow or continuous animation');
+      assert.ok(visual.every(values => values.every(value => value === 'none')), 'device buttons and hubs have no glow or continuous animation');
       for (const width of [320, 390, 768, 1440]) {
         await page.setViewportSize({ width, height: 1000 });
         await frame.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-        await frame.locator('#device-picker').selectOption('');
+        await pick('');
+        await frame.locator('#close-device-search').click();
         assert.equal(await frame.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, layout + ' no page overflow at ' + width);
+        if (layout === 'baum' && width < 640) {
+          const scrollable = await frame.locator('#network-graph').evaluate(stage => {
+            stage.scrollLeft = stage.scrollWidth; return stage.scrollLeft > 0;
+          });
+          assert.equal(scrollable, true, 'narrow tree can scroll to the device column');
+          await frame.locator('.tree-device').last().click();
+          assert.equal(await frame.locator('#device-details-panel').isVisible(), true);
+          await frame.locator('#close-device-details').click();
+          await frame.locator('#network-graph').evaluate(stage => { stage.scrollLeft = 0; });
+        }
         await page.screenshot({ path: shots + '/' + layout + '-' + width + '.png', fullPage: true });
         await frame.locator('#fullscreen-network').click();
         await frame.waitForFunction(() => Boolean(document.fullscreenElement));
+        await pick('device--4');
         assert.equal(await frame.locator('.network-inspector').isVisible(), true);
-        await frame.locator('#device-picker').selectOption('device--4');
         await frame.locator('#fullscreen-network').click();
         await frame.waitForFunction(() => !document.fullscreenElement);
       }

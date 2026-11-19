@@ -5,12 +5,15 @@
   let fullModel = null, onlyOnline = false;
   let model = null, graph = null, mode = 'groups', groupFilter = '', selectedId = '';
   let resizeObserver = null, layout = null;
+  let detailsOpen = false;
   try { const saved = localStorage.getItem('nethera.topology.layout'); if (['klassisch', 'baum'].includes(saved)) layout = saved; } catch {}
   let sourceRouter = null, sourceRules = null, draftKey = null, draftRevision;
   let loadVersion = 0;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const row = (name, value) => `<div><dt>${escape(name)}</dt><dd>${escape(value)}</dd></div>`;
   const date = value => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' }) : 'Nicht bekannt';
+  const presetTitle = device => device.preset?.name || (device.presetDraft ? 'Keine Vorlage im Entwurf'
+    : !device.rulesKnown ? 'Nicht vom Router gemeldet' : device.assignment ? 'Vorlagendetails fehlen' : 'Keine Vorlage zugewiesen');
 
   function notice(message) {
     $('network-notice').textContent = message;
@@ -63,6 +66,7 @@
       graph?.destroy(); graph = null;
       $('graph-caption').hidden = true;
       $('device-details').innerHTML = '';
+      setDetails(false); setSearch(false); updateDeviceBar();
       $('group-legend').innerHTML = '';
       $('device-picker').innerHTML = '<option value="">Keine Gerätedaten</option>';
       notice('Netzwerk konnte nicht geladen werden. Bitte Anmeldung und Backend prüfen und erneut laden.');
@@ -88,10 +92,11 @@
 
   function renderLegend() {
     $('group-legend').replaceChildren();
-    [{ id: '', name: 'Alle', count: model.devices.length }, ...model.groups].forEach(group => {
+    model.groups.forEach(group => {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'legend-item';
       button.dataset.group = group.id;
+      button.style.setProperty('--group-color', group.color);
       button.setAttribute('aria-pressed', String(group.id === groupFilter));
       if (group.color) {
         const swatch = document.createElement('span');
@@ -106,19 +111,27 @@
     });
   }
 
-  function fit() { graph?.fit(); }
+  function fit() {
+    const height = layout === 'baum' ? document.querySelector('.legend-bar').offsetHeight : 0;
+    document.querySelector('.topology-body').style.setProperty('--legend-height', `${height}px`);
+    graph?.fit();
+  }
 
   function renderGraph() {
     graph?.destroy();
     if (!layout) layout = $('network-graph').clientWidth < 700 ? 'baum' : 'klassisch';
-    document.querySelectorAll('[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layout)));
+    document.querySelector('.topology-body').dataset.activeLayout = layout;
+    document.querySelectorAll('button[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layout)));
     ['zoom-in', 'zoom-out', 'reset-network'].forEach(id => { $(id).hidden = layout === 'baum'; });
+    $('device-bar').hidden = layout === 'baum';
     const renderer = layout === 'baum' ? window.NetheraTopologyTree : window.NetheraTopologyClassic;
     graph = renderer.render($('network-graph'), {
       model, hubs: topologyHubs(model, mode), mode, groupFilter, query: $('device-search').value, selectedId,
       scope: draftKey,
       onSelect(id) {
-        if (!id) { selectedId = ''; graph.select(''); $('device-picker').value = ''; showDetails(); return; }
+        setSearch(false);
+        if (!id || id === selectedId) { clearSelection(); return; }
+        detailsOpen = false;
         selectDevice(id);
       },
       onHubClick(hub) {
@@ -130,12 +143,14 @@
     if (!resizeObserver) {
       resizeObserver = new ResizeObserver(fit);
       resizeObserver.observe($('network-graph'));
+      resizeObserver.observe(document.querySelector('.legend-bar'));
     }
     $('graph-caption').textContent = model.hasLocalDraft ? mode === 'groups' ? 'Gruppen inklusive lokaler Entwürfe' : 'Verbindungen unverändert · Regeln als Entwurf'
       : model.router.dataMode === 'demo' ? ''
       : mode === 'groups' ? model.rulesKnown ? 'Gruppenzuordnung vom Router' : 'Nur verifizierte Gruppenzuordnungen' : 'Verbindungstyp laut Gerätedaten';
     $('graph-caption').hidden = !$('graph-caption').textContent;
     $('network-graph').setAttribute('aria-label', `Netzwerkgraph mit ${model.devices.length} Geräten. Auswahl auch unter Gerät auswählen.`);
+    fit();
   }
 
   function filterGraph() {
@@ -164,32 +179,86 @@
 
   function showDetails() {
     if (!model) return;
+    updateDeviceBar();
     const demo = model.router.dataMode === 'demo';
     const device = model.devices.find(item => item.id === selectedId);
     if (!device) {
-      $('device-details').innerHTML = `<p class="detail-kicker">Netzwerkübersicht</p><h2>${escape(model.router.name)}</h2><p class="overview-count">${model.devices.length}</p><p class="detail-note">${onlyOnline ? 'Geräte gerade online' : demo ? 'Geräte im Beispiel-Netzwerk' : 'Geräte im gespeicherten Netzwerk'}</p><section class="detail-section"><h3>Gruppen</h3>${model.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span><span>${escape(group.name)}</span><span class="legend-count">${group.count}</span></div>`).join('')}</section><section class="detail-section"><h3>Router</h3><dl>${row('Modell', model.router.model)}</dl></section>`;
+      $('device-details').replaceChildren();
+      setDetails(false);
       return;
     }
     const preset = device.preset;
     const limit = device.timeLimit;
-    const presetName = preset?.name || (device.presetDraft ? 'Keine Vorlage im Entwurf' : !device.rulesKnown ? 'Nicht vom Router gemeldet' : device.assignment ? 'Vorlagendetails fehlen' : 'Keine Vorlage zugewiesen');
+    const presetName = presetTitle(device);
     const paused = device.assignment?.status === 'paused';
     const limitText = !limit ? 'Keine Zeitregel geladen' : limit.status === 'paused' ? 'Pausiert' : limit.blockedFrom && limit.blockedUntil ? `${limit.blockedFrom}–${limit.blockedUntil}` : 'Kein Sperrzeitraum';
     $('device-details').innerHTML = `<p class="detail-kicker">Gerät</p><h2>${escape(device.name)}</h2>
-      <section class="detail-section"><h3>Gruppenzuordnung</h3>${device.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span>${escape(group.name)}</div>`).join('')}${device.groupDraft ? '<span class="assignment-state">Lokaler Entwurf</span>' : ''}</section>
-      <section class="detail-section"><h3>Zugewiesene Vorlage</h3><strong>${escape(presetName)}</strong>${device.assignment || device.presetDraft ? `<div><span class="assignment-state">${device.presetDraft ? 'Lokaler Entwurf' : demo ? 'Beispiel' : paused ? 'Zuweisung pausiert' : 'Gespeichert'}${demo && paused ? ' · pausiert' : ''}</span></div>` : ''}
-      <p class="detail-note">${demo ? 'Keine Wirkung auf deinen Router.' : 'Die Routerwirkung ist hier nicht bestätigt.'}</p></section>
+      <dl class="detail-primary"><dt>Gruppe</dt><dd>${device.groups.map(group => `<span class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span>${escape(group.name)}</span>`).join('')}${device.groupDraft ? '<span class="assignment-state">Lokaler Entwurf</span>' : ''}</dd>
+      <dt>Status</dt><dd class="${device.online ? 'status-online' : 'status-offline'}">${device.online ? 'Online' : 'Offline'}</dd>
+      <dt>Verbindung</dt><dd>${escape(device.connection)}</dd><dt>IP</dt><dd>${escape(device.ip)}</dd><dt>MAC</dt><dd>${escape(device.mac)}</dd>
+      <dt>Vorlage</dt><dd>${escape(presetName)}${device.assignment || device.presetDraft ? `<span class="assignment-state">${device.presetDraft ? 'Lokaler Entwurf' : demo ? 'Beispiel' : paused ? 'Zuweisung pausiert' : 'Gespeichert'}${demo && paused ? ' · pausiert' : ''}</span>` : ''}</dd></dl>
+      <details class="detail-more"><summary>Regeln und Verbindungsdetails</summary>
+      <p class="detail-note">${demo ? 'Keine Wirkung auf deinen Router.' : 'Die Routerwirkung ist hier nicht bestätigt.'}</p>
       <section class="detail-section"><h3>Regeln${device.presetDraft || limit?.localDraft || device.blocklist?.localDraft ? ' im Entwurf' : ''}</h3><dl>${row('Priorität', (!device.rulesKnown && !device.presetDraft || device.assignment) && !preset ? 'Nicht verfügbar' : paused ? 'Vorlage pausiert' : preset?.priorityMode ? 'Bevorzugt' : 'Normal')}${row('Sperrzeit', limitText)}${row('Tagesbudget', !limit ? 'Nicht verfügbar' : limit.dailyLimitMinutes ? `${limit.dailyLimitMinutes} Minuten` : 'Kein Tagesbudget')}${row('Vorlagen-Blockliste', device.blocklist?.name || (preset?.blocklistId === null ? 'Keine' : !device.rulesKnown || preset?.blocklistId ? 'Nicht verfügbar' : 'Keine'))}</dl></section>
-      <section class="detail-section"><h3>Verbindung</h3><dl>${row('Status', device.online ? 'Online' : 'Offline')}${row('Typ', device.connection)}${row('IP-Adresse', device.ip)}${row('MAC-Adresse', device.mac)}${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section>`;
+      <section class="detail-section"><dl>${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section></details>`;
+    setDetails((detailsOpen || layout === 'baum') && $('device-search-panel').hidden);
+  }
+
+  function clearSelection() {
+    selectedId = ''; graph?.select(''); $('device-picker').value = ''; showDetails();
+  }
+
+  function setSearch(open) {
+    $('device-search-panel').hidden = !open;
+    $('open-device-search').setAttribute('aria-expanded', String(open));
+    if (open) { setDetails(false); $('device-search').focus(); }
+  }
+
+  function setDetails(open) {
+    detailsOpen = Boolean(open && selectedId && model);
+    $('device-details-panel').hidden = !detailsOpen;
+    $('device-bar-details').setAttribute('aria-expanded', String(detailsOpen));
+    if (detailsOpen) setSearch(false);
+  }
+
+  function updateDeviceBar() {
+    const device = model?.devices.find(item => item.id === selectedId);
+    const bar = $('device-bar-details');
+    bar.disabled = !device;
+    bar.innerHTML = device
+      ? `<i class="tree-status${device.online ? '' : ' offline-dot'}" aria-hidden="true"></i><span><b>${escape(device.name)}</b> · ${escape(device.groups.map(group => group.name).join(', '))} · ${escape(presetTitle(device))} · ${escape(device.connection)} ${escape(device.ip)} · ${device.online ? 'online' : 'offline'}</span>`
+      : `<span>${model ? `${escape(model.router.name)} · ${model.devices.length} Geräte · ${model.devices.filter(item => item.online).length} online` : 'Keine Netzwerkdaten'}</span>`;
+    const empty = !model || !matchingDevices(model, $('device-search').value, groupFilter).length;
+    $('previous-device').disabled = $('next-device').disabled = empty;
+  }
+
+  function stepDevice(direction) {
+    if (!model) return;
+    const matching = new Set(matchingDevices(model, $('device-search').value, groupFilter).map(device => device.id));
+    const order = [...new Map(topologyHubs(model, mode).flatMap(hub => hub.devices).filter(device => matching.has(device.id)).map(device => [device.id, device])).values()];
+    if (!order.length) return;
+    const index = order.findIndex(device => device.id === selectedId);
+    const next = index < 0 ? direction > 0 ? 0 : order.length - 1 : (index + direction + order.length) % order.length;
+    selectDevice(order[next].id);
   }
 
   $('reload-network').addEventListener('click', load);
   $('online-filter').addEventListener('click', () => { onlyOnline = !onlyOnline; applyOnlineFilter(); });
-  $('back-to-graph').addEventListener('click', () => document.querySelector('.topology-header').scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  $('open-device-search').addEventListener('click', () => setSearch($('device-search-panel').hidden));
+  $('close-device-search').addEventListener('click', () => { setSearch(false); $('open-device-search').focus(); });
+  $('close-device-details').addEventListener('click', () => { clearSelection(); $('open-device-search').focus(); });
+  $('device-bar-details').addEventListener('click', () => setDetails(!detailsOpen));
+  $('previous-device').addEventListener('click', () => stepDevice(-1));
+  $('next-device').addEventListener('click', () => stepDevice(1));
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (!$('device-search-panel').hidden) { setSearch(false); $('open-device-search').focus(); }
+    else if (detailsOpen) { setDetails(false); $('open-device-search').focus(); }
+  });
   $('device-search').addEventListener('input', filterGraph);
   $('device-picker').addEventListener('change', event => {
-    if (event.target.value) selectDevice(event.target.value);
-    else { selectedId = ''; graph?.select(''); showDetails(); }
+    if (event.target.value) { selectDevice(event.target.value); setDetails(true); }
+    else clearSelection();
   });
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => {
     if (!model || mode === button.dataset.view) return;
@@ -197,11 +266,12 @@
     document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
     filterGraph();
   }));
-  document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('button[data-layout]').forEach(button => button.addEventListener('click', () => {
     if (!model || layout === button.dataset.layout) return;
     layout = button.dataset.layout;
     try { localStorage.setItem('nethera.topology.layout', layout); } catch {}
     renderGraph();
+    detailsOpen = false; showDetails();
   }));
   const workspace = document.querySelector('.topology-workspace');
   const fullscreenButton = $('fullscreen-network');

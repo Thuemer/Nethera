@@ -1,6 +1,8 @@
 # Frontend-Prüfung für Best of Projects
 
-Stand: 19. November 2026. Polish und die anschließend beauftragte Klassisch-/Baum-Topologie sind auf `fix/frontend-presentation-polish` gesichert und aus Commit `8382f01` als reines Frontend auf LeoCloud ausgerollt. Image, Prüfungen und Rollback stehen im [Deployment-Protokoll](../deploy/leocloud/README.md#presentation-polish-und-klassisch-baum-topologie-vom-19112026). Backend, Konten und Daten wurden nicht verändert. Die früheren Prüfstände bleiben unten als Verlauf erhalten.
+Stand: 19. November 2026. Nach dem ersten Rollout wurde eine genauere Übernahme von Manus Mockup angefragt. Diese neue C2-Ring-/F-Baum-Überarbeitung wurde in der gefüllten lokalen Vorschau geprüft und für einen reinen Frontend-Rollout freigegeben. [Lokale Vorschau öffnen](http://127.0.0.1:5501/index.html?entry=website&demo=1), dann Topologie wählen. Der [direkte Mockup-Vergleich und Testumfang](../openspec/changes/topology-visual-refresh/verification.md#current-local-revision-actual-mockup-design) dokumentiert Originalbild, Geometrie, Flächen, Geräte-Leiste und Detailansichten. Backend, Konten und Daten bleiben unverändert.
+
+Der vorherige Stand aus `8382f01` läuft weiterhin auf LeoCloud. Image und Rollback stehen im [Deployment-Protokoll](../deploy/leocloud/README.md#presentation-polish-und-klassisch-baum-topologie-vom-19112026). Die folgenden Abschnitte halten den bisherigen Verlauf fest und sind keine Freigabe für den neuen lokalen Stand.
 
 ## Topologie-Integration nach Freigabe
 

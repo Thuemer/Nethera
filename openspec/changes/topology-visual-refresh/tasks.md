@@ -42,3 +42,16 @@
 - [x] 7.2 Deploy frontend-only to LeoCloud following the LeoCloud instructions in `AGENTS.md`, and record the rollout like previous frontend deployments
 
 Verified: 122 unit tests, 83 general browser scenarios, both topology layouts (320/390/768/1440 px), presentation regression and 42 polish checks pass. Topology tests also pass against the built image and the cloud-served assets with intercepted API fixtures. Source scan has no remaining Cytoscape imports. Task 6.4 remains open: demo views were inspected, but no authenticated real-router visual check has been completed. Frontend rollout and preservation checks passed; see verification.md and deploy/leocloud/README.md.
+
+## 8. Local mockup fidelity revision (19.11.2026)
+
+The user requested the actual C2 Ring / F mockup design, not another interpretation of the plan. The filled local preview has now been reviewed and approved for a frontend-only release.
+
+- [x] 8.1 Port the reference asset, classic geometry, surfaces, chips, selected tooltip and bottom device bar from mockup.html
+- [x] 8.2 Port F tree geometry, row styling and selected detail overlay; retain live data, drafts, filters, keyboard access and fullscreen
+- [x] 8.3 Compare both renderers against the original mockup with identical fixtures and dimensions, run regression tests and inspect desktop/mobile screenshots
+- [x] 8.4 Update existing documentation and open the filled local preview for review
+
+- [ ] 8.5 Commit and push on the existing branch after fetching teammates; build, test and deploy only the approved frontend, then verify hashes and protected resources
+
+Local verification completed: reference comparison, 122 unit tests, 83 general browser scenarios, 42 polish scenarios, presentation regression and extended topology suite passed. Both layouts and a device detail were inspected in the in-app preview. Task 6.4's real-router account check is still open.

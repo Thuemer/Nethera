@@ -21,7 +21,7 @@
   function router(parent, model, onClick) {
     const node = button('topology-router', parent, model.router.name, () => onClick(''));
     const image = element('img', '', node);
-    image.src = '/website/images/router.png'; image.alt = ''; image.draggable = false;
+    image.src = 'topology-router.png'; image.alt = ''; image.draggable = false;
     element('strong', '', node, model.router.name);
     element('span', '', node, `${model.devices.length} Geräte · ${model.devices.filter(device => device.online).length} online`);
     return node;
