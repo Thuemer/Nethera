@@ -7,6 +7,8 @@ Team-Abgleich: `git fetch origin --prune --tags` meldete `origin/main=0d08547` u
 
 ## Ergebnis
 
+Nachtraegliche Freigabe: Der Nutzer hat die Implementierung von Manus Klassisch-/Baum-Plan und den gemeinsamen Frontend-Rollout ausdruecklich angefordert. Die zuvor offene Klaerung ist damit erledigt. Umsetzung und Tests stehen separat in [topology-visual-refresh/verification.md](../topology-visual-refresh/verification.md); die unten stehende unveraenderte Topologie bezieht sich nur auf den urspruenglichen Polish-Scope.
+
 - Bestehende Nethera-Farben, Seitenaufteilung und Funktionen bleiben erhalten.
 - Schutz: kompakter Bearbeitungsstatus, weniger doppelte Angaben, ruhigere Listen; lokale Aenderungen werden gezielt gekennzeichnet, auch beim Entfernen einer Zuweisung.
 - Prioritaeten: nicht gemeldete Werte bleiben unbekannt; unveraenderte Beispiele werden nicht als eigene lokale Aenderungen bezeichnet.

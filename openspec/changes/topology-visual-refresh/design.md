@@ -58,6 +58,8 @@ topologie_custom.js        (state, loading, drafts, legend, inspector, fullscree
 - Dragging uses pointer events with a 4 px click threshold. Dragging a group moves its devices along, and dragging a device stores an offset from its group. Positions live in memory per layout and mode. "Anordnung zurücksetzen" clears them.
 - Zoom: + / − scale an inner layer with a CSS transform (0.5–2), and drag deltas are divided by the scale.
 
+The existing `/website/images/router.png` is reused instead of `Applikation/router.png`, which contains a baked-in mint glow and wide padding. The website asset itself is not changed. Pairs of devices are placed perpendicular to their hub's radial direction to leave the centre clear. Dragging empty graph space pans a zoomed view; reset clears the camera offset too.
+
 ### 5. Baum geometry
 Router card on the left (image, name, `n Geräte · m online`), group cards in the middle (swatch, name, count), and device rows on the right (status dot, name, connection chip, IP). Rows are 36 px high with a 22 px gap between groups. Cubic Bézier curves connect router → group → row, with the selected device's curve in full group colour. Below 640 px the columns narrow, the IP is hidden and the row keeps name + status. The stage scrolls vertically. Zoom buttons and reset are hidden in Baum, while fullscreen stays.
 
@@ -79,10 +81,10 @@ Devices and groups are real `<button>` elements with `aria-label` (`"<Name>, <Gr
 
 ## Migration Plan
 
-1. Implement on branch `topology-visual-refresh`, keeping `topology-model.js` changes additive until both layouts work.
+1. Implement alongside the approved polish on `fix/frontend-presentation-polish` (integration explicitly requested on 19.11.2026), keeping model changes additive until both layouts work.
 2. Remove Cytoscape vendor files and the script tag once the browser test passes for both layouts.
 3. Bump the `?v=` query strings and roll out to LeoCloud as a frontend-only deployment (see `AGENTS.md` and the LeoCloud instructions).
-4. Rollback: revert the merge commit. There is no data or API migration.
+4. Rollback: restore the previous frontend image digest. There is no data or API migration and no Git history needs rewriting.
 
 ## Open Questions
 

@@ -34,7 +34,7 @@ button:disabled { opacity: .45; cursor: default; }
 .topology-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 286px; }
 .graph-surface { position: relative; min-width: 0; min-height: 0; background: #1c2226; }
 #network-graph { position: absolute; inset: 0 0 62px; }
-#graph-empty { position: absolute; inset: 40% 20px auto; text-align: center; color: var(--text-soft); pointer-events: none; }
+#graph-empty { position: absolute; inset: 12px 20px auto; text-align: center; color: var(--text-soft); pointer-events: none; }
 .graph-controls { position: absolute; left: 16px; bottom: 16px; display: flex; gap: 4px; }
 .graph-caption { position: absolute; right: 16px; bottom: 28px; font-size: 11px; color: var(--text-soft); pointer-events: none; }
 .network-inspector { overflow-y: auto; border-left: 1px solid var(--line); background: var(--bg-main); padding: 20px; }
@@ -73,23 +73,24 @@ button:disabled { opacity: .45; cursor: default; }
   .graph-caption { left: 16px; right: 12px; top: 12px; bottom: auto; }
 }
 
-/* The topology shares the app's mint glow, quiet surfaces and rounded panels. */
+/* Shared Nethera surfaces; the graph itself uses rings and lines without glow. */
 html { color-scheme: dark; }
-body { -webkit-font-smoothing: antialiased; background: radial-gradient(ellipse 850px 440px at 15% 0%, rgba(var(--accent-rgb), .08), transparent 70%), var(--bg-main); }
+body { -webkit-font-smoothing: antialiased; }
 .topology-workspace { padding: 24px; gap: 16px; min-height: 680px; }
 .topology-header { padding: 8px 0 0; border: 0; }
 .topology-header .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 11px; text-transform: uppercase; }
 h1 { font-size: 30px; font-weight: 650; }
-.view-modes { border-radius: 10px; background: rgba(var(--bg-card-rgb), .35); }
-.view-modes button { border-radius: 7px; min-height: 40px; }
+.topology-tools { flex-wrap: wrap; }
+.view-modes { border-radius: 6px; background: rgba(var(--bg-card-rgb), .35); }
+.view-modes button { border-radius: 4px; min-height: 40px; }
 .view-modes button[aria-pressed='true'] { color: var(--accent); background: rgba(var(--accent-rgb), .12); }
 .icon-button { border-radius: 8px; background: rgba(var(--bg-card-rgb), .6); }
 .legend-bar { padding: 0; border: 0; gap: 12px; }
 .legend-item { border-radius: 8px; }
 .topology-body { gap: 16px; grid-template-columns: minmax(0, 1fr) 286px; }
-.graph-surface { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: radial-gradient(ellipse at 48% 42%, rgba(var(--accent-rgb), .12), transparent 65%), radial-gradient(circle, rgba(var(--text-rgb), .045) 1px, transparent 1px) 0 0 / 24px 24px, var(--bg-card); }
+.graph-surface { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #202627; }
 .graph-controls { gap: 6px; }
-.network-inspector { border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--bg-main) 88%, var(--accent-2)); }
+.network-inspector { border: 1px solid var(--line); border-radius: 8px; background: var(--bg-main); }
 .search-field, .device-picker select { border-radius: 8px; min-height: 44px; background: rgba(var(--bg-card-rgb), .35); }
 .detail-kicker { color: var(--accent); }
 .network-notice { border: 1px solid rgba(245, 158, 11, .25); border-radius: 8px; background: rgba(245, 158, 11, .08); }
@@ -111,7 +112,60 @@ h1 { font-size: 30px; font-weight: 650; }
 /* Fullscreen contains the complete workspace, including filters and device details. */
 .topology-workspace:fullscreen {
   width: 100%; height: 100dvh; min-height: 0; overflow: auto;
-  background: radial-gradient(ellipse at 15% 0%, rgba(var(--accent-rgb), .08), transparent 60%), var(--bg-main);
+  background: var(--bg-main);
+}
+
+.topology-stage { overflow: hidden; isolation: isolate; }
+.topology-stage[data-layout='klassisch'] { touch-action: none; }
+.topology-stage[data-layout='baum'] { overflow-y: auto; scrollbar-width: thin; }
+.topology-lines { position: absolute; inset: 0; pointer-events: none; }
+.classic-layer { position: absolute; transform-origin: top left; }
+.topology-router { position: absolute; transform: translate(-50%, -50%); background: none; border: 0; padding: 0; display: grid; gap: 6px; text-align: center; }
+.topology-router img { width: 100%; height: auto; pointer-events: none; }
+.topology-router strong, .topology-router span { overflow-wrap: anywhere; }
+.topology-router strong { font-size: 13px; }
+.topology-router span { color: var(--text-soft); font-size: 11px; }
+.topology-hub { position: absolute; transform: translate(-50%, -50%); width: 146px; min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid color-mix(in srgb, var(--group-color) 50%, transparent); border-radius: 22px; background: color-mix(in srgb, var(--group-color) 12%, var(--bg-card)); font-size: 12px; text-align: left; }
+.hub-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hub-count { flex: none; font-size: 11px; color: var(--group-color); }
+.topology-hub[aria-pressed='true'] { outline: 1px solid var(--group-color); outline-offset: 2px; }
+.classic-device { position: absolute; transform: translate(-50%, -50%); border: 0; padding: 9px; width: 44px; height: 44px; background: none; touch-action: none; }
+.classic-layer .topology-hub { touch-action: none; user-select: none; }
+.device-ring { display: block; position: relative; width: 26px; height: 26px; border: 1.5px solid var(--group-color); border-radius: 50%; background: color-mix(in srgb, var(--group-color) 10%, var(--bg-card)); }
+.device-ring::after { content: ''; position: absolute; width: 6px; height: 6px; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; background: var(--group-color); }
+.offline .device-ring { border-style: dashed; }
+.offline .device-ring::after { display: none; }
+.device-name { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 124px; text-align: center; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.offline .device-name { color: var(--text-soft); }
+.classic-device:hover .device-ring, .classic-device:focus-visible .device-ring { outline: 2px solid var(--group-color); outline-offset: 2px; }
+.classic-device[aria-pressed='true'] .device-ring { outline: 1.5px solid #e5ebe7; outline-offset: 2px; transform: scale(1.15); }
+.selection-muted { opacity: .4; }
+.filtered-out { opacity: .14; }
+.tree-layer { position: relative; min-width: 0; width: 100%; }
+.tree-layer .topology-router { left: 2%; width: 20%; transform: translateY(-50%); padding: 10px; }
+.tree-layer .topology-hub { left: 32%; width: 21%; transform: translateY(-50%); border-radius: 6px; }
+.tree-device { position: absolute; left: 63%; width: calc(37% - 18px); height: 36px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg-main); display: flex; align-items: center; gap: 7px; text-align: left; }
+.tree-device[aria-pressed='true'] { border-color: var(--group-color); background: color-mix(in srgb, var(--group-color) 10%, var(--bg-main)); }
+.tree-status { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--group-color); }
+.offline .tree-status { background: transparent; border: 1px solid var(--text-soft); }
+.tree-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; flex: 1; font-size: 12px; }
+.tree-connection { font-size: 10px; color: var(--text-soft); }
+.tree-ip { font-size: 10px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.topology-stage { container-type: inline-size; }
+@container (max-width: 780px) { .tree-ip { display: none; } }
+@container (max-width: 640px) {
+  .tree-layer .topology-router { left: 1%; width: 20%; padding: 2px; }
+  .tree-layer .topology-router strong { font-size: 11px; }
+  .tree-layer .topology-router span { font-size: 10px; }
+  .tree-layer .topology-hub { left: 27%; width: 23%; padding: 7px; font-size: 11px; gap: 4px; }
+  .tree-device { left: 57%; width: calc(43% - 8px); padding: 5px; gap: 4px; }
+  .tree-name { font-size: 11px; }
+  .tree-connection { font-size: 9px; }
+}
+@media (max-width: 700px) {
+  .topology-tools { justify-content: flex-start; gap: 8px; }
+  .view-modes button { padding: 7px 9px; }
+  .topology-tools #reload-network { margin-left: auto; }
 }
 .topology-workspace::backdrop { background: var(--bg-main); }
 @media (max-width: 700px) {

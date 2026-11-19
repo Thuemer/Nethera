@@ -2,6 +2,10 @@
 
 Stand: 19. November 2026. Der frühere Frontend-Rollout ist unten separat dokumentiert. Die anschließende Überarbeitung auf `fix/frontend-presentation-polish` wurde lokal angesehen und für Commit/Push sowie einen reinen Frontend-Rollout angefragt. Der neue Rollout ist noch nicht erfolgt.
 
+## Topologie-Integration nach Freigabe
+
+Manuels neuer Push `0d08547` enthielt Plan und Mockup, noch keine fertige App-Seite. Auf ausdruecklichen Wunsch wurde sein `Klassisch / Baum`-Plan anschliessend auf demselben Branch umgesetzt. Beide Ansichten nutzen unveraenderte Routerdaten und lokale Entwuerfe. 122 Unit-Tests, 83 allgemeine Browser-Szenarien, 42 Polish-Szenarien, Praesentationsregression und die neue Topologie-Suite bestanden. Details und der noch offene manuelle Echtkonto-Check stehen im [Topologie-Pruefprotokoll](../openspec/changes/topology-visual-refresh/verification.md). Die folgenden Aussagen zum unveraenderten Topologie-Design beschreiben den zuvor abgeschlossenen Polish, nicht diese anschliessend angefragte Integration.
+
 ## Aktuelle lokale Vorschau
 
 [Gefüllte lokale Demovorschau ohne Anmeldung öffnen](http://127.0.0.1:5501/index.html?entry=website&demo=1). Sie verwendet dieselben Frontend-Dateien und vorhandenen Beispieldaten, aber einen getrennten Server ausschließlich auf `127.0.0.1:5501`. Das Beispielkonto ist keine echte Keycloak-Anmeldung. Alle API-Schreibzugriffe werden abgelehnt; es gibt weder einen Backend-Proxy noch Zugriff auf echte Konten oder Router. Dashboard, Topologie, Schutz und Internetzeiten wurden mit gefüllten Ansichten geprüft. Die Accountansicht zeigt ausdrücklich ein schreibgeschütztes Beispielkonto.
@@ -21,7 +25,7 @@ Nach der Bereinigung der Demo-Hinweise bestehen 120 JavaScript-Tests, die erweit
 
 Umfang, Testbefehle und Grenzen stehen im [OpenSpec-Prüfprotokoll](../openspec/changes/frontend-presentation-polish/verification.md); die Qualitätsanforderungen sind in der [MetaSpec](meta-spec.md#13-anforderungen-an-qualität-und-benutzerfreundlichkeit) verankert. Manus Topologie-Design, Website, Backend, Konten, Daten und Router wurden bei dieser Überarbeitung nicht verändert.
 
-**Release-Abgleich:** Vor dem Commit wurden alle Team-Branches abgerufen. Manus Commit `0d08547` enthält ausschließlich den Plan und das Mockup für „Klassisch“ und „Baum“, noch keine fertigen App-Renderer. Er wurde ohne Überschneidung per Fast-Forward auf den Feature-Branch übernommen. Die Umsetzung der zusätzlichen Topologie-Auswahl wird separat geklärt. `router-time-limits` enthält einen eigenen Zeitlimit-Vorschlag und wird nicht mit dem Frontend ausgerollt. Der neue Polish ist noch nicht auf LeoCloud; die bisherigen Deployment-Einträge dokumentieren den älteren, bereits laufenden Stand.
+**Release-Abgleich:** Vor dem Commit wurden alle Team-Branches abgerufen. Manus Commit `0d08547` enthält den Plan und das Mockup für „Klassisch“ und „Baum“. Er wurde ohne Überschneidung per Fast-Forward auf den Feature-Branch übernommen. Die anschließende Implementierung wurde ausdrücklich freigegeben und ist oben separat dokumentiert. `router-time-limits` enthält einen eigenen Zeitlimit-Vorschlag und wird nicht mit dem Frontend ausgerollt. Der neue Polish ist noch nicht auf LeoCloud; die bisherigen Deployment-Einträge dokumentieren den älteren, bereits laufenden Stand.
 
 ## Ausgangsstand vom 18. November
 

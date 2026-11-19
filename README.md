@@ -117,8 +117,11 @@ unter der oben verlinkten Adresse.
 Der aktuelle lokale Frontend-Stand vom **19. November 2026** ist in der
 [Präsentationsprüfung](Documentation/frontend-presentation-check.md) dokumentiert,
 einschließlich Vorschau, Änderungen, Tests und noch offener manueller Abnahme.
-Die Überarbeitung auf `fix/frontend-presentation-polish` bleibt bis zur
-Freigabe lokal; sie ist nicht mit dem bereits ausgerollten Stand gleichzusetzen.
+Die Überarbeitung auf `fix/frontend-presentation-polish` wurde für einen reinen
+Frontend-Rollout freigegeben. Der tatsächliche Release-Stand wird im
+[Deployment-Protokoll](deploy/leocloud/README.md) festgehalten.
+Die [Klassisch-/Baum-Topologie](openspec/changes/topology-visual-refresh/verification.md)
+setzt Manuels Entwurf mit gemerkter Auswahl und gemeinsamen Routerdaten um.
 Der [OpenSpec-Change](openspec/changes/frontend-presentation-polish/proposal.md)
 verknüpft die Umsetzung mit den Qualitätsanforderungen der
 [MetaSpec](Documentation/meta-spec.md).

@@ -51,29 +51,22 @@
     return { ...model, devices, groups: countGroups(model.allGroups, devices) };
   }
 
-  function graphElements(model, mode = 'groups') {
-    const nodes = [{ data: { id: 'router', label: model.router.name, kind: 'router', color: '#164b60' } }];
-    const edges = [];
-    const hubs = mode === 'groups' ? model.groups : [...new Set(model.devices.map(device => device.connection))].map(name => ({ id: `connection-${name}`, name, color: '#76b7c5' }));
-    hubs.forEach(group => {
-      nodes.push({ data: { id: group.id, label: group.name, kind: 'group', color: group.color } });
-      edges.push({ data: { id: `router-${group.id}`, source: 'router', target: group.id } });
-    });
-    model.devices.forEach(device => {
-      nodes.push({ data: { id: device.id, label: device.name, kind: 'device', color: device.groups[0].color, online: device.online ? 1 : 0 } });
-      const parents = mode === 'groups' ? device.groups.map(group => group.id) : [`connection-${device.connection}`];
-      parents.forEach(parent => edges.push({ data: { id: `${parent}-${device.id}`, source: parent, target: device.id } }));
-    });
-    return [...nodes, ...edges];
-  }
-
   function matchingDevices(model, query, groupId) {
     const search = String(query || '').trim().toLocaleLowerCase();
     return model.devices.filter(device => (!groupId || device.groups.some(group => group.id === groupId)) &&
       (!search || [device.name, device.ip, device.mac, device.preset?.name, ...device.groups.map(group => group.name)].some(value => String(value || '').toLocaleLowerCase().includes(search))));
   }
 
-  const api = { buildModel, onlineOnly, graphElements, matchingDevices };
+  function topologyHubs(model, mode = 'groups') {
+    const hubs = mode === 'groups' ? model.groups
+      : [...new Set(model.devices.map(device => device.connection))].sort().map(name => ({ id: `connection-${name}`, name, color: '#76b7c5' }));
+    return hubs.map(hub => ({ ...hub, kind: mode === 'groups' ? 'group' : 'connection',
+      devices: model.devices.filter(device => mode === 'groups'
+        ? device.groups.some(group => group.id === hub.id) : `connection-${device.connection}` === hub.id)
+    })).filter(hub => hub.devices.length);
+  }
+
+  const api = { buildModel, onlineOnly, topologyHubs, matchingDevices };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.NetheraTopology = api;
 })(typeof window !== 'undefined' ? window : globalThis);
