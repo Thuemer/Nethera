@@ -34,7 +34,7 @@
 - [x] 6.1 Rewrite `tests/topology-browser.cjs` to run its existing scenarios (picker selection, node click via DOM, mode switch, zoom/reset, fullscreen with inspector, permission failure, reload failure/recovery, 390/768/1440 px without horizontal scroll) in both layouts
 - [x] 6.2 Add browser checks for the layout switch persistence, narrow-screen default and reference styling; revision 8 verifies no glow on classic dots/pills and preserves the mockup's router/tree shadows
 - [x] 6.3 Run `node --test tests/*.test.cjs` and `npm run test:topology` and fix failures
-- [ ] 6.4 Check both layouts manually against `mockup.html` (C2 Ring, F) with demo data and a real router account
+- [x] 6.4 Check both layouts manually against `mockup.html` (C2 Ring, F) with demo data and a real router account
 
 ## 7. Rollout
 
