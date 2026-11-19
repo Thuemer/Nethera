@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="nethera-select.css">
   <link rel="stylesheet" href="security.css?v=20261116-local-draft">
-  <link rel="stylesheet" href="nethera-theme.css?v=20261118-polish2">
-  <link rel="stylesheet" href="data-source.css?v=20261118-polish2">
+  <link rel="stylesheet" href="nethera-theme.css?v=20261119-polish">
+  <link rel="stylesheet" href="data-source.css?v=20261119-polish">
 </head>
 <body data-local-draft="true">
   <main class="page security-page">
@@ -22,15 +22,17 @@
       <button type="button" data-tab="priority" role="tab"><i data-lucide="gauge"></i><span>Priorität</span></button>
       <button type="button" data-tab="wifi" role="tab"><i data-lucide="wifi"></i><span>WLAN-Analyse</span></button>
     </nav>
-    <section class="draft-strip" aria-label="Lokale Bearbeitung">
+    <section class="security-context" aria-label="Bearbeitungsstatus">
+    <div class="draft-strip" aria-label="Lokale Bearbeitung">
       <div><strong>Lokaler Entwurf</strong><span id="draftNotice">Nur in diesem Browser-Tab. Keine Übertragung an den Router.</span></div>
       <button id="discardDraft" class="small-btn ghost" type="button" disabled><i data-lucide="rotate-ccw" aria-hidden="true"></i>Entwurf verwerfen</button>
-    </section>
+    </div>
     <data-status id="statusBox" role="status" aria-live="polite" text="Lade Regeln ..."></data-status>
     <div class="router-control-strip" role="status" aria-live="polite">
       <span id="routerControlStatus">Routerwirkung wird geprüft ...</span>
       <button id="refreshRouterControl" class="small-btn ghost" type="button">Status prüfen</button>
     </div>
+    </section>
     <details class="security-summary" id="confirmedRules" hidden>
       <summary><i data-lucide="chevron-right" aria-hidden="true"></i>Am Router bestätigte Sperrlisten</summary>
       <dl id="confirmedRulesList" class="confirmed-rules"></dl>
@@ -249,11 +251,11 @@
   </main>
 
   <script src="config.js"></script>
-  <script src="api.js?v=20261118-demo"></script>
+  <script src="api.js?v=20261119-polish"></script>
   <script src="components.js"></script>
   <script src="nethera-select.js?v=20261118-polish2"></script>
   <script src="vendor/lucide.min.js"></script>
   <script src="security-draft.js?v=20261116-topology-draft"></script>
-  <script src="security.js?v=20261116-topology-draft"></script>
+  <script src="security.js?v=20261119-polish"></script>
 </body>
 </html>

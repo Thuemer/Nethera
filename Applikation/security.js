@@ -69,6 +69,7 @@ function sanitizeDomain(value) {
 function setStatus(text, tone = 'info') {
   if (state.preview && tone === 'success') text = 'Im lokalen Entwurf gespeichert. Nicht an den Router gesendet.';
   const status = document.getElementById('statusBox');
+  if (status) status.hidden = false;
   status?.setAttribute('text', text);
   status?.setAttribute('state', tone);
 }
@@ -133,6 +134,8 @@ async function loadSecurityState(refresh = false) {
     useDraft();
     setStatus(router.dataMode === 'unavailable' ? 'Gerätedaten nicht verfügbar. Lokale Entwürfe bleiben erhalten.'
       : localDraft.dirty ? 'Lokaler Entwurf geladen. Routereinstellungen unverändert.' : 'Gerätedaten geladen. Änderungen werden nur in diesem Tab gespeichert.', 'info');
+    // The persistent draft and source notices already describe a successful initial load.
+    if (state.loaded && !refresh) document.getElementById('statusBox').hidden = true;
   } catch (error) {
     Object.assign(state, { loaded: false, preview: true, draftError: true, rulesKnown: false, dataMode: 'unavailable', routerControl: null, routerControlError: error, devices: [], groups: [], members: [], blocklists: [], presets: [], assignments: [], timeLimits: [], wifiNetworks: [] });
     renderAll();
@@ -350,17 +353,24 @@ function renderGroupDevices() {
     const presetBlocklist = state.blocklists.find(item => Number(item.id) === Number(preset?.blocklistId));
     const ruleCount = new Set([...blocklistDomains(groupBlocklist), ...blocklistDomains(presetBlocklist),
       ...state.blocklists.filter(item => item.sourceType === 'NETWORK').flatMap(blocklistDomains)]).size;
-    const presetState = state.preview ? 'Lokaler Entwurf' : preset ? (assignment?.status === 'paused' ? 'Vorlage pausiert' : 'Vorlage zugewiesen') : state.rulesKnown ? 'Keine Vorlage' : 'Zuweisung nicht gemeldet';
+    const locallyChanged = group?.localDraft || preset?.localDraft
+      || state.draftDeviceIds?.members?.includes(Number(device.id))
+      || state.draftDeviceIds?.assignments?.includes(Number(device.id));
+    const presetState = locallyChanged ? 'Lokaler Entwurf' : assignment?.status === 'paused' ? 'Vorlage pausiert' : '';
     const presetClass = assignment?.status === 'paused' ? 'warn' : '';
+    const ruleSummary = ruleCount > 0 ? `${ruleCount} Filtereinträge`
+      : state.rulesKnown ? 'Keine zusätzlichen Filter' : 'Routerzuweisungen nicht bestätigt';
+    const connectionType = String(device.connectionType || '').toLowerCase();
+    const connection = connectionType === 'wifi' ? 'WLAN' : connectionType === 'lan' ? 'LAN' : 'Verbindung unbekannt';
     return `
       <article class="device-group-item">
         <div class="device-group-main">
           <div class="device-title-row">
             <strong>${escapeText(device.hostname || 'Unbekanntes Gerät')}</strong>
-            <span class="badge ${presetClass}">${escapeText(presetState)}</span>
+            ${presetState ? `<span class="badge ${presetClass}">${escapeText(presetState)}</span>` : ''}
           </div>
-          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${escapeText(device.connectionType || 'unbekannt')} · Gruppe: ${escapeText(group?.name || (canEditRules() ? 'Nicht zugewiesen' : 'Nicht gemeldet'))}</span>
-          <span class="preset-line">Vorlage: <b>${escapeText(preset?.name || (canEditRules() ? 'Keine' : 'Nicht gemeldet'))}</b> · ${canEditRules() ? ruleCount : '—'} Regeln · Priorität: ${!preset && !canEditRules() ? 'Unbekannt' : preset?.priorityMode ? 'Bevorzugt' : 'Normal'}</span>
+          <span>${escapeText(device.ipAddress || 'Keine IP')} · ${connection}</span>
+          <span class="preset-line">${escapeText(ruleSummary)}${preset?.priorityMode ? ' · Priorität bevorzugt' : ''}</span>
         </div>
         <div class="device-group-actions">
           <label><span>Gruppe</span><select aria-label="Gruppe für ${escapeText(device.hostname)}" data-device-group="${device.id}">${groupOptions(group?.id)}</select></label>
@@ -647,13 +657,16 @@ function renderPriorityList() {
   const list = document.getElementById('priorityList');
   if (!list) return;
   list.innerHTML = state.devices.map(device => {
-    if (!canEditRules() && !presetForDevice(device.id)) {
+    const preset = presetForDevice(device.id);
+    const locallyChanged = preset?.localDraft || state.draftDeviceIds?.assignments?.includes(Number(device.id));
+    if (!state.rulesKnown && !preset && !locallyChanged) {
       return `<div class="priority-row"><span>${escapeText(device.hostname)}</span><span class="badge">Priorität nicht gemeldet</span></div>`;
     }
-    const desired = presetForDevice(device.id)?.priorityMode ? 'high' : 'normal';
+    const desired = preset?.priorityMode ? 'high' : 'normal';
     const actual = state.routerControl?.priority?.[device.id];
     const confirmed = !state.preview && state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
-    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${state.preview ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Nur gespeichert'}</span></div>`;
+    const status = locallyChanged ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerwirkung unbestätigt';
+    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${status}</span></div>`;
   }).join('');
 }
 

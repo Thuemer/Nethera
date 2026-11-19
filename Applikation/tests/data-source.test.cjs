@@ -23,6 +23,37 @@ function harness(routers = []) {
 const live = { id: 1, dataMode: 'live', connection: 'online', devices: [{ id: 20, hostname: 'Real laptop' }] };
 const offline = { id: 1, dataMode: 'demo', connection: 'offline', devices: [{ id: 99, hostname: 'Old DB seed' }] };
 
+test('embedded demo has one shell label; live and failure notices remain visible', async () => {
+  const h = harness([offline]);
+  const notice = { dataset: {} }, indicator = { hidden: true }, body = { dataset: {} };
+  h.context.document = { body, getElementById: () => notice };
+  h.context.window.parent = { document: { getElementById: () => indicator } };
+  await h.run('NetheraApi.getPrimaryRouter()');
+  assert.equal(indicator.hidden, false);
+  assert.equal(notice.hidden, true);
+  assert.equal(notice.textContent, 'Demo');
+  assert.equal(body.dataset.sourceMode, 'demo');
+  h.context.routers = [live];
+  await h.run('NetheraApi.getPrimaryRouter()');
+  assert.equal(indicator.hidden, true);
+  assert.equal(notice.hidden, false);
+  assert.equal(body.dataset.sourceMode, 'live');
+  h.context.status = 500;
+  await assert.rejects(h.run('NetheraApi.getPrimaryRouter()'));
+  assert.equal(notice.hidden, false);
+  assert.match(notice.textContent, /unbekannt/);
+  assert.equal(body.dataset.sourceMode, 'unavailable');
+});
+
+test('standalone demo pages keep a concise source label', async () => {
+  const h = harness([offline]);
+  const notice = { dataset: {} };
+  h.context.document = { body: { dataset: {} }, getElementById: () => notice };
+  await h.run('NetheraApi.getPrimaryRouter()');
+  assert.equal(notice.textContent, 'Demo');
+  assert.equal(notice.hidden, false);
+});
+
 test('live mode never fills missing streams or WLAN with demo values', async () => {
   const h = harness([live]);
   const router = await h.run('NetheraApi.getPrimaryRouter()');

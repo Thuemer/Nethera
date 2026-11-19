@@ -185,8 +185,9 @@
     });
     resizeObserver.observe($('network-graph'));
     $('graph-caption').textContent = model.hasLocalDraft ? mode === 'groups' ? 'Gruppen inklusive lokaler Entwürfe' : 'Verbindungen unverändert · Regeln als Entwurf'
-      : model.router.dataMode === 'demo' ? 'Beispiel-Netzwerk · Nur Ansicht'
+      : model.router.dataMode === 'demo' ? ''
       : mode === 'groups' ? model.rulesKnown ? 'Gruppenzuordnung vom Router' : 'Nur verifizierte Gruppenzuordnungen' : 'Verbindungstyp laut Gerätedaten';
+    $('graph-caption').hidden = !$('graph-caption').textContent;
     $('network-graph').setAttribute('aria-label', `Netzwerkgraph mit ${model.devices.length} Geräten. Auswahl auch unter Gerät auswählen.`);
   }
 

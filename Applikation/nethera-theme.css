@@ -55,7 +55,7 @@
 
 html { color-scheme: dark; }
 body, .account-view {
-    background: radial-gradient(ellipse 800px 400px at 10% 0%, rgba(var(--accent-rgb), .07), transparent 70%), var(--bg-main);
+    background: var(--bg-main);
     -webkit-font-smoothing: antialiased;
 }
 *, *::before, *::after { letter-spacing: 0; }
@@ -67,7 +67,7 @@ h2, .card-header h2 { font-size: 18px; font-weight: 600; }
 .card, .account-card {
     background: color-mix(in srgb, var(--bg-main) 88%, var(--accent-2));
     border-color: rgba(var(--text-rgb), .10);
-    border-radius: 12px;
+    border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .10);
 }
 .hero.card, .account-hero { background: transparent; box-shadow: none; }
@@ -156,9 +156,62 @@ body:not(.app-shell):not(.account-view) { padding: 24px; }
 .hero .eyebrow, .account-eyebrow { font-size: 11px; color: var(--accent); margin-bottom: 8px; }
 .subline { max-width: 65ch; }
 .card-header { gap: 12px; }
-.page > .stats-grid, .traffic-page > .stats-grid { border-radius: 12px; }
+.page > .stats-grid, .traffic-page > .stats-grid { border-radius: 8px; }
 .stat p { text-transform: none; font-weight: 500; line-height: 1.4; }
 .app-card { height: 100%; }
+.page app-card { display: block; min-width: 0; }
+.page .card-body { min-width: 0; }
+.page data-status:not([state="error"]) .status-message {
+    padding: 4px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-soft);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.page data-status[state="success"] .status-message { color: var(--accent); }
+.page .data-source-notice { margin-bottom: 0; border-radius: 4px; }
+.page .router-control-strip { padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; font-size: 13px; line-height: 1.5; }
+.page .router-control-strip > span { flex: 1 1 280px; }
+.page .router-control-strip > button { flex: none; }
+.time-limits-page > .two-grid { align-items: start; }
+.time-limits-page .router-state { border: 0; font-weight: 400; color: var(--text-soft); }
+.security-context { display: grid; gap: 8px; min-width: 0; }
+.security-context .draft-strip { padding-top: 0; }
+.security-context .router-control-strip { border: 0; padding-bottom: 0; }
+.security-page .device-group-list, .security-page .rule-list,
+.security-page .preset-list, .security-page .wifi-list, .status-stack { gap: 0; }
+.security-page .device-group-item, .security-page .rule-item,
+.security-page .preset-item, .security-page .wifi-item, .status-stack .status-row {
+    padding: 16px 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+}
+.security-page :is(.device-group-item, .rule-item, .preset-item, .wifi-item):last-child,
+.status-stack .status-row:last-child { border-bottom: 0; }
+.security-page .device-title-row { justify-content: flex-start; gap: 8px; }
+.security-page .device-title-row strong { font-size: 15px; overflow-wrap: anywhere; }
+.security-page .device-group-main { align-content: center; gap: 6px; }
+.security-page .device-group-actions label { font-weight: 500; }
+.security-page .device-title-row .badge { flex: none; white-space: nowrap; }
+.status-stack .status-row strong { font-size: 14px; font-weight: 500; }
+.status-stack .status-row span { overflow-wrap: anywhere; }
+.page .config-row, .security-page .security-toggle {
+    padding: 14px 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+}
+.time-limits-page .limit-list { gap: 0; }
+.time-limits-page .limit-card { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; padding: 16px 0; }
+.time-limits-page .limit-card:last-child { border-bottom: 0; }
+.time-limits-page .limit-card.is-blocked { border-left: 3px solid var(--danger); padding-left: 12px; }
+.security-page .security-tabs button { min-height: 64px; gap: 6px; padding: 10px 6px; }
+.security-page .security-tabs button svg { width: 18px; height: 18px; }
 .field > span { font-size: 13px; font-weight: 500; }
 small, .helper-text, .detail-note { line-height: 1.6; }
 input[type="search"] { min-width: 0; }

@@ -89,4 +89,7 @@ Die Hauptzielgruppe umfasst private Haushalte, insbesondere:
 * **Echtzeit-Feedback:** Wie schnell meldet der Router den Erfolg einer Änderung an die App zurück?
 * **Offline-Modus:** Ist eine Konfiguration im lokalen WLAN ohne Internetverbindung im ersten Prototyp möglich? (muss nachbearbeitet werden).
 
+## 17. Umsetzungsnachweise
+* **Frontend-Qualität, Abschnitte 13 und 14 (19.11.2026):** Der Change [frontend-presentation-polish](../openspec/changes/frontend-presentation-polish/proposal.md) dokumentiert konsistente bestehende Oberflächen, mobile Darstellung und die Unterscheidung zwischen unbekannten Routerdaten, Demodaten und lokalen Entwürfen. Testumfang und offene manuelle Prüfungen stehen im [Prüfprotokoll](../openspec/changes/frontend-presentation-polish/verification.md). Dies ist kein Nachweis einer Router-Umsetzung oder einer vollständigen End-to-End-Abnahme der User Stories.
+
 ---

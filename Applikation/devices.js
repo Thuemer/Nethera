@@ -63,6 +63,7 @@ function bySort(sortBy, a, b) {
 function setMessage(message, isError = false) {
     const el = document.getElementById('statusMessage');
     if (!el) return;
+    el.hidden = !message;
     el.textContent = message;
     el.classList.toggle('error', isError);
 }
@@ -171,7 +172,7 @@ async function loadDevices() {
         updateStats();
         applyFilters();
 
-        setMessage(state.dataMode === 'live' ? 'Geräteübersicht aktualisiert.' : state.dataMode === 'demo' ? 'Beispielgeräte · keine Routerverbindung.' : 'Keine bestätigten Gerätedaten verfügbar.');
+        setMessage(state.dataMode === 'live' ? 'Geräteübersicht aktualisiert.' : state.dataMode === 'demo' ? '' : 'Keine bestätigten Gerätedaten verfügbar.');
     } catch (error) {
         state.dataMode = 'unavailable';
         state.devices = [];

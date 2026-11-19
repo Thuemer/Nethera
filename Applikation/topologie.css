@@ -98,7 +98,10 @@ h1 { font-size: 30px; font-weight: 650; }
   .topology-workspace { padding: 16px; min-height: 100dvh; }
   .topology-header { padding: 4px 0 0; }
   h1 { font-size: 26px; }
-  .legend-bar { padding: 0; }
+  .legend-bar { padding: 0; flex-wrap: wrap; }
+  .legend-title { align-self: center; }
+  #group-legend { order: 1; width: 100%; min-width: 0; }
+  .legend-item { max-width: 100%; overflow-wrap: anywhere; }
   .graph-surface { height: clamp(380px, 65dvh, 520px); }
   .network-inspector { overflow: visible; }
   .graph-controls { bottom: 12px; left: 12px; }

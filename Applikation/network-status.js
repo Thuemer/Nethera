@@ -25,7 +25,7 @@ function renderDetails(router, error) {
   if (!details) return;
 
   const authRequired = /\b(401|403)\b/.test(String(error?.message));
-  const sourceStatus = !error ? 'Erreichbar'
+  const sourceStatus = !error ? (router?.dataMode === 'demo' ? 'Demodaten' : router?.dataMode === 'unavailable' ? 'Keine aktuellen Daten' : 'Routerdaten')
     : authRequired ? 'Anmeldung erforderlich'
       : error.message === 'Keine Routerdaten gefunden' ? 'Erreichbar' : 'Nicht erreichbar';
 
@@ -55,15 +55,17 @@ async function checkStatus() {
     const router = await NetheraApi.getPrimaryRouter();
     const wifiDevices = (router.devices || []).filter(device => String(device.connectionType || '').toLowerCase() === 'wifi');
     document.getElementById('routerState')?.setAttribute('value', router.isOnline == null ? 'Unbekannt' : router.isOnline ? 'Online' : 'Offline');
-    document.getElementById('routerState')?.setAttribute('tone', router.isOnline ? '' : 'danger');
-    document.getElementById('deviceCount')?.setAttribute('value', String(wifiDevices.length));
+    document.getElementById('routerState')?.setAttribute('tone', router.isOnline === false ? 'danger' : '');
+    document.getElementById('deviceCount')?.setAttribute('value', router.dataMode === 'unavailable' ? '—' : String(wifiDevices.length));
+    document.getElementById('deviceCount')?.setAttribute('detail', router.dataMode === 'demo' ? 'Beispielgeräte' : router.dataMode === 'unavailable' ? 'nicht verfügbar' : 'vom Router geladen');
     renderDetails(router, null);
-    setStatus('Routerstatus aktualisiert.', 'success');
+    setStatus(router.dataMode === 'unavailable' ? 'Routerstatus derzeit unbekannt.' : router.dataMode === 'demo' ? 'Demo-Vorschau. Kein aktueller Routerstatus.' : 'Routerstatus aktualisiert.', router.dataMode === 'live' ? 'success' : 'info');
   } catch (error) {
     const noRouter = error.message === 'Keine Routerdaten gefunden';
     document.getElementById('routerState')?.setAttribute('value', noRouter ? 'Nicht verbunden' : 'Unbekannt');
     document.getElementById('routerState')?.setAttribute('tone', '');
     document.getElementById('deviceCount')?.setAttribute('value', '—');
+    document.getElementById('deviceCount')?.setAttribute('detail', 'nicht verfügbar');
     renderDetails(null, error);
     setStatus(NetheraApi.userMessage(error), 'error');
   }

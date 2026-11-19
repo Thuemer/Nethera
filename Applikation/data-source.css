@@ -11,4 +11,10 @@
 }
 .data-source-notice[data-mode="live"] { border-color: #59bcae; }
 .data-source-notice[data-mode="demo"] { border-color: #e0b66b; }
+.data-source-notice[hidden] { display: none; }
+body[data-source-mode="demo"] .router-control-strip,
+body[data-source-mode="demo"] #adblockActual,
+body[data-source-mode="demo"] #blocklistActual,
+body[data-source-mode="demo"] #priorityActual,
+body[data-source-mode="demo"] #wifiDataSource { display: none; }
 .topology-workspace > .data-source-notice { margin: 0; }
