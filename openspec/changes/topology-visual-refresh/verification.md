@@ -28,4 +28,9 @@ Tests use the existing local Chromium runtime, `NETHERA_TEST_URL=http://127.0.0.
 
 - Manual visual check with an authenticated real-router account. No usable session is currently open in the review browser; no accounts or credentials have been changed.
 - OpenSpec CLI validation (CLI not installed).
-- Frontend-only image build and rollout: not yet performed at this checkpoint. Keep the currently deployed compatible account.js overlay; do not ship the temporary local demo server or synthetic identity.
+
+## Deployed frontend
+
+Commit `8382f01` was built as private amd64 image `ghcr.io/denizbernecker/nethera-frontend:20261119-105348`, digest `sha256:38d71664abbb1104e8f40f7af1e34a4f68f3d4725590ad2df9a02213effbe506`. The compatible account.js overlay is byte-identical to the previous release. All 81 deployed asset hashes match, no extra mock-auth files are present. The general browser suite passed against the image; the topology suite also passed against the actual cloud assets with intercepted API fixtures.
+
+Only the frontend deployment image changed. Protected resource specifications, identities, restart counts and secret metadata were compared before/after and remained unchanged. Public asset checksums and HTTP health passed; login discovery is reachable and `/api/routers/list` still requires authentication. Details and rollback: [deployment log](../../../deploy/leocloud/README.md).

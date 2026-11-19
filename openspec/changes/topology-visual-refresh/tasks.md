@@ -39,6 +39,6 @@
 ## 7. Rollout
 
 - [x] 7.1 Bump the `?v=` cache-busting query strings for the changed CSS/JS files
-- [ ] 7.2 Deploy frontend-only to LeoCloud following the LeoCloud instructions in `AGENTS.md`, and record the rollout like previous frontend deployments
+- [x] 7.2 Deploy frontend-only to LeoCloud following the LeoCloud instructions in `AGENTS.md`, and record the rollout like previous frontend deployments
 
-Verified locally: 122 unit tests, both topology browser suites (320/390/768/1440 px), presentation regression and 42 polish checks pass. Source scan has no remaining Cytoscape imports. Task 6.4 remains open: demo views were inspected, but no authenticated real-router visual check has been completed. Task 7.2 remains open: no new image has been deployed yet.
+Verified: 122 unit tests, 83 general browser scenarios, both topology layouts (320/390/768/1440 px), presentation regression and 42 polish checks pass. Topology tests also pass against the built image and the cloud-served assets with intercepted API fixtures. Source scan has no remaining Cytoscape imports. Task 6.4 remains open: demo views were inspected, but no authenticated real-router visual check has been completed. Frontend rollout and preservation checks passed; see verification.md and deploy/leocloud/README.md.

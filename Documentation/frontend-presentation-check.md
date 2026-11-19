@@ -1,6 +1,6 @@
 # Frontend-Prüfung für Best of Projects
 
-Stand: 19. November 2026. Der frühere Frontend-Rollout ist unten separat dokumentiert. Die anschließende Überarbeitung auf `fix/frontend-presentation-polish` wurde lokal angesehen und für Commit/Push sowie einen reinen Frontend-Rollout angefragt. Der neue Rollout ist noch nicht erfolgt.
+Stand: 19. November 2026. Polish und die anschließend beauftragte Klassisch-/Baum-Topologie sind auf `fix/frontend-presentation-polish` gesichert und aus Commit `8382f01` als reines Frontend auf LeoCloud ausgerollt. Image, Prüfungen und Rollback stehen im [Deployment-Protokoll](../deploy/leocloud/README.md#presentation-polish-und-klassisch-baum-topologie-vom-19112026). Backend, Konten und Daten wurden nicht verändert. Die früheren Prüfstände bleiben unten als Verlauf erhalten.
 
 ## Topologie-Integration nach Freigabe
 
@@ -25,7 +25,7 @@ Nach der Bereinigung der Demo-Hinweise bestehen 120 JavaScript-Tests, die erweit
 
 Umfang, Testbefehle und Grenzen stehen im [OpenSpec-Prüfprotokoll](../openspec/changes/frontend-presentation-polish/verification.md); die Qualitätsanforderungen sind in der [MetaSpec](meta-spec.md#13-anforderungen-an-qualität-und-benutzerfreundlichkeit) verankert. Manus Topologie-Design, Website, Backend, Konten, Daten und Router wurden bei dieser Überarbeitung nicht verändert.
 
-**Release-Abgleich:** Vor dem Commit wurden alle Team-Branches abgerufen. Manus Commit `0d08547` enthält den Plan und das Mockup für „Klassisch“ und „Baum“. Er wurde ohne Überschneidung per Fast-Forward auf den Feature-Branch übernommen. Die anschließende Implementierung wurde ausdrücklich freigegeben und ist oben separat dokumentiert. `router-time-limits` enthält einen eigenen Zeitlimit-Vorschlag und wird nicht mit dem Frontend ausgerollt. Der neue Polish ist noch nicht auf LeoCloud; die bisherigen Deployment-Einträge dokumentieren den älteren, bereits laufenden Stand.
+**Release-Abgleich:** Vor dem Commit wurden alle Team-Branches abgerufen. Manus Commit `0d08547` enthält den Plan und das Mockup für „Klassisch“ und „Baum“. Er wurde ohne Überschneidung per Fast-Forward auf den Feature-Branch übernommen. Die anschließende Implementierung wurde ausdrücklich freigegeben und ist oben separat dokumentiert. `router-time-limits` enthält einen eigenen Zeitlimit-Vorschlag und wurde nicht mit dem Frontend ausgerollt. Polish und beide Topologieansichten sind jetzt gemeinsam auf LeoCloud; das aktuelle Deployment-Protokoll ist oben verlinkt.
 
 ## Ausgangsstand vom 18. November
 
@@ -77,7 +77,7 @@ Bei der Demo offen sagen, dass es Beispieldaten sind. Eine tatsächliche Routers
 
 ## Grenzen außerhalb des Frontends
 
-Die Tests belegen die geprüften Fälle, keine Fehlerfreiheit für jede Kombination. Browsermatrix derzeit Chrome; echte Routerwirkung und LeoCloud sind damit nicht geprüft. Beim lokalen Start fiel außerdem ein bestehender Seed-Fehler auf (`device_group` fehlt); der Seed-Container beendet sich deshalb mit Fehler. Das Backend-Team sollte diesen Initialisierungsfall vor einer Vorführung mit echten Daten prüfen. Die temporäre Frontend-Demo benötigt den Seed nicht.
+Die Tests belegen die geprüften Fälle, keine Fehlerfreiheit für jede Kombination. Browsermatrix derzeit Chrome; echte Routerwirkung ist damit nicht geprüft. Die spätere Prüfung der ausgelieferten LeoCloud-Dateien ist im aktuellen Deployment-Protokoll dokumentiert und ersetzt keinen manuellen Echtkonto-Test. Beim lokalen Start fiel außerdem ein bestehender Seed-Fehler auf (`device_group` fehlt); der Seed-Container beendet sich deshalb mit Fehler. Das Backend-Team sollte diesen Initialisierungsfall vor einer Vorführung mit echten Daten prüfen. Die temporäre Frontend-Demo benötigt den Seed nicht.
 
 ## Nachprüfung: Topologie-Vollbild
 

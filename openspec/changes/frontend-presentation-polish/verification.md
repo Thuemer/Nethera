@@ -1,7 +1,7 @@
 # Frontend-Pruefprotokoll
 
 Datum: 19.11.2026. Branch: `fix/frontend-presentation-polish`, urspruengliche Basis: `94b7009`.
-Status: lokal umgesetzt, angesehen und fuer Commit/Push sowie Frontend-Releasevorbereitung freigegeben. Neuer LeoCloud-Rollout noch ausstehend.
+Status: lokal umgesetzt und angesehen, anschliessend zusammen mit der beauftragten Topologie-Integration aus `8382f01` als reines Frontend ausgerollt. Details: `deploy/leocloud/README.md`, Image `20261119-105348`. Die folgenden Abschnitte halten den jeweiligen Zwischenstand fest; die manuelle Echtkonto-Pruefung bleibt offen.
 
 Team-Abgleich: `git fetch origin --prune --tags` meldete `origin/main=0d08547` und den neuen Vorschlagsbranch `router-time-limits=5bf6e67`. Die 35 uncommittierten Dateien wurden zusaetzlich unter `/private/tmp/nethera-release-2026-11-19T10-27-57-052Z` gesichert; Manus ausschliesslich neue OpenSpec-/Mockup-Dateien wurden anschliessend per Fast-Forward uebernommen. Keine fremden Commits ersetzt, keine Backend-Aenderungen integriert. Der Entwurf `topology-visual-refresh` ist noch keine fertige App-Implementierung; die gewuenschte Auswahl bleibt bis zur Klaerung offen. Cache-Version fuer die geaenderten Frontend-Assets: `20261119-polish`.
 
