@@ -12,7 +12,9 @@ import org.jboss.logging.Logger;
 
 import java.util.Optional;
 
-// Makes the SSH router (nethera.router.id) claimable with nethera.router.pairing-code
+// Makes the SSH router (nethera.router.id) claimable with nethera.router.pairing-code.
+// Runs at startup and again before every claim: in Compose the seed container creates the router
+// only after the backend has started.
 @ApplicationScoped
 public class RouterPairingCodeInitializer {
 
@@ -27,15 +29,19 @@ public class RouterPairingCodeInitializer {
     @ConfigProperty(name = "nethera.router.pairing-code")
     Optional<String> pairingCode;
 
-    @Transactional
     void onStart(@Observes StartupEvent event) {
+        apply();
+    }
+
+    @Transactional
+    public void apply() {
         String code = Router.normalizePairingCode(pairingCode.orElse(null));
         if (code == null) {
             return;
         }
         Router router = entityManager.find(Router.class, routerId);
         if (router == null) {
-            LOG.warn("Pairing code configured, but router " + routerId + " does not exist");
+            LOG.info("Pairing code configured, but router " + routerId + " does not exist yet");
             return;
         }
         if (!code.equals(router.getPairingCode())) {

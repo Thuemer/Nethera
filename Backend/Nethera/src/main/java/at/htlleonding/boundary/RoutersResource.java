@@ -13,6 +13,7 @@ import at.htlleonding.repository.DnsStatsRepository;
 import at.htlleonding.repository.SpeedStatsRepository;
 import at.htlleonding.model.Account;
 import at.htlleonding.services.CurrentRouter;
+import at.htlleonding.services.RouterPairingCodeInitializer;
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -60,6 +61,9 @@ public class RoutersResource {
     @Inject
     EntityManager entityManager;
 
+    @Inject
+    RouterPairingCodeInitializer pairingCodes;
+
     // Only the caller's router; an empty list means "no router connected yet"
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -78,6 +82,7 @@ public class RoutersResource {
         if (code == null) {
             throw new BadRequestException("Kopplungscode fehlt");
         }
+        pairingCodes.apply();
         Router router = entityManager.createNamedQuery(Router.QUERY_FIND_BY_PAIRING_CODE, Router.class)
                 .setParameter("code", code)
                 // Two accounts claiming the same router at once: the second waits and then sees the owner

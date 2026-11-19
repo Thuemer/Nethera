@@ -31,6 +31,23 @@ class RouterOwnershipIT {
         assertEquals("NETHERA-TEST", tx(() -> em.find(Router.class, 1L).getPairingCode()));
     }
 
+    // Compose seeds router 1 after the backend has started, so the startup hook saw no router
+    @Test
+    @TestSecurity(user = "late-seed")
+    void configuredCodeWorksForRouterCreatedAfterStartup() {
+        tx(() -> {
+            Router router = em.find(Router.class, 1L);
+            router.setPairingCode(null);
+            router.setOwner(null);
+            return null;
+        });
+
+        given().contentType(ContentType.JSON).body("{\"pairingCode\":\"nethera-test\"}")
+                .when().post("/api/routers/claim")
+                .then().statusCode(200).body("id", equalTo(1));
+        assertEquals("late-seed", ownerSub(1L));
+    }
+
     @Test
     @TestSecurity(user = "claim-ok")
     void claimIsCaseInsensitiveTrimmedAndIdempotent() {

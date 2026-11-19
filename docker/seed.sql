@@ -6,8 +6,8 @@ SELECT 'Nethera Router', 'CT-Router NG LAN', '1.08.03', true, CURRENT_TIMESTAMP
 WHERE NOT EXISTS (SELECT 1 FROM router);
 
 -- One settings row: the adblock switch (dns_blocking) needs it; off until the user turns it on
-INSERT INTO config (router_name, mode, updates, dns_blocking, lan_ip, gateway_ip, guest_network, profiling)
-SELECT 'Nethera Router', 'Router', true, false, '192.168.1.1', '192.168.1.1', false, false
+INSERT INTO config (router_id, router_name, mode, updates, dns_blocking, lan_ip, gateway_ip, guest_network, profiling)
+SELECT (SELECT min(id) FROM router), 'Nethera Router', 'Router', true, false, '192.168.1.1', '192.168.1.1', false, false
 WHERE NOT EXISTS (SELECT 1 FROM config);
 
 INSERT INTO blocklists (routerid, name, sourcetype, urlpattern)
@@ -22,8 +22,8 @@ CROSS JOIN (VALUES
 WHERE r.id = (SELECT min(id) FROM router)
   AND NOT EXISTS (SELECT 1 FROM blocklists);
 
-INSERT INTO device_group (name, description, blocklist_id, color)
-SELECT v.name, v.description, b.blocklistid, v.color
+INSERT INTO device_group (router_id, name, description, blocklist_id, color)
+SELECT b.routerid, v.name, v.description, b.blocklistid, v.color
 FROM (VALUES
   ('Kinder', 'Geraete mit Abendruhe und Jugendschutz', 'Kinder Schutz', '#2fb09a'),
   ('Arbeit & Schule', 'Fokus-Regeln waehrend Lernzeiten', 'Lernen / Hausaufgaben', '#4f8cff'),
@@ -33,8 +33,8 @@ JOIN blocklists b ON b.name = v.blocklist_name
 WHERE NOT EXISTS (SELECT 1 FROM device_group);
 
 INSERT INTO security_preset
-  (name, description, blocklist_id, time_limit_minutes, blocked_from, blocked_until, parental_mode, priority_mode)
-SELECT v.name, v.description, b.blocklistid, v.minutes, v.blocked_from, v.blocked_until, v.parental, v.priority
+  (router_id, name, description, blocklist_id, time_limit_minutes, blocked_from, blocked_until, parental_mode, priority_mode)
+SELECT b.routerid, v.name, v.description, b.blocklistid, v.minutes, v.blocked_from, v.blocked_until, v.parental, v.priority
 FROM (VALUES
   ('Schultag', 'Lernen priorisieren und nachts sperren', 'Lernen / Hausaufgaben', 180, '21:00', '07:00', true, false),
   ('Abendruhe', 'Unterhaltungsseiten ueber Nacht blockieren', 'Social Media Pause', 120, '20:30', '06:30', true, false),
