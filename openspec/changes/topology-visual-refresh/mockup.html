@@ -1,0 +1,766 @@
+<title>Nethera Topology Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: option tabs, one live stage with shared sample network, notes below. Single dark look = Nethera app palette. */
+:root {
+  --bg-main: #212121; --card: #001818; --accent: #63e5c5; --accent-2: #144659;
+  --text: #e5ebe7; --soft: rgba(229,235,231,.72); --faint: rgba(229,235,231,.45); --line: rgba(229,235,231,.10);
+  --on: #5fd08a;
+  --f-ui: "Inter", "Segoe UI", system-ui, sans-serif;
+  --f-head: "Space Grotesk", "Inter", sans-serif;
+  --f-app: "Avenir Next", "Segoe UI", "Inter", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg-main); }
+body {
+  color: var(--text); font: 14px/1.5 var(--f-ui);
+  background: radial-gradient(ellipse 900px 460px at 12% 0%, rgba(99,229,197,.08), transparent 70%), var(--bg-main);
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 1280px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
+header h1 { font: 600 28px/1.15 var(--f-head); margin: 4px 0 6px; text-wrap: balance; }
+header p { margin: 0; color: var(--soft); max-width: 70ch; }
+.eyebrow { color: var(--accent); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.tab { text-align: left; border: 1px solid var(--line); background: rgba(0,24,24,.45); border-radius: 12px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.tab:hover { border-color: rgba(99,229,197,.35); }
+.tab[aria-selected="true"] { border-color: var(--accent); background: rgba(99,229,197,.09); }
+.tab .k { font: 600 12px var(--f-head); color: var(--accent); letter-spacing: .06em; }
+.tab .n { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab .s { font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; background: rgba(0,24,24,.35); }
+.seg button { border: 0; background: transparent; padding: 7px 12px; border-radius: 7px; color: var(--soft); }
+.seg button[aria-pressed="true"] { background: rgba(99,229,197,.12); color: var(--accent); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: rgba(0,24,24,.35); border-radius: 10px; padding: 8px 12px; color: var(--soft); }
+.toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: rgba(99,229,197,.08); }
+.toggle i { width: 9px; height: 9px; border-radius: 50%; background: var(--on); }
+.controls .hint { color: var(--faint); font-size: 12px; margin-left: auto; }
+
+#stage { position: relative; height: clamp(540px, 74vh, 720px); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; font-family: var(--f-app); user-select: none; -webkit-user-select: none; }
+
+.notes { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 14px; }
+.note { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: rgba(0,24,24,.35); min-width: 0; }
+.note h2 { font: 600 17px var(--f-head); margin: 0 0 4px; }
+.note h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); margin: 0 0 8px; font-weight: 600; }
+.note p { margin: 0; color: var(--soft); }
+.note ul { margin: 0; padding-left: 18px; color: var(--soft); display: grid; gap: 4px; }
+.note .origin { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+.note .effort { margin-top: 10px; font-size: 12px; color: var(--faint); }
+.note .effort b { color: var(--text); font-weight: 600; }
+.plus li::marker { content: "+  "; color: var(--accent); }
+.minus li::marker { content: "–  "; color: #e0a96d; }
+
+/* ---------- shared detail card (D, E, F) ---------- */
+.detail { position: absolute; top: 14px; right: 14px; width: 250px; z-index: 40; background: rgba(0,24,24,.93); border: 1px solid var(--line); border-radius: 12px; padding: 14px; backdrop-filter: blur(6px); font-size: 13px; }
+.detail .x { position: absolute; top: 8px; right: 8px; border: 0; background: transparent; color: var(--faint); width: 28px; height: 28px; border-radius: 6px; font-size: 18px; line-height: 1; }
+.detail .x:hover { background: rgba(229,235,231,.08); }
+.detail .kick { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); }
+.detail h4 { margin: 2px 0 10px; font-size: 17px; padding-right: 24px; }
+.detail dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+.detail dt { color: var(--faint); }
+.detail dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--g); margin-right: 6px; vertical-align: -1px; }
+.st-on { color: var(--on); } .st-off { color: var(--faint); }
+
+/* ---------- A + C: classic DOM topology ---------- */
+.cold { background: radial-gradient(ellipse at 50% 48%, rgba(20,70,89,.23), transparent 62%), #212121; }
+.cmod { background: radial-gradient(circle, rgba(229,235,231,.035) 1px, transparent 1px) 0 0 / 26px 26px, #1f2222; }
+.c-lines { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.c-lines line { stroke-linecap: round; }
+.cold .c-lines line { stroke: var(--accent); stroke-width: 1.35; stroke-opacity: .36; }
+.c-router { position: absolute; transform: translate(-50%, -50%); z-index: 10; opacity: .93; pointer-events: none;
+  filter: drop-shadow(0 12px 22px rgba(0,0,0,.48)) drop-shadow(0 0 24px rgba(99,229,197,.42)) drop-shadow(0 0 44px rgba(99,229,197,.22)); }
+.c-group { position: absolute; z-index: 12; touch-action: none; cursor: grab; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; border-radius: 999px; font-weight: 700; font-size: 14px; letter-spacing: .03em; color: var(--text); white-space: nowrap; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease, opacity .2s; }
+.cold .c-group { background: linear-gradient(135deg, rgba(20,70,89,.9), rgba(99,229,197,.75)); border: 1px solid rgba(99,229,197,.45); }
+.c-group:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 8px 18px rgba(0,0,0,.35); }
+.c-dev { position: absolute; z-index: 14; touch-action: none; cursor: pointer; border-radius: 50%; transition: transform .18s ease, box-shadow .18s ease, opacity .2s; }
+.cold .c-dev { background: radial-gradient(circle at 30% 28%, var(--text), var(--accent) 28%, var(--accent-2) 95%); border: 1px solid rgba(99,229,197,.9); box-shadow: 0 0 0 5px rgba(99,229,197,.10), 0 0 20px rgba(99,229,197,.42); }
+.cold .c-dev:hover { transform: translateY(-3px) scale(1.08); box-shadow: 0 0 0 7px rgba(99,229,197,.16), 0 0 28px rgba(99,229,197,.6); }
+.cold .c-dev.sel { transform: scale(1.05); box-shadow: 0 0 0 7px rgba(99,229,197,.18), 0 0 30px rgba(99,229,197,.7); }
+.c-info { position: absolute; z-index: 16; pointer-events: none; background: rgba(0,24,24,.96); border: 1px solid rgba(99,229,197,.22); padding: 8px 10px; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.32); font-size: 13px; line-height: 1.25; width: max-content; max-width: 230px; }
+.cold .c-info { opacity: 0; transform: translateY(3px); transition: opacity .15s ease, transform .15s ease; }
+.cold .c-info.show { opacity: .98; transform: none; }
+.c-info b { display: block; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-info span { display: block; color: var(--soft); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-bar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); width: min(960px, calc(100% - 28px)); min-height: 42px; padding: 4px 6px; z-index: 30; display: flex; align-items: center; gap: 8px; background: rgba(0,24,24,.9); border: 1px solid var(--line); border-radius: 999px; color: var(--soft); font-size: 13px; backdrop-filter: blur(3px); }
+.c-bar > button { width: 34px; height: 30px; flex: none; border: 0; border-radius: 999px; font-weight: 700; color: var(--text); background: linear-gradient(135deg, var(--accent-2), var(--accent)); }
+.c-bar .d { flex: 1; min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-bar b { color: var(--accent); }
+.c-reset { position: absolute; top: 14px; right: 14px; z-index: 30; border: 1px solid rgba(229,235,231,.16); border-radius: 7px; background: var(--card); padding: 9px 14px; font-weight: 700; }
+.c-reset:hover { transform: translateY(-1px); }
+
+.cmod .c-group { font-size: 13px; letter-spacing: .02em; background: linear-gradient(135deg, color-mix(in srgb, var(--g) 38%, #144659), rgba(20,70,89,.88)); border: 1px solid color-mix(in srgb, var(--g) 65%, transparent); }
+.cmod .c-group small { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: rgba(0,0,0,.28); color: var(--soft); }
+.cmod .c-group.act { outline: 2px solid var(--g); outline-offset: 3px; }
+.cmod .c-dev { background: radial-gradient(circle at 30% 28%, #f2f6f4, var(--g) 30%, color-mix(in srgb, var(--g) 40%, #0b1d22) 95%); border: 1px solid var(--g); box-shadow: none; }
+.cmod .c-dev:hover { box-shadow: 0 0 0 2px var(--g); }
+.cmod .c-dev.sel { transform: scale(1.15); box-shadow: 0 0 0 2px #1f2222, 0 0 0 4px #e5ebe7; }
+.cmod .c-router { filter: drop-shadow(0 10px 16px rgba(0,0,0,.45)); }
+.cmod .dot { box-shadow: none; }
+.cmod .c-dev.off { background: #1f2222; border: 1.5px dashed rgba(229,235,231,.38); box-shadow: none; }
+.cmod .c-dev.off.sel { border-color: var(--g); box-shadow: 0 0 0 3px #1f2222, 0 0 0 5px #e5ebe7; }
+.cmod.has-sel .c-dev:not(.sel), .cmod.has-sel .c-label { opacity: .4; }
+.cmod .c-dev.v2 { display: grid; place-items: center; }
+.cmod .c-dev.v2 svg { width: 56%; height: 56%; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.cmod .c-dev.v2.s-ring { background: radial-gradient(circle, var(--g) 0 22%, color-mix(in srgb, var(--g) 10%, #1f2222) 25%); border: 1.5px solid var(--g); }
+.cmod .c-dev.v2.s-ring.off { background: #1f2222; border: 1.5px dashed color-mix(in srgb, var(--g) 65%, transparent); }
+.cmod .c-dev.v2.s-ring.sel { box-shadow: 0 0 0 2px #1f2222, 0 0 0 3.5px #e5ebe7; }
+.cmod .c-dev.v2.s-icon { background: var(--g); border: 2px solid color-mix(in srgb, var(--g) 55%, #0b1d22); color: #0b1d22; }
+.cmod .c-dev.v2.s-icon.off { background: #1f2222; border: 1.5px dashed color-mix(in srgb, var(--g) 70%, transparent); color: color-mix(in srgb, var(--g) 75%, transparent); }
+.cmod .c-dev.v2.s-square { border-radius: 30%; background: linear-gradient(160deg, color-mix(in srgb, var(--g) 65%, #ffffff) 0%, var(--g) 45%, color-mix(in srgb, var(--g) 55%, #0b1d22) 100%); border: 1px solid color-mix(in srgb, var(--g) 50%, #0b1d22); }
+.cmod .c-dev.v2.s-square.off { background: #1f2222; border: 1.5px dashed rgba(229,235,231,.38); }
+.c-label { position: absolute; z-index: 13; transform: translateX(-50%); pointer-events: none; font-size: 11px; color: var(--soft); white-space: nowrap; max-width: 110px; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px #000, 0 0 6px #000; transition: opacity .2s; }
+.c-label.off { color: var(--faint); }
+.c-label.sel { color: var(--text); font-weight: 600; }
+.cmod .dim { opacity: .14; }
+.c-chips { position: absolute; top: 14px; left: 14px; z-index: 30; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 150px); }
+.chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(0,24,24,.72); font-size: 12px; color: var(--text); }
+.chip[aria-pressed="true"] { border-color: var(--g, var(--accent)); background: color-mix(in srgb, var(--g, var(--accent)) 14%, rgba(0,24,24,.8)); }
+.chip .c { color: var(--faint); font-variant-numeric: tabular-nums; }
+.cmod .c-reset { font-weight: 600; font-size: 12px; padding: 7px 12px; border-radius: 999px; background: rgba(0,24,24,.72); border-color: var(--line); }
+.cmod .c-bar .d { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.cmod .c-bar .d span { overflow: hidden; text-overflow: ellipsis; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--on); box-shadow: 0 0 8px var(--on); }
+.dot.off { background: transparent; border: 1.5px dashed var(--faint); box-shadow: none; }
+@keyframes breathe { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--g) 7%, transparent), 0 0 28px color-mix(in srgb, var(--g) 55%, transparent); } }
+
+/* ---------- B: current (Cytoscape look) ---------- */
+.b-wrap { position: absolute; inset: 0; padding: 14px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; background: radial-gradient(ellipse 600px 300px at 15% 0%, rgba(99,229,197,.08), transparent 70%), #212121; font-size: 14px; }
+.b-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.b-legend .t { font-size: 12px; color: var(--soft); margin-right: 6px; }
+.b-item { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 10px; border: 1px solid transparent; background: transparent; border-radius: 8px; font-size: 13px; }
+.b-item:hover { background: rgba(229,235,231,.06); }
+.b-item[aria-pressed="true"] { border-color: var(--accent); background: rgba(99,229,197,.08); }
+.b-item .c { color: var(--soft); }
+.b-item.on { margin-left: auto; border-color: var(--line); }
+.b-body { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 14px; min-height: 0; }
+.b-graph { position: relative; min-height: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: radial-gradient(ellipse at 48% 42%, rgba(99,229,197,.12), transparent 65%), radial-gradient(circle, rgba(229,235,231,.045) 1px, transparent 1px) 0 0 / 24px 24px, var(--card); }
+.b-graph svg { position: absolute; inset: 0; }
+.b-tools { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; }
+.b-tools button { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 8px; background: rgba(0,24,24,.6); font-size: 16px; }
+.b-cap { position: absolute; right: 14px; bottom: 20px; font-size: 11px; color: var(--soft); }
+.b-insp { min-height: 0; overflow: auto; border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: color-mix(in srgb, #212121 88%, #144659); font-size: 13px; }
+.b-insp label { display: grid; gap: 6px; font-size: 12px; color: var(--soft); margin-bottom: 16px; }
+.b-insp select { min-height: 40px; border-radius: 8px; background: rgba(0,24,24,.35); color: var(--text); border: 1px solid var(--line); padding: 6px; font: inherit; }
+.b-insp .kick { color: var(--accent); font-size: 11px; text-transform: uppercase; margin: 0 0 4px; }
+.b-insp h5 { font-size: 19px; margin: 0 0 10px; }
+.b-insp .big { font-size: 30px; color: var(--accent); font-weight: 600; margin: 0; }
+.b-insp .sec { border-top: 1px solid var(--line); padding: 12px 0; }
+.b-insp .sec h6 { font-size: 13px; margin: 0 0 8px; }
+.b-insp .row { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.b-insp .row .c { color: var(--soft); margin-left: auto; }
+.b-insp dl { margin: 0; display: grid; gap: 8px; }
+.b-insp dt { color: var(--soft); font-size: 12px; }
+.b-insp dd { margin: 0; }
+
+/* ---------- D, E: SVG stages ---------- */
+.svgstage { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(20,70,89,.30), transparent 60%), #1f2121; }
+.svgstage svg { position: absolute; inset: 0; }
+.svgstage text { font-family: var(--f-app); }
+.hit { cursor: pointer; }
+.hit:focus { outline: none; }
+.hit:focus-visible .ring { stroke: var(--accent); stroke-width: 2; }
+
+/* ---------- F: tree ---------- */
+.f-scroll { position: absolute; inset: 0; overflow: auto; background: radial-gradient(ellipse 700px 400px at 0% 50%, rgba(20,70,89,.30), transparent 65%), #1f2121; }
+.f-canvas { position: relative; }
+.f-canvas svg { position: absolute; inset: 0; pointer-events: none; }
+.f-router, .f-group, .f-dev { position: absolute; display: flex; align-items: center; }
+.f-router { flex-direction: column; justify-content: center; gap: 4px; text-align: center; border: 1px solid rgba(99,229,197,.35); border-radius: 16px; background: rgba(0,24,24,.75); box-shadow: 0 0 40px rgba(99,229,197,.12); padding: 10px; }
+.f-router img { width: 64%; filter: drop-shadow(0 0 16px rgba(99,229,197,.45)); }
+.f-router b { font-size: 14px; }
+.f-router span { font-size: 11px; color: var(--soft); }
+.f-group { gap: 8px; padding: 0 12px; height: 40px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--g) 55%, transparent); background: color-mix(in srgb, var(--g) 13%, rgba(0,24,24,.85)); font-weight: 600; font-size: 13px; }
+.f-group .c { margin-left: auto; color: var(--soft); font-weight: 500; font-variant-numeric: tabular-nums; }
+.f-dev { gap: 10px; height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: rgba(0,24,24,.55); font-size: 13px; cursor: pointer; text-align: left; color: var(--text); }
+.f-dev:hover { border-color: rgba(229,235,231,.25); }
+.f-dev.sel { border-color: var(--accent); background: rgba(99,229,197,.09); }
+.f-dev.off { color: var(--faint); }
+.f-dev .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.f-dev .cn { font-size: 11px; color: var(--soft); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+.f-dev .ip { font: 12px ui-monospace, "SF Mono", Menlo, monospace; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 980px) {
+  .tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .notes { grid-template-columns: 1fr 1fr; }
+  .notes .note:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .notes { grid-template-columns: 1fr; }
+  .controls .hint { margin-left: 0; width: 100%; }
+  .detail { top: auto; bottom: 12px; left: 12px; right: 12px; width: auto; }
+  .c-chips { max-width: calc(100% - 28px); top: 54px; }
+  .c-bar { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { .cmod .c-dev { animation: none; } * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">Nethera · Topologie · Branch topology-visual-refresh</div>
+    <h1>Pick a topology style</h1>
+    <p>Six ways to draw the same sample network: 5 groups, 15 devices, 4 offline. A is the look from before the redesign and B is the current page. Click devices and drag pills and orbs where the style allows it.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Topology options" id="tabs"></div>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Gruppieren nach">
+      <button type="button" data-mode="groups" aria-pressed="true">Gruppen</button>
+      <button type="button" data-mode="conn" aria-pressed="false">Verbindungen</button>
+    </div>
+    <button type="button" class="toggle" id="online" aria-pressed="false"><i></i>Nur online</button>
+    <div class="seg" id="dotstyle" role="group" aria-label="Punktstil" hidden>
+      <button type="button" data-dot="ring" aria-pressed="true">Ring</button>
+      <button type="button" data-dot="icon" aria-pressed="false">Icon</button>
+      <button type="button" data-dot="square" aria-pressed="false">Kachel</button>
+    </div>
+    <span class="hint" id="hint"></span>
+  </div>
+
+  <section id="stage" role="tabpanel" aria-live="polite"></section>
+
+  <section class="notes" id="notes"></section>
+</div>
+
+<script>
+const ROUTER = "data:image/png;base64,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";
+const GROUPS = [
+  { id: 'kinder', name: 'Kinder', color: '#69c5b6' },
+  { id: 'eltern', name: 'Eltern', color: '#79b9e3' },
+  { id: 'smart', name: 'Smart Home', color: '#d9b96f' },
+  { id: 'gaeste', name: 'Gäste', color: '#bcaae2' },
+  { id: 'none', name: 'Ohne Gruppe', color: '#9aa8b0' }
+];
+const DEVICES = [
+  { id: 1, name: 'Lenas iPad', group: 'kinder', conn: 'WLAN', ip: '192.168.1.21', mac: '3C:22:FB:1A:09:C4', online: true, seen: 1, preset: 'Schulzeit' },
+  { id: 2, name: 'Max Switch', group: 'kinder', conn: 'WLAN', ip: '192.168.1.24', mac: '98:41:5C:02:7E:11', online: true, seen: 0, preset: 'Spielzeit 2h' },
+  { id: 3, name: 'Max Gaming-PC', group: 'kinder', conn: 'LAN', ip: '192.168.1.30', mac: '04:D9:F5:88:31:A0', online: true, seen: 0, preset: 'Spielzeit 2h' },
+  { id: 4, name: 'Lenas Handy', group: 'kinder', conn: 'WLAN', ip: '192.168.1.22', mac: 'A4:83:E7:5B:C2:19', online: false, seen: 214, preset: 'Schulzeit' },
+  { id: 5, name: 'MacBook Anna', group: 'eltern', conn: 'WLAN', ip: '192.168.1.11', mac: 'F0:18:98:4E:6D:02', online: true, seen: 0, preset: null },
+  { id: 6, name: 'Pixel 8', group: 'eltern', conn: 'WLAN', ip: '192.168.1.12', mac: '58:24:29:B1:0C:7F', online: true, seen: 2, preset: null },
+  { id: 7, name: 'Arbeitslaptop', group: 'eltern', conn: 'LAN', ip: '192.168.1.15', mac: '8C:EC:4B:73:A9:5E', online: false, seen: 960, preset: null },
+  { id: 8, name: 'Hue Bridge', group: 'smart', conn: 'LAN', ip: '192.168.1.40', mac: 'EC:B5:FA:12:44:9D', online: true, seen: 0, preset: 'Nur Hersteller-Cloud' },
+  { id: 9, name: 'Thermostat', group: 'smart', conn: 'WLAN', ip: '192.168.1.41', mac: '18:B4:30:6A:F2:03', online: true, seen: 1, preset: 'Nur Hersteller-Cloud' },
+  { id: 10, name: 'Türklingel', group: 'smart', conn: 'WLAN', ip: '192.168.1.42', mac: '34:3E:A4:9C:10:B8', online: true, seen: 0, preset: 'Nur Hersteller-Cloud' },
+  { id: 11, name: 'Lautsprecher Küche', group: 'smart', conn: 'WLAN', ip: '192.168.1.43', mac: '48:A6:B8:21:7D:E6', online: false, seen: 75, preset: null },
+  { id: 12, name: 'Gast-iPhone', group: 'gaeste', conn: 'WLAN', ip: '192.168.1.60', mac: '6A:1F:0E:93:B7:2C', online: true, seen: 3, preset: 'Gastzugang' },
+  { id: 13, name: 'Gast-Laptop', group: 'gaeste', conn: 'WLAN', ip: '192.168.1.61', mac: '7E:C0:51:2D:88:4A', online: false, seen: 2880, preset: 'Gastzugang' },
+  { id: 14, name: 'Drucker Büro', group: 'none', conn: 'LAN', ip: '192.168.1.50', mac: '00:1E:0B:4F:D1:62', online: true, seen: 0, preset: null },
+  { id: 15, name: '192.168.1.47', group: 'none', conn: 'WLAN', ip: '192.168.1.47', mac: 'B2:7D:44:E0:19:5A', online: true, seen: 4, preset: null }
+];
+const ROUTER_NAME = 'Nethera Box';
+
+const OPTIONS = {
+  A: { name: 'Classic', sub: 'Before redesign · 19.10.', render: (s, w, h, c) => classic(s, w, h, c, false),
+    origin: 'Commit 9903b72, the state before ae64dfb (15.11.)',
+    what: 'Full-bleed stage with a large glowing router image, gradient pills for each group and glowing mint orbs for the devices. Hovering a device shows its tooltip. In 9903b72 every tooltip was visible all the time; this preview switches them to hover. A pill bar at the bottom steps through the devices.',
+    plus: ['Strong identity that nobody would mistake for a generic tool', 'Everything is labelled in place', 'Groups and devices can be dragged freely'],
+    minus: ['Device names only appear on hover, so it is hard to read without a mouse (with every tooltip visible, as in the original, they collide)', 'No group colours and no offline state', 'Originally grouped only by WLAN/LAN', 'Details only fit in the one-line bottom bar'],
+    effort: 'Low to restore the files, but it drops online filter, group filter, drafts and inspector.',
+    hint: 'Hover an orb for its info · drag pills and orbs · ‹ › steps through devices' },
+  B: { name: 'Current', sub: 'Since 15.11. / 18.11.', render: current,
+    origin: 'Commits ae64dfb (15.11.) and 0366b88 (18.11.), Cytoscape',
+    what: 'Header, legend chips, a framed graph card with zoom tools and a side inspector. Devices are flat circles in group colours, offline ones dashed.',
+    plus: ['Search, group filter and online filter', 'Inspector shows template, rules and connection', 'Scales to many devices'],
+    minus: ['Looks like a generic graph library', 'Router shrinks to a small circle', 'A lot of interface around a fairly small graph'],
+    effort: 'None, this is main today.',
+    hint: 'Click chips to filter · + / − to zoom' },
+  C: { name: 'Classic, upgraded', sub: 'Look of A, features of B', render: (s, w, h, c) => classic(s, w, h, c, true),
+    origin: 'New: A’s visual language with today’s data model',
+    what: 'Same router and pills as A, tinted in group colours, with no glow anywhere. Devices keep the shaded orb look from A. Selecting one gives it a white ring and a soft halo, and the other devices fade. Offline devices become hollow dashed rings. Each orb gets a short name label, and the full tooltip appears only for the selected device. The group chips filter and the bottom bar shows status, template and IP.',
+    plus: ['Keeps the identity people liked', 'Shows group colours and online/offline at a glance', 'No more overlapping tooltips', 'Drag still works'],
+    minus: ['The bottom bar holds less than the inspector, so rule details need an expandable bar or drawer', 'Very large networks get dense'],
+    effort: 'Medium. Restyle with custom DOM/SVG as in A, or theme Cytoscape heavily.',
+    hint: 'Drag pills and orbs · chips filter · click an orb for details' },
+  C2: { name: 'Classic, new dots', sub: 'C with other dot styles', render: (s, w, h, c) => classic(s, w, h, c, true, true),
+    origin: 'Variant of C: same layout, pills, labels and bottom bar',
+    what: 'Only the device dots change. Use the Ring / Icon / Kachel switch above the stage to compare. Ring: a thin coloured ring with a small solid core. Icon: a flat dot in the group colour with a device-type symbol (phone, laptop, console, printer and so on). Kachel: a rounded tile with soft shading. None of them glow.',
+    plus: ['Ring is the calmest and stays readable when small', 'Icon shows what kind of device it is without reading the label', 'Kachel keeps some of the 3D feel of the original orbs'],
+    minus: ['Icon needs a device type, which the router does not report yet (it would have to be guessed from the hostname or set by the user)', 'Kachel looks less like a classic network diagram'],
+    effort: 'Same as C. Icon adds a small device-type mapping.',
+    hint: 'Switch Ring / Icon / Kachel · drag pills and dots · click a dot for details' },
+  D: { name: 'Orbit', sub: 'New · ring sectors', render: orbit,
+    origin: 'New layout',
+    what: 'The router sits in the centre and every group owns an arc of one shared ring. Devices sit on the ring and the labels point outward.',
+    plus: ['Groups can never overlap', 'Calm, round picture that stays tidy at 30+ devices', 'Group size is visible as arc length'],
+    minus: ['Labels near the top and bottom of the ring get tight', 'Dragging doesn’t fit this layout'],
+    effort: 'Medium. Pure SVG, layout math is simple.',
+    hint: 'Click a device for details' },
+  E: { name: 'Clusters', sub: 'New · group bubbles', render: clusters,
+    origin: 'New layout',
+    what: 'Each group is a soft bubble that holds its devices in a small grid, and the bubbles sit around the router.',
+    plus: ['Group membership is obvious at once', 'Easy to explain at the Tag der offenen Tür', 'Labels never collide inside a bubble'],
+    minus: ['A large group makes one bubble dominate', 'Feels less like a network'],
+    effort: 'Medium. SVG with a simple packing step.',
+    hint: 'Click a device for details' },
+  F: { name: 'Tree', sub: 'New · router → group → device', render: tree,
+    origin: 'New layout',
+    what: 'A left-to-right hierarchy: router card, group cards, then one row per device with status, connection and IP.',
+    plus: ['The most readable and scannable option', 'Scrolls to any number of devices', 'Works well on phones'],
+    minus: ['Looks like a list and loses the spatial network feel', 'Less impressive in a demo'],
+    effort: 'Low to medium. HTML rows plus SVG curves.',
+    hint: 'Click a row for details' }
+};
+
+const TYPES = { 1: 'tablet', 2: 'console', 3: 'desktop', 4: 'phone', 5: 'laptop', 6: 'phone', 7: 'laptop', 8: 'home', 9: 'thermo', 10: 'bell', 11: 'speaker', 12: 'phone', 13: 'laptop', 14: 'printer', 15: 'unknown' };
+const ICONS = {
+  phone: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+  tablet: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M11 18h2"/>',
+  laptop: '<rect x="5" y="5" width="14" height="10" rx="1"/><path d="M3 19h18"/>',
+  desktop: '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M9 20h6M12 16v4"/>',
+  console: '<rect x="3" y="7" width="18" height="10" rx="4"/><path d="M7 12h3M8.5 10.5v3M15 11h.01M17 13h.01"/>',
+  home: '<path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/>',
+  thermo: '<circle cx="12" cy="12" r="8"/><path d="M12 12l3-3"/>',
+  bell: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+  speaker: '<rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="14" r="3"/><path d="M12 7h.01"/>',
+  printer: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="1"/><path d="M7 14h10v7H7z"/>',
+  unknown: '<path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7v.5M12 17h.01"/>'
+};
+const state = { dot: 'ring', view: 'A', mode: 'groups', online: false, sel: null, filter: null, zoom: 1, pos: { A: { g: {}, d: {} }, C: { g: {}, d: {} } } };
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const esc = v => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+function S(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs || {}) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; }
+function H(tag, cls, parent, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.append(e); return e; }
+const groupOf = d => GROUPS.find(g => g.id === d.group);
+const ago = m => m < 1 ? 'gerade eben' : m < 60 ? `vor ${m} min` : m < 1440 ? `vor ${Math.round(m / 60)} h` : `vor ${Math.round(m / 1440)} d`;
+const short = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
+
+function ctx() {
+  const devs = DEVICES.filter(d => !state.online || d.online);
+  const base = state.mode === 'groups' ? GROUPS
+    : [{ id: 'wlan', name: 'WLAN', color: '#79b9e3' }, { id: 'lan', name: 'LAN', color: '#d9b96f' }];
+  const hubs = base.map(h => ({ ...h, devices: devs.filter(d => state.mode === 'groups' ? d.group === h.id : d.conn === h.name) })).filter(h => h.devices.length);
+  if (state.filter && !hubs.some(h => h.id === state.filter)) state.filter = null;
+  const hubOf = d => hubs.find(h => h.devices.includes(d));
+  return { devs, hubs, hubOf };
+}
+function select(id) { state.sel = state.sel === id ? null : id; render(); }
+
+function detailCard(stage, c) {
+  const d = c.devs.find(x => x.id === state.sel);
+  if (!d) return;
+  const g = groupOf(d);
+  const card = H('div', 'detail', stage, `<button class="x" type="button" aria-label="Details schließen">×</button>
+    <div class="kick">Gerät</div><h4>${esc(d.name)}</h4>
+    <dl><dt>Gruppe</dt><dd><span class="sw" style="--g:${g.color}"></span>${esc(g.name)}</dd>
+    <dt>Status</dt><dd class="${d.online ? 'st-on' : 'st-off'}">${d.online ? 'Online' : 'Offline · ' + ago(d.seen)}</dd>
+    <dt>Verbindung</dt><dd>${d.conn}</dd><dt>IP</dt><dd>${d.ip}</dd><dt>MAC</dt><dd>${d.mac}</dd>
+    <dt>Vorlage</dt><dd>${esc(d.preset || 'Keine Vorlage')}</dd></dl>`);
+  card.querySelector('.x').onclick = () => { state.sel = null; render(); };
+}
+
+/* ===== A + C ===== */
+function classic(st, w, h, c, modern, v2) {
+  const key = v2 ? 'C2' : modern ? 'C' : 'A', P = state.pos[key] || (state.pos[key] = { g: {}, d: {} });
+  st.classList.add(modern ? 'cmod' : 'cold');
+  if (modern && state.sel) st.classList.add('has-sel');
+  const small = w < 720, base = Math.min(w, h - 40);
+  const cx = w / 2, cy = h / 2 + (modern && small ? 14 : 0);
+  const svg = S('svg', { class: 'c-lines', width: w, height: h }, st);
+  const router = H('img', 'c-router', st); router.src = ROUTER; router.alt = '';
+  router.style.width = Math.max(small ? 110 : 140, Math.min(w * .2, small ? 170 : 250)) + 'px';
+  router.style.left = cx + 'px'; router.style.top = cy + 'px';
+  const gR = Math.max(95, Math.min(base * .30, 260)) * (modern ? 1.04 : 1);
+  const gW = small ? (modern ? 112 : 94) : (modern ? 146 : 118), gH = small ? 40 : (modern ? 44 : 48), dS = v2 ? (state.dot === 'icon' ? (small ? 30 : 36) : state.dot === 'ring' ? (small ? 22 : 26) : (small ? 26 : 30)) : small ? 26 : (modern ? 30 : 34);
+  const n = c.hubs.length || 1, items = [];
+  const order = c.hubs.flatMap(hb => hb.devices);
+  const cur = order.find(d => d.id === state.sel) || (modern ? null : order[0]);
+
+  c.hubs.forEach((hub, i) => {
+    const a = 2 * Math.PI * i / n - Math.PI / 2;
+    const pos = P.g[hub.id] || { x: Math.max(16 + gW / 2, Math.min(cx + gR * Math.cos(a), w - 16 - gW / 2)), y: Math.max(16 + gH / 2, Math.min(cy + gR * Math.sin(a), h - 70 - gH / 2)) };
+    const dimHub = modern && state.filter && state.filter !== hub.id;
+    const el = H('div', 'c-group' + (dimHub ? ' dim' : '') + (modern && state.filter === hub.id ? ' act' : ''), st,
+      modern ? `<span>${esc(hub.name)}</span><small>${hub.devices.length}</small>` : esc(hub.name));
+    el.style.setProperty('--g', hub.color); el.style.width = gW + 'px'; el.style.height = gH + 'px';
+    el.tabIndex = 0; el.setAttribute('role', 'button'); el.setAttribute('aria-label', `Gruppe ${hub.name}`);
+    const k = hub.devices.length;
+    const dR = modern ? Math.min(small ? 112 : 168, Math.max(small ? 60 : 82, 48 + k * (small ? 10 : 14)))
+                      : Math.min(small ? 118 : 170, Math.max(small ? 54 : 72, 42 + k * (small ? 9 : 12)));
+    const it = { hub, el, pos, dim: dimHub, devs: [] };
+    hub.devices.forEach((d, j) => {
+      const da = 2 * Math.PI * j / Math.max(1, k) - Math.PI / 2;
+      const id = hub.id + ':' + d.id;
+      const off = P.d[id] || { x: Math.round(dR * Math.cos(da)), y: Math.round(dR * Math.sin(da)) };
+      const sel = cur && cur.id === d.id;
+      const de = H('div', 'c-dev' + (sel ? ' sel' : '') + (modern && !d.online ? ' off' : '') + (dimHub ? ' dim' : '') + (v2 ? ' v2 s-' + state.dot : ''), st,
+        v2 && state.dot === 'icon' ? `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[TYPES[d.id]] || ICONS.unknown}</svg>` : null);
+      de.style.setProperty('--g', groupOf(d).color); de.style.width = de.style.height = dS + 'px';
+      de.tabIndex = 0; de.setAttribute('role', 'button'); de.setAttribute('aria-label', `${d.name}, Gruppe ${hub.name}`);
+      const dv = { d, el: de, off, id };
+      if (!modern || sel) {
+        dv.info = H('div', 'c-info', st, `<b>${esc(d.name)}</b><span>${esc(hub.name)} · ${d.ip} · ${modern ? (d.online ? 'online' : ago(d.seen)) : 'vor ' + d.seen + 'min'}</span>`);
+        if (dimHub) dv.info.classList.add('dim');
+      }
+      if (!modern) {
+        const info = dv.info, show = () => info.classList.add('show'), hide = () => info.classList.remove('show');
+        de.addEventListener('pointerenter', show); de.addEventListener('pointerleave', hide);
+        de.addEventListener('focus', show); de.addEventListener('blur', hide);
+      }
+      if (modern && !sel) dv.label = H('div', 'c-label' + (d.online ? '' : ' off') + (dimHub ? ' dim' : ''), st, esc(short(d.name, 16)));
+      it.devs.push(dv);
+      drag(de, () => ({ ...dv.off }), (x, y) => { dv.off = { x, y }; P.d[id] = dv.off; place(); }, () => select(d.id));
+    });
+    items.push(it);
+    drag(el, () => ({ ...it.pos }), (x, y) => { it.pos = { x, y }; P.g[hub.id] = it.pos; place(); },
+      () => { if (modern) { state.filter = state.filter === hub.id ? null : hub.id; render(); } });
+  });
+
+  function line(x1, y1, x2, y2, color, op, wd) {
+    const l = S('line', { x1, y1, x2, y2 }, svg);
+    if (modern) { l.setAttribute('stroke', color); l.setAttribute('stroke-opacity', op); l.setAttribute('stroke-width', wd); }
+  }
+  function place() {
+    svg.innerHTML = '';
+    items.forEach(it => {
+      const g = it.pos;
+      it.el.style.left = (g.x - gW / 2) + 'px'; it.el.style.top = (g.y - gH / 2) + 'px';
+      line(cx, cy, g.x, g.y, '#63e5c5', it.dim ? .06 : .32, 1.4);
+      it.devs.forEach(dv => {
+        const x = g.x + dv.off.x, y = g.y + dv.off.y;
+        dv.el.style.left = (x - dS / 2) + 'px'; dv.el.style.top = (y - dS / 2) + 'px';
+        const sel = state.sel === dv.d.id;
+        line(g.x, g.y, x, y, it.hub.color, it.dim ? .05 : sel ? .9 : dv.d.online ? .38 : .16, sel ? 2.2 : 1.3);
+        if (dv.label) { dv.label.style.left = x + 'px'; dv.label.style.top = (y + dS / 2 + 4) + 'px'; }
+        if (dv.info) {
+          const bw = dv.info.offsetWidth || 180, bh = dv.info.offsetHeight || 44, gap = 10, o = dv.off;
+          let left = x + (o.x >= 0 ? dS / 2 + gap : -dS / 2 - gap - bw);
+          let top = y + (Math.abs(o.y) > Math.abs(o.x) ? (o.y >= 0 ? dS / 2 + gap : -dS / 2 - gap - bh) : -bh / 2);
+          dv.info.style.left = Math.max(8, Math.min(left, w - bw - 8)) + 'px';
+          dv.info.style.top = Math.max(8, Math.min(top, h - bh - 8)) + 'px';
+        }
+      });
+    });
+  }
+  place();
+
+  const reset = H('button', 'c-reset', st, 'Anordnung zurücksetzen'); reset.type = 'button';
+  reset.onclick = () => { state.pos[key] = { g: {}, d: {} }; render(); };
+
+  if (modern) {
+    const chips = H('div', 'c-chips', st);
+    c.hubs.forEach(hub => {
+      const b = H('button', 'chip', chips, `<span class="sw" style="--g:${hub.color};margin:0"></span>${esc(hub.name)}<span class="c">${hub.devices.length}</span>`);
+      b.type = 'button'; b.style.setProperty('--g', hub.color); b.setAttribute('aria-pressed', String(state.filter === hub.id));
+      b.onclick = () => { state.filter = state.filter === hub.id ? null : hub.id; render(); };
+    });
+  }
+
+  const bar = H('div', 'c-bar', st);
+  const prev = H('button', '', bar, '&lt;'); prev.type = 'button'; prev.setAttribute('aria-label', 'Vorheriges Gerät');
+  const det = H('div', 'd', bar);
+  const next = H('button', '', bar, '&gt;'); next.type = 'button'; next.setAttribute('aria-label', 'Nächstes Gerät');
+  if (cur) {
+    const hn = c.hubOf(cur).name;
+    det.innerHTML = modern
+      ? `<i class="dot${cur.online ? '' : ' off'}"></i><span><b>${esc(cur.name)}</b> · ${esc(groupOf(cur).name)} · ${esc(cur.preset || 'Keine Vorlage')} · ${cur.conn} ${cur.ip} · ${cur.online ? 'online' : 'zuletzt ' + ago(cur.seen)}</span>`
+      : `<b>${esc(cur.name)}</b> · Gruppe: ${esc(hn)} · IP: ${cur.ip} · zuletzt: vor ${cur.seen}min`;
+  } else {
+    const on = c.devs.filter(d => d.online).length;
+    det.innerHTML = `<span>${ROUTER_NAME} · ${c.devs.length} Geräte · ${on} online · Gerät antippen für Details</span>`;
+  }
+  const step = dir => { if (!order.length) return; const i = cur ? order.indexOf(cur) : -1; state.sel = order[(i + dir + order.length) % order.length].id; render(); };
+  prev.onclick = () => step(-1); next.onclick = () => step(1);
+}
+
+function drag(el, getStart, setPos, onClick) {
+  el.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    const sx = e.clientX, sy = e.clientY, start = getStart(); let moved = false;
+    const mv = ev => { const dx = ev.clientX - sx, dy = ev.clientY - sy; if (!moved && Math.hypot(dx, dy) < 4) return; moved = true; setPos(start.x + dx, start.y + dy); };
+    const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); if (!moved) onClick(); };
+    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } });
+}
+
+/* ===== B: current ===== */
+function current(st, w, h, c) {
+  const wrap = H('div', 'b-wrap', st);
+  const leg = H('div', 'b-legend', wrap, '<span class="t">Gruppen</span>');
+  [{ id: null, name: 'Alle', devices: c.devs }, ...c.hubs].forEach(hub => {
+    const b = H('button', 'b-item', leg, `${hub.color ? `<span class="sw" style="--g:${hub.color};margin:0"></span>` : ''}${esc(hub.name)}<span class="c">${hub.devices.length}</span>`);
+    b.type = 'button'; b.setAttribute('aria-pressed', String(state.filter === hub.id && hub.id !== null));
+    b.onclick = () => { state.filter = state.filter === hub.id ? null : hub.id; render(); };
+  });
+  const on = H('button', 'b-item on', leg, `<i class="dot" style="box-shadow:none"></i>Nur online<span class="c">${DEVICES.filter(d => d.online).length}</span>`);
+  on.type = 'button'; on.setAttribute('aria-pressed', String(state.online)); on.onclick = () => $('#online').click();
+  const narrow = w < 760;
+  const body = H('div', 'b-body', wrap); if (narrow) body.style.gridTemplateColumns = '1fr';
+  const gEl = H('div', 'b-graph', body);
+  let insp = null; if (!narrow) insp = H('aside', 'b-insp', body);
+  const W = gEl.clientWidth, Hh = gEl.clientHeight;
+  const svg = S('svg', { width: W, height: Hh }, gEl);
+
+  // same ring arrangement as topologie_custom.js arrange()
+  const pos = { router: { x: 0, y: 0 } };
+  const dv = c.devs.length, slots = dv + c.hubs.length * 1.5, R = Math.max(320, dv * 26);
+  let off = -Math.PI / 2;
+  c.hubs.forEach(hub => {
+    const arc = (hub.devices.length + 1.5) / Math.max(1, slots) * Math.PI * 2, a = off + arc / 2;
+    pos[hub.id] = { x: Math.cos(a) * R * .58, y: Math.sin(a) * R * .58 };
+    hub.devices.forEach((d, i) => { const t = off + arc * (i + 1) / (hub.devices.length + 1); pos['d' + d.id] = { x: Math.cos(t) * R, y: Math.sin(t) * R }; });
+    off += arc;
+  });
+  const xs = Object.values(pos).map(p => p.x), ys = Object.values(pos).map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const s = Math.min((W - 150) / (maxX - minX || 1), (Hh - 130) / (maxY - minY || 1), 1.2) * state.zoom;
+  const P = p => ({ x: W / 2 + (p.x - (minX + maxX) / 2) * s, y: Hh / 2 - 10 + (p.y - (minY + maxY) / 2) * s });
+  const matches = d => !state.filter || c.hubOf(d).id === state.filter;
+  const filtered = !!state.filter;
+
+  c.hubs.forEach(hub => {
+    const hp = P(pos[hub.id]), rp = P(pos.router);
+    const mutedHub = filtered && state.filter !== hub.id;
+    S('line', { x1: rp.x, y1: rp.y, x2: hp.x, y2: hp.y, stroke: '#617078', 'stroke-width': 1.4, opacity: mutedHub ? .13 : 1 }, svg);
+    hub.devices.forEach(d => {
+      const p = P(pos['d' + d.id]); const hl = state.sel === d.id;
+      S('line', { x1: hp.x, y1: hp.y, x2: p.x, y2: p.y, stroke: hl ? '#9cd6cd' : '#617078', 'stroke-width': hl ? 2 : 1.4, opacity: mutedHub ? .13 : 1 }, svg);
+    });
+  });
+  function label(x, y, text, color, weight, op) {
+    const lines = text.length > 13 && text.includes(' ') ? [text.slice(0, text.lastIndexOf(' ', 13) > 0 ? text.lastIndexOf(' ', 13) : text.indexOf(' ')), text.slice((text.lastIndexOf(' ', 13) > 0 ? text.lastIndexOf(' ', 13) : text.indexOf(' ')) + 1)] : [text];
+    const g = S('g', { opacity: op }, svg);
+    const t = S('text', { x, y, 'text-anchor': 'middle', fill: color, 'font-size': 12, 'font-weight': weight }, g);
+    lines.forEach((ln, i) => { const sp = S('tspan', { x, dy: i ? 15 : 0 }, t); sp.textContent = ln; });
+    const bb = t.getBBox();
+    g.insertBefore(S('rect', { x: bb.x - 3, y: bb.y - 3, width: bb.width + 6, height: bb.height + 6, fill: '#001818', 'fill-opacity': .85 }), t);
+  }
+  const rp = P(pos.router), rr = Math.max(86 * s, 46) / 2;
+  S('circle', { cx: rp.x, cy: rp.y, r: rr + 14 * Math.max(s, .6), fill: '#63e5c5', 'fill-opacity': .08 }, svg);
+  S('circle', { cx: rp.x, cy: rp.y, r: rr, fill: '#164b60', stroke: '#63e5c5', 'stroke-width': 2 }, svg);
+  S('image', { href: ROUTER, x: rp.x - rr * .8, y: rp.y - rr * .8, width: rr * 1.6, height: rr * 1.6 }, svg);
+  if (W >= 600) label(rp.x, rp.y + rr + 22, ROUTER_NAME, '#e4e9eb', 600, filtered ? 1 : 1);
+  c.hubs.forEach(hub => {
+    const p = P(pos[hub.id]), r = Math.max(32 * s, 18) / 2, m = filtered && state.filter !== hub.id;
+    const g = S('g', { class: 'hit', opacity: m ? .13 : 1 }, svg);
+    S('circle', { cx: p.x, cy: p.y, r, fill: hub.color, 'fill-opacity': .18, stroke: hub.color, 'stroke-width': 2 }, g);
+    g.onclick = () => { state.filter = state.filter === hub.id ? null : hub.id; render(); };
+    label(p.x, p.y + r + 21, hub.name, '#e4e9eb', 600, m ? .13 : 1);
+  });
+  c.devs.forEach(d => {
+    const p = P(pos['d' + d.id]), r = Math.max(42 * s, 23) / 2, m = filtered && !matches(d), sel = state.sel === d.id;
+    const g = S('g', { class: 'hit', opacity: m ? .13 : 1, tabindex: 0, role: 'button', 'aria-label': d.name }, svg);
+    S('circle', { class: 'ring', cx: p.x, cy: p.y, r, fill: groupOf(d).color, 'fill-opacity': d.online ? 1 : .3,
+      stroke: sel ? '#63e5c5' : d.online ? '#001818' : '#617078', 'stroke-width': sel ? 4 : 2, 'stroke-dasharray': d.online ? '' : '4 3' }, g);
+    g.onclick = () => select(d.id); g.onkeydown = e => { if (e.key === 'Enter') select(d.id); };
+    label(p.x, p.y + r + 21, d.name, d.online ? '#e4e9eb' : '#9aa8b0', 400, m ? .13 : 1);
+  });
+  const tools = H('div', 'b-tools', gEl);
+  [['+', 'Vergrößern', () => state.zoom *= 1.2], ['−', 'Verkleinern', () => state.zoom /= 1.2], ['↺', 'Anordnung zurücksetzen', () => state.zoom = 1]].forEach(([t, l, f]) => {
+    const b = H('button', '', tools, t); b.type = 'button'; b.title = l; b.setAttribute('aria-label', l); b.onclick = () => { f(); render(); };
+  });
+  H('span', 'b-cap', gEl, state.mode === 'groups' ? 'Gruppenzuordnung vom Router' : 'Verbindungstyp laut Gerätedaten');
+
+  if (!insp) { detailCard(st, c); return; }
+  const sel = H('label', '', insp, 'Gerät auswählen');
+  const sl = H('select', '', sel); sl.id = 'b-picker';
+  sl.add(new Option('Netzwerkübersicht', ''));
+  c.devs.filter(matches).forEach(d => sl.add(new Option(d.name, d.id)));
+  sl.value = state.sel || ''; sl.onchange = () => { state.sel = sl.value ? +sl.value : null; render(); };
+  const d = c.devs.find(x => x.id === state.sel);
+  const det = H('div', '', insp);
+  if (!d) {
+    det.innerHTML = `<p class="kick">Netzwerkübersicht</p><h5>${ROUTER_NAME}</h5><p class="big">${c.devs.length}</p><p style="color:var(--soft);margin:0 0 12px;font-size:12px">${state.online ? 'Geräte gerade online' : 'Geräte im gespeicherten Netzwerk'}</p>
+      <div class="sec"><h6>Gruppen</h6>${c.hubs.map(hb => `<div class="row"><span class="sw" style="--g:${hb.color}"></span>${esc(hb.name)}<span class="c">${hb.devices.length}</span></div>`).join('')}</div>
+      <div class="sec"><h6>Router</h6><dl><div><dt>Modell</dt><dd>Beispielrouter</dd></div></dl></div>`;
+  } else {
+    const g = groupOf(d);
+    det.innerHTML = `<p class="kick">Gerät</p><h5>${esc(d.name)}</h5>
+      <div class="sec"><h6>Gruppenzuordnung</h6><div class="row"><span class="sw" style="--g:${g.color}"></span>${esc(g.name)}</div></div>
+      <div class="sec"><h6>Zugewiesene Vorlage</h6><strong>${esc(d.preset || 'Keine Vorlage zugewiesen')}</strong></div>
+      <div class="sec"><h6>Verbindung</h6><dl><div><dt>Status</dt><dd>${d.online ? 'Online' : 'Offline'}</dd></div><div><dt>Typ</dt><dd>${d.conn}</dd></div><div><dt>IP-Adresse</dt><dd>${d.ip}</dd></div><div><dt>MAC-Adresse</dt><dd>${d.mac}</dd></div><div><dt>Zuletzt gesehen</dt><dd>${ago(d.seen)}</dd></div></dl></div>`;
+  }
+}
+
+/* ===== D: orbit ===== */
+function orbit(st, w, h, c) {
+  const wrap = H('div', 'svgstage', st);
+  const svg = S('svg', { width: w, height: h }, wrap);
+  const small = w < 640;
+  const cx = w / 2, cy = h / 2;
+  const Rmax = Math.max(130, Math.min(w / 2 - (small ? 70 : 130), h / 2 - 46));
+  const R = Rmax, band = small ? 20 : 26;
+  defs(svg);
+  [R - band, R + band].forEach(r => S('circle', { cx, cy, r, fill: 'none', stroke: '#e5ebe7', 'stroke-opacity': .05, 'stroke-dasharray': '2 6' }, svg));
+  S('circle', { cx, cy, r: R * .5, fill: 'none', stroke: '#63e5c5', 'stroke-opacity': .07 }, svg);
+  const total = c.hubs.reduce((s, hb) => s + hb.devices.length + .8, 0) || 1, gap = .05;
+  let a = -Math.PI / 2 - (c.hubs[0] ? Math.PI * 2 * (c.hubs[0].devices.length + .8) / total / 2 : 0);
+  const pt = (r, t) => [cx + r * Math.cos(t), cy + r * Math.sin(t)];
+  const rIn = Math.min(R * .2, 70) + 6;
+  const layerL = S('g', {}, svg), layerS = S('g', {}, svg), layerP = S('g', {}, svg), layerD = S('g', {}, svg);
+  c.hubs.forEach(hub => {
+    const span = Math.PI * 2 * (hub.devices.length + .8) / total, a0 = a + gap / 2, a1 = a + span - gap / 2, mid = (a0 + a1) / 2;
+    const ri = R - band, ro = R + band, large = a1 - a0 > Math.PI ? 1 : 0;
+    const [x0, y0] = pt(ro, a0), [x1, y1] = pt(ro, a1), [x2, y2] = pt(ri, a1), [x3, y3] = pt(ri, a0);
+    S('path', { d: `M${x0},${y0} A${ro},${ro} 0 ${large} 1 ${x1},${y1} L${x2},${y2} A${ri},${ri} 0 ${large} 0 ${x3},${y3} Z`, fill: hub.color, 'fill-opacity': .09, stroke: hub.color, 'stroke-opacity': .32 }, layerS);
+    const [px, py] = pt(R * .5, mid), [sx, sy] = pt(rIn, mid), [ex, ey] = pt(ri, mid);
+    S('line', { x1: sx, y1: sy, x2: ex, y2: ey, stroke: hub.color, 'stroke-opacity': .4, 'stroke-width': 1.3 }, layerL);
+    const pg = S('g', {}, layerP);
+    const t = S('text', { x: px, y: py + 4, 'text-anchor': 'middle', fill: '#e5ebe7', 'font-size': 12, 'font-weight': 600 }, pg);
+    t.textContent = `${hub.name} · ${hub.devices.length}`;
+    const bb = t.getBBox();
+    pg.insertBefore(S('rect', { x: bb.x - 10, y: bb.y - 5, width: bb.width + 20, height: bb.height + 10, rx: (bb.height + 10) / 2, fill: '#0c2026', stroke: hub.color, 'stroke-opacity': .7 }), t);
+    const k = hub.devices.length;
+    hub.devices.forEach((d, i) => {
+      const th = a0 + (a1 - a0) * (i + .5) / k, [x, y] = pt(R, th), sel = state.sel === d.id;
+      const g = S('g', { class: 'hit', tabindex: 0, role: 'button', 'aria-label': d.name }, layerD);
+      if (d.online) S('circle', { cx: x, cy: y, r: sel ? 20 : 14, fill: hub.color, 'fill-opacity': sel ? .3 : .16, filter: 'url(#glow)' }, g);
+      S('circle', { class: 'ring', cx: x, cy: y, r: sel ? 11 : 8, fill: d.online ? groupOf(d).color : '#1f2121', stroke: d.online ? '#e5ebe7' : '#9aa8b0', 'stroke-opacity': d.online ? .5 : .6, 'stroke-width': sel ? 2 : 1.2, 'stroke-dasharray': d.online ? '' : '3 2' }, g);
+      const cos = Math.cos(th), lr = R + band + 8, [lx, ly] = pt(lr, th);
+      const txt = S('text', { x: lx, y: ly + 4 + Math.sin(th) * 6, 'text-anchor': cos > .25 ? 'start' : cos < -.25 ? 'end' : 'middle', fill: d.online ? (sel ? '#63e5c5' : '#e5ebe7') : '#8b979d', 'font-size': small ? 11 : 12, 'font-weight': sel ? 600 : 400 }, g);
+      txt.textContent = small ? short(d.name, 12) : d.name;
+      S('circle', { cx: x, cy: y, r: 18, fill: 'transparent' }, g);
+      g.onclick = () => select(d.id); g.onkeydown = e => { if (e.key === 'Enter') select(d.id); };
+    });
+    a += span;
+  });
+  const rs = Math.min(R * .4, 140);
+  S('circle', { cx, cy, r: rs * .62, fill: 'url(#core)' }, svg);
+  S('image', { href: ROUTER, x: cx - rs / 2, y: cy - rs / 2, width: rs, height: rs, filter: 'url(#glow)' }, svg);
+  const rt = S('text', { x: cx, y: cy + rs / 2 + 4, 'text-anchor': 'middle', fill: '#63e5c5', 'font-size': 12, 'font-weight': 600 }, svg); rt.textContent = ROUTER_NAME;
+  detailCard(st, c);
+}
+function defs(svg) {
+  const d = S('defs', {}, svg);
+  const f = S('filter', { id: 'glow', x: '-60%', y: '-60%', width: '220%', height: '220%' }, d);
+  S('feGaussianBlur', { stdDeviation: 5 }, f);
+  const m = S('feMerge', {}, f); S('feMergeNode', {}, m); S('feMergeNode', { in: 'SourceGraphic' }, m);
+  const rg = S('radialGradient', { id: 'core' }, d);
+  S('stop', { offset: '0%', 'stop-color': '#63e5c5', 'stop-opacity': .28 }, rg);
+  S('stop', { offset: '100%', 'stop-color': '#63e5c5', 'stop-opacity': 0 }, rg);
+}
+
+/* ===== E: clusters ===== */
+function clusters(st, w, h, c) {
+  const wrap = H('div', 'svgstage', st);
+  const svg = S('svg', { width: w, height: h }, wrap);
+  defs(svg);
+  const cw = 96, ch = 54;
+  const bubbles = c.hubs.map(hub => {
+    const n = hub.devices.length, cols = n <= 2 ? n : n <= 4 ? 2 : 3, rows = Math.ceil(n / cols);
+    return { hub, cols, rows, r: Math.hypot(cols * cw / 2, rows * ch / 2) + 16 };
+  });
+  const circ = bubbles.reduce((s, b) => s + 2 * b.r + 34, 0);
+  const maxR = Math.max(...bubbles.map(b => b.r), 0);
+  const ring = Math.max(circ / (2 * Math.PI), maxR + 120);
+  let a = -Math.PI / 2 - (bubbles[0] ? (2 * bubbles[0].r + 34) / circ * Math.PI : 0);
+  bubbles.forEach(b => { const span = (2 * b.r + 34) / circ * Math.PI * 2; const t = a + span / 2; b.x = Math.cos(t) * ring; b.y = Math.sin(t) * ring; a += span; });
+  const minX = Math.min(...bubbles.map(b => b.x - b.r), -80), maxX = Math.max(...bubbles.map(b => b.x + b.r), 80);
+  const minY = Math.min(...bubbles.map(b => b.y - b.r - 26), -80), maxY = Math.max(...bubbles.map(b => b.y + b.r), 80);
+  const s = Math.min((w - 40) / (maxX - minX), (h - 40) / (maxY - minY), 1);
+  const root = S('g', { transform: `translate(${w / 2 - (minX + maxX) / 2 * s},${h / 2 - (minY + maxY) / 2 * s}) scale(${s})` }, svg);
+  bubbles.forEach(b => {
+    const d = Math.hypot(b.x, b.y), ux = b.x / d, uy = b.y / d;
+    S('line', { x1: ux * 62, y1: uy * 62, x2: b.x - ux * b.r, y2: b.y - uy * b.r, stroke: b.hub.color, 'stroke-opacity': .45, 'stroke-width': 1.4, 'stroke-dasharray': '3 5' }, root);
+  });
+  S('circle', { cx: 0, cy: 0, r: 80, fill: 'url(#core)' }, root);
+  S('image', { href: ROUTER, x: -56, y: -56, width: 112, height: 112, filter: 'url(#glow)' }, root);
+  const rt = S('text', { x: 0, y: 70, 'text-anchor': 'middle', fill: '#63e5c5', 'font-size': 12, 'font-weight': 600 }, root); rt.textContent = ROUTER_NAME;
+  bubbles.forEach(b => {
+    S('circle', { cx: b.x, cy: b.y, r: b.r, fill: b.hub.color, 'fill-opacity': .07, stroke: b.hub.color, 'stroke-opacity': .45, 'stroke-width': 1.3 }, root);
+    const t = S('text', { x: b.x, y: b.y - b.r - 10, 'text-anchor': 'middle', fill: b.hub.color, 'font-size': 13, 'font-weight': 700 }, root);
+    t.textContent = b.hub.name; const cnt = S('tspan', { fill: '#9aa8b0', 'font-weight': 400 }, t); cnt.textContent = `  ${b.hub.devices.length}`;
+    b.hub.devices.forEach((d, i) => {
+      const col = i % b.cols, row = Math.floor(i / b.cols);
+      const inRow = Math.min(b.cols, b.hub.devices.length - row * b.cols);
+      const x = b.x + (col - (inRow - 1) / 2) * cw, y = b.y + (row - (b.rows - 1) / 2) * ch - 6, sel = state.sel === d.id;
+      const g = S('g', { class: 'hit', tabindex: 0, role: 'button', 'aria-label': d.name }, root);
+      S('rect', { x: x - cw / 2 + 4, y: y - 16, width: cw - 8, height: ch - 6, rx: 10, fill: sel ? '#63e5c5' : 'transparent', 'fill-opacity': sel ? .12 : 0, stroke: sel ? '#63e5c5' : 'none', 'stroke-opacity': .7 }, g);
+      S('circle', { class: 'ring', cx: x, cy: y - 2, r: 8, fill: d.online ? groupOf(d).color : '#1f2121', stroke: d.online ? '#e5ebe7' : '#9aa8b0', 'stroke-opacity': .55, 'stroke-dasharray': d.online ? '' : '3 2', filter: d.online ? 'url(#glow)' : '' }, g);
+      const lt = S('text', { x, y: y + 20, 'text-anchor': 'middle', fill: d.online ? '#e5ebe7' : '#8b979d', 'font-size': 11 }, g); lt.textContent = short(d.name, 14);
+      g.onclick = () => select(d.id); g.onkeydown = e => { if (e.key === 'Enter') select(d.id); };
+    });
+  });
+  detailCard(st, c);
+}
+
+/* ===== F: tree ===== */
+function tree(st, w, h, c) {
+  const sc = H('div', 'f-scroll', st);
+  const small = w < 640;
+  const rx = 16, rw = small ? 96 : 170, gx = small ? 128 : 250, gw = small ? 120 : 180, dx = small ? 268 : 500;
+  const width = Math.max(w, dx + (small ? 200 : 300));
+  const dw = Math.min(width - dx - 16, 440);
+  const rowH = 36, gapG = 22, top = 24;
+  let y = top; const rows = [];
+  c.hubs.forEach(hub => { const y0 = y; hub.devices.forEach(d => { rows.push({ d, hub, y }); y += rowH; }); hub.y = (y0 + y - rowH) / 2 + 15; y += gapG; });
+  const height = Math.max(h, y + 10);
+  const cv = H('div', 'f-canvas', sc); cv.style.width = width + 'px'; cv.style.height = height + 'px';
+  const svg = S('svg', { width, height }, cv);
+  const ry = (top + y - gapG - rowH) / 2 + 15, rh = small ? 110 : 140;
+  const curve = (x1, y1, x2, y2, col, op, wd) => S('path', { d: `M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}`, fill: 'none', stroke: col, 'stroke-opacity': op, 'stroke-width': wd }, svg);
+  c.hubs.forEach(hub => {
+    curve(rx + rw, ry, gx, hub.y, '#63e5c5', .35, 1.4);
+    hub.devices.forEach(d => { const r = rows.find(q => q.d === d); const sel = state.sel === d.id; curve(gx + gw, hub.y, dx, r.y + 15, hub.color, sel ? .9 : .35, sel ? 2 : 1.2); });
+  });
+  const router = H('div', 'f-router', cv, `<img src="${ROUTER}" alt=""><b>${ROUTER_NAME}</b><span>${c.devs.length} Geräte · ${c.devs.filter(d => d.online).length} online</span>`);
+  Object.assign(router.style, { left: rx + 'px', top: (ry - rh / 2) + 'px', width: rw + 'px', height: rh + 'px' });
+  c.hubs.forEach(hub => {
+    const g = H('div', 'f-group', cv, `<span class="sw" style="--g:${hub.color};margin:0"></span>${esc(hub.name)}<span class="c">${hub.devices.length}</span>`);
+    g.style.setProperty('--g', hub.color); Object.assign(g.style, { left: gx + 'px', top: (hub.y - 20) + 'px', width: gw + 'px' });
+  });
+  rows.forEach(({ d, y }) => {
+    const b = H('button', 'f-dev' + (d.online ? '' : ' off') + (state.sel === d.id ? ' sel' : ''), cv,
+      `<i class="dot${d.online ? '' : ' off'}"></i><span class="nm">${esc(d.name)}</span><span class="cn">${d.conn}</span>${dw >= 300 ? `<span class="ip">${d.ip}</span>` : ''}`);
+    b.type = 'button'; Object.assign(b.style, { left: dx + 'px', top: y + 'px', width: dw + 'px' });
+    b.onclick = () => select(d.id);
+  });
+  detailCard(st, c);
+}
+
+/* ===== shell ===== */
+function renderNotes() {
+  const o = OPTIONS[state.view];
+  $('#notes').innerHTML = `<div class="note"><h3>Option ${state.view}</h3><h2>${o.name}</h2><div class="origin">${o.origin}</div><p>${o.what}</p><p class="effort"><b>Effort:</b> ${o.effort}</p></div>
+    <div class="note"><h3>Works well</h3><ul class="plus">${o.plus.map(x => `<li>${x}</li>`).join('')}</ul></div>
+    <div class="note"><h3>Watch out</h3><ul class="minus">${o.minus.map(x => `<li>${x}</li>`).join('')}</ul></div>`;
+  $('#hint').textContent = o.hint;
+}
+function render() {
+  const st = $('#stage');
+  st.innerHTML = ''; st.className = '';
+  const c = ctx();
+  if (state.sel && !c.devs.some(d => d.id === state.sel)) state.sel = null;
+  OPTIONS[state.view].render(st, st.clientWidth, st.clientHeight, c);
+}
+function setView(v) {
+  state.view = v; state.sel = null; state.filter = null; state.zoom = 1;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.v === v)));
+  $('#dotstyle').hidden = v !== 'C2';
+  try { localStorage.setItem('nethera-topo-view', v); } catch {}
+  renderNotes(); render();
+}
+Object.entries(OPTIONS).forEach(([k, o]) => {
+  const b = H('button', 'tab', $('#tabs'), `<span class="k">${k}</span><span class="n">${o.name}</span><span class="s">${o.sub}</span>`);
+  b.type = 'button'; b.dataset.v = k; b.setAttribute('role', 'tab'); b.onclick = () => setView(k);
+});
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+  state.mode = b.dataset.mode; state.filter = null; state.pos = { A: { g: {}, d: {} }, C: { g: {}, d: {} } };
+  document.querySelectorAll('[data-mode]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); render();
+});
+document.querySelectorAll('[data-dot]').forEach(b => b.onclick = () => {
+  state.dot = b.dataset.dot;
+  document.querySelectorAll('[data-dot]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); render();
+});
+$('#online').onclick = () => { state.online = !state.online; $('#online').setAttribute('aria-pressed', String(state.online)); render(); };
+let raf = 0, lastW = 0, lastH = 0;
+new ResizeObserver(() => {
+  const st = $('#stage'); if (st.clientWidth === lastW && st.clientHeight === lastH) return;
+  lastW = st.clientWidth; lastH = st.clientHeight; cancelAnimationFrame(raf); raf = requestAnimationFrame(render);
+}).observe($('#stage'));
+let start = 'A'; try { const v = localStorage.getItem('nethera-topo-view'); if (OPTIONS[v]) start = v; } catch {}
+setView(start);
+</script>
