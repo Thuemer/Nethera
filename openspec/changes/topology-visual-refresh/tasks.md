@@ -13,7 +13,7 @@
 ## 3. Klassisch layout
 
 - [x] 3.1 Create `Applikation/topology-classic.js`: router image, pills on a ring, devices on rings around their primary hub, SVG lines, dashed secondary-membership lines
-- [x] 3.2 Style ring dots in `topologie.css`: 1.5 px group-colour ring, small core, faint tint, dashed offline ring with no core, short labels, and no glow/blur/animation anywhere (router uses a plain dark drop shadow)
+- [x] 3.2 Style ring dots in `topologie.css`: 1.5 px group-colour ring, small core, faint tint, dashed offline ring with no core and short labels; revision 8 restores the original router image/shadows while classic dots and pills remain without glow
 - [x] 3.3 Highlighting: solid ring on hover/focus, white ring + scale for the selected device, fading of other devices to 40 %, group filter fading to 14 %, emphasised selected line
 - [x] 3.4 Pointer dragging for pills and devices (4 px threshold, in-memory offsets per mode), zoom via CSS transform (0.5–2), reset, and `fit()` on resize/fullscreen
 - [x] 3.5 Devices and pills as `<button>` elements with `aria-label`/`aria-pressed`, keyboard selection, and a group pill click toggling the group filter
@@ -32,7 +32,7 @@
 ## 6. Tests and verification
 
 - [x] 6.1 Rewrite `tests/topology-browser.cjs` to run its existing scenarios (picker selection, node click via DOM, mode switch, zoom/reset, fullscreen with inspector, permission failure, reload failure/recovery, 390/768/1440 px without horizontal scroll) in both layouts
-- [x] 6.2 Add browser checks for the layout switch persistence, the narrow-screen default and the absence of glow (`box-shadow`/`filter` without blur on dots, pills and router)
+- [x] 6.2 Add browser checks for the layout switch persistence, narrow-screen default and reference styling; revision 8 verifies no glow on classic dots/pills and preserves the mockup's router/tree shadows
 - [x] 6.3 Run `node --test tests/*.test.cjs` and `npm run test:topology` and fix failures
 - [ ] 6.4 Check both layouts manually against `mockup.html` (C2 Ring, F) with demo data and a real router account
 
@@ -43,7 +43,7 @@
 
 Verified: 122 unit tests, 83 general browser scenarios, both topology layouts (320/390/768/1440 px), presentation regression and 42 polish checks pass. Topology tests also pass against the built image and the cloud-served assets with intercepted API fixtures. Source scan has no remaining Cytoscape imports. Task 6.4 remains open: demo views were inspected, but no authenticated real-router visual check has been completed. Frontend rollout and preservation checks passed; see verification.md and deploy/leocloud/README.md.
 
-## 8. Local mockup fidelity revision (19.11.2026)
+## 8. Mockup fidelity revision (19.11.2026)
 
 The user requested the actual C2 Ring / F mockup design, not another interpretation of the plan. The filled local preview has now been reviewed and approved for a frontend-only release.
 
@@ -52,6 +52,6 @@ The user requested the actual C2 Ring / F mockup design, not another interpretat
 - [x] 8.3 Compare both renderers against the original mockup with identical fixtures and dimensions, run regression tests and inspect desktop/mobile screenshots
 - [x] 8.4 Update existing documentation and open the filled local preview for review
 
-- [ ] 8.5 Commit and push on the existing branch after fetching teammates; build, test and deploy only the approved frontend, then verify hashes and protected resources
+- [x] 8.5 Commit and push on the existing branch after fetching teammates; build, test and deploy only the approved frontend, then verify hashes and protected resources
 
-Local verification completed: reference comparison, 122 unit tests, 83 general browser scenarios, 42 polish scenarios, presentation regression and extended topology suite passed. Both layouts and a device detail were inspected in the in-app preview. Task 6.4's real-router account check is still open.
+Verification completed: reference comparison, 122 unit tests, 83 general browser scenarios, 42 polish scenarios, presentation regression and extended topology suite passed. Both layouts and a device detail were inspected in the in-app preview. All browser suites passed against the built image; cloud topology checks, all 82 asset hashes and protected resource comparisons passed after rollout. Source: `6444fed`. Task 6.4's real-router account check is still open.

@@ -4,7 +4,7 @@ Date: 19.11.2026. Branch: `fix/frontend-presentation-polish`.
 
 ## Current local revision: actual mockup design
 
-The user requested the visual design from C2 Ring and F directly after reviewing the first release, then approved the filled local preview and a frontend-only release. The release recorded below still describes the earlier interpretation until the new rollout is verified.
+The user requested the visual design from C2 Ring and F directly after reviewing the first release, then approved the filled local preview and a frontend-only release. This revision is now committed, pushed and deployed from `6444fed`. The earlier interpretation is retained below as release history.
 
 - Extracted the reference PNG byte-for-byte (`0f6c6c0822c76bd6dc662b26492c1f91495bc13395ea55750710a9adc64afce4`) as `Applikation/topology-router.png`; did not edit any existing website image.
 - Restored the C2 dot-grid background, tinted gradient pills/count badges, original ring arrangement, below-dot labels, selected tooltip and previous/next device bar. Removed the permanent side column.
@@ -13,8 +13,16 @@ The user requested the visual design from C2 Ring and F directly after reviewing
 - 122 unit tests, 83 general browser scenarios, 42 polish scenarios, presentation regression and the extended topology suite passed. Topology checks include device-bar wraparound, details, search/picker, drag/zoom/reset, online/group filters, multiple memberships, keyboard selection, fullscreen/error recovery, 320/390/768/1440 px and narrow-tree scrolling. Both layouts and selected-device details were also inspected in the in-app preview. No test writes reached a backend.
 - App integration differences are deliberate and visible: existing navigation/reload/search/fullscreen controls, expandable rule details, group filtering above the tree, and a fitted/zoomable classic canvas on narrow screens. The mockup's gallery/English design notes are not application content. Text tracking remains zero per the app convention. This is a reference-port verification, not a claim that the entire application shell is pixel-identical to the standalone mockup.
 - Preview: `http://127.0.0.1:5501/index.html?entry=website&demo=1` (Topologie). The isolated preview uses existing demo data and has no real-account/router connection. App screenshots: `/private/tmp/nethera-mockup-local/`.
-- OpenSpec CLI remains unavailable. Real-account/router end-to-end verification remains open. No deployment files, backend/API logic, accounts, databases or router settings were changed.
+- OpenSpec CLI remains unavailable. Real-account/router end-to-end verification remains open. No backend/API logic, accounts, databases or router settings were changed.
 - The approved release must include `topology-router.png` in its isolated build allowlist. The existing Dockerfile's PNG copy already covers it. Both the app iframe version and topology asset queries use `20261119-mockup` to avoid cached older pages. The compatible login overlay must remain unchanged.
+
+### Verified mockup release
+
+- Source `6444fedd13595eb2cdb28ef84a975821638862e9` was pushed normally on the existing branch after fetching all team refs. No new remote commits, merge or force-push; main was not changed.
+- Private amd64 image `ghcr.io/denizbernecker/nethera-frontend:20261119-113142`, digest `sha256:74611941299557b652e3c54545751ec4ab4ae126b486cda8ffb5facd79bce009`. All 82 file hashes match the approved context, tested container, running pod and public assets. The compatible login overlay and complete website are byte-identical to the previous live release; no mock-auth files are included.
+- All five browser suites above passed against the built image. The topology suite also passed against cloud-served assets with intercepted API fixtures. No test API writes reached the backend. Evidence: `/private/tmp/nethera-mockup-20261119-113142/`, including before/after resource snapshots and cloud screenshots.
+- Only the frontend image was patched, guarded by resource version, old image and spec comparison. Registry digest equals pod image ID; rollout is healthy. Backend, Keycloak, databases, broker, services, ingress, PVCs, secret metadata and protected pod identities/restart counts are unchanged. Startpage, all assets and login discovery return 200; unauthenticated `/api/routers/list` returns 401.
+- Deployment metadata and rollback are recorded in [the deployment log](../../../deploy/leocloud/README.md#mockup-getreue-topologie-vom-19112026). Password-login and real-router visual acceptance remain open; no credentials were changed.
 
 ## Earlier deployed integration
 
@@ -45,7 +53,7 @@ Tests use the existing local Chromium runtime, `NETHERA_TEST_URL=http://127.0.0.
 - Manual visual check with an authenticated real-router account. No usable session is currently open in the review browser; no accounts or credentials have been changed.
 - OpenSpec CLI validation (CLI not installed).
 
-## Deployed frontend
+## Earlier deployed frontend
 
 Commit `8382f01` was built as private amd64 image `ghcr.io/denizbernecker/nethera-frontend:20261119-105348`, digest `sha256:38d71664abbb1104e8f40f7af1e34a4f68f3d4725590ad2df9a02213effbe506`. The compatible account.js overlay is byte-identical to the previous release. All 81 deployed asset hashes match, no extra mock-auth files are present. The general browser suite passed against the image; the topology suite also passed against the actual cloud assets with intercepted API fixtures.
 
