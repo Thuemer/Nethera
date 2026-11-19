@@ -5,3 +5,4 @@
 /etc/rc.d/K10nethera-agent
 /etc/nethera/
 /usr/share/nftables.d/table-post/90-nethera.nft
+/usr/share/nftables.d/table-post/91-nethera-time.nft

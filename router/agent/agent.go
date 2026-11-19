@@ -24,6 +24,10 @@ type Agent struct {
 	connected chan struct{}
 	// control holds the newest DNS control message; an older one that was not applied yet is dropped
 	control chan []byte
+	// controlTime holds the newest time control message, with the same drop-old policy
+	controlTime chan []byte
+	// timeRT is the in-memory state of time control (runtime, usage counters, blocks)
+	timeRT *timeRuntime
 
 	// failing remembers which problems are already logged, so each one is reported
 	// when it starts and when it ends instead of on every cycle
@@ -32,7 +36,16 @@ type Agent struct {
 }
 
 func NewAgent(cfg Config, src Sources) *Agent {
-	return &Agent{cfg: cfg, src: src, started: src.Now(), connected: make(chan struct{}, 1), control: make(chan []byte, 1), failing: map[string]bool{}}
+	return &Agent{
+		cfg:         cfg,
+		src:         src,
+		started:     src.Now(),
+		connected:   make(chan struct{}, 1),
+		control:     make(chan []byte, 1),
+		controlTime: make(chan []byte, 1),
+		timeRT:      newTimeRuntime(),
+		failing:     map[string]bool{},
+	}
 }
 
 // report logs a problem once when it appears and once when it is gone
@@ -150,6 +163,7 @@ func (a *Agent) DryRun(w io.Writer) bool {
 // state at once, so the router catches up with changes made while it was offline.
 func (a *Agent) SubscribeControl() {
 	a.report("control subscribe", a.conn.Subscribe("config/dns", a.receiveControl))
+	a.report("time subscribe", a.conn.Subscribe("config/time", a.receiveTimeControl))
 }
 
 // receiveControl is called by the MQTT library. Applying can take minutes (installing
@@ -209,4 +223,68 @@ func resultError(result controlPayload) error {
 		return nil
 	}
 	return fmt.Errorf("%s", result.Error)
+}
+
+// receiveTimeControl is the MQTT handler for config/time. Only the newest message is kept.
+func (a *Agent) receiveTimeControl(data []byte) {
+	for {
+		select {
+		case a.controlTime <- data:
+			return
+		default:
+			select {
+			case <-a.controlTime:
+			default:
+			}
+		}
+	}
+}
+
+// RunTimeControl applies the state saved on flash, then every new message and a minute
+// ticker. Each tick re-reads the firewall counters, counts used minutes and adjusts the
+// nft set. The report is published retained on telemetry/time.
+func (a *Agent) RunTimeControl(ctx context.Context) {
+	if saved, ok := loadSavedTimeControl(a.src.TimeControlFile); ok {
+		rt := a.timeRT
+		today := a.src.Now().In(rt.location).Format("2006-01-02")
+		rt.usage = loadUsage(a.src.TimeUsageFile, today)
+		report, err := rt.applyTimeControl(a.src, saved)
+		a.report("time", err)
+		a.publish("time", 1, true, report, nil)
+	}
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case data := <-a.controlTime:
+			a.handleTimeControl(data)
+		case <-ticker.C:
+			a.timeTick()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (a *Agent) handleTimeControl(data []byte) {
+	c, err := parseTimeControl(data)
+	if err != nil {
+		a.report("time", err)
+		a.publish("time", 1, true, timePayload{V: schemaVersion, TS: a.src.Now().Unix(), Applied: false, Error: err.Error()}, nil)
+		return
+	}
+	report, applyErr := a.timeRT.applyTimeControl(a.src, c)
+	a.report("time", applyErr)
+	if normalized, err := json.Marshal(c); err == nil {
+		a.report("time save", saveTimeControl(a.src.TimeControlFile, normalized))
+	}
+	a.publish("time", 1, true, report, nil)
+}
+
+func (a *Agent) timeTick() {
+	if !a.timeRT.hasControl {
+		return
+	}
+	report, _ := a.timeRT.tickTimeControl(a.src)
+	a.publish("time", 1, true, report, nil)
 }

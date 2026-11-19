@@ -10,6 +10,10 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	// OpenWrt ships no zoneinfo; the agent evaluates time rules in the router's
+	// configured IANA zone and therefore has to carry its own database (~450 KB).
+	_ "time/tzdata"
 )
 
 // version is set at build time with -ldflags "-X main.version=..."
@@ -60,6 +64,7 @@ func main() {
 	log.Printf("started for router %d, every %s", cfg.RouterID, cfg.Interval)
 	// Applies the blocks saved on flash right away, then every new message from the backend
 	go agent.RunControl(ctx)
+	go agent.RunTimeControl(ctx)
 
 	done := make(chan struct{})
 	go func() {
