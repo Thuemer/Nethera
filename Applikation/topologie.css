@@ -9,7 +9,7 @@ button, select { cursor: pointer; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 button:disabled { opacity: .45; cursor: default; }
 [hidden] { display: none !important; }
-.topology-workspace { max-width: 1280px; padding: 28px 16px 48px; margin: 0 auto; display: grid; gap: 18px; }
+.topology-workspace { max-width: 1280px; height: 100dvh; padding: 20px 16px 24px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
 .topology-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px; }
 .eyebrow { color: var(--accent); font-size: 11px; text-transform: uppercase; margin: 0 0 4px; }
 h1 { font-size: 28px; line-height: 1.15; font-weight: 600; margin: 4px 0 6px; }
@@ -26,8 +26,8 @@ h1 { font-size: 28px; line-height: 1.15; font-weight: 600; margin: 4px 0 6px; }
 .online-dot, .tree-status { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--online); }
 .online-dot { width: 9px; height: 9px; }
 .network-notice { padding: 10px 14px; border-left: 3px solid var(--warn); color: var(--text-soft); font-size: 13px; background: rgba(245,158,11,.06); }
-.topology-body { min-width: 0; }
-.graph-surface { position: relative; height: clamp(540px, 74vh, 720px); min-width: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; isolation: isolate; }
+.topology-body { min-width: 0; flex: 1; min-height: 360px; }
+.graph-surface { position: relative; height: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; isolation: isolate; }
 .topology-stage { position: absolute; inset: 0; overflow: hidden; user-select: none; -webkit-user-select: none; }
 .topology-stage[data-layout='klassisch'] { background: radial-gradient(circle, rgba(229,235,231,.035) 1px, transparent 1px) 0 0 / 26px 26px, #1f2222; touch-action: none; }
 .topology-stage[data-layout='baum'] { overflow: auto; scrollbar-width: thin; background: radial-gradient(ellipse 700px 400px at 0% 50%, rgba(20,70,89,.30), transparent 65%), #1f2121; }
@@ -129,7 +129,7 @@ h1 { font-size: 28px; line-height: 1.15; font-weight: 600; margin: 4px 0 6px; }
 .topology-workspace:fullscreen .graph-surface { height: 100%; }
 .topology-workspace::backdrop { background: var(--bg-main); }
 @media (max-width: 700px) {
-  .topology-workspace { padding: 16px 12px 28px; }
+  .topology-workspace { padding: 16px 12px 12px; }
   .topology-tools { gap: 8px; }
   .view-modes button { padding: 7px 10px; }
   .legend-bar { top: 54px; max-width: calc(100% - 28px); }
