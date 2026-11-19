@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { create } = require('../security-draft.js');
+const { create, keyFor } = require('../security-draft.js');
 const base = () => ({ dataMode: 'live', rulesKnown: false, devices: [{ id: 20 }, { id: 21 }],
   groups: [], members: [], presets: [], assignments: [], timeLimits: [],
   blocklists: [{ id: 5, routerId: 1, name: 'Network', sourceType: 'NETWORK', urlPattern: 'blocked.example.org', confirmationSource: 'ROUTER_ACK' }] });
@@ -120,4 +120,29 @@ test('storage errors and unsupported actions cannot silently succeed or call a b
   assert.equal(draft.dirty, false);
   assert.equal(draft.snapshot(source).groups.length, 0);
   assert.throws(() => draft.request(source, '/api/router-control/adblock/install', { method: 'POST' }), /lokalen Vorschau/);
+});
+
+test('shared draft keys preserve existing entries and separate API, account, router and mode', () => {
+  const router = { id: 1, dataMode: 'live' };
+  const key = keyFor('http://localhost:8080', 'user:a', router);
+  assert.equal(key, 'nethera.security-draft.v1:http%3A%2F%2Flocalhost%3A8080:user%3Aa:1:live');
+  assert.notEqual(key, keyFor('https://example.org', 'user:a', router));
+  assert.notEqual(key, keyFor('http://localhost:8080', 'user:b', router));
+  assert.notEqual(key, keyFor('http://localhost:8080', 'user:a', { ...router, id: 2 }));
+  assert.notEqual(key, keyFor('http://localhost:8080', 'user:a', { ...router, dataMode: 'demo' }));
+});
+
+test('explicit local removals remain identifiable without inventing complete router readback', () => {
+  const store = storage(), source = base(), draft = create(store, 'live');
+  draft.assignGroup(source, 20, null);
+  draft.request(source, '/api/security/devices/20/preset', { method: 'DELETE' });
+  const snapshot = create(store, 'live').snapshot(source);
+  assert.deepEqual(snapshot.members, []);
+  assert.deepEqual(snapshot.assignments, []);
+  assert.deepEqual(snapshot.draftDeviceIds, { members: [20], assignments: [20] });
+  assert.equal(snapshot.hasLocalDraft, true);
+  assert.equal(snapshot.rulesKnown, false);
+  assert.deepEqual(draft.snapshot({ ...source, devices: [] }).draftDeviceIds, { members: [], assignments: [] });
+  draft.reset();
+  assert.equal(create(store, 'live').snapshot(source).hasLocalDraft, false);
 });

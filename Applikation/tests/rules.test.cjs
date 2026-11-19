@@ -335,3 +335,44 @@ test('time limit readback is not confirmed while router is offline', () => {
   assert.match(h.field('limitsList').innerHTML, /Nur gespeichert/);
   assert.doesNotMatch(h.field('limitsList').innerHTML, /Am Router gesperrt/);
 });
+
+test('day preview covers midnight and daytime exactly without gaps', () => {
+  const h = harness('time-limits.js');
+  for (const [from, until, duration] of [['21:00','07:00',600], ['14:00','16:00',120], ['00:00','07:00',420], ['23:59','00:00',1]]) {
+    const segments = h.run(`scheduleSegments('${from}', '${until}')`);
+    assert.equal(segments[0].start, 0);
+    assert.equal(segments.at(-1).end, 1440);
+    assert.equal(segments.reduce((sum, item) => sum + item.end - item.start, 0), 1440);
+    assert.equal(segments.filter(item => item.blocked).reduce((sum, item) => sum + item.end - item.start, 0), duration);
+    segments.slice(1).forEach((item, index) => assert.equal(item.start, segments[index].end));
+  }
+  assert.equal(h.run(`scheduleSegments('21:00','07:00',true).some(item=>item.blocked)`), false);
+  assert.equal(h.run(`scheduleSegments('07:00','07:00').length`), 0);
+});
+
+test('invalid schedule preview never displays a stale timeline', () => {
+  const h = harness('time-limits.js');
+  h.field('deviceSelect').value = '1';
+  h.field('blockedFrom').value = '14:00';
+  h.field('blockedUntil').value = '14:00';
+  h.run(`state.devices=[{id:1,hostname:'Tablet'}];updateSchedulePreview()`);
+  assert.match(h.field('schedulePreview').innerHTML, /unterschiedliche Uhrzeiten/);
+  assert.equal(h.field('scheduleTimeline').hidden, true);
+  h.run('state.devices=[];updateSchedulePreview()');
+  assert.match(h.field('schedulePreview').innerHTML, /Kein Gerät ausgewählt/);
+});
+
+test('schedule shortcuts only edit the form and cannot mutate demo data', () => {
+  const h = harness('time-limits.js');
+  h.run(`state.devices=[{id:1}];state.storageMode='demo';applySchedulePreset('homework')`);
+  assert.equal(h.field('blockedFrom').value, '');
+  h.run(`state.storageMode='backend';applySchedulePreset('homework')`);
+  assert.equal(h.field('blockedFrom').value, '14:00');
+  assert.equal(h.field('blockedUntil').value, '16:00');
+  assert.equal(h.calls.length, 0);
+});
+
+test('disabled browser storage cannot turn a saved backend rule into an error', () => {
+  const h = harness('time-limits.js');
+  h.run(`localStorage.setItem=()=>{throw new Error('disabled')};saveLimits()`);
+});

@@ -14,3 +14,5 @@ Registry tarball integrity:
 
 - cytoscape: `sha512-sMvBIXiGMnhkCaWz2R06FwF/27MNlS+Tqvi17foO9UhnUg3XGZccKjxsvEqQFAQYMSSZmN5SxYzUYlQ0DOJJ3g==`
 - lucide: `sha512-qiNin5j7qEflnAdLG/9Yb4d5N9qnnP8TOMdn6e66399fgX25Y0eYEPS3PUPWGIPLloOj4X+xLTdF2lk9gSgWpA==`
+
+- `keycloak.min.js`: Keycloak JS 24.0.5 (unverändert aus dem npm-Paket `keycloak-js@24.0.5`), Apache-2.0, siehe `LICENSE.keycloak`. Lokal eingebunden, damit die Anmeldung kein externes CDN benötigt.

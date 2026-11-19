@@ -387,3 +387,27 @@ test('traffic excludes unknown-origin rows and another router', async () => {
   assert.equal(connections.length, 1);
   assert.equal(connections[0].id, 3);
 });
+
+test('temporary demo uses memory-only fixtures for the authenticated demo account', async () => {
+  const h = harness([live]);
+  h.run(`window.parent={NETHERA_DEMO_PREVIEW:true,NetheraAccount:{authenticated:true,keycloak:{tokenParsed:{preferred_username:'demo'}}}}`);
+  const router = await h.run('NetheraApi.getPrimaryRouter()');
+  assert.equal(router.dataMode, 'demo');
+  assert.equal(router.devices.length, 8);
+  assert.equal(h.calls.length, 0);
+  await assert.rejects(h.run('NetheraApi.requireLive()'));
+  h.run('window.parent.NETHERA_DEMO_PREVIEW=false');
+  const restored = await h.run('NetheraApi.getPrimaryRouter()');
+  assert.equal(restored.dataMode, 'live');
+  assert.equal(restored.devices[0].id, 20);
+  assert.equal(restored.devices.some(device => device.id < 0), false);
+});
+
+test('temporary demo flag does not bypass authentication or affect other accounts', async () => {
+  for (const [authenticated, username] of [[false,'demo'],[true,'nico']]) {
+    const h = harness([live]);
+    h.context.window.parent={NETHERA_DEMO_PREVIEW:true,NetheraAccount:{authenticated,keycloak:{tokenParsed:{preferred_username:username}}}};
+    assert.equal((await h.run('NetheraApi.getPrimaryRouter()')).dataMode, 'live');
+    assert.equal(h.calls.length, 1);
+  }
+});

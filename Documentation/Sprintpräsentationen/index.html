@@ -476,6 +476,8 @@
     .lb-design { --c: 155, 194, 120; --t: #b3d891; }
     .lb-hw { --c: 225, 233, 242; --t: #e1e9f2; }
     .lb-story { --c: 134, 226, 165; --t: #9ff0ba; }
+    .lb-frontend { --c: 197, 42, 104; --t: #ef8fb3; }
+    .lb-doc { --c: 0, 117, 202; --t: #6cb6f5; }
 
     @keyframes fadeIn {
       from {
@@ -1176,8 +1178,204 @@
                 <h4>Läuft auf LeoCloud</h4>
                 <p>App, Backend, Keycloak, DBs</p>
               </div>
-              <div class="s10-item planned wide">
-                <h4>Geplant: MQTT in der Cloud</h4>
+              <div class="s10-item wide">
+                <h4>MQTT in der Cloud</h4>
+                <p>Router → LeoCloud per WebSocket</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+      <!--=====End Review Section====-->
+
+      <!--=====Start Review Section====-->
+      <section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Sprint Review #11</h3>
+            <p class="s10-sub">14.10.2026 – 16.11.2026</p>
+            <div class="s10-stats">
+              <div class="s10-stat big"><strong>108:19 h</strong><span>Gesamtstunden</span></div>
+              <div class="s10-stat"><strong>3</strong><span>Wochen</span></div>
+            </div>
+            <img src="./sprint5_2/Bildschirmfoto 2026-11-16 um 15.32.49.png" class="s10-shot" alt="Zeitaufzeichnung">
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Verwendete Userstories/Issues</h3>
+            <div class="gh-board" style="grid-template-columns: repeat(3, 1fr); max-width: 78%; margin: 0 auto;">
+              <div class="gh-col">
+                <div class="gh-col-head"><span class="gh-dot lb-router"></span>Router & Backend<span class="gh-count">3</span></div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #23</div>
+                  <div class="gh-title">Als User möchte ich einen AdBlocker ganz leicht auf meinem Router installieren können</div>
+                  <span class="gh-label lb-story">userStory</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #25</div>
+                  <div class="gh-title">Als User möchte ich, Seiten in meinem Netzwerk sperren können</div>
+                  <span class="gh-label lb-story">userStory</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #105
+                    <span class="gh-avatars"><span class="gh-avatar av-db">DB</span></span>
+                  </div>
+                  <div class="gh-title">Backend Unterscheidung Online/Offline Daten</div>
+                  <span class="gh-label lb-backend">Cloud Backend</span>
+                </div>
+              </div>
+              <div class="gh-col">
+                <div class="gh-col-head"><span class="gh-dot lb-frontend"></span>Frontend<span class="gh-count">3</span></div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #102
+                    <span class="gh-avatars"><span class="gh-avatar av-db">DB</span><span class="gh-avatar av-nh">NH</span></span>
+                  </div>
+                  <div class="gh-title">AdBlocker Konfigurationsseite</div>
+                  <span class="gh-label lb-frontend">Frontend</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #103
+                    <span class="gh-avatars"><span class="gh-avatar av-db">DB</span><span class="gh-avatar av-nh">NH</span></span>
+                  </div>
+                  <div class="gh-title">Fontend Seite für Schutzkonfiguration</div>
+                  <span class="gh-label lb-frontend">Frontend</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #104
+                    <span class="gh-avatars"><span class="gh-avatar av-db">DB</span><span class="gh-avatar av-nh">NH</span></span>
+                  </div>
+                  <div class="gh-title">Frontend Supportseite</div>
+                  <span class="gh-label lb-frontend">Frontend</span>
+                </div>
+              </div>
+              <div class="gh-col">
+                <div class="gh-col-head"><span class="gh-dot lb-doc"></span>PA-Video<span class="gh-count">4</span></div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #100
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mf">MF</span></span>
+                  </div>
+                  <div class="gh-title">Als Team brauche ich ein professionelles Video für den Project-Award</div>
+                  <span class="gh-label lb-story">userStory</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #101
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mf">MF</span></span>
+                  </div>
+                  <div class="gh-title">Konzept für PA-Video</div>
+                  <span class="gh-label lb-doc">documentation</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #106
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mf">MF</span></span>
+                  </div>
+                  <div class="gh-title">Treatment für PA-Video</div>
+                  <span class="gh-label lb-doc">documentation</span>
+                </div>
+                <div class="gh-card">
+                  <div class="gh-meta"><svg><use href="#gh-open"></use></svg>Nethera #107
+                    <span class="gh-avatars"><span class="gh-avatar av-th">TH</span><span class="gh-avatar av-mf">MF</span></span>
+                  </div>
+                  <div class="gh-title">Storyboard für PA-Video</div>
+                  <span class="gh-label lb-doc">documentation</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Organisatorisch</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>PA-Video gestartet <span class="s10-ref">#100</span></h4>
+                <p>Video für den Project-Award</p>
+              </div>
+              <div class="s10-item">
+                <h4>Konzept & Treatment <span class="s10-ref">#101</span> <span class="s10-ref">#106</span></h4>
+              </div>
+              <div class="s10-item wide">
+                <h4>Storyboard <span class="s10-ref">#107</span></h4>
+                <p>Szenen & Ablauf stehen</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Frontend</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Support-Kontakt <span class="s10-ref">#21</span></h4>
+                <p>direkt in der App</p>
+              </div>
+              <div class="s10-item">
+                <h4>Routereinstellungen <span class="s10-ref">#26</span></h4>
+                <p>Validierung, ungespeicherte Änderungen</p>
+              </div>
+              <div class="s10-item">
+                <h4>Netzwerk-Topologie</h4>
+                <p>interaktive Ansicht</p>
+              </div>
+              <div class="s10-item">
+                <h4>Router-Controls</h4>
+                <p>AdBlock & Seiten-Sperre bedienbar</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Backend</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Router-Steuerung <span class="s10-ref">#23</span> <span class="s10-ref">#25</span></h4>
+                <p>AdBlock & Seiten-Sperre per MQTT</p>
+              </div>
+              <div class="s10-item">
+                <h4>Live- vs. Demo-Daten <span class="s10-ref">#105</span></h4>
+                <p>verifizierte Telemetrie getrennt</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">Router</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Go-Telemetrie-Agent</h4>
+                <p>MQTT über WebSocket + TLS</p>
+              </div>
+              <div class="s10-item">
+                <h4>DNS-Steuerung <span class="s10-ref">#23</span> <span class="s10-ref">#25</span></h4>
+                <p>AdBlock & Website-Sperre</p>
+              </div>
+              <div class="s10-item wide">
+                <h4>Live-Telemetrie läuft</h4>
+                <p>Cudy → LeoCloud</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="s10">
+            <h3 class="s10-head" style="color:var(--blue)">LeoCloud</h3>
+            <div class="s10-grid">
+              <div class="s10-item">
+                <h4>Komplett gehostet <span class="s10-ref">#98</span></h4>
+                <p>App, Backend, Broker</p>
+              </div>
+              <div class="s10-item">
+                <h4>Live-Routerdaten in der Cloud</h4>
+                <p>Demo-Modus als Fallback</p>
               </div>
             </div>
           </div>

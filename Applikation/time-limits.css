@@ -179,3 +179,23 @@
         min-width: 0;
     }
 }
+
+.schedule-presets { border: 0; padding: 0; margin: 0; min-width: 0; }
+.schedule-presets legend { padding: 0; margin-bottom: 8px; font-size: 13px; color: var(--text-soft); }
+.schedule-preset-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.schedule-preset-buttons button { display: grid; gap: 4px; text-align: left; padding: 10px 14px; flex: 1; }
+.schedule-preset-buttons button span { color: var(--text-soft); font-size: 12px; font-weight: 400; }
+.schedule-preset-buttons button[aria-pressed="true"] { border-color: var(--accent); background: rgba(var(--accent-rgb), .08); }
+.schedule-timeline { padding: 20px 0; border-top: 1px solid var(--line); }
+.timeline-heading, .timeline-ticks, .timeline-legend { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--text-soft); }
+.timeline-heading { margin-bottom: 16px; flex-wrap: wrap; }
+.timeline-heading strong { font-size: 14px; color: var(--text-main); }
+.schedule-track { display: flex; height: 28px; border-radius: 8px; overflow: hidden; background: rgba(var(--accent-rgb), .18); }
+.schedule-segment { width: var(--segment-width); background: rgba(var(--accent-rgb), .18); }
+.schedule-segment.blocked { background: repeating-linear-gradient(135deg, rgba(var(--accent-2-rgb), .9) 0 5px, rgba(var(--accent-2-rgb), .5) 5px 10px); border-inline: 1px solid rgba(var(--text-rgb), .3); }
+.timeline-ticks { margin: 8px 0 18px; font-variant-numeric: tabular-nums; }
+.timeline-legend { justify-content: flex-start; flex-wrap: wrap; }
+.timeline-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.timeline-legend i { width: 12px; height: 12px; border: 1px solid var(--line); border-radius: 3px; }
+.allowed-swatch { background: rgba(var(--accent-rgb), .3); }
+.blocked-swatch { background: repeating-linear-gradient(135deg, var(--accent-2) 0 3px, transparent 3px 6px); }

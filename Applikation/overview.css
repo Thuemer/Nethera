@@ -1189,3 +1189,10 @@ body.edit-mode .dashboard .card:hover {
     }
     .bottom-nav button span { font-size: 12px; }
 }
+
+/* Editing controls appear together only when customizing the dashboard. */
+body:not(.edit-mode) .dashboard-toolbar,
+body:not(.edit-mode) #resetLayout,
+body:not(.edit-mode) #layoutHint { display: none; }
+body.edit-mode .dashboard-toolbar { border-color: rgba(var(--accent-rgb), .3); }
+.layout-controls { flex-wrap: wrap; }

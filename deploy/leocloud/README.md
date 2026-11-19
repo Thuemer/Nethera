@@ -59,6 +59,62 @@ Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
 ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
 `themes/nethera/README.md`.
 
+### Topologie mit lokalen Schutz-Entwuerfen vom 16.11.2026
+
+Frontend-Quellstand: `0f3801192c2843b391c320e653a116b0911a90bf`.
+Image: `ghcr.io/denizbernecker/nethera-frontend:20261116-142215`, privat,
+`linux/amd64`, Digest
+`sha256:5a73ec0742fca46e7269890cc11c562328b9759f15232d82d3ca7feb56078428`.
+
+Die Topologie zeigt jetzt auch lokale Gruppen-, Vorlagen- und Regelentwuerfe aus
+der Schutzseite an. Graph, Legende, Filter und Details lesen denselben tablokalen
+Speicher, getrennt nach API, Benutzer, Router und Live-/Demo-Modus. Verwerfen und
+Seitenwechsel werden beruecksichtigt. Die Vorschau bleibt sichtbar gekennzeichnet;
+fehlender Router-Readback wird nicht als bestaetigte Zuweisung ausgegeben.
+Geraeteinventar, verbunden/getrennt, WLAN/LAN, IP, MAC und zuletzt gesehen stammen
+unveraendert aus dem Router-Snapshot bzw. der separaten Offline-Demo. "Nur online"
+verwendet weiterhin ausschliesslich den Verbindungsstatus, niemals den Entwurf.
+Es gibt keine neuen Backend-Schreibzugriffe oder Routerbefehle.
+
+Alle Team-Branches wurden vor dem Code-Push und erneut vor dem Deployment-Eintrag
+abgerufen. `main` hatte dabei keine weiteren Team-Commits; geloeschte, bereits
+integrierte Remote-Branches wurden durch Fetch/Prune entfernt. Keine Force-Pushes,
+kein eigener Merge und keine Aenderung fremder Commits.
+
+Wichtig fuer Nachbauten: `main` enthaelt bereits die neue Account-/Routerzuordnung,
+deren Backend und Migration nicht Teil dieses Rollouts sind. Deshalb bleibt
+`Applikation/account.js` im isolierten Build-Kontext auf dem bisherigen Cloud-Stand
+aus `c88bfd3bd9e53c78af6ecab48ea6488cac48d6c1`; die Repository-Datei wurde nicht
+zurueckgesetzt. Das Image dokumentiert dies mit dem Label
+`io.nethera.preserved-account-revision`. Eine ungepruefte Komplettveroeffentlichung
+von `main` waere nicht derselbe Frontend-Stand.
+
+Der Build behaelt die bisherigen 77 oeffentlichen Dateien ohne Backup-Kopien.
+Nur `index.html`, `security-draft.js`, `security.html`, `security.js`,
+`topologie_custom.html`, `topologie_custom.js` und `topology-model.js` aendern sich.
+Website, Support, Konfiguration, Login-Code, alle weiteren Assets und nginx sind
+bytegleich zum vorherigen Image. Der Rollout ersetzte ausschliesslich das
+Frontend-Image per JSON-Patch mit Ressourcen-Version-/Pod-Template-Pruefung.
+Backend, Keycloak, Broker, Datenbank-Pods, PVCs, Secrets, Services und Ingress
+blieben unveraendert und ohne weitere Neustarts. Kein vollstaendiges Stack-Apply,
+keine Migration und keine Schreibtests gegen echte Konten oder Router.
+
+Pruefungen: 101 JavaScript-Tests und ein Python-Navigationstest erfolgreich.
+Das fertige Image bestand 18 Schutz-Layoutpruefungen sowie Topologie-Workflows
+auf 1440/390/320 px. Dieselben Topologie-Workflows bestanden auch nach dem Rollout
+auf LeoCloud: Seitenwechsel, reaktive Gruppenwechsel, Verwerfen, Scope-Trennung,
+unveraenderte Verbindungsdaten, Online-Filter und nichtleerer Graph-Canvas.
+Alle Browserpruefungen nutzen isolierte API-Antworten; keine Backend-Schreibversuche
+oder JavaScript-Fehler. Registry- und Pod-Digest stimmen ueberein. Startseite,
+Support, Anleitung, Konfiguration und Keycloak-Discovery liefern 200, die
+Router-API ohne Anmeldung 401. Die sieben geaenderten Dateien sowie `account.js`
+wurden zusaetzlich per HTTP-Hash geprueft; Cache-Control bleibt
+`no-cache, must-revalidate`.
+
+Frontend-Rollback bei Bedarf: ausschliesslich das Frontend-Image auf
+`ghcr.io/denizbernecker/nethera-frontend:20261116-135836@sha256:eb16637af7a5fcf304f9239590c2dc32109afa0129630aaa2be3ae7babc105ee`
+setzen. Backend, Keycloak und persistente Ressourcen dabei nicht anfassen.
+
 ### Lokale Schutz-Entwuerfe vom 16.11.2026
 
 Frontend-Quellstand: `c88bfd3bd9e53c78af6ecab48ea6488cac48d6c1`.

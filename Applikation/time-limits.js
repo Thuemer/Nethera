@@ -5,6 +5,8 @@ const SECURITY_STATE_API_URL = `${appConfig.API_BASE_URL || 'http://localhost:80
 
 const state = {
   loaded: false,
+  busy: false,
+  loading: false,
   devices: [],
   limits: {},
   presets: [],
@@ -26,7 +28,7 @@ function loadLimits() {
 }
 
 function saveLimits() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.limits));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.limits)); } catch { /* Backend remains the source of truth. */ }
 }
 
 function normalizeLimit(limit) {
@@ -244,6 +246,7 @@ function renderDeviceOptions() {
   const select = document.getElementById('deviceSelect');
   if (!select) return;
 
+  document.querySelectorAll('[data-schedule]').forEach(button => { button.disabled = state.storageMode !== 'backend' || state.busy || !state.devices.length; });
   const saveButton = document.getElementById('saveLimitButton');
   if (saveButton) saveButton.disabled = !state.devices.length || state.storageMode !== 'backend';
   document.querySelectorAll('#limitForm input, #limitForm select:not(#deviceSelect)').forEach(control => {
@@ -253,6 +256,7 @@ function renderDeviceOptions() {
   if (!state.devices.length) {
     select.innerHTML = '<option value="">Keine Geräte verfügbar</option>';
     select.disabled = true;
+    updateSchedulePreview();
     return;
   }
 
@@ -272,7 +276,15 @@ function loadSelectedLimit() {
 
   const dailyLimit = document.getElementById('dailyLimit');
   const limitStatus = document.getElementById('limitStatus');
-  dailyLimit.value = String(limit.dailyLimit ?? 0);
+  // Preserve budgets created by another client instead of silently resetting them.
+  dailyLimit.querySelectorAll?.('[data-custom-budget]').forEach(option => option.remove());
+  const budget = String(limit.dailyLimit ?? 0);
+  if (dailyLimit.options && ![...dailyLimit.options].some(option => option.value === budget)) {
+    const option = new Option(formatMinutes(Number(budget)), budget);
+    option.dataset.customBudget = 'true';
+    dailyLimit.add(option);
+  }
+  dailyLimit.value = budget;
   limitStatus.value = limit.status || 'active';
   dailyLimit.dispatchEvent(new Event('change', { bubbles: true }));
   limitStatus.dispatchEvent(new Event('change', { bubbles: true }));
@@ -285,6 +297,18 @@ function loadSelectedLimit() {
   updateSchedulePreview();
 }
 
+// Segments cover one day exactly, including schedules that cross midnight.
+function scheduleSegments(from, until, paused = false) {
+  if (validLimitInput(from, until, 0, '')) return [];
+  if (paused) return [{ start: 0, end: 1440, blocked: false }];
+  const start = minutesSinceMidnight(from), end = minutesSinceMidnight(until);
+  const points = [...new Set([0, start, end, 1440])].sort((a, b) => a - b);
+  return points.slice(0, -1).map((point, index) => ({
+    start: point, end: points[index + 1],
+    blocked: start < end ? point >= start && point < end : point >= start || point < end
+  }));
+}
+
 function updateSchedulePreview() {
   const key = document.getElementById('deviceSelect').value;
   const device = state.devices.find(item => deviceKey(item) === key);
@@ -292,12 +316,56 @@ function updateSchedulePreview() {
   const until = document.getElementById('blockedUntil').value;
   const paused = document.getElementById('limitStatus').value === 'paused';
   const daily = Number(document.getElementById('dailyLimit').value);
-  const overnight = from > until ? ' am nächsten Morgen' : '';
-  document.getElementById('schedulePreview').innerHTML = `
-    <strong>${escapeText(device?.hostname || 'Kein Gerät ausgewählt')}</strong>
-    <p>${paused ? 'Zeitsperre ausschalten' : `Geplant: täglich kein Internet von <b>${escapeText(from)}</b> bis <b>${escapeText(until)}</b>${overnight}.`}</p>
-    <span>${paused ? 'Sperrzeit und Tageslimit sollen pausiert werden.' : daily ? `Zusätzlich maximal ${formatMinutes(daily)} pro Tag.` : 'Außerhalb der Sperrzeit kein Tageslimit.'}</span>
+  const error = validLimitInput(from, until, daily, '');
+  const overnight = from > until ? ' am nächsten Tag' : '';
+  const preview = document.getElementById('schedulePreview');
+  const timeline = document.getElementById('scheduleTimeline');
+  if (!device || error) {
+    preview.innerHTML = `<strong>${escapeText(device?.hostname || 'Kein Gerät ausgewählt')}</strong><p>${escapeText(!device ? 'Wähle ein Gerät, um seine Internetzeiten anzusehen.' : error)}</p>`;
+    if (timeline) timeline.hidden = true;
+    return;
+  }
+  preview.innerHTML = `
+    <strong>${escapeText(device.hostname || 'Unbekanntes Gerät')}</strong>
+    <p>${paused ? 'Zeitsperre ausgeschaltet' : `Geplant: täglich kein Internet von <b>${escapeText(from)}</b> bis <b>${escapeText(until)}</b>${overnight}.`}</p>
+    <span>${paused ? 'Sperrzeit und Tageslimit sind pausiert.' : daily ? `Zusätzlich maximal ${formatMinutes(daily)} pro Tag.` : 'Außerhalb der Sperrzeit kein Tageslimit.'}</span>
     <small>Uhrzeit: ${escapeText(Intl.DateTimeFormat().resolvedOptions().timeZone)} · Routerwirkung separat prüfen</small>`;
+  if (timeline) {
+    timeline.hidden = false;
+    const track = document.getElementById('scheduleTrack');
+    track.innerHTML = scheduleSegments(from, until, paused).map(segment => `<span class="schedule-segment${segment.blocked ? ' blocked' : ''}" style="--segment-width:${(segment.end - segment.start) / 1440 * 100}%"></span>`).join('');
+    track.setAttribute('aria-label', paused ? 'Keine Zeitsperre: Regel ausgeschaltet.' : `Geplante Sperrzeit täglich von ${from} bis ${until}${overnight}. Außerhalb keine Zeitsperre.`);
+  }
+  document.querySelectorAll('[data-schedule]').forEach(button => {
+    const times = button.dataset.schedule === 'night' ? ['21:00', '07:00'] : ['14:00', '16:00'];
+    button.setAttribute('aria-pressed', String(!paused && from === times[0] && until === times[1]));
+  });
+}
+
+function applySchedulePreset(name) {
+  if (state.storageMode !== 'backend' || state.busy || state.loading || !state.devices.length) return;
+  const times = { night: ['21:00', '07:00'], homework: ['14:00', '16:00'] }[name];
+  if (!times) return;
+  document.getElementById('blockedFrom').value = times[0];
+  document.getElementById('blockedUntil').value = times[1];
+  const status = document.getElementById('limitStatus');
+  status.value = 'active';
+  status.dispatchEvent(new Event('change', { bubbles: true }));
+  updateSchedulePreview();
+}
+
+function setLimitBusy(busy) {
+  state.busy = busy;
+  document.getElementById('limitForm')?.setAttribute('aria-busy', String(busy));
+  document.querySelectorAll('#limitForm input, #limitForm select, #limitForm button, #limitsList button').forEach(control => {
+    const viewOnly = control.id === 'deviceSelect' || control.dataset.action === 'edit';
+    control.disabled = busy || (viewOnly ? !state.devices.length : state.storageMode !== 'backend');
+  });
+  if (!busy) {
+    const key = document.getElementById('deviceSelect')?.value;
+    document.getElementById('clearLimitButton').disabled = !state.limits[key] || state.storageMode !== 'backend';
+    document.getElementById('saveLimitButton').disabled = !state.devices.length || state.storageMode !== 'backend';
+  }
 }
 
 function renderList() {
@@ -392,6 +460,10 @@ function applyFilters() {
 }
 
 async function loadDevices() {
+  if (state.loading || state.busy) return;
+  state.loading = true;
+  state.storageMode = 'unavailable';
+  setLimitBusy(true);
   setStatus('Lade Internetzeiten ...');
 
   try {
@@ -434,10 +506,13 @@ async function loadDevices() {
     setStatus(NetheraApi.userMessage(error), 'error');
   }
   await loadRouterControlStatus();
+  state.loading = false;
+  setLimitBusy(false);
 }
 
 async function saveSelectedLimit(event) {
   event.preventDefault();
+  if (state.busy || state.loading) return;
 
   const key = document.getElementById('deviceSelect')?.value;
   if (!key) {
@@ -463,12 +538,13 @@ async function saveSelectedLimit(event) {
     updatedAt: new Date().toISOString()
   };
 
+  setLimitBusy(true);
   try {
     state.limits[key] = await saveBackendLimit(key, nextLimit);
   } catch (error) {
     setStatus(`${NetheraApi.userMessage(error)} Deine Eingaben bleiben erhalten.`, 'error');
     return;
-  }
+  } finally { setLimitBusy(false); }
 
   saveLimits();
   loadSelectedLimit();
@@ -478,17 +554,19 @@ async function saveSelectedLimit(event) {
 }
 
 async function clearSelectedLimit() {
+  if (state.busy || state.loading) return;
   const key = document.getElementById('deviceSelect')?.value;
   if (!key) return;
   if (state.storageMode !== 'backend') return setStatus('Nicht entfernt. Bitte prüfe die Verbindung und versuche es erneut.', 'error');
 
   if (state.storageMode === 'backend') {
     try {
+      setLimitBusy(true);
       await deleteBackendLimit(key);
     } catch (error) {
       setStatus(NetheraApi.userMessage(error), 'error');
       return;
-    }
+    } finally { setLimitBusy(false); }
   }
 
   delete state.limits[key];
@@ -501,7 +579,7 @@ async function clearSelectedLimit() {
 
 async function handleListClick(event) {
   const button = event.target.closest('button[data-action]');
-  if (!button) return;
+  if (!button || state.busy || state.loading) return;
 
   const key = button.dataset.key;
   const select = document.getElementById('deviceSelect');
@@ -525,11 +603,12 @@ async function handleListClick(event) {
 
     if (state.storageMode === 'backend') {
       try {
+        setLimitBusy(true);
         state.limits[key] = await saveBackendLimit(key, current);
       } catch (error) {
         setStatus(NetheraApi.userMessage(error), 'error');
         return;
-      }
+      } finally { setLimitBusy(false); }
     } else {
       saveLimits();
     }
@@ -542,6 +621,7 @@ async function handleListClick(event) {
 }
 
 function setupEvents() {
+  document.querySelectorAll('[data-schedule]').forEach(button => button.addEventListener('click', () => applySchedulePreset(button.dataset.schedule)));
   document.querySelector('app-hero')?.addEventListener('hero-click', loadDevices);
   document.getElementById('limitForm')?.addEventListener('submit', saveSelectedLimit);
   document.getElementById('clearLimitButton')?.addEventListener('click', clearSelectedLimit);

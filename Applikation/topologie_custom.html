@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Netzwerk-Topologie</title>
   <link rel="icon" href="nethera_logo.png">
-  <link rel="stylesheet" href="topologie.css?v=20261116-online">
-  <link rel="stylesheet" href="data-source.css">
+  <link rel="stylesheet" href="topologie.css?v=20261118-fullscreen2">
+  <link rel="stylesheet" href="data-source.css?v=20261118-fullscreen2">
 </head>
 <body>
   <main class="topology-workspace">
     <header class="topology-header">
-      <div><h1>Topologie</h1><p id="network-summary" role="status">Netzwerk wird geladen …</p></div>
+      <div><p class="eyebrow">Nethera Dashboard</p><h1>Topologie</h1><p id="network-summary" role="status">Netzwerk wird geladen …</p></div>
       <div class="topology-tools">
         <div class="view-modes" role="group" aria-label="Topologieansicht">
           <button type="button" data-view="groups" aria-pressed="true">Gruppen</button>
@@ -32,24 +32,25 @@
         <div class="graph-controls" aria-label="Graphwerkzeuge">
           <button class="icon-button" id="zoom-in" aria-label="Vergrößern" title="Vergrößern"><i data-lucide="plus"></i></button>
           <button class="icon-button" id="zoom-out" aria-label="Verkleinern" title="Verkleinern"><i data-lucide="minus"></i></button>
-          <button class="icon-button" id="fit-network" aria-label="Alles anzeigen" title="Alles anzeigen"><i data-lucide="maximize"></i></button>
+          <button class="icon-button" id="fullscreen-network" type="button" aria-label="Vollbild öffnen" title="Vollbild öffnen" aria-pressed="false"><i data-lucide="maximize"></i></button>
           <button class="icon-button" id="reset-network" aria-label="Anordnung zurücksetzen" title="Anordnung zurücksetzen"><i data-lucide="rotate-ccw"></i></button>
         </div>
         <span class="graph-caption" id="graph-caption">Gespeicherte Gruppenzuordnung</span>
       </section>
       <aside class="network-inspector" aria-label="Gerätedetails">
         <button id="back-to-graph" class="back-to-graph" type="button"><i data-lucide="arrow-up"></i>Zum Netzwerk</button>
-        <label class="search-field" for="device-search"><i data-lucide="search"></i><input type="search" id="device-search" placeholder="Gerät, IP oder MAC suchen" autocomplete="off"></label>
+        <label class="search-field" for="device-search"><i data-lucide="search"></i><input type="search" id="device-search" aria-label="Geräte durchsuchen" placeholder="Gerät, IP oder MAC suchen" autocomplete="off"></label>
         <label class="device-picker" for="device-picker">Gerät auswählen<select id="device-picker"><option value="">Netzwerkübersicht</option></select></label>
         <div id="device-details" aria-live="polite"></div>
       </aside>
     </div>
   </main>
   <script src="config.js"></script>
-  <script src="api.js"></script>
+  <script src="api.js?v=20261118-demo"></script>
   <script src="vendor/cytoscape.min.js"></script>
   <script src="vendor/lucide.min.js"></script>
-  <script src="topology-model.js?v=20261116-online"></script>
-  <script src="topologie_custom.js?v=20261116-online"></script>
+  <script src="security-draft.js?v=20261116-topology-draft"></script>
+  <script src="topology-model.js?v=20261118-fullscreen2"></script>
+  <script src="topologie_custom.js?v=20261118-fullscreen2"></script>
 </body>
 </html>
