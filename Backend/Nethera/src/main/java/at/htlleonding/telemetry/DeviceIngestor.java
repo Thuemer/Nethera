@@ -34,9 +34,12 @@ public class DeviceIngestor {
             leasedMacs.add(mac);
             String hostname = normalizeHostname(lease.hostname());
             boolean isOnline = snapshot.reachableMacs().contains(mac);
-            String connectionType = snapshot.wifiMacs().contains(mac) ? "WIFI" : "LAN";
-
             ConnectedDevice existing = deviceRepository.findByMac(router, mac);
+            // wifiMacs only lists stations associated right now. An offline phone still has a lease,
+            // so keep its last known type instead of turning every disconnected WLAN device into LAN.
+            String connectionType = snapshot.wifiMacs().contains(mac) ? "WIFI"
+                    : isOnline || existing == null || existing.getConnectionType() == null ? "LAN"
+                    : existing.getConnectionType();
             boolean wasNew = existing == null;
             boolean wasOnline = existing != null && Boolean.TRUE.equals(existing.getOnline());
 

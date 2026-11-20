@@ -108,6 +108,28 @@ class DeviceIngestorTest {
     }
 
     @Test
+    void offlineWifiDeviceKeepsItsConnectionType() {
+        ConnectedDevice phone = existing(true);
+        phone.setConnectionType("WIFI");
+        when(repository.findByMac(router, MAC)).thenReturn(phone);
+
+        ingestor.ingest(router, snapshot("iphone", false));
+
+        verify(repository).syncDevice(router, MAC, "192.168.1.20", "iphone", false, "WIFI");
+    }
+
+    @Test
+    void reachableDeviceOutsideWifiIsLan() {
+        ConnectedDevice laptop = existing(true);
+        laptop.setConnectionType("WIFI");
+        when(repository.findByMac(router, MAC)).thenReturn(laptop);
+
+        ingestor.ingest(router, snapshot("laptop", true));
+
+        verify(repository).syncDevice(router, MAC, "192.168.1.20", "laptop", true, "LAN");
+    }
+
+    @Test
     void onlineDeviceMissingFromLeasesGoesOffline() {
         ConnectedDevice gone = existing(true);
         gone.setMacAddress("11:22:33:44:55:66");
