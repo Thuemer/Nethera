@@ -18,6 +18,9 @@
 .confirmed-rules dt { font-weight: 600; }
 .confirmed-rules dd { margin: 0 0 12px; color: var(--text-soft); overflow-wrap: anywhere; }
 .security-summary { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+/* Router status and the two summaries are the same on every tab: one box keeps them apart from the tab content */
+.security-overview { display: grid; padding: 4px 16px; border: 1px solid var(--line); border-radius: 8px; background: rgba(var(--text-rgb), .02); }
+.security-overview .security-summary:last-child { border-bottom: 0; padding-bottom: 4px; }
 .security-summary summary { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; color: var(--text-soft); font-size: 14px; list-style: none; }
 .security-summary summary::-webkit-details-marker { display: none; }
 .security-summary summary svg { width: 16px; height: 16px; }

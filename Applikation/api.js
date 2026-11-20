@@ -292,6 +292,19 @@ const NetheraApi = (() => {
     return response.json();
   }
 
+  // Same rule as the topology: the backend sends no per-device online flag, but lastSeen is only
+  // refreshed while the router reports a device as reachable. Online = seen in the latest report.
+  const ONLINE_WINDOW_MS = 120000;
+  const timeOf = value => { const ms = value ? new Date(value).getTime() : NaN; return Number.isNaN(ms) ? null : ms; };
+  function onlineDevices(router) {
+    const devices = Array.isArray(router?.devices) ? router.devices : [];
+    const seen = devices.map(device => timeOf(device.lastSeen)).filter(ms => ms != null);
+    const reference = timeOf(router?.checkedAt) ?? (seen.length ? Math.max(...seen) : null);
+    return devices.filter(device => typeof device.isOnline === 'boolean' ? device.isOnline
+      : reference != null && timeOf(device.lastSeen) != null && timeOf(device.lastSeen) >= reference - ONLINE_WINDOW_MS);
+  }
+  function isDeviceOnline(router, device) { return onlineDevices(router).includes(device); }
+
   function userMessage(error) {
     const message = String(error?.message || '');
     if (/\b(401|403)\b/.test(message)) return 'Bitte melde dich erneut an, um diese Daten zu sehen.';
@@ -300,5 +313,6 @@ const NetheraApi = (() => {
   }
 
   return { getRouters, getPrimaryRouter, getRouterControlStatus, installAdblock, getAuthHeader, routerUrl, userMessage,
-    getSecurityState, getConnections, getConfiguration, selectDataSource, isLive, requireLive, watchSource };
+    getSecurityState, getConnections, getConfiguration, selectDataSource, isLive, requireLive, watchSource,
+    onlineDevices, isDeviceOnline };
 })();

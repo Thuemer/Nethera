@@ -297,7 +297,7 @@ function presetForDevice(deviceId) {
 
 function groupOptions(selectedId = '') {
   return [
-    `<option value="">${canEditRules() ? 'Keine Gruppe im Entwurf' : 'Nicht gemeldet'}</option>`,
+    `<option value="">${canEditRules() ? (state.preview ? 'Keine Gruppe im Entwurf' : 'Keine Gruppe') : 'Nicht gemeldet'}</option>`,
     ...state.groups.map(group => `<option value="${group.id}" ${Number(group.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(group.name)}</option>`)
   ].join('');
 }
@@ -408,7 +408,7 @@ function renderGroupOverview() {
   const list = document.getElementById('groupOverviewList');
   if (!list) return;
   if (!state.groups.length) {
-    list.innerHTML = canEditRules() ? '<empty-state title="Noch keine Gruppen im Entwurf" text="Lege eine Gruppe an und ordne deine Geräte zu."></empty-state>' : '<empty-state title="Keine gemeldeten Gruppen" text="Der Router hat noch keine verifizierten Gruppen geliefert."></empty-state>';
+    list.innerHTML = canEditRules() ? `<empty-state title="Noch keine Gruppen${state.preview ? ' im Entwurf' : ''}" text="Lege eine Gruppe an und ordne deine Geräte zu."></empty-state>` : '<empty-state title="Keine gemeldeten Gruppen" text="Der Router hat noch keine verifizierten Gruppen geliefert."></empty-state>';
     return;
   }
 
@@ -443,7 +443,7 @@ function renderManualDomains() {
   const list = document.getElementById('manualDomainsList');
   if (!list) return;
   if (!state.blocklists.length) {
-    list.innerHTML = canEditRules() ? '<empty-state title="Keine Blocklisten im Entwurf" text="Füge die erste Website hinzu."></empty-state>' : '<empty-state title="Keine bestätigten Blocklisten" text="Es liegen noch keine verifizierten Sperrlisten oder Übernahmebestätigungen vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
+    list.innerHTML = canEditRules() ? `<empty-state title="Keine Blocklisten${state.preview ? ' im Entwurf' : ''}" text="Füge die erste Website hinzu."></empty-state>` : '<empty-state title="Keine bestätigten Blocklisten" text="Es liegen noch keine verifizierten Sperrlisten oder Übernahmebestätigungen vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
     return;
   }
 
@@ -476,7 +476,7 @@ function renderAdDomains() {
       </div>
       <span class="badge ${!blocklist.localDraft && blocklist.confirmationSource === 'ROUTER_ACK' ? 'ok' : ''}">${blocklist.localDraft ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : blocklist.confirmationSource === 'ROUTER_ACK' ? 'Am Router aktiv' : routerEffect(state.routerControl?.blocklists?.[blocklist.id])}</span>
     </article>
-  `).join('') || (canEditRules() ? '<empty-state title="Keine Werbe-Domains im Entwurf" text="Noch keine DNS-Blockliste vorhanden."></empty-state>' : '<empty-state title="Keine bestätigten Werbe-Domains" text="Keine aktuell bestätigte Domain-Liste. Der Adblock-Status wird separat angezeigt."></empty-state>');
+  `).join('') || (canEditRules() ? `<empty-state title="Keine Werbe-Domains${state.preview ? ' im Entwurf' : ''}" text="Noch keine DNS-Blockliste vorhanden."></empty-state>` : '<empty-state title="Keine bestätigten Werbe-Domains" text="Keine aktuell bestätigte Domain-Liste. Der Adblock-Status wird separat angezeigt."></empty-state>');
 }
 
 function renderPresetDeviceOptions() {
@@ -502,7 +502,7 @@ function renderPresets() {
   const list = document.getElementById('presetList');
   if (!list) return;
   if (!state.presets.length) {
-    list.innerHTML = canEditRules() ? '<empty-state title="Keine Vorlagen im Entwurf" text="Noch keine Vorlage gespeichert."></empty-state>' : '<empty-state title="Keine gemeldeten Vorlagen" text="Es liegen noch keine Vorlagen mit bestätigter Router-Herkunft vor."></empty-state>';
+    list.innerHTML = canEditRules() ? `<empty-state title="Keine Vorlagen${state.preview ? ' im Entwurf' : ''}" text="Noch keine Vorlage gespeichert."></empty-state>` : '<empty-state title="Keine gemeldeten Vorlagen" text="Es liegen noch keine Vorlagen mit bestätigter Router-Herkunft vor."></empty-state>';
     return;
   }
 
