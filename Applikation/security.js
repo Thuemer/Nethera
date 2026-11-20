@@ -23,6 +23,8 @@ const canEditRules = () => state.preview || state.rulesKnown;
 function renderDraft() {
   const discard = document.getElementById('discardDraft');
   if (discard) discard.disabled = !localDraft?.dirty && !state.draftError;
+  const strip = document.querySelector('.draft-strip');
+  if (strip) strip.hidden = state.preview === false;
   const confirmed = (draftBase?.blocklists || []).filter(item => item.confirmationSource === 'ROUTER_ACK');
   const section = document.getElementById('confirmedRules');
   if (section) section.hidden = !confirmed.length || state.dataMode !== 'live';
@@ -122,6 +124,19 @@ async function loadSecurityState(refresh = false) {
       assignments: data.assignments || [],
       timeLimits: data.timeLimits || []
     });
+    if (router.dataMode === 'live') {
+      // Connected router: changes go to the backend, which publishes them to the router.
+      Object.assign(state, { preview: false });
+      draftBase = null;
+      if (document.body) document.body.dataset.localDraft = 'false';
+      renderAll();
+      setStatus('Routerdaten geladen. Änderungen werden an den Router gesendet.', 'info');
+      renderRouterControlStatus();
+      renderDraft();
+      updateReadOnlyControls();
+      return;
+    }
+    if (document.body) document.body.dataset.localDraft = 'true';
     const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
     const owner = account?.keycloak?.tokenParsed?.sub || 'local-preview';
     const key = NetheraSecurityDraft.keyFor(API_BASE_URL, owner, router);

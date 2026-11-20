@@ -376,3 +376,17 @@ test('disabled browser storage cannot turn a saved backend rule into an error', 
   const h = harness('time-limits.js');
   h.run(`localStorage.setItem=()=>{throw new Error('disabled')};saveLimits()`);
 });
+
+test('a live router loads without the local draft and sends writes to the backend', async () => {
+  const h = harness('security.js');
+  h.run(`NetheraApi.getPrimaryRouter = async () => ({ id: 1, dataMode: 'live', devices: [{ id: 20, hostname: 'Laptop' }] });
+    NetheraApi.getSecurityState = async router => ({ dataMode: 'live', rulesKnown: true, devices: router.devices,
+      groups: [], members: [], presets: [], assignments: [], timeLimits: [],
+      blocklists: [{ id: 5, routerId: 1, sourceType: 'NETWORK', urlPattern: 'example.com' }] });
+    NetheraSecurityDraft = { keyFor() { throw new Error('draft must not be used'); } };`);
+  await h.run('loadSecurityState()');
+  assert.equal(h.run('state.preview'), false);
+  assert.equal(h.run('state.rulesKnown'), true);
+  await h.run(`apiJson(SECURITY_API + '/blocklists', { method: 'POST', body: JSON.stringify({ id: 5, urlPattern: 'example.com|youtube.com' }) })`);
+  assert.deepEqual(h.calls.map(call => [call.method, call.url]), [['POST', 'http://test/api/security/blocklists']]);
+});
