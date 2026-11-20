@@ -69,6 +69,8 @@ function configErrors(config) {
 }
 
 function setStatus(text, tone = 'info') {
+  const status = document.getElementById('statusBox');
+  if (status) status.hidden = !text;
   document.getElementById('statusBox')?.setAttribute('text', text);
   document.getElementById('statusBox')?.setAttribute('state', tone);
 }
@@ -113,7 +115,7 @@ async function loadConfigs() {
     document.getElementById('configFields').disabled = !config || router.dataMode !== 'live';
     updateChangeState();
 
-    setStatus(router.dataMode === 'demo' ? 'Beispiel-Konfiguration · Nur Ansicht.'
+    setStatus(router.dataMode === 'demo' ? ''
       : router.dataMode === 'unavailable' ? 'Keine bestätigten Routerdaten verfügbar.'
         : config ? 'Konfiguration aktualisiert.' : 'Noch keine Konfiguration vorhanden.',
     router.dataMode === 'live' && config ? 'success' : 'info');

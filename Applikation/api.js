@@ -89,10 +89,18 @@ const NetheraApi = (() => {
       (document.querySelector('main') || document.body).prepend(notice);
     }
     notice.dataset.mode = router?.dataMode || 'unavailable';
-    notice.textContent = isTemporaryDemo() ? 'Temporäre Demo · Beispieldaten nur in diesem Tab. Beenden über die Seitenleiste.' : router?.dataMode === 'live' ? 'Routerdaten · Verbunden'
-      : router?.dataMode === 'demo' ? document.body?.dataset.localDraft === 'true'
-        ? 'Demo-Geräte · Kein Router verbunden. Lokale Vorschau.'
-        : 'Demo · Kein Router verbunden. Beispieldaten, nur Ansicht.'
+    if (document.body) document.body.dataset.sourceMode = notice.dataset.mode;
+    const demo = router?.dataMode === 'demo';
+    notice.hidden = false;
+    try {
+      const indicator = window.parent?.document?.getElementById('demo-mode-indicator');
+      if (indicator) {
+        indicator.hidden = !demo;
+        notice.hidden = demo;
+      }
+    } catch { /* Standalone or cross-origin pages keep their own source label. */ }
+    notice.textContent = router?.dataMode === 'live' ? 'Routerdaten · Verbunden'
+      : demo ? 'Demo'
         : 'Routerstatus unbekannt · Keine bestätigten Routerdaten verfügbar.';
   }
 

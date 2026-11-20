@@ -1,7 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { buildModel, graphElements, matchingDevices } = require('../topology-model.js');
-const cytoscape = require('../vendor/cytoscape.min.js');
+const { buildModel, topologyHubs, matchingDevices, onlineOnly } = require('../topology-model.js');
 const { create, keyFor } = require('../security-draft.js');
 
 const router = { name: 'Nethera', devices: [
@@ -15,6 +14,28 @@ const rules = { groups: [{ id: 2, name: 'Arbeit' }, { id: 1, name: 'Familie' }],
   presets: [{ id: 4, name: 'Abendruhe', priorityMode: true }],
   timeLimits: [{ deviceId: 1, blockedFrom: '20:00', blockedUntil: '07:00', status: 'paused' }]
 };
+
+test('layout-neutral hubs preserve all memberships, primary order and connection types', () => {
+  const model = buildModel(router, rules), before = JSON.stringify(model);
+  const groups = topologyHubs(model);
+  assert.equal(groups[0].id, model.devices[0].groups[0].id);
+  assert.equal(groups.filter(hub => hub.devices.includes(model.devices[0])).length, 2);
+  assert.ok(groups.every(hub => hub.devices.length && hub.kind === 'group'));
+  const connections = topologyHubs(model, 'connections');
+  assert.deepEqual(connections.map(hub => hub.name), ['LAN', 'Unbekannt', 'WLAN']);
+  assert.equal(connections.reduce((count, hub) => count + hub.devices.length, 0), 3);
+  assert.ok(connections.every(hub => hub.kind === 'connection'));
+  assert.equal(JSON.stringify(model), before);
+});
+
+test('layout-neutral hubs omit empty groups and follow online filtering', () => {
+  assert.deepEqual(topologyHubs(buildModel({}, rules)), []);
+  assert.deepEqual(topologyHubs(buildModel({}, rules), 'connections'), []);
+  const model = buildModel({ ...router, devices: router.devices.map((device, i) => ({ ...device, isOnline: i === 0 })) }, rules);
+  const hubs = topologyHubs(onlineOnly(model));
+  assert.deepEqual(hubs.map(hub => hub.name), ['Familie', 'Arbeit']);
+  assert.ok(hubs.every(hub => hub.devices.length === 1 && hub.devices[0].online));
+});
 
 test('topology joins real groups and assignments without confusing them with WLAN/LAN', () => {
   const model = buildModel(router, rules);
@@ -62,21 +83,20 @@ test('only devices of the selected router appear, even when rules contain other 
   assert.equal(model.groups.find(g => g.id === 'group-1').count, 1);
 });
 
-test('both graph modes have valid endpoints and support multiple memberships', () => {
+test('both layouts receive valid memberships and untrusted labels as plain model strings', () => {
+  const model = buildModel(router, rules);
   for (const mode of ['groups', 'connections']) {
-    const cy = cytoscape({ headless: true, elements: graphElements(buildModel(router, rules), mode) });
-    assert.equal(cy.nodes('[kind="device"]').length, 3);
-    assert.equal(cy.getElementById('device-1').degree(), mode === 'groups' ? 2 : 1);
-    assert.equal(cy.getElementById('device-3').data('label'), '<img onerror=alert(1)>');
-    cy.edges().forEach(edge => { assert.equal(edge.source().length, 1); assert.equal(edge.target().length, 1); });
-    cy.destroy();
+    const hubs = topologyHubs(model, mode);
+    assert.equal(new Set(hubs.flatMap(hub => hub.devices.map(device => device.id))).size, 3);
+    assert.equal(hubs.filter(hub => hub.devices.some(device => device.id === 'device-1')).length, mode === 'groups' ? 2 : 1);
+    assert.equal(model.devices[2].name, '<img onerror=alert(1)>');
   }
 });
 
 test('empty networks remain a valid graph', () => {
   const model = buildModel({}, null);
   assert.deepEqual(model.devices, []);
-  assert.equal(graphElements(model).length, 1);
+  assert.deepEqual(topologyHubs(model), []);
 });
 
 test('online status compares lastSeen with the router check time, not with the browser clock', () => {
@@ -96,7 +116,7 @@ test('online status compares lastSeen with the router check time, not with the b
   // The group whose only device is offline disappears, and the counts follow
   assert.deepEqual(online.groups.map(group => [group.name, group.count]), [['Ohne Gruppe', 1]]);
   assert.equal(model.devices.length, 4, 'the full model stays untouched');
-  assert.equal(graphElements(online).filter(element => element.data.kind === 'device').length, 1);
+  assert.equal(new Set(topologyHubs(online).flatMap(hub => hub.devices.map(device => device.id))).size, 1);
 });
 
 test('without a router check time the newest device is the reference', () => {
@@ -132,7 +152,7 @@ test('topology overlays local groups and presets but keeps router telemetry and 
   const telemetry = model => model.devices.map(({ id, name, online, connection, ip, mac, lastSeen }) => ({ id, name, online, connection, ip, mac, lastSeen }));
   assert.deepEqual(telemetry(model), telemetry(baseline));
   assert.deepEqual(require('../topology-model.js').onlineOnly(model).devices.map(d => d.sourceId), [1]);
-  assert.equal(graphElements(model).some(e => e.data.target === 'device-2' && e.data.source === `group-${group.id}`), true);
+  assert.equal(topologyHubs(model).find(hub => hub.id === `group-${group.id}`).devices.some(device => device.id === 'device-2'), true);
   assert.equal(JSON.stringify({ live, base }), before);
   draft.reset();
   assert.deepEqual(buildModel(live, create(storage, key).snapshot(base)), baseline);

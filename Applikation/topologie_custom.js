@@ -1,15 +1,19 @@
 (() => {
   const $ = id => document.getElementById(id);
-  const { buildModel, onlineOnly, graphElements, matchingDevices } = window.NetheraTopology;
+  const { buildModel, onlineOnly, topologyHubs, matchingDevices } = window.NetheraTopology;
   // fullModel = every stored device; model = what is shown (all, or only the online ones)
   let fullModel = null, onlyOnline = false;
   let model = null, graph = null, mode = 'groups', groupFilter = '', selectedId = '';
-  let initialPositions = null, resizeObserver = null;
+  let resizeObserver = null, layout = null;
+  let detailsOpen = false;
+  try { const saved = localStorage.getItem('nethera.topology.layout'); if (['klassisch', 'baum'].includes(saved)) layout = saved; } catch {}
   let sourceRouter = null, sourceRules = null, draftKey = null, draftRevision;
   let loadVersion = 0;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const row = (name, value) => `<div><dt>${escape(name)}</dt><dd>${escape(value)}</dd></div>`;
   const date = value => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value).toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' }) : 'Nicht bekannt';
+  const presetTitle = device => device.preset?.name || (device.presetDraft ? 'Keine Vorlage im Entwurf'
+    : !device.rulesKnown ? 'Nicht vom Router gemeldet' : device.assignment ? 'Vorlagendetails fehlen' : 'Keine Vorlage zugewiesen');
 
   function notice(message) {
     $('network-notice').textContent = message;
@@ -56,11 +60,13 @@
     } catch {
       if (version !== loadVersion) return;
       sourceRouter = null; sourceRules = null; draftKey = null;
-      resizeObserver?.disconnect();
+      resizeObserver?.disconnect(); resizeObserver = null;
       model = null; fullModel = null;
       $('online-filter').disabled = true;
       graph?.destroy(); graph = null;
+      $('graph-caption').hidden = true;
       $('device-details').innerHTML = '';
+      setDetails(false); setSearch(false); updateDeviceBar();
       $('group-legend').innerHTML = '';
       $('device-picker').innerHTML = '<option value="">Keine Gerätedaten</option>';
       notice('Netzwerk konnte nicht geladen werden. Bitte Anmeldung und Backend prüfen und erneut laden.');
@@ -80,16 +86,17 @@
     $('online-filter').setAttribute('aria-pressed', String(onlyOnline));
     $('online-count').textContent = online;
     $('network-summary').textContent = `${fullModel.devices.length} Geräte · ${online} online · ${model.hasLocalDraft ? 'Lokale Gruppenvorschau' : model.rulesKnown ? `${model.groups.length} Gruppen` : 'Gruppenzuordnung unvollständig'} · ${model.router.name}`;
-    renderLegend(); renderGraph(); filterGraph();
+    renderLegend(); filterGraph();
     if (selectedId) selectDevice(selectedId);
   }
 
   function renderLegend() {
     $('group-legend').replaceChildren();
-    [{ id: '', name: 'Alle', count: model.devices.length }, ...model.groups].forEach(group => {
+    model.groups.forEach(group => {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'legend-item';
       button.dataset.group = group.id;
+      button.style.setProperty('--group-color', group.color);
       button.setAttribute('aria-pressed', String(group.id === groupFilter));
       if (group.color) {
         const swatch = document.createElement('span');
@@ -105,112 +112,58 @@
   }
 
   function fit() {
-    if (!graph) return;
-    graph.resize();
-    graph.nodes().style({ 'font-size': 12, 'text-max-width': 110, width: 42, height: 42 });
-    graph.nodes('[kind = "group"]').style({ width: 32, height: 32 });
-    graph.nodes('[kind = "router"]').style({ width: 86, height: 86, label: graph.width() < 600 ? '' : 'data(label)' });
-    graph.fit(graph.elements(), 48);
-    // Keep labels readable when a full graph is fitted into a narrow viewport.
-    for (let pass = 0; pass < 3; pass++) {
-      const scale = graph.zoom();
-      const minFont = graph.width() < 600 ? 10 : 12;
-      graph.nodes().style({ 'font-size': Math.max(12, minFont / scale), 'text-max-width': 84 / scale, width: Math.max(42, 23 / scale), height: Math.max(42, 23 / scale) });
-      graph.nodes('[kind = "group"]').style({ width: Math.max(32, 18 / scale), height: Math.max(32, 18 / scale) });
-      graph.nodes('[kind = "router"]').style({ width: Math.max(86, 46 / scale), height: Math.max(86, 46 / scale) });
-      graph.fit(graph.elements(), 48);
-    }
-    if (graph.zoom() > 1.2) graph.zoom({ level: 1.2, renderedPosition: { x: graph.width() / 2, y: graph.height() / 2 } });
+    const height = layout === 'baum' ? document.querySelector('.legend-bar').offsetHeight : 0;
+    document.querySelector('.topology-body').style.setProperty('--legend-height', `${height}px`);
+    graph?.fit();
   }
 
   function renderGraph() {
-    graph?.destroy(); resizeObserver?.disconnect();
-    graph = cytoscape({
-      container: $('network-graph'), elements: graphElements(model, mode),
-      minZoom: .02, maxZoom: 2.5, selectionType: 'single', boxSelectionEnabled: false,
-      style: [
-        { selector: 'node', style: { label: 'data(label)', 'background-color': 'data(color)', width: 42, height: 42, 'border-width': 2, 'border-color': '#001818', color: '#e4e9eb', 'font-family': 'Avenir Next, Segoe UI, sans-serif', 'font-size': 12, 'text-valign': 'bottom', 'text-margin-y': 9, 'text-wrap': 'wrap', 'text-max-width': 110, 'text-background-color': '#001818', 'text-background-opacity': .85, 'text-background-padding': 3, 'overlay-opacity': 0 } },
-        { selector: 'node[kind = "router"]', style: { width: 86, height: 86, 'background-image': 'router.png', 'background-fit': 'contain', 'background-width': '80%', 'background-height': '80%', 'border-width': 2, 'border-color': '#63e5c5', 'underlay-color': '#63e5c5', 'underlay-padding': 14, 'underlay-shape': 'ellipse', 'underlay-opacity': .08, 'font-weight': 600 } },
-        { selector: 'node[kind = "group"]', style: { width: 32, height: 32, 'background-opacity': .18, 'border-color': 'data(color)', 'border-width': 2, 'font-weight': 600 } },
-        { selector: 'edge', style: { width: 1.4, 'line-color': '#617078', 'curve-style': 'bezier', 'overlay-opacity': 0 } },
-        { selector: 'node[kind = "device"][online = 0]', style: { 'background-opacity': .3, 'border-style': 'dashed', 'border-color': '#617078', color: '#9aa8b0' } },
-        { selector: '.muted', style: { opacity: .13 } },
-        { selector: 'node:selected', style: { 'border-color': '#63e5c5', 'border-width': 4 } },
-        { selector: 'edge.highlighted', style: { 'line-color': '#9cd6cd', width: 2 } }
-      ],
-      layout: { name: 'preset', padding: 60 }
+    graph?.destroy();
+    if (!layout) layout = $('network-graph').clientWidth < 700 ? 'baum' : 'klassisch';
+    document.querySelector('.topology-body').dataset.activeLayout = layout;
+    document.querySelectorAll('button[data-layout]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.layout === layout)));
+    ['zoom-in', 'zoom-out', 'reset-network'].forEach(id => { $(id).hidden = layout === 'baum'; });
+    $('device-bar').hidden = layout === 'baum';
+    const renderer = layout === 'baum' ? window.NetheraTopologyTree : window.NetheraTopologyClassic;
+    graph = renderer.render($('network-graph'), {
+      model, hubs: topologyHubs(model, mode), mode, groupFilter, query: $('device-search').value, selectedId,
+      scope: draftKey,
+      onSelect(id) {
+        setSearch(false);
+        if (!id || id === selectedId) { clearSelection(); return; }
+        detailsOpen = false;
+        selectDevice(id);
+      },
+      onHubClick(hub) {
+        if (hub.kind !== 'group') return;
+        groupFilter = groupFilter === hub.id ? '' : hub.id;
+        renderLegend(); filterGraph();
+      }
     });
-    // Stable rings keep groups apart and prevent the narrow, overlapping mobile layout.
-    function arrange() {
-      const hubs = graph.nodes('[kind = "group"]');
-      const devices = graph.nodes('[kind = "device"]');
-      graph.getElementById('router').position({ x: 0, y: 0 });
-      const slots = devices.length + hubs.length * 1.5;
-      let offset = -Math.PI / 2;
-      hubs.forEach(hub => {
-        const children = devices.filter(node => node.connectedEdges()[0]?.source().id() === hub.id());
-        const arc = (children.length + 1.5) / Math.max(1, slots) * Math.PI * 2;
-        const angle = offset + arc / 2;
-        const radius = Math.max(320, devices.length * 26);
-        hub.position({ x: Math.cos(angle) * radius * .58, y: Math.sin(angle) * radius * .58 });
-        children.forEach((node, index) => {
-          const theta = offset + arc * (index + 1) / (children.length + 1);
-          node.position({ x: Math.cos(theta) * radius, y: Math.sin(theta) * radius });
-        });
-        offset += arc;
-      });
+    if (!resizeObserver) {
+      resizeObserver = new ResizeObserver(fit);
+      resizeObserver.observe($('network-graph'));
+      resizeObserver.observe(document.querySelector('.legend-bar'));
     }
-    arrange(); fit();
-    initialPositions = new Map(graph.nodes().map(node => [node.id(), { ...node.position() }]));
-    graph.on('tap', 'node', event => {
-      const node = event.target;
-      if (node.data('kind') === 'device') {
-        selectDevice(node.id());
-        if (window.matchMedia('(max-width: 700px)').matches) document.querySelector('.network-inspector').scrollIntoView({ block: 'start', behavior: 'smooth' });
-      }
-      else if (node.data('kind') === 'group' && mode === 'groups') { groupFilter = groupFilter === node.id() ? '' : node.id(); renderLegend(); filterGraph(); }
-      else { selectedId = ''; graph.nodes().unselect(); graph.edges().removeClass('highlighted'); showDetails(); $('device-picker').value = ''; }
-    });
-    graph.on('tap', event => { if (event.target === graph) { selectedId = ''; graph.nodes().unselect(); graph.edges().removeClass('highlighted'); showDetails(); $('device-picker').value = ''; } });
-    let compactLayout = graph.width() < 600;
-    resizeObserver = new ResizeObserver(() => {
-      graph.resize();
-      const compact = graph.width() < 600;
-      fit();
-      if (compact !== compactLayout) {
-        compactLayout = compact;
-        arrange(); fit();
-        initialPositions = new Map(graph.nodes().map(node => [node.id(), { ...node.position() }]));
-      }
-    });
-    resizeObserver.observe($('network-graph'));
     $('graph-caption').textContent = model.hasLocalDraft ? mode === 'groups' ? 'Gruppen inklusive lokaler Entwürfe' : 'Verbindungen unverändert · Regeln als Entwurf'
-      : model.router.dataMode === 'demo' ? 'Beispiel-Netzwerk · Nur Ansicht'
+      : model.router.dataMode === 'demo' ? ''
       : mode === 'groups' ? model.rulesKnown ? 'Gruppenzuordnung vom Router' : 'Nur verifizierte Gruppenzuordnungen' : 'Verbindungstyp laut Gerätedaten';
+    $('graph-caption').hidden = !$('graph-caption').textContent;
     $('network-graph').setAttribute('aria-label', `Netzwerkgraph mit ${model.devices.length} Geräten. Auswahl auch unter Gerät auswählen.`);
+    fit();
   }
 
   function filterGraph() {
-    if (!model || !graph) return;
+    if (!model) return;
     const matches = matchingDevices(model, $('device-search').value, groupFilter);
     const filtered = Boolean(groupFilter || $('device-search').value.trim());
-    graph.elements().removeClass('muted');
-    if (filtered) {
-      graph.elements().addClass('muted');
-      let visible = graph.getElementById('router');
-      matches.forEach(device => {
-        const node = graph.getElementById(device.id);
-        visible = visible.union(node.closedNeighborhood()).union(node.neighborhood().nodes().connectedEdges().filter(edge => edge.source().id() === 'router'));
-      });
-      visible.removeClass('muted');
-    }
     $('device-picker').replaceChildren(new Option(filtered ? `${matches.length} Geräte gefunden` : 'Netzwerkübersicht', ''));
     matches.forEach(device => $('device-picker').add(new Option(device.name, device.id)));
     if (!matches.some(device => device.id === selectedId)) selectedId = '';
     $('device-picker').value = selectedId;
     $('graph-empty').hidden = matches.length > 0;
     $('graph-empty').textContent = model.devices.length ? 'Keine passenden Geräte' : onlyOnline && fullModel.devices.length ? 'Gerade ist kein Gerät online' : 'Noch keine Geräte vorhanden';
-    if (!selectedId) { graph.nodes().unselect(); graph.edges().removeClass('highlighted'); }
+    renderGraph();
     showDetails();
   }
 
@@ -220,46 +173,105 @@
       groupFilter = ''; $('device-search').value = ''; renderLegend(); filterGraph();
     }
     selectedId = id; $('device-picker').value = id;
-    graph.nodes().unselect(); graph.edges().removeClass('highlighted');
-    const node = graph.getElementById(id);
-    node.select(); node.connectedEdges().addClass('highlighted');
+    graph.select(id);
     showDetails();
   }
 
   function showDetails() {
     if (!model) return;
+    updateDeviceBar();
     const demo = model.router.dataMode === 'demo';
     const device = model.devices.find(item => item.id === selectedId);
     if (!device) {
-      $('device-details').innerHTML = `<p class="detail-kicker">Netzwerkübersicht</p><h2>${escape(model.router.name)}</h2><p class="overview-count">${model.devices.length}</p><p class="detail-note">${onlyOnline ? 'Geräte gerade online' : demo ? 'Geräte im Beispiel-Netzwerk' : 'Geräte im gespeicherten Netzwerk'}</p><section class="detail-section"><h3>Gruppen</h3>${model.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span><span>${escape(group.name)}</span><span class="legend-count">${group.count}</span></div>`).join('')}</section><section class="detail-section"><h3>Router</h3><dl>${row('Modell', model.router.model)}</dl></section>`;
+      $('device-details').replaceChildren();
+      setDetails(false);
       return;
     }
     const preset = device.preset;
     const limit = device.timeLimit;
-    const presetName = preset?.name || (device.presetDraft ? 'Keine Vorlage im Entwurf' : !device.rulesKnown ? 'Nicht vom Router gemeldet' : device.assignment ? 'Vorlagendetails fehlen' : 'Keine Vorlage zugewiesen');
+    const presetName = presetTitle(device);
     const paused = device.assignment?.status === 'paused';
     const limitText = !limit ? 'Keine Zeitregel geladen' : limit.status === 'paused' ? 'Pausiert' : limit.blockedFrom && limit.blockedUntil ? `${limit.blockedFrom}–${limit.blockedUntil}` : 'Kein Sperrzeitraum';
     $('device-details').innerHTML = `<p class="detail-kicker">Gerät</p><h2>${escape(device.name)}</h2>
-      <section class="detail-section"><h3>Gruppenzuordnung</h3>${device.groups.map(group => `<div class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span>${escape(group.name)}</div>`).join('')}${device.groupDraft ? '<span class="assignment-state">Lokaler Entwurf</span>' : ''}</section>
-      <section class="detail-section"><h3>Zugewiesene Vorlage</h3><strong>${escape(presetName)}</strong>${device.assignment || device.presetDraft ? `<div><span class="assignment-state">${device.presetDraft ? 'Lokaler Entwurf' : demo ? 'Beispiel' : paused ? 'Zuweisung pausiert' : 'Gespeichert'}${demo && paused ? ' · pausiert' : ''}</span></div>` : ''}
-      <p class="detail-note">${demo ? 'Keine Wirkung auf deinen Router.' : 'Die Routerwirkung ist hier nicht bestätigt.'}</p></section>
+      <dl class="detail-primary"><dt>Gruppe</dt><dd>${device.groups.map(group => `<span class="detail-group"><span class="swatch" style="--group-color:${group.color}"></span>${escape(group.name)}</span>`).join('')}${device.groupDraft ? '<span class="assignment-state">Lokaler Entwurf</span>' : ''}</dd>
+      <dt>Status</dt><dd class="${device.online ? 'status-online' : 'status-offline'}">${device.online ? 'Online' : 'Offline'}</dd>
+      <dt>Verbindung</dt><dd>${escape(device.connection)}</dd><dt>IP</dt><dd>${escape(device.ip)}</dd><dt>MAC</dt><dd>${escape(device.mac)}</dd>
+      <dt>Vorlage</dt><dd>${escape(presetName)}${device.assignment || device.presetDraft ? `<span class="assignment-state">${device.presetDraft ? 'Lokaler Entwurf' : demo ? 'Beispiel' : paused ? 'Zuweisung pausiert' : 'Gespeichert'}${demo && paused ? ' · pausiert' : ''}</span>` : ''}</dd></dl>
+      <details class="detail-more"><summary>Regeln und Verbindungsdetails</summary>
+      <p class="detail-note">${demo ? 'Keine Wirkung auf deinen Router.' : 'Die Routerwirkung ist hier nicht bestätigt.'}</p>
       <section class="detail-section"><h3>Regeln${device.presetDraft || limit?.localDraft || device.blocklist?.localDraft ? ' im Entwurf' : ''}</h3><dl>${row('Priorität', (!device.rulesKnown && !device.presetDraft || device.assignment) && !preset ? 'Nicht verfügbar' : paused ? 'Vorlage pausiert' : preset?.priorityMode ? 'Bevorzugt' : 'Normal')}${row('Sperrzeit', limitText)}${row('Tagesbudget', !limit ? 'Nicht verfügbar' : limit.dailyLimitMinutes ? `${limit.dailyLimitMinutes} Minuten` : 'Kein Tagesbudget')}${row('Vorlagen-Blockliste', device.blocklist?.name || (preset?.blocklistId === null ? 'Keine' : !device.rulesKnown || preset?.blocklistId ? 'Nicht verfügbar' : 'Keine'))}</dl></section>
-      <section class="detail-section"><h3>Verbindung</h3><dl>${row('Status', device.online ? 'Online' : 'Offline')}${row('Typ', device.connection)}${row('IP-Adresse', device.ip)}${row('MAC-Adresse', device.mac)}${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section>`;
+      <section class="detail-section"><dl>${row('Zuletzt gesehen', date(device.lastSeen))}</dl></section></details>`;
+    setDetails((detailsOpen || layout === 'baum') && $('device-search-panel').hidden);
+  }
+
+  function clearSelection() {
+    selectedId = ''; graph?.select(''); $('device-picker').value = ''; showDetails();
+  }
+
+  function setSearch(open) {
+    $('device-search-panel').hidden = !open;
+    $('open-device-search').setAttribute('aria-expanded', String(open));
+    if (open) { setDetails(false); $('device-search').focus(); }
+  }
+
+  function setDetails(open) {
+    detailsOpen = Boolean(open && selectedId && model);
+    $('device-details-panel').hidden = !detailsOpen;
+    $('device-bar-details').setAttribute('aria-expanded', String(detailsOpen));
+    if (detailsOpen) setSearch(false);
+  }
+
+  function updateDeviceBar() {
+    const device = model?.devices.find(item => item.id === selectedId);
+    const bar = $('device-bar-details');
+    bar.disabled = !device;
+    bar.innerHTML = device
+      ? `<i class="tree-status${device.online ? '' : ' offline-dot'}" aria-hidden="true"></i><span><b>${escape(device.name)}</b> · ${escape(device.groups.map(group => group.name).join(', '))} · ${escape(presetTitle(device))} · ${escape(device.connection)} ${escape(device.ip)} · ${device.online ? 'online' : 'offline'}</span>`
+      : `<span>${model ? `${escape(model.router.name)} · ${model.devices.length} Geräte · ${model.devices.filter(item => item.online).length} online` : 'Keine Netzwerkdaten'}</span>`;
+    const empty = !model || !matchingDevices(model, $('device-search').value, groupFilter).length;
+    $('previous-device').disabled = $('next-device').disabled = empty;
+  }
+
+  function stepDevice(direction) {
+    if (!model) return;
+    const matching = new Set(matchingDevices(model, $('device-search').value, groupFilter).map(device => device.id));
+    const order = [...new Map(topologyHubs(model, mode).flatMap(hub => hub.devices).filter(device => matching.has(device.id)).map(device => [device.id, device])).values()];
+    if (!order.length) return;
+    const index = order.findIndex(device => device.id === selectedId);
+    const next = index < 0 ? direction > 0 ? 0 : order.length - 1 : (index + direction + order.length) % order.length;
+    selectDevice(order[next].id);
   }
 
   $('reload-network').addEventListener('click', load);
   $('online-filter').addEventListener('click', () => { onlyOnline = !onlyOnline; applyOnlineFilter(); });
-  $('back-to-graph').addEventListener('click', () => document.querySelector('.topology-header').scrollIntoView({ block: 'start', behavior: 'smooth' }));
+  $('open-device-search').addEventListener('click', () => setSearch($('device-search-panel').hidden));
+  $('close-device-search').addEventListener('click', () => { setSearch(false); $('open-device-search').focus(); });
+  $('close-device-details').addEventListener('click', () => { clearSelection(); $('open-device-search').focus(); });
+  $('device-bar-details').addEventListener('click', () => setDetails(!detailsOpen));
+  $('previous-device').addEventListener('click', () => stepDevice(-1));
+  $('next-device').addEventListener('click', () => stepDevice(1));
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (!$('device-search-panel').hidden) { setSearch(false); $('open-device-search').focus(); }
+    else if (detailsOpen) { setDetails(false); $('open-device-search').focus(); }
+  });
   $('device-search').addEventListener('input', filterGraph);
   $('device-picker').addEventListener('change', event => {
-    if (event.target.value) selectDevice(event.target.value);
-    else { selectedId = ''; graph?.nodes().unselect(); graph?.edges().removeClass('highlighted'); showDetails(); }
+    if (event.target.value) { selectDevice(event.target.value); setDetails(true); }
+    else clearSelection();
   });
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => {
     if (!model || mode === button.dataset.view) return;
     mode = button.dataset.view;
     document.querySelectorAll('[data-view]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-    renderGraph(); filterGraph(); if (selectedId) selectDevice(selectedId);
+    filterGraph();
+  }));
+  document.querySelectorAll('button[data-layout]').forEach(button => button.addEventListener('click', () => {
+    if (!model || layout === button.dataset.layout) return;
+    layout = button.dataset.layout;
+    try { localStorage.setItem('nethera.topology.layout', layout); } catch {}
+    renderGraph();
+    detailsOpen = false; showDetails();
   }));
   const workspace = document.querySelector('.topology-workspace');
   const fullscreenButton = $('fullscreen-network');
@@ -283,9 +295,9 @@
     } finally { fullscreenButton.disabled = false; }
   });
   document.addEventListener('fullscreenchange', updateFullscreen);
-  $('reset-network').addEventListener('click', () => { if (graph && initialPositions) { graph.nodes().positions(node => initialPositions.get(node.id())); fit(); } });
+  $('reset-network').addEventListener('click', () => graph?.reset());
   ['zoom-in', 'zoom-out'].forEach(id => $(id).addEventListener('click', () => {
-    if (graph) graph.zoom({ level: graph.zoom() * (id === 'zoom-in' ? 1.2 : 1 / 1.2), renderedPosition: { x: graph.width() / 2, y: graph.height() / 2 } });
+    graph?.zoom?.(id === 'zoom-in' ? 1.2 : 1 / 1.2);
   }));
   window.addEventListener('pagehide', () => { resizeObserver?.disconnect(); graph?.destroy(); });
   window.addEventListener('storage', event => {

@@ -88,17 +88,17 @@ function updateTrafficTable(connections = [], emptyMessage = 'Noch keine Verbind
         .sort((a, b) => (b.download + b.upload) - (a.download + a.upload));
 
     if (rows.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5">${escapeHtml(emptyMessage)}</td></tr>`;
+        tableBody.innerHTML = `<tr role="row"><td role="cell" colspan="5">${escapeHtml(emptyMessage)}</td></tr>`;
         return;
     }
 
     tableBody.innerHTML = rows.map(connection => `
-        <tr>
-            <td><strong>${escapeHtml(connection.client)}</strong></td>
-            <td>${escapeHtml(connection.ip)}</td>
-            <td><span class="protocol-pill">${escapeHtml(connection.protocol)}</span></td>
-            <td>${formatMbit(connection.download)}</td>
-            <td>${formatMbit(connection.upload)}</td>
+        <tr role="row">
+            <td role="cell" data-label="Client"><strong>${escapeHtml(connection.client)}</strong></td>
+            <td role="cell" data-label="IP-Adresse">${escapeHtml(connection.ip)}</td>
+            <td role="cell" data-label="Protokoll"><span class="protocol-pill">${escapeHtml(connection.protocol)}</span></td>
+            <td role="cell" data-label="Download">${formatMbit(connection.download)}</td>
+            <td role="cell" data-label="Upload">${formatMbit(connection.upload)}</td>
         </tr>
     `).join('');
 }

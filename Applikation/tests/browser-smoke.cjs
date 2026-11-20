@@ -57,6 +57,7 @@ const pages = ['overview','devices','network-status','topologie_custom','time-li
   await page.locator('#editToggle').click();assert.equal(await page.locator('#dashboard-settings').isVisible(),true);
   await page.locator('#editToggle').click();assert.equal(await page.locator('#dashboard-settings').isVisible(),false);checks++;
   await visit('topologie_custom');
+  await page.locator('#open-device-search').click();
   await page.locator('#device-search').fill('nicht vorhanden');assert.equal(await page.locator('#graph-empty').innerText(),'Keine passenden Geräte');
   await page.locator('#device-search').fill('');await page.locator('#device-picker').selectOption('device--1');
   assert.match(await page.locator('#device-details').innerText(),/Demo-Laptop/);

@@ -41,6 +41,16 @@ function securityHarness() {
   return h;
 }
 
+test('quiet demo form status never hides a later error', () => {
+  for (const file of ['time-limits.js', 'configuration.js']) {
+    const h = harness(file);
+    h.run("setStatus('')");
+    assert.equal(h.field('statusBox').hidden, true, file);
+    h.run("setStatus('Fehler beim Laden', 'error')");
+    assert.equal(h.field('statusBox').hidden, false, file);
+  }
+});
+
 test('domain parsing accepts URLs but rejects credentials, ports and invalid domains', () => {
   const h = securityHarness();
   assert.equal(h.run(`sanitizeDomain('https://www.Example.com/path')`), 'example.com');
@@ -65,13 +75,51 @@ test('unknown assignments and empty rule views do not pretend there are no rules
   const h = securityHarness();
   h.run(`Object.assign(state, {loaded:true, dataMode:'live', rulesKnown:false, groups:[], members:[], presets:[], assignments:[], blocklists:[]});
     renderGroupDevices(); renderManualDomains(); renderPresets(); renderGroupOverview(); renderPriorityList();`);
-  assert.match(h.field('groupDeviceList').innerHTML, /Zuweisung nicht gemeldet/);
-  assert.match(h.field('groupDeviceList').innerHTML, /Priorität: Unbekannt/);
-  assert.doesNotMatch(h.field('groupDeviceList').innerHTML, /0 Regeln|Keine Vorlage/);
+  assert.match(h.field('groupDeviceList').innerHTML, /Routerzuweisungen nicht bestätigt/);
+  assert.doesNotMatch(h.field('groupDeviceList').innerHTML, /0 Regeln|Keine Vorlage|Priorität: Normal/);
   assert.match(h.field('manualDomainsList').innerHTML, /Keine bestätigten Blocklisten/);
   assert.match(h.field('presetList').innerHTML, /Keine gemeldeten Vorlagen/);
   assert.match(h.field('groupOverviewList').innerHTML, /Keine gemeldeten Gruppen/);
   assert.doesNotMatch(h.field('priorityList').innerHTML, /Normal|Nur gespeichert/);
+});
+
+test('unchanged protection rows do not claim local edits or repeat assignment values', () => {
+  const h = securityHarness();
+  h.run("state.preview = true; state.devices[0].connectionType = 'WiFi'; state.devices[1].connectionType = 'LAN'; renderGroupDevices()");
+  const html = h.field('groupDeviceList').innerHTML;
+  assert.doesNotMatch(html, /Lokaler Entwurf|Gruppe:|Vorlage:/);
+  assert.match(html, /data-device-group="1"/);
+  assert.match(html, /data-device-preset="1"/);
+  assert.match(html, /2 Filtereinträge/);
+  assert.match(html, /Keine IP · WLAN/);
+  assert.match(html, /Keine IP · LAN/);
+});
+
+test('only changed assignments are labelled, including explicit removals', () => {
+  const h = securityHarness();
+  h.run(`state.preview = true; state.assignments = [];
+    state.draftDeviceIds = {members:[], assignments:[1]}; renderGroupDevices()`);
+  assert.equal((h.field('groupDeviceList').innerHTML.match(/Lokaler Entwurf/g) || []).length, 1);
+  h.run(`state.draftDeviceIds = {members:[2], assignments:[]}; renderGroupDevices()`);
+  assert.equal((h.field('groupDeviceList').innerHTML.match(/Lokaler Entwurf/g) || []).length, 1);
+});
+
+test('editing a shared preset labels its affected devices, without changing any API data', () => {
+  const h = securityHarness();
+  h.run('state.preview = true; state.presets[0].localDraft = true; renderGroupDevices()');
+  assert.equal((h.field('groupDeviceList').innerHTML.match(/Lokaler Entwurf/g) || []).length, 2);
+  assert.equal(h.calls.length, 0);
+});
+
+test('editable priority views keep unreported values unknown and label demo examples correctly', () => {
+  const h = securityHarness();
+  h.run(`Object.assign(state, {preview:true, rulesKnown:false, presets:[], assignments:[]}); renderPriorityList()`);
+  assert.match(h.field('priorityList').innerHTML, /Priorität nicht gemeldet/);
+  assert.doesNotMatch(h.field('priorityList').innerHTML, /Normal|Lokaler Entwurf/);
+  h.run(`state.draftDeviceIds = {assignments:[1]}; renderPriorityList()`);
+  assert.equal((h.field('priorityList').innerHTML.match(/Lokaler Entwurf/g) || []).length, 1);
+  h.run(`state.dataMode = 'demo'; state.rulesKnown = true; state.draftDeviceIds = {}; renderPriorityList()`);
+  assert.equal((h.field('priorityList').innerHTML.match(/Beispiel/g) || []).length, 2);
 });
 
 test('all confirmed DNS lists render their domains and active status without exposing raw markup', () => {
@@ -271,7 +319,7 @@ test('priority list confirms only the matching device and mode', () => {
   h.run(`state.routerControl={connection:'online',priority:{1:{mode:'high',applied:true},2:{mode:'normal',applied:false}}};
     state.presets[0].priorityMode=true; renderPriorityList();`);
   assert.match(h.field('priorityList').innerHTML, /Tablet.*Am Router bestätigt/);
-  assert.match(h.field('priorityList').innerHTML, /Laptop.*Nur gespeichert/);
+  assert.match(h.field('priorityList').innerHTML, /Laptop.*Routerwirkung unbestätigt/);
   h.run(`state.routerControl.connection='offline'; renderPriorityList();`);
   assert.doesNotMatch(h.field('priorityList').innerHTML, /Am Router bestätigt/);
 });

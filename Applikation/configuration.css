@@ -1,4 +1,9 @@
 #configFields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.configuration-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px 32px; flex-wrap: wrap; padding: 14px 0; border-block: 1px solid var(--line); }
+.configuration-summary > div { display: grid; gap: 4px; min-width: 0; }
+.configuration-summary span, .configuration-summary p { font-size: 13px; color: var(--text-soft); line-height: 1.5; }
+.configuration-summary strong { font-size: 15px; overflow-wrap: anywhere; }
+.configuration-summary p { margin: 0; max-width: 55ch; }
 #configFields:disabled { opacity: .65; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 #configForm .field { margin-bottom: 18px; }

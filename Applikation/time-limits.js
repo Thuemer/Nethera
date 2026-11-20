@@ -185,6 +185,7 @@ function presetForDevice(deviceId) {
 
 function setStatus(text, tone = 'info') {
   const status = document.getElementById('statusBox');
+  if (status) status.hidden = !text;
   status?.setAttribute('text', text);
   status?.setAttribute('state', tone);
 }
@@ -491,7 +492,7 @@ async function loadDevices() {
     applyFilters();
     setStatus(state.storageMode === 'backend'
       ? `${state.devices.length} Geräte · Internetzeiten aktualisiert.`
-      : state.storageMode === 'demo' ? 'Demo-Netzwerk mit Beispiel-Zeitplänen · Nur Ansicht.'
+      : state.storageMode === 'demo' ? ''
         : 'Internetzeiten konnten nicht geladen werden. Speichern ist derzeit nicht möglich.',
     state.storageMode === 'backend' ? 'success' : 'warning');
   } catch (error) {

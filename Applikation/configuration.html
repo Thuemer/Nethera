@@ -6,17 +6,16 @@
   <title>Konfiguration – Nethera</title>
   <link rel="icon" href="nethera_logo.png">
   <link rel="stylesheet" href="app.css">
-  <link rel="stylesheet" href="nethera-theme.css?v=20261118-polish2">
-  <link rel="stylesheet" href="configuration.css?v=20261114">
-  <link rel="stylesheet" href="data-source.css?v=20261118-polish2">
+  <link rel="stylesheet" href="nethera-theme.css?v=20261119-polish">
+  <link rel="stylesheet" href="configuration.css?v=20261119-polish">
+  <link rel="stylesheet" href="data-source.css?v=20261119-polish">
 </head>
 <body>
   <main class="page">
     <app-hero title="Konfiguration" text="Router und Heimnetzwerk verständlich einstellen."></app-hero>
-    <section class="settings-summary card" aria-label="Hinweise zur Konfiguration">
-      <article><strong>Dein Router</strong><span id="configName">Konfiguration wird geladen.</span></article>
-      <article><strong>Einfach erklärt</strong><span>Die Netzwerkeinstellungen findest du unter „Erweitert“.</span></article>
-      <article><strong>Speicherung</strong><span>Speichern bestätigt die Datenbankänderung. Die Übernahme am Router wird hier noch nicht bestätigt.</span></article>
+    <section class="configuration-summary" aria-label="Hinweise zur Konfiguration">
+      <div><span>Router</span><strong id="configName">Konfiguration wird geladen.</strong></div>
+      <p>Änderungen werden gespeichert. Die Übernahme am Router ist damit noch nicht bestätigt.</p>
     </section>
     <form id="configForm" novalidate aria-describedby="statusBox">
       <fieldset id="configFields" disabled>
@@ -53,6 +52,6 @@
   <script src="config.js"></script>
   <script src="api.js?v=20261120-live-rules"></script>
   <script src="components.js"></script>
-  <script src="configuration.js?v=20261116-restored"></script>
+  <script src="configuration.js?v=20261119-polish"></script>
 </body>
 </html>

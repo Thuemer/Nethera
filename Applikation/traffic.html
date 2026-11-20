@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datenverkehr</title>
     <link rel="icon" href="nethera_logo.png">
-    <link rel="stylesheet" href="traffic.css?v=20261009-mobile">
-  <link rel="stylesheet" href="nethera-theme.css?v=20261118-polish2">
-  <link rel="stylesheet" href="data-source.css?v=20261118-polish2">
+    <link rel="stylesheet" href="traffic.css?v=20261119-polish">
+  <link rel="stylesheet" href="nethera-theme.css?v=20261119-polish">
+  <link rel="stylesheet" href="data-source.css?v=20261119-polish">
 </head>
 <body>
     <main class="traffic-page">
@@ -47,23 +47,24 @@
 
         <section class="card traffic-info">
             <h2>Auslastung nach Verbindung</h2>
+            <div class="traffic-legend"><span><i class="download-bar" aria-hidden="true"></i>Download</span><span><i class="upload-bar" aria-hidden="true"></i>Upload</span></div>
             <div id="connectionBars" class="connection-bars-chart" aria-live="polite"></div>
         </section>
 
         <section class="card traffic-table">
             <h2>Stärkste Verbindungen</h2>
             <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Client</th>
-                            <th>IP-Adresse</th>
-                            <th>Protokoll</th>
-                            <th>Download</th>
-                            <th>Upload</th>
+                <table role="table" aria-label="Stärkste Verbindungen">
+                    <thead role="rowgroup">
+                        <tr role="row">
+                            <th scope="col" role="columnheader">Client</th>
+                            <th scope="col" role="columnheader">IP-Adresse</th>
+                            <th scope="col" role="columnheader">Protokoll</th>
+                            <th scope="col" role="columnheader">Download</th>
+                            <th scope="col" role="columnheader">Upload</th>
                         </tr>
                     </thead>
-                    <tbody id="traffic-table-body">
+                    <tbody id="traffic-table-body" role="rowgroup">
                         <tr>
                             <td>--</td>
                             <td>--</td>
@@ -79,6 +80,6 @@
 
     <script src="config.js"></script>
 <script src="api.js?v=20261120-live-rules"></script>
-<script src="traffic.js"></script>
+<script src="traffic.js?v=20261119-polish"></script>
 </body>
 </html>

@@ -114,29 +114,45 @@ unter der oben verlinkten Adresse.
 
 ## Projektpräsentation und Funktionsstand
 
-Die [aktuelle Projektpräsentation](Documentation/revealjs/nethera-projektpraesentation.html)
+Der aktuelle lokale Frontend-Stand vom **19. November 2026** ist in der
+[Präsentationsprüfung](Documentation/frontend-presentation-check.md) dokumentiert,
+einschließlich Vorschau, Änderungen, Tests und noch offener manueller Abnahme.
+Die Überarbeitung auf `fix/frontend-presentation-polish` wurde für einen reinen
+Frontend-Rollout freigegeben. Der tatsächliche Release-Stand wird im
+[Deployment-Protokoll](deploy/leocloud/README.md) festgehalten.
+Die [Klassisch-/Baum-Topologie](openspec/changes/topology-visual-refresh/verification.md)
+setzt Manuels Entwurf mit gemerkter Auswahl und gemeinsamen Routerdaten um.
+Der [OpenSpec-Change](openspec/changes/frontend-presentation-polish/proposal.md)
+verknüpft die Umsetzung mit den Qualitätsanforderungen der
+[MetaSpec](Documentation/meta-spec.md).
+
+Die [Projektpräsentation vom 11. Oktober](Documentation/revealjs/nethera-projektpraesentation.html)
 beschreibt den Stand vom **11. Oktober 2026** auf Basis von `df170e7`: Website,
 Login, Anwendung, Datenhaltung, LeoCloud, lokale Docker-Umgebung, MQTT und die
 noch offenen Routerfunktionen. Sie verwendet wie die bisherigen Präsentationen
 Reveal.js. Zum Öffnen im Browser werden die Reveal.js-Dateien vom CDN geladen.
 
-Bereits in Oberfläche und Backend verwaltbar sind Geräte, Gruppen mit
-Umbenennen und Zuweisung, Domainsperren für Geräte/Gruppen/das gesamte Netzwerk,
-Presets mit optionalen Internetzeiten, tägliche Sperrfenster, optionale
-Tagesbudgets sowie gespeicherte Werbeschutz- und Prioritätsoptionen.
-Dashboard-Bereiche und Layout sind weiterhin anpassbar. Website und App wurden
-für mobile Ansichten überarbeitet.
+Die Oberfläche umfasst Geräte, Gruppen, Domainsperren, Vorlagen, Internetzeiten,
+Werbeschutz und Prioritäten. Unter **Schutz** werden Änderungen derzeit als
+lokale Entwürfe im Browser-Tab bearbeitet, nicht an Backend oder Router gesendet.
+Bestätigte Routerwerte werden davon getrennt angezeigt. Internetzeiten und
+Routerkonfiguration haben eigene Speicherpfade; eine erfolgreiche Speicherung
+belegt allein noch keine Routerwirkung. Dashboard-Bereiche und Layout bleiben
+anpassbar, Website und App unterstützen mobile Ansichten.
 
-**Gespeichert ist nicht automatisch am Router aktiv:** DNS-Filter, Firewall-
-Sperrzeiten, Werbefilter und QoS müssen noch mit bestätigter Routerwirkung
-verbunden werden. Feste Mbit/s-/Prozentanteile und ein echter WLAN-Scan sind
-keine fertigen Funktionen. Die Cloud-Demo nutzt gespeicherte Demo-/DB-Daten;
-der lokale MQTT-Pfad ist davon getrennt.
+**Gespeichert ist nicht automatisch am Router aktiv:** Maßgeblich ist die
+ausgewiesene Routerbestätigung. Feste Mbit/s-/Prozentanteile sind keine fertige
+Funktion. Live-Werte stammen aus den als Routerdaten gekennzeichneten
+API-Antworten. Bei bestätigtem Offline-Modus verwendet das Frontend getrennte
+Beispieldaten; Verbindungs- oder Anmeldefehler werden nicht als Demo kaschiert.
+Das Demo-Konto kann zusätzlich eine ausdrücklich gekennzeichnete temporäre
+Vorschau einschalten. Fehlende Live-Daten werden nicht mit Beispielen aufgefüllt.
 
 Die [Abschlusspräsentation 2025/26](Documentation/revealjs/nethera-abschlusspraesentation.html)
 bleibt als historischer Rückblick erhalten. Ihre früheren Kennzahlen sind keine
 aktuelle Erhebung; unbelegte Live-/Testaussagen sind als offene Nachweise
-gekennzeichnet. Für eine aktuelle Vorführung die Projektpräsentation verwenden.
+gekennzeichnet. Für eine aktuelle Vorführung zusätzlich die Präsentationsprüfung
+und den tatsächlich bestätigten Funktionsstand beachten.
 
 Die Regeltests lassen sich ohne laufendes Backend ausführen:
 
@@ -144,9 +160,10 @@ Die Regeltests lassen sich ohne laufendes Backend ausführen:
 node --test Applikation/tests/rules.test.cjs
 ```
 
-Bekannte Grenzen: Das Datenvolumen in der Datenverkehrsansicht wird derzeit
-fälschlich aus Geschwindigkeiten abgeleitet; DNS-Zähler unterscheiden lokal
-beantwortete und tatsächlich blockierte Anfragen noch nicht zuverlässig.
+Bekannte Grenzen: Das tägliche Datenvolumen wird ohne kumulierten Zähler als
+unbekannt angezeigt, nicht mehr aus Geschwindigkeiten abgeleitet. Die Bedeutung
+der DNS-Zähler muss mit dem jeweiligen Router-Datenlieferanten abgeglichen
+werden; eine UI-Anzeige allein ist kein Wirksamkeitsnachweis.
 Die direkte Backend-Entwicklungskonfiguration nutzt `drop-and-create`.
 Vor `./mvnw quarkus:dev` deshalb eine isolierte Entwicklungsdatenbank verwenden
 oder die Datenbank sichern und die ORM-Konfiguration prüfen. Compose und

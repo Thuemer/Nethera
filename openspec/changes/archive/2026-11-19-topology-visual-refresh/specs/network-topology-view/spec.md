@@ -31,7 +31,7 @@ The page SHALL offer a "Klassisch | Baum" switch and SHALL remember the last cho
 - **THEN** the page still renders using the default layout and the switch still works for the current visit
 
 ### Requirement: Ring dots without glow
-In Klassisch, an online device SHALL be drawn as a thin ring in its group colour with a small solid core, and an offline device SHALL be drawn as a dashed ring without a core and with a softer label. No node, pill or router image SHALL use glow, blur or pulse effects.
+In Klassisch, an online device SHALL be drawn as a thin ring in its group colour with a small solid core, and an offline device SHALL be drawn as a dashed ring without a core and with a softer label. Classic device rings and pills SHALL NOT glow or pulse. The router asset and F's router/status shadows SHALL match the original mockup, as explicitly requested in the local visual-fidelity revision.
 
 #### Scenario: Online and offline devices
 - **WHEN** the network contains an online and an offline device in the same group
@@ -39,7 +39,7 @@ In Klassisch, an online device SHALL be drawn as a thin ring in its group colour
 
 #### Scenario: No glow
 - **WHEN** the Klassisch layout is rendered
-- **THEN** no device, group pill or router image has a blurred or coloured glow shadow and no element animates continuously
+- **THEN** no classic device ring or group pill has a blurred or coloured glow shadow and no element animates continuously; the original router image and its plain dark shadow are preserved
 
 ### Requirement: Selection and highlighting
 Selecting a device SHALL highlight it without glow: in Klassisch with a white ring while all other devices fade, and in Baum with an accent-bordered row and a fully coloured connecting curve. Hovering or focusing a device in Klassisch SHALL show a solid ring in the group colour. The inspector SHALL show the selected device's details in both layouts.
@@ -100,6 +100,21 @@ In Klassisch the user SHALL be able to drag group pills (devices follow) and sin
 #### Scenario: Tools in Baum
 - **WHEN** the Baum layout is active
 - **THEN** zoom and reset controls are hidden and the stage scrolls vertically when the rows do not fit
+
+### Requirement: Mockup surfaces and on-demand details
+The C2 Ring and F visual design SHALL be transferred from mockup.html: router asset, node and hub geometry, background, gradients, borders and labels. A same-fixture browser test SHALL compare geometry and computed surface styles against the unchanged reference. The application SHALL keep its own navigation and functional controls rather than the mockup's option gallery and explanatory notes.
+
+#### Scenario: Classic device bar
+- **WHEN** Klassisch is displayed
+- **THEN** group chips and reset sit inside the graph, and the bottom device bar offers previous/next selection, a selected-device summary and access to full details without a permanent side column
+
+#### Scenario: Tree details
+- **WHEN** a device row is selected in Baum
+- **THEN** the reference-style detail card opens over the graph, with group, status, connection, IP, MAC and preset; additional rules and local draft information remain available
+
+#### Scenario: Search and narrow view
+- **WHEN** the user opens search or uses a narrow screen
+- **THEN** search and the device picker remain keyboard-accessible, the tree scrolls inside its stage, and neither the graph nor a detail panel causes page-level horizontal overflow
 
 ### Requirement: Existing page behaviour is preserved
 Both layouts SHALL keep the existing page behaviour: local draft notice and captions, demo captions, reload, error and empty states, fullscreen including the inspector, and no horizontal page scroll at 390, 768 and 1440 px.

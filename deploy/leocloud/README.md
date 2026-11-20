@@ -59,6 +59,175 @@ Dockerfile gebaut. Die Keycloak-Basisversion und ihr Digest bleiben dabei fest;
 ein Design-Update ist kein Keycloak-Versionsupgrade. Anleitung und Rollback:
 `themes/nethera/README.md`.
 
+### Mockup-getreue Topologie vom 19.11.2026
+
+Aktuelles Frontend: `ghcr.io/denizbernecker/nethera-frontend:20261119-113142`,
+privat, `linux/amd64`, Digest
+`sha256:74611941299557b652e3c54545751ec4ab4ae126b486cda8ffb5facd79bce009`.
+Quelle: `6444fedd13595eb2cdb28ef84a975821638862e9` auf
+`fix/frontend-presentation-polish`. Nach Freigabe der gefuellten lokalen Vorschau
+wurden alle Team-Branches erneut abgerufen. Keine neuen Commits, kein Merge,
+kein Force-Push und keine Aenderung an main waren erforderlich.
+
+Diese Revision uebernimmt Manus tatsaechliche C2-Ring-/F-Baum-Gestaltung samt
+Original-Routerbild, Geometrie, Flaechen, Geraeteleiste und Detailansichten.
+App-Bedienung und Datenmodell bleiben erhalten; der genaue Vergleich und
+bewusste Integrationsunterschiede stehen in
+`openspec/changes/topology-visual-refresh/verification.md`.
+Cache-Version fuer App-Frames und geaenderte Topologie-Assets: `20261119-mockup`.
+
+Alle 82 Dateien des isolierten Build-Kontexts wurden im getesteten Container,
+im Cloud-Pod und ueber die oeffentliche URL per SHA256 verifiziert.
+Die kompatible `account.js` aus `c88bfd3` samt Demo-Logout-Bereinigung,
+Account-Seite, Login-Konfiguration, Keycloak-JS und saemtliche Website-Dateien
+sind bytegleich zum vorigen Release. Kein Demo-Server oder Mock-Login wird
+ausgeliefert. Das neue `topology-router.png` ist Teil der Build-Allowlist.
+
+Tests: 122 Unit-Tests, 83 allgemeine Browser-Szenarien, 42 Polish-Szenarien,
+Praesentationsregression, erweiterte Topologie-Suite und direkter Mockup-Vergleich
+erfolgreich. Alle Browser-Suiten liefen am fertigen amd64-Image; die
+Topologie-Suite zusaetzlich an den tatsaechlichen Cloud-Dateien. API-Aufrufe
+wurden fuer diese Tests abgefangen; keine Testschreibzugriffe auf echte Daten.
+
+Nur das Frontend-Image wurde per JSON-Patch mit Pruefung von Ressourcen-Version,
+altem Image und Deployment-Spec getauscht. Rollout erfolgreich; Registry- und
+Pod-Digest stimmen. Startseite/Assets und Keycloak-Discovery liefern 200;
+`/api/routers/list` verlangt ohne Anmeldung weiterhin 401. Backend, Keycloak,
+Datenbanken, Broker, Services, Ingress, PVCs und Secret-Metadaten sowie
+Identitaeten und Neustartzaehler ihrer Pods blieben unveraendert.
+Kein Realm-Import, keine Migration und keine Routerbefehle. Erneuter Passwort-Login
+und manuelle Sichtpruefung mit echtem Routerkonto bleiben separat offen.
+
+Rollback ausschliesslich des Frontends:
+
+```bash
+kubectl --context leocloud -n student-it220208 set image deployment/nethera-frontend frontend=ghcr.io/denizbernecker/nethera-frontend:20261119-105348@sha256:38d71664abbb1104e8f40f7af1e34a4f68f3d4725590ad2df9a02213effbe506
+kubectl --context leocloud -n student-it220208 rollout status deployment/nethera-frontend
+```
+
+### Presentation-Polish und Klassisch-/Baum-Topologie vom 19.11.2026
+
+Ausgerolltes Image: `ghcr.io/denizbernecker/nethera-frontend:20261119-105348`,
+privat, `linux/amd64`, Digest
+`sha256:38d71664abbb1104e8f40f7af1e34a4f68f3d4725590ad2df9a02213effbe506`.
+Quelle: `8382f01a3f654b024f1f7cd76d7a52f1b6018b89` auf
+`fix/frontend-presentation-polish`, einschliesslich Polish-Commit `e58541b`.
+Vor Commit/Push und Rollout wurden alle Team-Branches erneut abgerufen.
+`origin/main=0d08547` wurde ohne Ueberschreiben per Fast-Forward eingebunden;
+main selbst wurde nicht gepusht oder umgeschrieben.
+
+Manuels `0d08547` enthielt einen Plan und ein Mockup. Die anschliessend explizit
+beauftragte Implementierung bietet `Klassisch | Baum`, merkt die Auswahl und
+verwendet fuer beide Ansichten dieselben Routerdaten, Gruppen und lokalen
+Entwuerfe. Beschreibung und verbleibende manuelle Pruefung:
+`openspec/changes/topology-visual-refresh/verification.md`.
+Cache-Version der Topologie und App-Seiten: `20261119-layouts`.
+
+Der isolierte Build behaelt die unten dokumentierte kompatible `account.js`
+aus `c88bfd3` samt Demo-Logout-Bereinigung bytegleich zum vorigen Release.
+Website, Support, Anleitung, Account-Seite, Konfiguration der Anmeldung und
+Keycloak-JS bleiben ebenfalls bytegleich. Kein Backend-Ownership-Rollout,
+keine neuen Router-Features, kein Realm-Import und keine Migration.
+Der temporaere lokale Demo-Server und seine synthetische Identitaet sind
+nicht Teil des Images. Drei Topologie-Module ersetzen Cytoscape und dessen
+Lizenzdatei; das Image enthaelt 81 statische Dateien.
+
+Pruefungen: 122 Unit-Tests, 83 allgemeine Browser-Szenarien, 42 gezielte
+Polish-Szenarien und die Praesentationsregression erfolgreich. Die neue
+Topologie-Suite besteht lokal, am fertigen amd64-Image und an den ausgelieferten
+Cloud-Dateien: beide Layouts, Auswahl/Tastatur, Filter, Mehrfachgruppen,
+Offline-Ringe, Zoom/Drag/Reset, Vollbild/Verweigerung, Speicherfehler,
+Ladefehler/Wiederherstellung und 320/390/768/1440 px. API-Aufrufe wurden in
+diesen Browser-Tests abgefangen; keine Testschreibzugriffe auf echte Daten.
+Die allgemeine Browser-Suite bestand auch direkt am Release-Image.
+
+Nur `deployment/nethera-frontend` wurde per JSON-Patch geaendert, abgesichert
+durch Ressourcen-Version, vorheriges Image und Vergleich der Deployment-Spec.
+Rollout erfolgreich; Registry- und Pod-Digest sowie alle 81 Datei-Hashes stimmen.
+HTTP-Pruefung: App, neue Module, Website und Support liefern 200 mit passenden
+Pruefsummen; Keycloak-Discovery unter `/realms/Nethera/` liefert 200, die
+tatsaechliche Routerroute `/api/routers/list` ohne Anmeldung weiterhin 401.
+Backend, Keycloak, beide Datenbanken, Broker, Services, Ingress, PVCs und
+Secret-Metadaten sowie Identitaeten/Neustartzaehler ihrer Pods sind unveraendert.
+Ein erneuter Passwort-Login und manuelle Sichtabnahme mit echtem Routerkonto
+bleiben offen; Konten und Passwoerter wurden nicht geaendert.
+
+Rollback ausschliesslich des Frontends:
+
+```bash
+kubectl --context leocloud -n student-it220208 set image deployment/nethera-frontend frontend=ghcr.io/denizbernecker/nethera-frontend:20261119-092645@sha256:aa6523b3fee5185ca54d49c38e1d836207c9d5bd6339124696a873b9f2517b57
+kubectl --context leocloud -n student-it220208 rollout status deployment/nethera-frontend
+```
+
+### Nicos Praesentations-Frontend vom 19.11.2026
+
+Image: `ghcr.io/denizbernecker/nethera-frontend:20261119-092645`, privat,
+`linux/amd64`, Digest
+`sha256:aa6523b3fee5185ca54d49c38e1d836207c9d5bd6339124696a873b9f2517b57`.
+
+Frontend-Basis: `e5d07eab150d043c3927ece3a95a3bf9be4c14eb`, einschliesslich
+Nicos Commits `0366b88` und `9d7fe92`. Vor dem Rollout wurden erneut alle
+Team-Branches abgerufen und die inzwischen eingetroffenen Commits bis `94b7009`
+ebenfalls per Fast-Forward geholt. Diese aendern keine ausgelieferten
+Frontend-Dateien. Backend-Ownership, Seed und Realm-Selbstregistrierung aus
+diesen Commits wurden ausdruecklich NICHT auf LeoCloud angewendet.
+
+Ausgerollt sind Dashboard-Anpassung, mobile Geraeteliste, gemeinsame Oberflaechen,
+Tagesablauf-Vorschau, Schnellvorlagen fuer Internetzeiten, Tastaturbedienung der
+Auswahlfelder sowie stabile Topologie mit Vollbild und lokaler Keycloak-JS-Datei.
+Zwei bei der Pruefung gefundene Regressionen sind zusaetzlich korrigiert:
+Die Gruppenlegende passt jetzt auch auf 320 px, und das Konto `demo` startet
+nicht automatisch eine Praesentationsdemo ueber den echten Routerdaten.
+`Demo ansehen` bzw. `demo=1` aktiviert sie bewusst. Die normale Auswahl bleibt:
+Live-Routerdaten bei Verbindung, getrennte Beispieldaten bei bestaetigtem Offline,
+keine vorgetaeuschten Live-Daten bei API-/Anmeldefehlern. Lokale Gruppen- und
+Vorlagenentwuerfe bleiben getrennt von den Router-Verbindungsdaten.
+
+Die drei zusaetzlichen Laufzeitkorrekturen liegen in `Applikation/index.html`,
+`Applikation/topologie.css` und `Applikation/topologie_custom.html`. Das Image
+kennzeichnet den Build-Patch mit `io.nethera.frontend-patch-sha256`:
+`1c21bf6e864e83c935836b04de89551aac6ab1080e2da859db769b9acb6fd814`.
+
+Die Account-Kompatibilitaetsausnahme des vorherigen Rollouts bleibt bestehen:
+Im isolierten Build-Kontext stammt `account.js` aus
+`c88bfd3bd9e53c78af6ecab48ea6488cac48d6c1`, ergaenzt ausschliesslich um Nicos
+zwei Zeilen zum Entfernen von `nethera-demo-preview` und Zuruecksetzen von
+`window.NETHERA_DEMO_PREVIEW` beim Abmelden. Die Repository-Datei bleibt auf
+Team-Stand. Die Image-Labels `io.nethera.preserved-account-revision` und
+`io.nethera.account-overlay=demo-preview-logout-cleanup` dokumentieren dies.
+Ein ungepruefter Standard-Build von main wuerde dagegen bereits das neue
+Account-/Router-Pairing ausliefern und ist NICHT derselbe Cloud-Stand.
+
+Die 77 bisherigen oeffentlichen Dateien bleiben erhalten; hinzu kommen nur
+Keycloak-Adapter, Source-Map und Lizenz unter `vendor/` (80 Dateien insgesamt).
+Website, Support, Anleitung, nginx und die lokalen Schutz-Entwurfsmodelle sind
+bytegleich zum vorherigen Cloud-Stand. Ausschliesslich das Frontend-Image wurde
+per JSON-Patch mit Ressourcen-Version- und Pod-Template-Pruefung ersetzt.
+Backend, Keycloak, Broker, PVCs, Secrets, Services und Ingress sowie die
+Identitaeten/Neustartzaehler aller anderen Pods sind unveraendert.
+
+Pruefungen: 110 JavaScript-Tests, ein Website-Navigationstest und 83
+Browser-Szenarien erfolgreich. Zusaetzlich bestehen die Topologie-Vollbildtests
+und `Applikation/tests/presentation-browser.cjs` fuer explizite Demo-Auswahl,
+normale Konten, Offline-/Live-Wechsel, lokale Gruppen/Vorlagen und unveraenderte
+Verbindungszustaende. Browser-Workflows wurden am fertigen Image und auf den
+ausgelieferten Cloud-Dateien mit isolierten API-/Anmelde-Fixtures geprueft;
+kein Test-Schreibzugriff erreichte Backend oder Router. Die echte
+Keycloak-Weiterleitung und Loginmaske wurden ohne Zugangsdaten geprueft.
+Ein echter Login mit bestehendem Passwort und die physische Routerwirkung
+wurden dabei nicht erneut ausgefuehrt.
+
+Registry- und Pod-Digest sowie alle 80 Datei-Hashes stimmen ueberein. Die
+oeffentlichen Seiten und Keycloak-Discovery liefern 200; die Router-API ohne
+Token liefert erwartungsgemaess 401. Geaenderte HTML-/JS-/CSS-Dateien werden
+mit `no-cache, must-revalidate` ausgeliefert. Die roten GitHub-Checks betreffen
+den Backend-Build-Workflow; dessen externe Laufprotokolle waren bei dieser
+Pruefung nicht zugaenglich und sind hiermit nicht als behoben bestaetigt.
+
+Frontend-Rollback: nur das Image auf
+`ghcr.io/denizbernecker/nethera-frontend:20261116-142215@sha256:5a73ec0742fca46e7269890cc11c562328b9759f15232d82d3ca7feb56078428`
+zuruecksetzen; keinen kompletten Stack oder Realm-Import anwenden.
+
 ### Topologie mit lokalen Schutz-Entwuerfen vom 16.11.2026
 
 Frontend-Quellstand: `0f3801192c2843b391c320e653a116b0911a90bf`.

@@ -5,52 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Netzwerk-Topologie</title>
   <link rel="icon" href="nethera_logo.png">
-  <link rel="stylesheet" href="topologie.css?v=20261118-fullscreen2">
-  <link rel="stylesheet" href="data-source.css?v=20261118-fullscreen2">
+  <link rel="stylesheet" href="topologie.css?v=20261119-fill2">
+  <link rel="stylesheet" href="data-source.css?v=20261119-polish">
 </head>
 <body>
   <main class="topology-workspace">
     <header class="topology-header">
       <div><p class="eyebrow">Nethera Dashboard</p><h1>Topologie</h1><p id="network-summary" role="status">Netzwerk wird geladen …</p></div>
       <div class="topology-tools">
+        <div class="view-modes" role="group" aria-label="Layout">
+          <button type="button" data-layout="klassisch" aria-pressed="false">Klassisch</button>
+          <button type="button" data-layout="baum" aria-pressed="false">Baum</button>
+        </div>
         <div class="view-modes" role="group" aria-label="Topologieansicht">
           <button type="button" data-view="groups" aria-pressed="true">Gruppen</button>
           <button type="button" data-view="connections" aria-pressed="false">Verbindungen</button>
         </div>
+        <button type="button" class="legend-item online-filter" id="online-filter" aria-pressed="false" disabled title="Nur Geräte zeigen, die gerade verbunden sind"><span class="online-dot" aria-hidden="true"></span>Nur online<span class="legend-count" id="online-count"></span></button>
+        <button class="icon-button" id="open-device-search" type="button" aria-label="Gerät suchen" title="Gerät suchen" aria-expanded="false" aria-controls="device-search-panel"><i data-lucide="search"></i></button>
+        <button class="icon-button" id="fullscreen-network" type="button" aria-label="Vollbild öffnen" title="Vollbild öffnen" aria-pressed="false"><i data-lucide="maximize"></i></button>
         <button class="icon-button" id="reload-network" aria-label="Netzwerk neu laden" title="Netzwerk neu laden"><i data-lucide="refresh-cw"></i></button>
       </div>
     </header>
     <div id="network-notice" class="network-notice" role="status" hidden></div>
-    <section class="legend-bar" aria-label="Legende und Gruppenfilter">
-      <span class="legend-title">Gruppen</span><div id="group-legend"></div>
-      <button type="button" class="legend-item online-filter" id="online-filter" aria-pressed="false" disabled title="Nur Geräte zeigen, die gerade verbunden sind"><span class="online-dot" aria-hidden="true"></span>Nur online<span class="legend-count" id="online-count"></span></button>
-    </section>
     <div class="topology-body">
       <section class="graph-surface" aria-label="Netzwerkgraph">
-        <div id="network-graph" role="img" aria-label="Netzwerkgraph. Geräte sind auch über die Geräteauswahl erreichbar."></div>
+        <section class="legend-bar" aria-label="Legende und Gruppenfilter"><div id="group-legend"></div></section>
+        <button id="reset-network" type="button" title="Anordnung zurücksetzen">Anordnung zurücksetzen</button>
+        <div id="network-graph" class="topology-stage" role="group" aria-label="Netzwerkgraph. Geräte sind auch über die Geräteauswahl erreichbar."></div>
         <div id="graph-empty" role="status" hidden></div>
         <div class="graph-controls" aria-label="Graphwerkzeuge">
           <button class="icon-button" id="zoom-in" aria-label="Vergrößern" title="Vergrößern"><i data-lucide="plus"></i></button>
           <button class="icon-button" id="zoom-out" aria-label="Verkleinern" title="Verkleinern"><i data-lucide="minus"></i></button>
-          <button class="icon-button" id="fullscreen-network" type="button" aria-label="Vollbild öffnen" title="Vollbild öffnen" aria-pressed="false"><i data-lucide="maximize"></i></button>
-          <button class="icon-button" id="reset-network" aria-label="Anordnung zurücksetzen" title="Anordnung zurücksetzen"><i data-lucide="rotate-ccw"></i></button>
+        </div>
+        <div class="device-bar" id="device-bar">
+          <button type="button" id="previous-device" aria-label="Vorheriges Gerät" title="Vorheriges Gerät"><i data-lucide="chevron-left"></i></button>
+          <button type="button" id="device-bar-details" aria-label="Gerätedetails öffnen" aria-expanded="false" aria-controls="device-details-panel"></button>
+          <button type="button" id="next-device" aria-label="Nächstes Gerät" title="Nächstes Gerät"><i data-lucide="chevron-right"></i></button>
         </div>
         <span class="graph-caption" id="graph-caption">Gespeicherte Gruppenzuordnung</span>
-      </section>
-      <aside class="network-inspector" aria-label="Gerätedetails">
-        <button id="back-to-graph" class="back-to-graph" type="button"><i data-lucide="arrow-up"></i>Zum Netzwerk</button>
+      <aside id="device-search-panel" class="search-panel" aria-label="Gerät suchen" hidden>
+        <button id="close-device-search" class="panel-close" type="button" aria-label="Suche schließen" title="Suche schließen"><i data-lucide="x"></i></button>
         <label class="search-field" for="device-search"><i data-lucide="search"></i><input type="search" id="device-search" aria-label="Geräte durchsuchen" placeholder="Gerät, IP oder MAC suchen" autocomplete="off"></label>
         <label class="device-picker" for="device-picker">Gerät auswählen<select id="device-picker"><option value="">Netzwerkübersicht</option></select></label>
+      </aside>
+      <aside id="device-details-panel" class="network-inspector" aria-label="Gerätedetails" hidden>
+        <button id="close-device-details" class="panel-close" type="button" aria-label="Details schließen" title="Details schließen"><i data-lucide="x"></i></button>
         <div id="device-details" aria-live="polite"></div>
       </aside>
+      </section>
     </div>
   </main>
   <script src="config.js"></script>
   <script src="api.js?v=20261120-live-rules"></script>
-  <script src="vendor/cytoscape.min.js"></script>
   <script src="vendor/lucide.min.js"></script>
   <script src="security-draft.js?v=20261116-topology-draft"></script>
-  <script src="topology-model.js?v=20261118-fullscreen2"></script>
-  <script src="topologie_custom.js?v=20261118-fullscreen2"></script>
+  <script src="topology-model.js?v=20261119-layouts"></script>
+  <script src="topology-renderer.js?v=20261119-mockup"></script>
+  <script src="topology-classic.js?v=20261119-mockup"></script>
+  <script src="topology-tree.js?v=20261119-mockup"></script>
+  <script src="topologie_custom.js?v=20261119-mockup"></script>
 </body>
 </html>
