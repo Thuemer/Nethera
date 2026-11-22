@@ -46,6 +46,47 @@ ein Cloud-Rollout synchronisiert diese Daten automatisch.
 
 ## Aenderungen deployen
 
+### Zeitplan-Bridge: kompatibler Cloud-Build (22.11.2026)
+
+Die laufende Cloud benutzt noch die gemeinsame Router-Zuordnung. Der Branch
+`feat/router-time-schedules` enthaelt durch seine Basis bereits die separate
+Ownership-Arbeit des Teams. Diese ist fuer diesen Rollout **nicht** freigegeben.
+Nicht das gesamte Branch-Backend bauen und keine Ownership-Migration ausfuehren.
+
+`prepare-time-release.mjs` erzeugt einen neuen, isolierten Build-Ordner:
+
+```sh
+node deploy/leocloud/prepare-time-release.mjs /tmp/nethera-time-release <commit>
+```
+
+Backend-Basis ist exakt `6065a405` plus nur `DeviceIngestor.java` und dessen Test
+aus `655dd275`, wie im laufenden Release vom 20.11. Dazu kommen die explizit im
+Skript gelisteten Zeitplan-Dateien und `time-schedules-cloud.patch`. Der Patch
+erhaelt die angemeldete gemeinsame Nutzung von Router `nethera.router.id` und
+verhindert Zeitplan-Schreibzugriffe auf andere Router. DNS-Steuerung und deren
+Konfiguration bleiben auf der laufenden Basis. Das Frontend basiert auf
+`f38f6204` plus den Zeitplan-Aenderungen; `account.js` bleibt bytegleich zur Cloud
+(SHA256 `8912b216f8c534c814434cc235ceb988f20bae0a0bafc41fe85473e4328a3b2f`).
+
+Vor dem Backend-Imagewechsel beide Datenbanken sichern und **nur**
+`Backend/Nethera/migrations/20261122_time_control_bridge.sql` ausfuehren.
+Bestehende Zeitregeln erhalten `router_enforcement=false` und werden nicht
+automatisch aktiviert. Schema-Modus bleibt `validate`, kein Seed-Import.
+Der MQTT-Zeitplan-Retry verwendet einen eigenen Vert.x-Timer/Worker, damit der
+allgemeine Scheduler weiterhin ausgeschaltet bleiben kann. Keine Broker-,
+Keycloak-, Secret- oder Volume-Aenderung erforderlich.
+
+Die erzeugte `release-source.json` dokumentiert die Basis und die Quellrevision.
+`WORKTREE` ist nur fuer lokale Vorabtests; ein Release muss einen Commit angeben.
+Die fuenf Tests in `account-router.test.cjs` gehoeren ausschliesslich zur noch
+nicht ausgerollten Ownership-Oberflaeche. Sie werden im vollstaendigen Branch
+getestet, nicht gegen das absichtlich beibehaltene Cloud-Login. Alle anderen
+Frontend-Tests muessen auch im Cloud-Build bestehen.
+
+Rollback: aktive Testregeln zuerst entfernen und die Routerbestaetigung abwarten,
+dann bei Bedarf die vorherigen Images zuruecksetzen. Additive Tabellen/Spalten
+und beide Datenbanken bleiben erhalten; nie Volumes loeschen.
+
 Code- oder Theme-Aenderungen erscheinen nicht automatisch auf LeoCloud. Fuer
 Frontend- oder Backend-Code ist jeweils ein neuer Image-Build mit einem neuen
 UTC-Zeitstempel-Tag, ein Push nach GHCR und eine Anpassung des entsprechenden

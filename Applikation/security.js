@@ -760,11 +760,9 @@ async function saveAdProtection(event) {
 
 async function applyPresetToDevice(deviceId, preset) {
   if (preset.blockedFrom && preset.blockedUntil) {
-    const current = state.timeLimits.find(item => Number(item.deviceId) === Number(deviceId));
     await apiJson(`${API_BASE_URL}/api/device-time-limits/${deviceId}`, { method: 'PUT', body: JSON.stringify({
       deviceId, dailyLimitMinutes: preset.timeLimitMinutes || 0, blockedFrom: preset.blockedFrom,
-      blockedUntil: preset.blockedUntil, usedMinutesToday: current?.usedMinutesToday || 0,
-      status: 'active', note: `Preset: ${preset.name}`
+      blockedUntil: preset.blockedUntil, status: 'active', note: `Preset: ${preset.name}`
     }) });
   }
   await apiJson(`${SECURITY_API}/devices/${deviceId}/preset/${preset.id}`, { method: 'PUT' });

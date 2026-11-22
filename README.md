@@ -35,6 +35,18 @@ Ein Compose-Befehl startet Frontend, Backend, Keycloak, den MQTT-Broker (Mosquit
 
 ### Router-Telemetrie (MQTT)
 
+**Zeitpläne #27, Arbeitsstand 22.11.2026:** Moritz' Agent-Implementierung wurde
+gegen Firewall-/Speicherfehler abgesichert und eine kurze Sperrzeit am echten
+Cudy mit einem separaten iPhone geprüft. Auf `feat/router-time-schedules` ist
+zusätzlich die bestehende Internetzeiten-Seite über Backend und MQTT angebunden:
+tägliche Sperrzeiten (Wien), Tagesbudget, Pausieren und Entfernen mit Routerbestätigung.
+Vor dem Backend-Update muss `Backend/Nethera/migrations/20261122_time_control_bridge.sql`
+angewendet werden; alte Regeln bleiben bis zum erneuten Speichern inaktiv.
+Diese Backend-/Frontend-Anbindung ist lokal getestet, **noch nicht auf LeoCloud**.
+Gruppen-Zeitpläne, Wochentagsauswahl und Sofortfreigaben bleiben im OpenSpec offen.
+[Vertrag und Tests](router/agent/README.md),
+[Prüfprotokoll und offene Abnahme](openspec/changes/device-time-limits/verification.md).
+
 Der Broker lauscht auf Port `1883`. Dieser Port ist bewusst im ganzen LAN erreichbar, weil der Router ihn erreichen muss. Ohne Router kann man Live-Daten simulieren:
 
 ```bash

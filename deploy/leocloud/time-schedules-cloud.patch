@@ -1,0 +1,149 @@
+--- a/Backend/Nethera/src/main/java/at/htlleonding/boundary/DeviceTimeLimitsResource.java
++++ b/Backend/Nethera/src/main/java/at/htlleonding/boundary/DeviceTimeLimitsResource.java
+@@ -3,7 +3,8 @@
+ import at.htlleonding.dto.DeviceTimeLimitDto;
+ import at.htlleonding.model.DeviceTimeLimit;
+ import at.htlleonding.repository.DeviceTimeLimitsRepository;
+-import at.htlleonding.services.CurrentRouter;
++import at.htlleonding.model.ConnectedDevice;
++import org.eclipse.microprofile.config.inject.ConfigProperty;
+ import at.htlleonding.control.TimeControlChanged;
+ import at.htlleonding.control.TimeControlPublisher;
+ import at.htlleonding.control.TimeDesiredState;
+@@ -28,25 +29,35 @@
+     @Inject
+     DeviceTimeLimitsRepository repository;
+ 
+-    @Inject
+-    CurrentRouter currentRouter;
++    // Preserve the deployed authenticated shared-router model for this release.
++    @ConfigProperty(name = "nethera.router.id", defaultValue = "1")
++    long routerId;
+ 
++    private ConnectedDevice device(Long id) {
++        ConnectedDevice device = em.find(ConnectedDevice.class, id);
++        if (device == null || device.getRouter() == null || device.getRouter().getId() != routerId) {
++            throw new NotFoundException("Geraet nicht gefunden");
++        }
++        return device;
++    }
++
+     @Inject TimeControlPublisher publisher;
+     @Inject Event<TimeControlChanged> changed;
+     @Inject EntityManager em;
+ 
+     @GET
+     public List<DeviceTimeLimitDto> getAll() {
+-        return repository.findByDeviceIds(currentRouter.deviceIds()).stream().map(this::toDto).toList();
++        return em.createQuery("SELECT l FROM DeviceTimeLimit l WHERE l.device.router.id = :id", DeviceTimeLimit.class)
++                .setParameter("id", routerId).getResultStream().map(this::toDto).toList();
+     }
+ 
+-    // One transaction so the ownership-checked device is managed by the same session that saves the limit
++    // Validate the configured router and save the device rule in one transaction.
+     @PUT
+     @Path("{deviceId}")
+     @Transactional
+     public Response save(@PathParam("deviceId") Long deviceId, DeviceTimeLimitDto dto) {
+         RequestValidation.requireBody(dto);
+-        var device = currentRouter.device(deviceId);
++        var device = device(deviceId);
+         long routerId = device.getRouter().getId();
+         em.lock(device.getRouter(), LockModeType.PESSIMISTIC_WRITE);
+         DeviceTimeLimit input = new DeviceTimeLimit();
+@@ -79,7 +90,7 @@
+     @Path("{deviceId}")
+     @Transactional
+     public Response delete(@PathParam("deviceId") Long deviceId) {
+-        var device = currentRouter.device(deviceId);
++        var device = device(deviceId);
+         long routerId = device.getRouter().getId();
+         em.lock(device.getRouter(), LockModeType.PESSIMISTIC_WRITE);
+         if (!repository.deleteByDeviceId(deviceId)) {
+--- a/Backend/Nethera/src/main/java/at/htlleonding/boundary/RouterControlResource.java
++++ b/Backend/Nethera/src/main/java/at/htlleonding/boundary/RouterControlResource.java
+@@ -2,6 +2,8 @@
+ 
+ import at.htlleonding.control.DnsDesiredState;
+ import at.htlleonding.control.RouterControlPublisher;
++import at.htlleonding.control.TimeControlPublisher;
++import at.htlleonding.control.TimeControlStatus;
+ import at.htlleonding.model.BlockList;
+ import at.htlleonding.model.Config;
+ import at.htlleonding.model.Router;
+@@ -42,6 +44,9 @@
+     @ConfigProperty(name = "nethera.router.id", defaultValue = "1")
+     long routerId;
+ 
++    @Inject TimeControlPublisher timePublisher;
++    @Inject TimeControlStatus timeStatus;
++
+     @GET
+     @Path("status")
+     public StatusDto status() {
+@@ -69,15 +74,18 @@
+             }
+         }
+ 
++        var time = timeStatus.read(routerId, connection);
+         return new StatusDto(
++                routerId,
+                 connection,
+                 state == null ? null : state.getCheckedAt(),
+-                new CapabilitiesDto(publisher.enabled()),
++                new CapabilitiesDto(publisher.enabled(), timePublisher.enabled()),
+                 new AdblockDto(installed, enabled, adblockApplied),
+                 Map.of(),
+                 blocklists,
+-                Map.of(),
+-                confirmed ? state.getError() : null);
++                time.devices(),
++                confirmed ? state.getError() : null,
++                time.checkedAt(), time.error(), "Europe/Vienna", time.applied());
+     }
+ 
+     // The agent installs adblock-fast by itself as soon as adblock is wanted. So "install" switches
+@@ -104,12 +112,12 @@
+     }
+ 
+     @JsonInclude(JsonInclude.Include.NON_NULL)
+-    public record StatusDto(String connection, Instant checkedAt, CapabilitiesDto capabilities, AdblockDto adblock,
++    public record StatusDto(long routerId, String connection, Instant checkedAt, CapabilitiesDto capabilities, AdblockDto adblock,
+                             Map<String, Object> priority, Map<String, BlocklistStatusDto> blocklists,
+-                            Map<String, Object> timeLimits, String error) {
++                            Map<String, Object> timeLimits, String error, Instant timeCheckedAt, String timeError, String timezone, Boolean timeApplied) {
+     }
+ 
+-    public record CapabilitiesDto(boolean adblockInstall) {
++    public record CapabilitiesDto(boolean adblockInstall, boolean timeControl) {
+     }
+ 
+     public record AdblockDto(boolean installed, boolean enabled, boolean applied) {
+--- a/Backend/Nethera/src/main/java/at/htlleonding/boundary/SecurityStateResource.java
++++ b/Backend/Nethera/src/main/java/at/htlleonding/boundary/SecurityStateResource.java
+@@ -241,7 +241,7 @@
+     }
+ 
+     private LimitDto limitDto(DeviceTimeLimit limit) {
+-        return new LimitDto(limit.getId(), limit.getDevice().getId(), limit.getDailyLimitMinutes(), limit.getUsedMinutesToday(), limit.getBlockedFrom(), limit.getBlockedUntil(), limit.getStatus(), limit.getNote());
++        return new LimitDto(limit.getId(), limit.getDevice().getId(), limit.getDailyLimitMinutes(), null, limit.getBlockedFrom(), limit.getBlockedUntil(), limit.getStatus(), limit.getNote());
+     }
+ 
+     public record SecurityStateDto(
+--- a/Backend/Nethera/src/test/java/at/htlleonding/mqtt/TimeControlIT.java
++++ b/Backend/Nethera/src/test/java/at/htlleonding/mqtt/TimeControlIT.java
+@@ -1,6 +1,5 @@
+ package at.htlleonding.mqtt;
+ 
+-import at.htlleonding.boundary.TestRouters;
+ import at.htlleonding.model.*;
+ import at.htlleonding.telemetry.TimeIngestor;
+ import com.fasterxml.jackson.databind.JsonNode;
+@@ -30,7 +29,6 @@
+ 
+     @Test @TestSecurity(user = "time-owner")
+     void restBrokerReadbackPauseDeleteAndDnsIsolation() throws Exception {
+-        TestRouters.own(em, "time-owner", 1L);
+         long id = QuarkusTransaction.requiringNew().call(() -> {
+             ConnectedDevice device = new ConnectedDevice(); device.setRouter(em.find(Router.class, 1L));
+             device.setMacAddress(MAC); device.setHostname("Time integration test");

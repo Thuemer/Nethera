@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Backend publishes the desired time state
-The backend SHALL publish, per router, the complete effective time rules of all its devices with a valid MAC address as one retained MQTT message on `nethera/<routerId>/config/time` with QoS 1. The message SHALL contain the schema version `v`, a positive `version`, the router's `timezone`, `untilClockSync` (`OPEN` or `BLOCK`) and a map from lowercase MAC address to `{windows, budgets, override}`. Devices without any active rule SHALL be omitted. The backend SHALL publish after every committed change of schedules, assignments, overrides, groups, group memberships or the time settings, and once at startup. `version` SHALL only increase when the content changed.
+The backend SHALL publish, per router, the complete effective time rules of all its devices with a valid MAC address as one retained MQTT message on `nethera/<routerId>/config/time` with QoS 1. The message SHALL contain the schema version `v`, a positive `version`, the router's `timezone`, `untilClockSync` (`OPEN` or `BLOCK`) and a map from lowercase MAC address to `{windows, budgets, block, allow}`. Devices without any active rule SHALL be omitted. The backend SHALL publish after every committed change of schedules, assignments, overrides, groups, group memberships or the time settings, and once at startup. `version` SHALL only increase when the content changed.
 
 #### Scenario: Schedule changed
 - **WHEN** the owner changes a window of a schedule assigned to a group with two devices
@@ -30,6 +30,14 @@ The router agent SHALL subscribe to `config/time`. It SHALL refuse a message wit
 - **WHEN** the router reboots and cannot reach the broker
 - **THEN** the agent enforces the last saved rules
 
+#### Scenario: Missing devices field or replay
+- **WHEN** a message omits `devices`, contains null instead of an object, has an older version or reuses the current version for changed rules
+- **THEN** saved and live rules remain unchanged and the received message is not confirmed as applied
+
+#### Scenario: Persistence fails
+- **WHEN** the desired state cannot be saved
+- **THEN** the agent keeps the previous live rules and reports an error
+
 ### Requirement: Blocking means no internet access
 A blocked device SHALL NOT be able to send traffic through the router to the internet (IPv4 and IPv6), identified by its MAC address. Traffic inside the home network, DHCP and DNS to the router SHALL NOT be affected. Existing connections SHALL be interrupted when the block starts. A device that is no longer blocked SHALL regain access without reconnecting.
 
@@ -56,6 +64,10 @@ The agent SHALL evaluate each device's effective rule in the router's configured
 - **WHEN** a window from 21:00 to 07:00 is evaluated on the day after the switch to summer time
 - **THEN** the block starts at 21:00 local time
 
+#### Scenario: Repeated autumn hour
+- **WHEN** a selected local window covers 02:15 to 02:45 on the autumn clock change
+- **THEN** it applies in both occurrences of those local minutes
+
 #### Scenario: Override expires
 - **WHEN** a `BLOCK` override with `until` 18:00 is active and the clock passes 18:00
 - **THEN** the device's windows and budget apply again
@@ -75,6 +87,10 @@ For every device with a budget, the agent SHALL count used minutes per local day
 - **WHEN** the router reboots at 12:00 after 45 counted minutes
 - **THEN** counting continues from at least 40 minutes
 
+#### Scenario: Unsynchronized reboot
+- **WHEN** the boot clock indicates a different day before NTP synchronization
+- **THEN** saved usage is not overwritten and is restored after synchronization using the configured time zone
+
 ### Requirement: Behaviour while the clock is not synchronised
 Until NTP has set the router's clock after a boot, the agent SHALL NOT evaluate windows, budgets or timed overrides and SHALL NOT count minutes. With `untilClockSync` `OPEN`, only overrides with `until: null` SHALL apply. With `BLOCK`, every device that has any rule SHALL be blocked (reason `clock`), except devices with an `ALLOW` override with `until: null`.
 
@@ -92,3 +108,22 @@ When a device no longer appears in the desired state, or an assignment, override
 #### Scenario: Schedule deleted during its window
 - **WHEN** the owner deletes a schedule while its window blocks a device
 - **THEN** the device has internet access again after the new state is applied
+
+### Requirement: Time changes preserve existing DNS controls
+Time updates SHALL change only their own nft objects in a checked atomic transaction, without reloading all of fw4 or modifying DNS configuration. Actual kernel state SHALL be reconciled after reloads. Errors SHALL result in `applied: false`, never a success acknowledgement. Flow offloading that bypasses the forward hook SHALL be reported as unsupported without silently changing global router settings.
+
+#### Scenario: First window without a budget
+- **WHEN** a device receives a window but no daily budget
+- **THEN** the time chain and blocked set are created and the window is enforced
+
+#### Scenario: Time update beside device website blocks
+- **WHEN** time rules add or remove a device while DNS sets already contain resolved addresses
+- **THEN** those DNS sets, addresses and rules are preserved
+
+#### Scenario: Firewall apply fails
+- **WHEN** nft rejects a time transaction
+- **THEN** the previous live rules remain in place, the report contains an error and a later tick retries
+
+#### Scenario: DNS reload clears the time set
+- **WHEN** a successful DNS-control reload clears the set while a window is active
+- **THEN** the agent refreshes the time set without charging an additional usage minute

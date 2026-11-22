@@ -1,6 +1,71 @@
 # Routersteuerung: Übergabe für Backend und Cudy
 
-Stand: 15. November 2026. Dieses Dokument beschreibt den Vertrag der neuen Frontend-Oberfläche. Die Änderungen in diesem Arbeitsstand betreffen **nur das Frontend**. Weder Routerbefehle noch Backend-Endpunkte wurden implementiert oder am Cudy getestet.
+Historischer Frontend-Vertrag vom 15. November 2026. Die damaligen Änderungen
+betrafen nur das Frontend; die folgenden Tabellen sind kein aktueller
+Rollout-Nachweis für #23/#25. Aktuelle Teilumsetzung für #27 siehe unten und im
+[Prüfprotokoll](../openspec/changes/device-time-limits/verification.md).
+
+## Ergänzung #27 vom 22. November 2026
+
+Der Routerteil auf `feat/router-time-schedules` basiert auf Moritz' `b46710a`
+aus `leocloud-deployment`. Zeitfenster funktionieren im separaten Cudy-Test;
+der Nutzer bestätigte Sperre und automatische Freigabe seines Test-iPhones.
+Der [Agent-Vertrag](../router/agent/README.md) definiert die exakten JSON-Felder.
+
+- Backend sendet den vollständigen, pro MAC aufgelösten Zustand auf
+  `nethera/<routerId>/config/time` (QoS 1, retained). Die erste kompatible Stufe
+  nutzt vorhandene tägliche Geräteregeln, noch keine Gruppen-Zeitpläne.
+  `devices: {}` entfernt Regeln, fehlendes/null ist ungültig.
+- Agent meldet `telemetry/time` mit `version`, `applied`, `clockSynced`, `error`
+  und `devices[mac]` mit `usedMinutes`, `budgetMinutes`, `blocked`, `reason`.
+  Backend bildet auf Geräte-IDs ab und prüft Version, Online-Status und Frische.
+- `TimeControlPublisher`, Report-Ingestion, additive Migration und die Anbindung
+  von `PUT/DELETE /api/device-time-limits/{deviceId}` sind lokal implementiert.
+  Die bestehende Oberfläche bleibt erhalten. Kein Rollout dieser Brücke bisher.
+- Nichts aus einer lokalen Vorschau darf als am Router aktiv angezeigt werden.
+  Ein fehlgeschlagener Report bestätigt auch seine Gerätefelder nicht als wirksam.
+- Bei Flow-Offloading meldet der Agent einen Fehler, statt globale Routeroptionen
+  zu ändern. Die Budgetschwelle braucht noch Hardware-Kalibrierung; der bisherige
+  Sperrtest ist keine vollständige Abnahme von Budget, Neustart oder Mitternacht.
+
+Die weiteren Umsetzungsschritte stehen im bestehenden OpenSpec-Change
+[`device-time-limits`](../openspec/changes/device-time-limits/tasks.md).
+
+### Kompatible Backend-Brücke
+
+- Migration **vor** dem neuen Backend: `20261122_time_control_bridge.sql` ergänzt
+  `device_time_limit.router_enforcement` (Default false) und `time_control_state`.
+  Kein Löschen/Umbenennen vorhandener Tabellen, keine Änderung an Keycloak.
+- Erst bewusstes Speichern oder erneutes Zuweisen einer Zeitvorlage setzt
+  `routerEnforcement: true`. Alte Regeln werden beim Start nicht aktiviert.
+- Zeitfenster gelten täglich in `Europe/Vienna`, einschließlich Mitternacht und
+  Sommerzeit. Ohne synchronisierte Routeruhr gilt `OPEN`. Andere Zeitzonen,
+  Gruppenpläne, Wochentagsauswahl und Sofortaktionen sind noch nicht angebunden.
+- API-Tagesbudget `0` bedeutet wie bisher unbegrenzt. Der Adapter lässt deshalb
+  die MQTT-Budgets weg, statt die Agent-Bedeutung `0 = kein Internet` auszulösen.
+- Browserwerte `usedMinutesToday` werden ignoriert und bei gespeicherten Regeln
+  als null ausgegeben. Nur `timeLimits[id].usedMinutesToday` aus dem Status gilt
+  als Messwert, zusätzlich muss `clockSynced` wahr sein.
+- `capabilities.timeControl`: MQTT-Steuerpfad verfügbar, nicht selbst ein ACK.
+  `timeApplied`: null/fehlend vor erster Konfiguration, false bei ausstehender,
+  fehlgeschlagener, unvollständiger, veralteter oder offline Bestätigung; true
+  erst bei passender Version und vollständigem Report. Bestätigt auch Entfernen.
+- `timeCheckedAt`, `timeError`, `timezone` ergänzen den Status. Zeitfehler werden
+  **nicht** in das bestehende DNS-Feld `error` geschrieben. Berichte müssen jünger
+  als 180 Sekunden sein; Zeitstempel mehr als 5 Sekunden in der Zukunft werden
+  verworfen. Retained Zeitberichte machen einen Router nicht online.
+- `timeLimits[id]` enthält `applied`, optional `blockedNow`, `reason`,
+  `usedMinutesToday`, `budgetMinutesToday`, `clockSynced`, `error` und
+  `requiresActivation`. Pausierte Regeln können als entfernt bestätigt sein,
+  ohne erfundene Verbrauchs-/Sperrwerte.
+- Speichern bereitet die neue Version in derselben Datenbanktransaktion vor.
+  MQTT erfolgt erst nach Commit, beim Start und alle 60 Sekunden erneut für
+  bereits konfigurierte Router. DNS verwendet weiter seinen eigenen Publisher.
+- Internetzeiten fragt alle 5 Sekunden nach, solange die Seite sichtbar ist;
+  geöffnete Gerätedetails und Tastaturfokus bleiben beim Aktualisieren erhalten.
+
+Die folgenden Tabellen dokumentieren den früheren Frontend-Ausgangsstand, nicht
+die aktuelle Implementierung oder einen neuen Produktions-Rollout.
 
 ## Bereits vorhandene Schreibwege
 

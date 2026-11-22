@@ -2,6 +2,7 @@ package at.htlleonding.mqtt;
 
 import at.htlleonding.model.Router;
 import at.htlleonding.telemetry.ControlIngestor;
+import at.htlleonding.telemetry.TimeIngestor;
 import at.htlleonding.telemetry.DeviceIngestor;
 import at.htlleonding.telemetry.DnsIngestor;
 import at.htlleonding.telemetry.MetadataIngestor;
@@ -23,7 +24,7 @@ public class TelemetryMessageHandler {
 
     private static final Logger LOG = Logger.getLogger(TelemetryMessageHandler.class);
 
-    private static final Pattern TOPIC = Pattern.compile("nethera/(\\d+)/(status|telemetry/(metadata|speed|dns|devices|control))");
+    private static final Pattern TOPIC = Pattern.compile("nethera/(\\d+)/(status|telemetry/(metadata|speed|dns|devices|control|time))");
     // The backend's own desired-state messages come back through the nethera/# subscription
     private static final Pattern OWN_CONFIG = Pattern.compile("nethera/[^/]+/config/.*");
 
@@ -44,6 +45,8 @@ public class TelemetryMessageHandler {
 
     @Inject
     ControlIngestor controlIngestor;
+
+    @Inject TimeIngestor timeIngestor;
 
     @Inject
     TelemetryFreshness freshness;
@@ -76,6 +79,11 @@ public class TelemetryMessageHandler {
             // Retained, so it also arrives when the backend starts: no proof that the router is alive now
             controlIngestor.ingest(router, TelemetryPayloadParser.control(payload));
             return;
+        }
+
+        if (stream.equals("time")) {
+            timeIngestor.ingest(router, TelemetryPayloadParser.time(payload));
+            return; // Retained time reports do not prove a current connection.
         }
 
         switch (stream) {

@@ -4,6 +4,12 @@ import at.htlleonding.dto.DeviceTimeLimitDto;
 import at.htlleonding.model.DeviceTimeLimit;
 import at.htlleonding.repository.DeviceTimeLimitsRepository;
 import at.htlleonding.services.CurrentRouter;
+import at.htlleonding.control.TimeControlChanged;
+import at.htlleonding.control.TimeControlPublisher;
+import at.htlleonding.control.TimeDesiredState;
+import jakarta.enterprise.event.Event;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -25,6 +31,10 @@ public class DeviceTimeLimitsResource {
     @Inject
     CurrentRouter currentRouter;
 
+    @Inject TimeControlPublisher publisher;
+    @Inject Event<TimeControlChanged> changed;
+    @Inject EntityManager em;
+
     @GET
     public List<DeviceTimeLimitDto> getAll() {
         return repository.findByDeviceIds(currentRouter.deviceIds()).stream().map(this::toDto).toList();
@@ -36,15 +46,31 @@ public class DeviceTimeLimitsResource {
     @Transactional
     public Response save(@PathParam("deviceId") Long deviceId, DeviceTimeLimitDto dto) {
         RequestValidation.requireBody(dto);
+        var device = currentRouter.device(deviceId);
+        long routerId = device.getRouter().getId();
+        em.lock(device.getRouter(), LockModeType.PESSIMISTIC_WRITE);
         DeviceTimeLimit input = new DeviceTimeLimit();
         input.setDailyLimitMinutes(RequestValidation.minutesPerDay("dailyLimitMinutes", dto.dailyLimitMinutes()));
-        input.setUsedMinutesToday(RequestValidation.minutesPerDay("usedMinutesToday", dto.usedMinutesToday()));
-        input.setBlockedFrom(RequestValidation.timeOfDay("blockedFrom", dto.blockedFrom()));
-        input.setBlockedUntil(RequestValidation.timeOfDay("blockedUntil", dto.blockedUntil()));
+        try {
+            input.setBlockedFrom(TimeDesiredState.time(dto.blockedFrom()));
+            input.setBlockedUntil(TimeDesiredState.time(dto.blockedUntil()));
+        } catch (IllegalArgumentException e) { throw new BadRequestException(e.getMessage()); }
+        if ((input.getBlockedFrom() == null) != (input.getBlockedUntil() == null)
+                || (input.getBlockedFrom() != null && input.getBlockedFrom().equals(input.getBlockedUntil()))) {
+            throw new BadRequestException("Bitte zwei unterschiedliche Uhrzeiten angeben");
+        }
+        if (input.getBlockedFrom() == null && (dto.dailyLimitMinutes() == null || dto.dailyLimitMinutes() == 0)) {
+            throw new BadRequestException("Sperrzeit oder Tagesbudget fehlt");
+        }
         input.setStatus(dto.status() == null ? "active" : dto.status());
+        if (!List.of("active", "paused").contains(input.getStatus())) throw new BadRequestException("Ungültiger Regelstatus");
+        if (dto.note() != null && dto.note().length() > 160) throw new BadRequestException("Notiz ist zu lang");
         input.setNote(dto.note());
 
-        DeviceTimeLimit saved = repository.save(currentRouter.device(deviceId), input);
+        DeviceTimeLimit saved = repository.save(device, input);
+        try { publisher.prepare(routerId); }
+        catch (IllegalArgumentException e) { throw new BadRequestException(e.getMessage()); }
+        changed.fire(new TimeControlChanged(routerId));
 
         return Response.ok(toDto(saved)).build();
     }
@@ -53,11 +79,15 @@ public class DeviceTimeLimitsResource {
     @Path("{deviceId}")
     @Transactional
     public Response delete(@PathParam("deviceId") Long deviceId) {
-        currentRouter.device(deviceId);
+        var device = currentRouter.device(deviceId);
+        long routerId = device.getRouter().getId();
+        em.lock(device.getRouter(), LockModeType.PESSIMISTIC_WRITE);
         if (!repository.deleteByDeviceId(deviceId)) {
             throw new NotFoundException("Zeitlimit nicht gefunden");
         }
 
+        publisher.prepare(routerId);
+        changed.fire(new TimeControlChanged(routerId));
         return Response.noContent().build();
     }
 
@@ -66,11 +96,12 @@ public class DeviceTimeLimitsResource {
                 limit.getId(),
                 limit.getDevice().getId(),
                 limit.getDailyLimitMinutes(),
-                limit.getUsedMinutesToday(),
+                null,
                 limit.getBlockedFrom(),
                 limit.getBlockedUntil(),
                 limit.getStatus(),
-                limit.getNote()
+                limit.getNote(),
+                limit.getRouterEnforcement()
         );
     }
 }

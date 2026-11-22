@@ -35,6 +35,7 @@ class TelemetryMessageHandlerTest {
         handler.dnsIngestor = mock(DnsIngestor.class);
         handler.deviceIngestor = mock(DeviceIngestor.class);
         handler.controlIngestor = mock(ControlIngestor.class);
+        handler.timeIngestor = mock(at.htlleonding.telemetry.TimeIngestor.class);
         handler.freshness = mock(TelemetryFreshness.class);
 
         router = new Router();
@@ -106,6 +107,14 @@ class TelemetryMessageHandlerTest {
         // The answer is retained and also arrives after a backend restart
         assertNull(router.getLastSeen());
         verifyNoInteractions(handler.freshness);
+    }
+
+    @Test
+    void timeAnswerDoesNotProveRouterIsAlive() {
+        handler.handle("nethera/1/telemetry/time", TimePayloadParserTest.REPORT);
+        verify(handler.timeIngestor).ingest(router, TelemetryPayloadParser.time(TimePayloadParserTest.REPORT));
+        assertNull(router.getLastSeen());
+        verifyNoInteractions(handler.freshness, handler.controlIngestor, handler.dnsIngestor);
     }
 
     @Test

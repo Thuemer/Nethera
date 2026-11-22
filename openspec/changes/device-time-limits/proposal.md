@@ -4,6 +4,23 @@ Time limits are a core Nethera feature ("Gruppe Kinder → offline → Zeitplan"
 
 ## What Changes
 
+### Delivery phases (22 November 2026)
+
+The immediate request is to connect the **existing** Internetzeiten page while
+preserving current features. Phase A therefore keeps `DeviceTimeLimit`, its API,
+security presets and topology data shape. It adds an opt-in daily-rule adapter,
+MQTT publisher/readback, an additive migration and frontend confirmation polling.
+Only explicitly re-saved rules are sent; legacy rows remain inactive. API budget
+zero remains unlimited. Timezone is Europe/Vienna and unsynchronised-clock policy
+is OPEN in this phase. Preset assignment still copies a chosen daily rule, but
+never writes a browser usage counter.
+
+The reusable schedule/group/override model and the breaking changes listed below
+are **Phase B, not part of the completed compatibility bridge**. Their tasks stay
+open. See design D11 and tasks section 8 for the tested Phase A scope.
+
+### Target architecture (Phase B)
+
 - New reusable **schedules** per router: a name, any number of blocked windows with weekdays (windows may cross midnight) and a daily internet budget per weekday
 - Schedules are **assigned** to devices or device groups; an assignment can be paused
 - New **instant actions** per device or group: "Jetzt offline" (block) and "Jetzt freigeben" (allow), each for a duration or until switched off

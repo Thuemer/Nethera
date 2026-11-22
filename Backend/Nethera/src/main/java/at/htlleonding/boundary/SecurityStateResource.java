@@ -256,7 +256,7 @@ public class SecurityStateResource {
     }
 
     private LimitDto limitDto(DeviceTimeLimit limit) {
-        return new LimitDto(limit.getId(), limit.getDevice().getId(), limit.getDailyLimitMinutes(), limit.getUsedMinutesToday(), limit.getBlockedFrom(), limit.getBlockedUntil(), limit.getStatus(), limit.getNote());
+        return new LimitDto(limit.getId(), limit.getDevice().getId(), limit.getDailyLimitMinutes(), null, limit.getBlockedFrom(), limit.getBlockedUntil(), limit.getStatus(), limit.getNote());
     }
 
     public record SecurityStateDto(

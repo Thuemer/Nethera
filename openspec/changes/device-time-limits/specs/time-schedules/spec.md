@@ -1,5 +1,8 @@
 ## ADDED Requirements
 
+The reusable model/API requirements below describe Phase B. The compatibility
+requirement at the end specifies the currently implemented Phase A (design D11).
+
 ### Requirement: Reusable schedules per router
 The system SHALL store schedules per router. A schedule SHALL have a name, a list of blocked windows and a list of daily budgets. A window SHALL consist of one or more weekdays (`MO`, `TU`, `WE`, `TH`, `FR`, `SA`, `SU`), a start time `from` and an end time `until` in `HH:mm`. A budget SHALL consist of one or more weekdays and a number of minutes between 0 and 1440. A schedule SHALL be usable by any number of assignments.
 
@@ -135,3 +138,26 @@ The page "Internetzeiten" SHALL let the owner create, edit and delete schedules 
 #### Scenario: Group offline from the page
 - **WHEN** the owner selects group "Kinder" and clicks "Jetzt offline" with "1 Stunde"
 - **THEN** the page sends one `BLOCK` override for the group with `until` one hour from now
+
+### Requirement: Compatible daily-rule bridge before Phase B
+Phase A SHALL retain the existing device-time-limit endpoints and security preset
+assignment behavior. A successful explicit rule save SHALL opt that device into
+router enforcement; legacy rows SHALL remain unarmed after migration. Only
+ROUTER-origin devices owned by the caller's router SHALL enter desired MQTT state.
+Rules SHALL use all seven weekdays, Europe/Vienna and OPEN until clock sync.
+API budget zero SHALL mean unlimited and SHALL NOT become a zero-minute MQTT
+budget. Browser usage counters SHALL be ignored. Failed validation SHALL leave
+the stored and published desired state unchanged. MQTT side effects SHALL occur
+only after transaction commit and SHALL NOT alter DNS desired state.
+
+#### Scenario: Existing rule after migration
+- **WHEN** the backend starts with a legacy daily rule and no explicit re-save
+- **THEN** that rule remains stored, `routerEnforcement` is false and it is not sent to the router
+
+#### Scenario: Explicit save with unlimited daytime use
+- **WHEN** the owner saves 21:00 to 07:00 with API budget zero
+- **THEN** the backend publishes that daily window without any daily budget entries
+
+#### Scenario: Pausing or deleting
+- **WHEN** the owner pauses or deletes an armed rule
+- **THEN** the MAC is removed from the full desired set and the old ACK no longer confirms the changed set

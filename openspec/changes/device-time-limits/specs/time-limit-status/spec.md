@@ -1,5 +1,9 @@
 ## ADDED Requirements
 
+Phase A keeps the existing offline demo presentation and daily editor. It
+implements live-device status; the broader schedule/offline-view redesign below
+remains Phase B. The additional requirement at the end applies to Phase A now.
+
 ### Requirement: Agent reports the time state
 The agent SHALL publish a retained message on `nethera/<routerId>/telemetry/time` after handling a `config/time` message and whenever a device's blocked state, reason or used minutes change, at most once per minute for usage changes. The message SHALL contain `v`, the router clock `ts`, the handled `version`, `applied`, `clockSynced`, an optional `error`, and per MAC address `usedMinutes`, `budgetMinutes` (today, or null), `blocked` and `reason` (`manual`, `window`, `budget`, `clock` or null).
 
@@ -43,3 +47,25 @@ The Internetzeiten page, the topology and the security page SHALL show a device 
 #### Scenario: No confirmation endpoint
 - **WHEN** `GET /api/router-control/status` returns 404 or 501
 - **THEN** the page shows "Routerbestätigung noch nicht verfügbar" and no blocked state
+
+### Requirement: Phase A confirmation remains separate from DNS and presence
+Time confirmation SHALL require a matching desired version/content, an online
+router, no report error, matching device keys and a report at most 180 seconds
+old. Reports over five seconds in the future SHALL be rejected. Time reports
+SHALL NOT refresh presence. Usage SHALL require clock synchronisation. The status
+SHALL expose `timeApplied`, `timeCheckedAt` and `timeError` without changing the
+existing DNS error field. The frontend SHALL poll while visible and preserve
+expanded details and keyboard focus. Its preview SHALL use the router timezone,
+not the browser timezone.
+
+#### Scenario: Removal acknowledgement
+- **WHEN** an empty desired set is awaiting acknowledgement
+- **THEN** `timeApplied` is false until the online router confirms that exact empty set
+
+#### Scenario: Missing or stale device report
+- **WHEN** a matching-version report omits a desired MAC or is older than 180 seconds
+- **THEN** it does not confirm the whole set and no device usage is displayed as current
+
+#### Scenario: Unsynchronised clock
+- **WHEN** the router confirms a rule but reports `clockSynced: false`
+- **THEN** the UI receives no measured usage or budget values for that report

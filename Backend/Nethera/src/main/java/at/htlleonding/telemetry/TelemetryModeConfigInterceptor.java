@@ -12,7 +12,8 @@ public class TelemetryModeConfigInterceptor implements ConfigSourceInterceptor {
     static final String CHANNEL_ENABLED = "mp.messaging.incoming.router-telemetry.enabled";
     static final String CONTROL_CHANNEL_ENABLED = "mp.messaging.outgoing.router-config.enabled";
 
-    private static final Set<String> CHANNELS = Set.of(CHANNEL_ENABLED, CONTROL_CHANNEL_ENABLED);
+    private static final Set<String> CHANNELS = Set.of(CHANNEL_ENABLED, CONTROL_CHANNEL_ENABLED,
+            "mp.messaging.outgoing.router-time-config.enabled");
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {

@@ -51,25 +51,28 @@ Own file `/usr/share/nftables.d/table-post/91-nethera-time.nft`, included by fw4
 
 ```
 set nethera_time_blocked { type ether_addr; }
-counter nethera_time_<mac>                       # one per MAC with a budget
+counter nethera_time_<mac> { }                   # one per MAC with a budget
 chain nethera_time {
     type filter hook forward priority filter - 6; policy accept;
+    ether saddr @nethera_time_blocked counter reject
     ether saddr <mac> counter name nethera_time_<mac>     # per MAC with a budget
-    ether saddr @nethera_time_blocked reject
 }
 ```
 
 - The forward hook only sees routed traffic. Traffic inside the LAN bridge (printer, Chromecast), DHCP and DNS to the router (input hook) are unaffected.
 - Priority `filter - 6` runs before fw4's own forward chain (which accepts established connections), so a block also stops running connections. It runs before the DNS control chain (`filter - 5`); both only reject, so the order between them does not matter.
 - Blocking by source MAC stops IPv4 and IPv6 alike. Replies from the internet still arrive but the device cannot answer, so connections die.
-- The file changes only when the set of MACs with a budget changes (then `fw4 reload`). Blocking and unblocking is `nft add/delete element inet fw4 nethera_time_blocked {…}` without reload. After every reload the agent re-adds the set elements and treats a counter that went down as reset.
+- The boot include changes only when the budget MACs change or it is first created. Live changes use a checked, atomic nft transaction affecting only `nethera_time`, `nethera_time_blocked` and its named counters. A time update never calls `fw4 reload`, because that would clear populated DNS sets belonging to #25. Existing named counter values are preserved when rebuilding the time objects.
+- Each refresh reads actual kernel objects, not a cached blocked set. A successful DNS-triggered `fw4 reload` signals an immediate refresh without charging another usage minute; external reloads are repaired by the minute tick. A failed read/check/apply returns `applied: false` and is retried.
+- Flow offloading can bypass forward-hook rules and counters. With active flowtables, time control reports an error and does not change the router's global offload setting. Enabling time control on such a router needs an explicit, separately reviewed offload change. The Cudy checked on 22 November has no flowtables.
+- A window without a daily budget also creates the chain and set. Blocked retries are rejected before the usage counters and do not consume further budget.
 
 ### D4: Usage minute = upload above a threshold
 Every minute the agent reads the named counters (`nft -j list counters table inet fw4`). A minute counts when the bytes sent by the device to the internet grew by more than `usageThresholdBytes` (constant, initial value 20 KB, calibrated on the Cudy). Counting upload is enough: every real use (page loads, video, games) produces outgoing requests and acknowledgements, while an idle phone sends little.
 
 *Alternative:* counting "connected" minutes from ARP/WLAN. Rejected: a phone lying in the WLAN at night would use up the budget. Counting download would need the device's current IPv4/IPv6 addresses in the rules.
 
-Usage is stored in `/etc/nethera/time-usage.json` with the local date, written at most every 5 minutes and when a budget block starts. After a reboot on the same date the agent continues from the stored values; at most 5 minutes are lost.
+Usage is stored in `/etc/nethera/time-usage.json` with the local date, written every 5 minutes when changed, at a local-day change, and when a budget block starts. After a reboot it is restored only after NTP synchronization, in the configured time zone. Unsynchronized boots must not overwrite the saved day. On the same date the agent continues from the stored values; up to 5 minutes may be lost on power loss. The initial 20 KB threshold still requires idle/active hardware calibration; it is not a proven measurement of screen time.
 
 ### D5: Desired state message (`config/time`, schema v1)
 The backend resolves groups, pauses and the "strictest rule wins" combination, so the router never sees groups or schedules:
@@ -94,6 +97,8 @@ The backend resolves groups, pauses and the "strictest rule wins" combination, s
 - `budgets`: per weekday the smallest budget of those schedules; missing weekday = no budget.
 - `block` / `allow`: the device's and its groups' overrides of that mode combined; `until` is the latest end (Unix seconds), `{"until": null}` means indefinite, `null` means none. Expired overrides are left out. Sending both lets the agent fall back to an allow override when a block expires.
 - Evaluation order on the router: block, allow, windows, budget (spec `time-schedules`).
+- The router requires an explicit `devices` object (`{}` clears all time rules), rejects unknown fields and messages over 256 KiB, and rejects older versions or changed content reusing the current version. Saving must succeed before changing live rules. Errors never produce a successful confirmation.
+- Windows compare local wall-clock minutes, including both occurrences of a repeated hour when summer time ends. Overnight windows belong to their starting weekday.
 
 `TimeDesiredState.build(...)` is a pure function like `DnsDesiredState.build(...)` and gets the unit tests for the combination rules.
 
@@ -135,10 +140,58 @@ Presets keep their columns (`time_limit_minutes`, `blocked_from`, `blocked_until
 
 ## Risks / Trade-offs
 
+### D11: Compatible daily-rule bridge before the reusable-schedule redesign
+
+Cloud packaging exception (approved 22 November): production still runs the
+pre-ownership backend, so its release uses the reproducible selection in
+`deploy/leocloud/prepare-time-release.mjs` and the narrowly scoped compatibility
+patch. Only time endpoints use the configured shared router; the main branch
+implementation retains CurrentRouter ownership. Existing Cloud login and DNS
+control code are preserved. Ownership rollout remains a separate change.
+Time retries use a Vert.x timer dispatching to a worker, independent of the
+globally disabled scheduler; the timer is cancelled on shutdown.
+
+For the user's backend-connection request on 22 November, retain the deployed
+`DeviceTimeLimit` API and frontend. D8-D10 and the shared-event portion of D6 are
+the later Phase B design, not requirements to break the current app immediately.
+
+The bridge adds `router_enforcement` default false and `time_control_state` via
+`20261122_time_control_bridge.sql`. Existing rows and usage history remain intact;
+only a successful explicit PUT opts a rule into enforcement. Preset assignment
+keeps its existing time-rule PUT, without client counters. Only own devices with
+`data_source=ROUTER` enter the wire payload. Active daily windows map to all seven
+weekdays; API budget zero maps to an omitted budget. Europe/Vienna and OPEN are
+fixed until router timezone settings are implemented.
+
+`TimeControlChanged` is a separate AFTER_SUCCESS event, so saving/pause/delete
+does not resend or alter DNS state. A router-row lock serialises writes and desired
+version preparation. Preparing within the save transaction invalidates an old ACK
+before the response returns; publication happens only after commit. Startup and
+60-second retries publish only routers that already have a time-control state.
+
+Reports do not refresh router presence. Future timestamps beyond five seconds,
+older reports and lower versions at equal timestamps are ignored. Confirmation
+requires online presence, a report no older than 180 seconds, matching desired
+content/version, no error and matching device keys. `timeApplied` confirms the
+whole set, including removal; per-device usage requires a synchronised clock.
+`timeError` is independent of the DNS error field. UI polls every five seconds,
+preserving expanded details and keyboard focus, and never infers a live block
+from browser time or database usage counters.
+
+Phase A rollout: backup, additive bridge migration, backend, frontend, then
+explicitly save one approved test-device rule and verify the physical result.
+No broker ACL change is needed. Rollback is not simply clearing retention: the
+agent also persists its desired rules. First pause/delete rules with the new
+backend and obtain an empty-rule ACK while online, then restore old app/backend
+images; keep additive columns/tables. If the router is unreachable, keep the new
+control path available and report pending removal rather than claim unblocking.
+
+### General risks
+
 - [iPhones and Android use a private MAC per WLAN; "Netzwerk ignorieren" creates a new one] → The device appears as a new device without schedules. Documented as known limitation; the page shows schedules per device so the owner can reassign.
 - [Threshold too low counts background traffic, too high misses light use] → Constant in the agent, calibrated on the Cudy with an idle and an active phone before release; the hardware acceptance records the chosen value.
 - [Flash wear from usage files] → Write at most every 5 minutes and only when a value changed; `writeIfChanged` already writes atomically.
-- [`fw4 reload` resets counters and set elements] → Reload only when the MAC list with budgets changes; re-add set elements and handle counter resets explicitly; covered by Go tests.
+- [`fw4 reload` resets counters and set elements] → Time updates use their own nft transaction, preserving DNS objects. Reconcile after a DNS reload and handle counter resets; covered by Go and isolated real-nft tests.
 - [Binary grows by ~450 KB through embedded tzdata] → Acceptable on the WR3000S (flash and RAM headroom noted in the project context).
 - [Agent down → no blocks change] → Existing init script respawns the agent; the last applied set elements stay in nft until the next reload, so a crash does not lift an active block.
 - [A child pulls the plug to bypass the night window] → With `OPEN` the gap lasts until NTP answers (seconds with internet). Parents who want no gap switch to `BLOCK`.

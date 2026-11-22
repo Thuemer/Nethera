@@ -26,6 +26,8 @@ type Agent struct {
 	control chan []byte
 	// controlTime holds the newest time control message, with the same drop-old policy
 	controlTime chan []byte
+	// DNS changes can reload fw4; reapply time blocks without counting a minute.
+	timeRefresh chan struct{}
 	// timeRT is the in-memory state of time control (runtime, usage counters, blocks)
 	timeRT *timeRuntime
 
@@ -36,16 +38,28 @@ type Agent struct {
 }
 
 func NewAgent(cfg Config, src Sources) *Agent {
-	return &Agent{
+	a := &Agent{
 		cfg:         cfg,
 		src:         src,
 		started:     src.Now(),
 		connected:   make(chan struct{}, 1),
 		control:     make(chan []byte, 1),
 		controlTime: make(chan []byte, 1),
+		timeRefresh: make(chan struct{}, 1),
 		timeRT:      newTimeRuntime(),
 		failing:     map[string]bool{},
 	}
+	a.src.Run = func(name string, args ...string) ([]byte, error) {
+		out, err := src.Run(name, args...)
+		if err == nil && name == "fw4" && len(args) > 0 && args[0] == "reload" {
+			select {
+			case a.timeRefresh <- struct{}{}:
+			default:
+			}
+		}
+		return out, err
+	}
+	return a
 }
 
 // report logs a problem once when it appears and once when it is gone
@@ -246,8 +260,6 @@ func (a *Agent) receiveTimeControl(data []byte) {
 func (a *Agent) RunTimeControl(ctx context.Context) {
 	if saved, ok := loadSavedTimeControl(a.src.TimeControlFile); ok {
 		rt := a.timeRT
-		today := a.src.Now().In(rt.location).Format("2006-01-02")
-		rt.usage = loadUsage(a.src.TimeUsageFile, today)
 		report, err := rt.applyTimeControl(a.src, saved)
 		a.report("time", err)
 		a.publish("time", 1, true, report, nil)
@@ -260,6 +272,12 @@ func (a *Agent) RunTimeControl(ctx context.Context) {
 			a.handleTimeControl(data)
 		case <-ticker.C:
 			a.timeTick()
+		case <-a.timeRefresh:
+			if a.timeRT.hasControl {
+				report, err := a.timeRT.refresh(a.src, false)
+				a.report("time", err)
+				a.publish("time", 1, true, report, nil)
+			}
 		case <-ctx.Done():
 			return
 		}
@@ -270,14 +288,29 @@ func (a *Agent) handleTimeControl(data []byte) {
 	c, err := parseTimeControl(data)
 	if err != nil {
 		a.report("time", err)
-		a.publish("time", 1, true, timePayload{V: schemaVersion, TS: a.src.Now().Unix(), Applied: false, Error: err.Error()}, nil)
+		var rejected struct {
+			Version int64 `json:"version"`
+		}
+		_ = json.Unmarshal(data, &rejected)
+		report, _ := a.timeRT.rejected(a.src, rejected.Version, err)
+		a.publish("time", 1, true, report, nil)
+		return
+	}
+	if err = a.timeRT.checkVersion(c); err == nil {
+		var normalized []byte
+		normalized, err = json.Marshal(c)
+		if err == nil {
+			err = saveTimeControl(a.src.TimeControlFile, normalized)
+		}
+	}
+	if err != nil {
+		report, _ := a.timeRT.rejected(a.src, c.Version, err)
+		a.report("time", err)
+		a.publish("time", 1, true, report, nil)
 		return
 	}
 	report, applyErr := a.timeRT.applyTimeControl(a.src, c)
 	a.report("time", applyErr)
-	if normalized, err := json.Marshal(c); err == nil {
-		a.report("time save", saveTimeControl(a.src.TimeControlFile, normalized))
-	}
 	a.publish("time", 1, true, report, nil)
 }
 
@@ -286,5 +319,10 @@ func (a *Agent) timeTick() {
 		return
 	}
 	report, _ := a.timeRT.tickTimeControl(a.src)
+	var err error
+	if report.Error != "" {
+		err = fmt.Errorf("%s", report.Error)
+	}
+	a.report("time", err)
 	a.publish("time", 1, true, report, nil)
 }

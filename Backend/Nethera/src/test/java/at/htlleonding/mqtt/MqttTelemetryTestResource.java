@@ -34,6 +34,7 @@ public class MqttTelemetryTestResource implements QuarkusTestResourceLifecycleMa
                 // Profile-prefixed key, otherwise %test.nethera.telemetry.mode=ssh wins
                 "%test.nethera.telemetry.mode", "mqtt",
                 "quarkus.scheduler.enabled", "false",
+                "nethera.time-control.retry-millis", "1000",
                 "quarkus.http.test-port", "0");
     }
 
