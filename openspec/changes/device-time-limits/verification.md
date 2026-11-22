@@ -248,4 +248,46 @@ DNS desired state, accounts and credentials fingerprinted for after-rollout
 comparison. Seven accounts and seven credential rows existed before rollout.
 No passwords, dump contents or tokens belong in the repository.
 
-Migration, deployment and physical website test are still pending at this point.
+### Cloud rollout and physical website test completed
+
+Implementation commit `e08d1db`, final frontend recipe `6e7bc1d`, both pushed
+without merge or force. Migration restored/tested twice on the actual backup,
+then applied transactionally on LeoCloud before either image replacement.
+Full branch rerun: 142 backend and 122 JS tests pass. Compatible release: 127
+backend and 117 applicable JS tests pass. Independent retry succeeds even with
+the global scheduler disabled. Go race/nft integration tests pass again.
+
+Backend image `20261122-214210`:
+`sha256:e0ed3ff5d4251bbc877d02174aa36269565202c96ef66505200d67364baede15`.
+Frontend image `20261122-214620`:
+`sha256:3597f1a58e333ce67d107467ae3e4acb1fd78d587e66337b1c5bd2665f1528a1`.
+Registry and running pod digests verified; only deployment image fields changed.
+No Keycloak, broker, secret or volume change. Website and discovery 200;
+unauthenticated router/time/control API requests 401. Existing user session still
+works after reload. All 82 served files compared: only the five expected time
+integration/cache files differ, including byte-identical account.js.
+
+Actual user-approved test from the authenticated Cloud Internetzeiten form:
+
+1. Selected only device 24 (the authorised iPhone); the administrative Mac was
+   never targeted. No pre-existing rule for this device.
+2. Saved daily window 22:50-22:53 Europe/Vienna, no budget, around 22:51.
+   Website showed a fresh confirmed router block; user confirmed that new pages
+   did not load with cellular data disabled.
+3. Clicked "Regel ausschalten" before the window ended. Router confirmed pause;
+   user confirmed internet worked again, still without cellular data.
+4. Removed exactly the test rule via the website. Confirmed empty desired/actual
+   time device set, matching version `1795384312622`, applied true, synchronised
+   clock, no error. No activated rules remain; original paused legacy row intact.
+
+After cleanup all 13 protected table fingerprints match the backup, including
+seven accounts and seven credentials. Original DNS desired/applied versions,
+content and adblock state match. `tiktok.com` and `accounts.doubleclick.net`
+return NXDOMAIN before and after; `example.com` resolves normally. Device-specific
+DNS assignments were not changed for this test; regression covered in existing
+backend/agent suites, not claimed as a new physical per-device DNS acceptance.
+
+Private rollout logs, schema test proof, snapshots and fingerprints remain with
+the protected backups, not in Git. Digests and rollback instructions are recorded
+in `deploy/leocloud/README.md`. Phase A task 8.8 is complete; usage calibration,
+the remaining hardware matrix and the Phase B model/UI remain open.

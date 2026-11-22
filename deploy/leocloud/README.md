@@ -87,6 +87,54 @@ Rollback: aktive Testregeln zuerst entfernen und die Routerbestaetigung abwarten
 dann bei Bedarf die vorherigen Images zuruecksetzen. Additive Tabellen/Spalten
 und beide Datenbanken bleiben erhalten; nie Volumes loeschen.
 
+#### Ausgerollter Stand und Abnahme
+
+- Branch `feat/router-time-schedules`: Implementierung `e08d1db`, finale
+  Frontend-Build-Auswahl `6e7bc1d`. Frische Fetches ergaben keine neueren
+  Team-Commits; nur eigener Branch gepusht, kein Merge/Force-Push.
+- Backend `ghcr.io/denizbernecker/nethera-backend:20261122-214210`, Digest
+  `sha256:e0ed3ff5d4251bbc877d02174aa36269565202c96ef66505200d67364baede15`.
+- Frontend `ghcr.io/denizbernecker/nethera-frontend:20261122-214620`, Digest
+  `sha256:3597f1a58e333ce67d107467ae3e4acb1fd78d587e66337b1c5bd2665f1528a1`.
+- Beide Images privat, linux/amd64. Rollouts erfolgreich; laufende Pod-Digests
+  stimmen mit GHCR ueberein. Ausschliesslich Image-Felder per atomarem JSON-Patch
+  getauscht; kein vollstaendiges `stack.yaml apply`, kein Seed-Job.
+- Beide Datenbanken gesichert unter
+  `~/NetheraBackups/20261122-213800-time27-cloud/`. Dumps mit pg_restore geprueft;
+  Nethera-Dump in isoliertem Postgres wiederhergestellt und Migration zweimal
+  getestet. Danach Migration auf LeoCloud **vor** dem Backendwechsel ausgefuehrt.
+- Vor/nach Rollout und Test: 13 geschuetzte Tabellen unveraendert (darunter sieben
+  Accounts, sieben Keycloak-Credentials, Gruppen, Sperrlisten, Vorlagen und die
+  vorhandene pausierte Zeitregel). PVCs sowie alle sonstigen Deployment-Felder
+  unveraendert. Keycloak und Broker wurden nicht neu gestartet.
+- Alle 82 Frontend-Dateien mit dem vorherigen Cloud-Pod verglichen: nur
+  `index.html` (Cache-Version), `security.html/.js` und `time-limits.html/.js`
+  unterscheiden sich. Website, Topologie und Anmeldung bytegleich. Vier nicht
+  veroeffentlichte OneDrive-Duplikate bleiben auch im neuen Image ausgeschlossen.
+- 142 Backend-Tests im Feature-Branch, 127 im Cloud-Kompatibilitaetsbuild;
+  122 bzw. 117 passende Frontend-Tests erfolgreich. Go-Race/nft-Tests isoliert
+  erfolgreich. Zeitplan-Browsertest am finalen Image bei 1440/768/390/320 px
+  erfolgreich. HTTP: Website/Discovery 200, geschuetzte APIs ohne Login 401.
+- Echte Anmeldung nach Rollout erhalten. Am 22.11. gegen 22:51 Wien nur das
+  genehmigte Test-iPhone ueber die Website mit Fenster 22:50-22:53 gesperrt:
+  frische Routerbestaetigung und vom Nutzer bestaetigter Ausfall neuer Seiten.
+  Danach vor Fensterende ueber die Website ausgeschaltet: ACK und vom Nutzer
+  bestaetigte Internet-Freigabe. Testregel anschliessend geloescht.
+- Abschluss: keine aktivierte Zeitregel; leeres `devices`-Objekt am Router
+  bestaetigt, gewuenschte/gemeldete Version `1795384312622`, Uhr synchron,
+  kein Fehler. Urspruengliche Daten wieder unveraendert.
+- Netzwerksperre `tiktok.com` und Adblock-Probe `accounts.doubleclick.net` vor
+  und nach Test NXDOMAIN; `example.com` normal aufgeloest. DNS-Inhalt, Version
+  und Adblock-Bestaetigung unveraendert. Geraetespezifische DNS-Zuweisungen
+  wurden nicht veraendert; deren Regression ist automatisiert abgedeckt.
+
+Vorherige Images fuer den moeglichen Rollback:
+Backend `20261120-113326@sha256:55fafe39000f24bd24ac1b7f92d2c7b51cc4723c1f0dfdba004348a5f3b458e2`,
+Frontend `20261120-113300@sha256:4a4ef7731a1f830828181191983456e6292e718966483ad5902d73e792a2bafb`.
+Noch nicht abgenommen sind die Verbrauchsschwelle fuer Tagesbudgets und die
+vollstaendige Hardware-Matrix; Phase B (wiederverwendbare Wochen-/Gruppenplaene,
+Sofort-Overrides) ist weiterhin offen.
+
 Code- oder Theme-Aenderungen erscheinen nicht automatisch auf LeoCloud. Fuer
 Frontend- oder Backend-Code ist jeweils ein neuer Image-Build mit einem neuen
 UTC-Zeitstempel-Tag, ein Push nach GHCR und eine Anpassung des entsprechenden

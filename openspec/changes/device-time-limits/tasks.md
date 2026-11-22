@@ -78,4 +78,4 @@ calibration and the full reboot/boundary matrix remain open.
 - [x] 8.5 Connect current Internetzeiten editor including pause/delete/preset compatibility; poll ACKs and preserve expanded details/focus; use router counters only
 - [x] 8.6 Test actual REST -> isolated PostgreSQL/MQTT -> readback/status, version stability, invalid input, migration twice, and unchanged retained DNS state; run frontend regressions and responsive browser checks
 - [x] 8.7 Update README, meta-spec, frontend contract, OpenSpec and verification with the compatibility boundary and rollout/rollback order
-- [ ] 8.8 Review and deploy Phase A migration/backend/frontend, then repeat an approved real-device window/pause/delete test through the website; leave accounts/data/DNS rules intact
+- [x] 8.8 Review and deploy Phase A migration/backend/frontend, then repeat an approved real-device window/pause/delete test through the website; leave accounts/data/DNS rules intact
