@@ -22,6 +22,10 @@ const put = (path, data) => {
 };
 const current = path => source === 'WORKTREE' ? readFileSync(resolve(repo, path)) : git('show', `${revision}:${path}`);
 archive(frontend, ['Applikation', 'Website', '.dockerignore']);
+// OneDrive duplicate pages are tracked, but were never part of the live image.
+put('.dockerignore', readFileSync(resolve(target, '.dockerignore'), 'utf8') + '\n'
+  + ['Applikation/index 2.html', 'Website/html/nethera 2.html',
+    'Website/html/step_by_step 2.html', 'Website/css/nethera 2.css'].join('\n') + '\n');
 archive(backend, ['Backend/Nethera']);
 for (const path of ['src/main/java/at/htlleonding/telemetry/DeviceIngestor.java', 'src/test/java/at/htlleonding/telemetry/DeviceIngestorTest.java']) {
   put(`Backend/Nethera/${path}`, git('show', `${ingest}:Backend/Nethera/${path}`));
