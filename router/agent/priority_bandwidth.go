@@ -53,7 +53,7 @@ func resolvePriorityBandwidth(c priorityControl, read func(string) ([]byte, erro
 	return b, "local", b.validate()
 }
 func ownedPriorityRoot(out string) string {
-	if strings.Contains(out, "qdisc htb 7d00: root") {
+	if strings.Contains(out, "qdisc htb 7d00: root") || strings.Contains(out, "qdisc cake 7d00: root") {
 		return priorityShaperHandle
 	}
 	if strings.Contains(out, "qdisc drr 7e00: root") {
@@ -72,93 +72,81 @@ func (w priorityWorker) deleteOwnedQueue(dev string) error {
 	return nil
 }
 
-func priorityClassSteps(dev string, rate int, verb string) [][]string {
-	high := rate * 2 / 3
-	normal := rate - high
-	return [][]string{
-		{"class", verb, "dev", dev, "parent", priorityShaperHandle, "classid", "7d00:1", "htb", "rate", fmt.Sprintf("%dkbit", rate), "ceil", fmt.Sprintf("%dkbit", rate), "quantum", "1514"},
-		{"class", verb, "dev", dev, "parent", "7d00:1", "classid", "7d00:10", "htb", "rate", fmt.Sprintf("%dkbit", high), "ceil", fmt.Sprintf("%dkbit", rate), "prio", "0", "quantum", "3000"},
-		{"class", verb, "dev", dev, "parent", "7d00:1", "classid", "7d00:20", "htb", "rate", fmt.Sprintf("%dkbit", normal), "ceil", fmt.Sprintf("%dkbit", rate), "prio", "1", "quantum", "1500"},
-	}
-}
-func (w priorityWorker) ensureShapedQueue(dev string, rate int) error {
+// CAKE owns only our 7d00: root. Its tin overrides use priority 7d00:1
+// (normal/Bulk) and 7d00:2 (preferred/Best Effort), without rewriting DSCP.
+// Separate host fairness prevents a device gaining shares by opening more flows.
+func (w priorityWorker) ensureShapedQueue(dev string, rate int, download bool) error {
 	out, err := w.qdisc(dev)
 	if err != nil {
 		return err
-	}
-	if ownedPriorityRoot(out) == priorityShaperHandle && !strings.Contains(out, "qdisc drr") {
-		for _, step := range priorityClassSteps(dev, rate, "change") {
-			if err = w.command("tc", step...); err != nil {
-				return err
-			}
-		}
-		return w.verifyShapedQueue(dev, rate)
 	}
 	if !ownsPriorityQueue(out) && !freePriorityQueue(out) {
 		return fmt.Errorf("foreign root qdisc on %s; left unchanged", dev)
 	}
-	if ownsPriorityQueue(out) {
-		if err = w.deleteOwnedQueue(dev); err != nil {
+	if strings.Contains(out, "qdisc cake 7d00: root") {
+		if w.verifyShapedQueue(dev, rate, download) == nil {
+			return nil
+		}
+		if err = w.command("tc", cakeQueueArgs("change", dev, rate, download)...); err != nil {
+			return err
+		}
+	} else {
+		if ownsPriorityQueue(out) {
+			if err = w.deleteOwnedQueue(dev); err != nil {
+				return err
+			}
+		}
+		if err = w.command("tc", cakeQueueArgs("add", dev, rate, download)...); err != nil {
 			return err
 		}
 	}
-	steps := [][]string{{"qdisc", "add", "dev", dev, "root", "handle", priorityShaperHandle, "htb", "default", "20"}}
-	steps = append(steps, priorityClassSteps(dev, rate, "add")...)
-	steps = append(steps,
-		[]string{"qdisc", "add", "dev", dev, "parent", "7d00:10", "handle", "7e01:", "fq_codel"},
-		[]string{"qdisc", "add", "dev", dev, "parent", "7d00:20", "handle", "7e02:", "fq_codel"})
-	for _, step := range steps {
-		if err = w.command("tc", step...); err != nil {
-			_ = w.deleteOwnedQueue(dev)
-			return err
-		}
-	}
-	return w.verifyShapedQueue(dev, rate)
+	return w.verifyShapedQueue(dev, rate, download)
 }
-func (w priorityWorker) verifyShapedQueue(dev string, rate int) error {
-	out, err := w.qdisc(dev)
+func cakeQueueArgs(verb, dev string, rate int, download bool) []string {
+	mode, nat, direction := "dual-srchost", "nat", "egress"
+	if download {
+		mode, nat, direction = "dual-dsthost", "nonat", "ingress"
+	}
+	return []string{"qdisc", verb, "dev", dev, "root", "handle", priorityShaperHandle, "cake", "bandwidth", fmt.Sprintf("%dkbit", rate), "diffserv3", mode, nat, direction, "split-gso", "no-ack-filter", "nowash", "rtt", "100ms", "raw", "memlimit", "4mb", "fwmark", "0"}
+}
+func (w priorityWorker) verifyShapedQueue(dev string, rate int, download bool) error {
+	data, err := w.run("tc", "-j", "qdisc", "show", "dev", dev)
 	if err != nil {
 		return err
 	}
-	if ownedPriorityRoot(out) != priorityShaperHandle || !strings.Contains(out, "qdisc fq_codel 7e01:") || !strings.Contains(out, "qdisc fq_codel 7e02:") {
-		return fmt.Errorf("shaped queue readback failed on %s", dev)
-	}
-	data, err := w.run("tc", "-j", "-d", "class", "show", "dev", dev)
-	if err != nil {
-		return err
-	}
-	var classes []struct {
-		Kind    string `json:"class"`
+	var queues []struct {
+		Kind    string `json:"kind"`
 		Handle  string `json:"handle"`
-		Parent  string `json:"parent"`
-		Rate    int64  `json:"rate"`
-		Ceil    int64  `json:"ceil"`
-		Prio    int    `json:"prio"`
-		Quantum int    `json:"quantum"`
+		Root    bool   `json:"root"`
+		Options struct {
+			Bandwidth int64  `json:"bandwidth"`
+			Diffserv  string `json:"diffserv"`
+			Flowmode  string `json:"flowmode"`
+			Nat       *bool  `json:"nat"`
+			Wash      *bool  `json:"wash"`
+			Ingress   *bool  `json:"ingress"`
+			SplitGSO  *bool  `json:"split_gso"`
+			AckFilter string `json:"ack-filter"`
+			RTT       int    `json:"rtt"`
+			Raw       *bool  `json:"raw"`
+			Overhead  int    `json:"overhead"`
+			Memlimit  int    `json:"memlimit"`
+			FWMark    string `json:"fwmark"`
+		} `json:"options"`
 	}
-	if err = json.Unmarshal(data, &classes); err != nil {
+	if err = json.Unmarshal(data, &queues); err != nil {
 		return err
 	}
-	total, high, normal := false, false, false
-	for _, class := range classes {
-		if class.Kind != "htb" {
-			continue
-		}
-		if class.Handle == "7d00:1" {
-			total = class.Rate == int64(rate)*125 && class.Ceil == int64(rate)*125
-		}
-		if class.Handle == "7d00:10" {
-			high = class.Parent == "7d00:1" && class.Rate == int64(rate*2/3)*125 && class.Ceil == int64(rate)*125 && class.Prio == 0 && class.Quantum == 3000
-		}
-		if class.Handle == "7d00:20" {
-			normal = class.Parent == "7d00:1" && class.Rate == int64(rate-rate*2/3)*125 && class.Ceil == int64(rate)*125 && class.Prio == 1 && class.Quantum == 1500
+	mode := "dual-srchost"
+	if download {
+		mode = "dual-dsthost"
+	}
+	is := func(v *bool, want bool) bool { return v != nil && *v == want }
+	for _, q := range queues {
+		o := q.Options
+		if q.Kind == "cake" && q.Handle == priorityShaperHandle && q.Root && o.Bandwidth == int64(rate)*125 && o.Diffserv == "diffserv3" && o.Flowmode == mode && is(o.Nat, !download) && is(o.Ingress, download) && is(o.Wash, false) && is(o.SplitGSO, true) && is(o.Raw, true) && o.AckFilter == "disabled" && o.RTT == 100000 && o.Overhead == 0 && o.Memlimit == 4194304 && (o.FWMark == "0" || o.FWMark == "0x0") {
+			return nil
 		}
 	}
-	if !total || !high || !normal {
-		return fmt.Errorf("bandwidth/class readback failed on %s", dev)
-	}
-	if !strings.Contains(out, "default 0x20") && !strings.Contains(out, "default 20 ") {
-		return fmt.Errorf("normal default class missing on %s", dev)
-	}
-	return nil
+	return fmt.Errorf("CAKE rate/host-isolation/priority readback failed on %s", dev)
 }

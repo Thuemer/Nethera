@@ -28,19 +28,19 @@ Der Router kann beim Cloud-Rollout ausgeschaltet oder an einem anderen Ort sein.
 
 - Eigene nftables-Tabelle `inet nethera_priority`; keine Änderung an `fw4`, DSCP, Conntrack-Markierungen, UCI-Netzwerk, WLAN, DNS oder Werbeschutz.
 - Upload anhand der Geräte-MAC, Download anhand aktueller IPv4-/IPv6-Nachbartabellen. Wechselnde Adressen werden spätestens beim nächsten 30-Sekunden-Abgleich aktualisiert. Ein noch nicht bekanntes Gerät wird nicht vollständig bestätigt.
-- WAN über logisches Interface `wan`, LAN über `lan` und dessen Bridge-Mitglieder. Änderungen an diesen Netzen werden erkannt; zusätzliche benannte Gäste-/VPN-/Multi-WAN-Netze sind nicht abgedeckt.
-- DRR-Warteschlangen mit zwei Klassen: Quantum 3000 für bevorzugte und 1500 für normale Pakete, jeweils fq_codel. Das ist eine relative Gewichtung zwischen zwei Klassen, keine feste Prozentzuteilung pro Gerät. Normale Geräte können weiterhin senden.
+- WAN über logisches Interface `wan`, LAN über das geroutete Bridge-Interface von `lan`. Änderungen an diesen Netzen werden erkannt; zusätzliche benannte Gäste-/VPN-/Multi-WAN-Netze sind nicht abgedeckt.
+- CAKE mit Geräte-Fairness: Upload `nat dual-srchost`, Download `nonat dual-dsthost ingress`, jeweils `diffserv3`, `split-gso` und RTT-Profil 100 ms. Normale weitergeleitete Pakete werden explizit dem Bulk-Tin, bevorzugte dem Best-Effort-Tin zugeordnet. Normale Geräte können weiterhin senden und freie Kapazität nutzen; es gibt keine feste 2:1-Zusage.
 - Keine fest eingetragene Tarifgeschwindigkeit und keine automatische Ermittlung der ISP-Kapazität. Wenn der Engpass außerhalb des Routers liegt, sind weder bessere Internetlatenz noch eine feste Bandbreitenverteilung garantiert. Ein Lasttest im späteren Zielnetz bleibt erforderlich.
-- Fremde Root-Warteschlangen oder aktiviertes Flow-Offloading werden nicht umgestellt; Aktivierung meldet dann einen Fehler. Eigene Klassen verwenden ausschließlich Handles `7e00:`, `7e01:` und `7e02:`.
+- Fremde Root-Warteschlangen oder aktiviertes Flow-Offloading werden nicht umgestellt; Aktivierung meldet dann einen Fehler. Die neue Root-Warteschlange verwendet Handle `7d00:`; frühere eigene DRR-/HTB-Warteschlangen werden beim Wechsel gezielt entfernt.
 - Alle Geräte auf Normal entfernt nur die eigenen Warteschlangen und die eigene Tabelle. Stoppen des neuen Diensts entfernt sie ebenfalls. Bei einem fehlgeschlagenen Abgleich zeigt die API keine erfolgreiche Übernahme an; keine Änderung fremder Einstellungen als Fallback.
-- Abhängigkeiten: `tc-full`, `kmod-sched-core`, `kmod-sched-drr` und ihre Bibliotheken; kein Firmware-/Paket-Upgrade.
+- Abhängigkeiten: `tc-full`, `kmod-sched-core`, `kmod-sched-cake` und ihre Bibliotheken; kein Firmware-/Paket-Upgrade.
 
 ## Übergabe an den Kollegen mit LeoCloud-Zugriff
 
 **Der Router muss dafür nicht beim Kollegen stehen.** Voraussetzung: Diese Änderungen wurden committet und gepusht.
 
 1. Änderungen pullen und [AGENTS.md](../AGENTS.md) sowie `https://cloud.htl-leonding.ac.at/llms.txt` befolgen. Vor jedem Rollout die dort verlangten Skills lesen. Bestehende Images/Deployment-Konfiguration und Datenbank sichern.
-2. Einmal `Backend/Nethera/migrations/20261127_device_priority.sql` auf die bestehende Anwendungsdatenbank anwenden. Sie fügt nur zwei Tabellen hinzu. Keine Datenbank zurücksetzen, kein `drop-and-create`, keine PVCs löschen.
+2. Nacheinander `Backend/Nethera/migrations/20261127_device_priority.sql` und `20261127_priority_bandwidth.sql` aus dem kompatiblen Release auf die bestehende Anwendungsdatenbank anwenden. Die Migrationen erweitern nur die bestehenden Datenstrukturen. Keine Datenbank zurücksetzen, kein `drop-and-create`, keine PVCs löschen.
 3. Den gemeinsamen Release ausschließlich mit `deploy/leocloud/prepare-time-release.mjs` aus dem integrierten Commit erzeugen (siehe neue Anleitung in `deploy/leocloud/README.md`). Backend und Frontend aus dem erzeugten Ordner bauen und nach dem bestehenden Verfahren ausrollen. LeoCloud benötigt `linux/amd64`-Images. Keine Keycloak-, Broker-, Router- oder Zugangsdaten ersetzen.
 4. Die vorhandene MQTT-ACL muss dem Backend Schreiben auf `nethera/+/config/#` und dem jeweiligen Router Lesen auf `nethera/<id>/config/#` sowie Schreiben auf `nethera/<id>/telemetry/#` erlauben. Die Repository-ACL erlaubt das bereits. Die aktive Cloud-ACL vor Änderung prüfen; keine neuen Rechte vergeben, wenn die Regeln vorhanden sind.
 5. Mit dem Konto anmelden, das den Cudy besitzt. In Schutz → Priorität ein bekanntes Gerät wählen, Bevorzugt speichern, danach Status prüfen. Anschließend Normal speichern und Entfernung bestätigen. Nicht bloß den HTTP-Erfolg als Hardware-Nachweis werten.
@@ -67,7 +67,7 @@ Andere Dienste und Pakete bleiben erhalten. Die gesicherte Ausgangskonfiguration
 
 ## Prüfung am Testgerät
 
-Siehe [Prüfprotokoll](../openspec/changes/device-priority-control/verification.md): echte Paketzuordnung in beiden Richtungen, Normal-Rücknahme, Dienststart mit gespeichertem Zustand, Stop-Cleanup und unveränderte Prüfsummen der bestehenden Konfiguration. Der temporäre SSH-Schlüssel wurde auf Router und Mac entfernt; eine erneute Anmeldung damit wurde nachweislich abgelehnt. Der Cudy wartet jetzt mit dem neuen Dienst auf die spätere Backend-Anbindung. Die Internetwirkung unter Sättigung und der komplette Cloud-Bedienweg sind noch nicht abgenommen.
+Siehe [Prüfprotokoll](../openspec/changes/device-priority-control/verification.md): echte Paketzuordnung in beiden Richtungen, Normal-Rücknahme, Dienststart mit gespeichertem Zustand, Stop-Cleanup und unveränderte Prüfsummen der bestehenden Konfiguration. Die ursprünglichen temporären SSH-Schlüssel wurden entfernt; für die wiederaufgenommene Diagnose besteht aktuell erneut ein temporärer Zugang bis zur abschließenden Geräteprüfung. Der Cudy ist über MQTT angebunden; die neue Bandbreitenoberfläche benötigt noch den passenden Cloud-Rollout. Die Internetwirkung unter Sättigung und der komplette Cloud-Bedienweg sind noch nicht abgenommen.
 
 ## Integrierter Stand mit Zeitplänen und Live-Sperren
 
@@ -80,8 +80,10 @@ Der gemeldete TikTok-Zugriff auf der bestehenden Cloud wurde hier nicht an Route
 
 ## Update 27.11.: kontrollierte Bandbreite
 
-Die neue Version ersetzt die bisherige ungedrosselte DRR-Verteilung durch HTB auf WAN und LAN-Bridge. Unter gleichzeitiger Last erhalten die bevorzugte Gruppe zwei Drittel und die normale Gruppe ein Drittel des eingestellten Limits. Beide dürfen freie Kapazität bis zum Gesamtlimit nutzen. Die Anteile gelten pro Gruppe, nicht pro Gerät.
+Die erste begrenzte HTB-Version wurde nach weiteren Tests durch `priority-cake-20261127-v4` ersetzt. CAKE priorisiert die beiden Gerätemodi und isoliert Hosts innerhalb einer Prioritätsstufe; eine höhere Anzahl gleichzeitiger Verbindungen soll keinen zusätzlichen Geräteanteil verschaffen. Die früheren HTB-Anteile 2/3 zu 1/3 gelten in dieser Version nicht mehr.
 
-Im Frontend unter Schutz → Priorisierung lassen sich die globalen Download-/Upload-Limits konfigurieren. Dafür müssen Backend und Frontend gemeinsam aus dem kompatiblen Release aktualisiert und die neue Migration `20261127_priority_bandwidth.sql` nach `20261127_device_priority.sql` angewendet werden. Ohne neue Cloud-Version verwendet der Router seine lokale Bandbreitenkonfiguration. Aktuell sind dort 60/10 Mbit/s als Inbetriebnahmegrenzen gesetzt; diese Werte sind keine Messung des Anschlusses. Beim Netzwerkwechsel müssen beide Grenzen neu gewählt werden, typischerweise knapp unter der stabil verfügbaren Anschlussgeschwindigkeit.
+Im Frontend unter Schutz → Priorisierung lassen sich die globalen Download-/Upload-Limits konfigurieren. Dafür müssen Backend und Frontend gemeinsam aus dem kompatiblen Release aktualisiert und die neue Migration `20261127_priority_bandwidth.sql` nach `20261127_device_priority.sql` angewendet werden. Ohne neue Cloud-Version verwendet der Router seine lokale Bandbreitenkonfiguration. Für die laufende Diagnose sind dort aktuell 20/10 Mbit/s als Inbetriebnahmegrenzen gesetzt; diese Werte sind keine Messung des Anschlusses. Beim Netzwerkwechsel müssen beide Grenzen neu gewählt werden, typischerweise knapp unter der stabil verfügbaren Anschlussgeschwindigkeit.
 
 „Am Router bestätigt“ erfordert in der neuen Backend-Version passende aktive Bandbreitenklassen und aktuelle Bestätigung derselben Konfiguration. Ein höherer Speedtestwert für jedes bevorzugte Gerät ist dadurch nicht garantiert. Messungen und verbleibende Grenzen stehen im [Prüfprotokoll](../openspec/changes/device-priority-control/bandwidth-verification.md).
+
+Automatisierte direkte Internettests mit Produktions-Geräteerkennung zeigten zuletzt 8,17 gegenüber 1,88 Mbit/s; ein anderer längerer Lauf 4,22 gegenüber 2,54 Mbit/s. Der echte Handy-/Laptop-Vergleich bleibt davon getrennt und noch offen. Der reproduzierbare Prüfer `router/tests/priority-wan-check.py` startet zwei identische direkte Downloads am Mac und stuft nur eine dieser Testverbindungen vorübergehend als normal ein. Die bevorzugte Verbindung verwendet unverändert die Produktionsregeln. Ein Watchdog und `finally` stellen den ursprünglichen Zustand wieder her. Beispiel: `python3 router/tests/priority-wan-check.py --client-ip <Mac-IPv4> --ssh-key <temporärer-Schlüssel>`.

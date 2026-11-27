@@ -27,7 +27,7 @@ func main() {
 	for _, entry := range []struct {
 		port     int
 		priority int
-	}{{49724, 0x7d000010}, {49725, 0}} {
+	}{{49724, 0x7d000002}, {49725, 0x7d000001}} {
 		conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: ip, Port: entry.port})
 		if err != nil {
 			panic(err)

@@ -33,3 +33,13 @@ The router SHALL apply configured download and upload caps at the shared routed 
 #### Scenario: Existing backend
 - **WHEN** an older command omits bandwidth and a router-local commissioning setting exists
 - **THEN** the worker uses and reports the explicit local caps without changing DNS/time commands
+
+
+### Requirement: Device fairness and priority with CAKE
+The router SHALL isolate hosts within configured priority levels and assign normal/preferred traffic without rewriting DSCP or conntrack marks. Download SHALL use destination-host isolation and ingress accounting; upload SHALL use source-host isolation with NAT lookup. Active readback SHALL verify bandwidth and scheduler policy. No fixed per-device throughput ratio SHALL be promised.
+#### Scenario: Normal device alone
+- **WHEN** only normal traffic requests significant bandwidth
+- **THEN** it can use spare capacity up to the configured total, without a permanent low per-device cap
+#### Scenario: Autonomous WAN verification
+- **WHEN** two identical direct downloads are classified normal/preferred on a preferred client
+- **THEN** the diagnostic measures both, leaves preferred production classification unchanged, and restores temporary normal-flow rules through finally and a router-side watchdog

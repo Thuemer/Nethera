@@ -143,7 +143,7 @@ func (w priorityWorker) ownedInterfaces() ([]string, error) {
 	}
 	result := []string{}
 	for _, line := range strings.Split(string(raw), "\n") {
-		if strings.HasPrefix(line, "qdisc drr 7e00: dev ") || strings.HasPrefix(line, "qdisc htb 7d00: dev ") {
+		if strings.HasPrefix(line, "qdisc drr 7e00: dev ") || strings.HasPrefix(line, "qdisc htb 7d00: dev ") || strings.HasPrefix(line, "qdisc cake 7d00: dev ") {
 			f := strings.Fields(line)
 			if len(f) > 4 && interfacePattern.MatchString(f[4]) {
 				result = append(result, f[4])
@@ -207,18 +207,20 @@ func (w priorityWorker) addresses() (map[string][]string, error) {
 func priorityRules(c priorityControl, addresses map[string][]string) string {
 	var b strings.Builder
 	b.WriteString("table inet nethera_priority {\n chain classify {\n type filter hook forward priority -149; policy accept;\n")
-	// Only classify preferred devices; never rewrite DSCP or conntrack marks.
+	// Pin normal traffic to Bulk, then promote selected devices to Best Effort.
+	// Never rewrite DSCP or conntrack marks.
+	b.WriteString(" meta priority set 0x7d000001\n")
 	for _, mac := range sortedPriorityMACs(c) {
 		if c.Devices[mac] != "high" {
 			continue
 		}
-		fmt.Fprintf(&b, " ether saddr %s counter meta priority set 0x7d000010\n", mac)
+		fmt.Fprintf(&b, " ether saddr %s counter meta priority set 0x7d000002\n", mac)
 		for _, ip := range addresses[mac] {
 			family := "ip6"
 			if net.ParseIP(ip).To4() != nil {
 				family = "ip"
 			}
-			fmt.Fprintf(&b, " %s daddr %s counter meta priority set 0x7d000010\n", family, ip)
+			fmt.Fprintf(&b, " %s daddr %s counter meta priority set 0x7d000002\n", family, ip)
 		}
 	}
 	b.WriteString(" }\n}\n")
@@ -304,7 +306,7 @@ func (w priorityWorker) applyPriority(c priorityControl, bandwidth priorityBandw
 		if i == 1 {
 			rate = bandwidth.DownloadKbit
 		}
-		if err = w.ensureShapedQueue(dev, rate); err != nil {
+		if err = w.ensureShapedQueue(dev, rate, i == 1); err != nil {
 			return err
 		}
 	}
@@ -353,9 +355,12 @@ func (w priorityWorker) applyPriority(c priorityControl, bandwidth priorityBandw
 	if err != nil {
 		return err
 	}
+	if !strings.Contains(string(out), "meta priority set 7d00:1") {
+		return errors.New("normal CAKE tin readback failed")
+	}
 	for _, mac := range sortedPriorityMACs(c) {
 		if c.Devices[mac] == "high" {
-			if !strings.Contains(string(out), "ether saddr "+mac) || !strings.Contains(string(out), "meta priority set 7d00:10") {
+			if !strings.Contains(string(out), "ether saddr "+mac) || !strings.Contains(string(out), "meta priority set 7d00:2") {
 				return fmt.Errorf("priority rule readback failed for %s", mac)
 			}
 			for _, ip := range addresses[mac] {

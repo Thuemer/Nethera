@@ -33,3 +33,15 @@
 - [x] 6.2 Add explicit configurable upload/download rates to backend/API/UI and compatibility release, with versioned shaping readback and migration.
 - [x] 6.3 Test real routed bridge traffic, shaping ceilings, rollback and existing DNS/time preservation; avoid claiming throughput advantage without a simultaneous client test.
 - [x] 6.4 Test source/cloud builds, document deployment and limitations, deliver changes and remove the temporary SSH key again.
+
+## 7. Autonomous TCP diagnostics and scheduler tuning
+
+- [x] 7.1 Tune rate-scaled bursts/quanta and verify readback without repeatedly rewriting matching classes.
+- [x] 7.2 Re-run controlled TCP contention and spare-capacity checks on the installed binary, preserve original settings and document actual-client limitations.
+- [ ] 7.3 Verify revised priority with actual simultaneous phone/laptop Internet traffic; remove the current temporary SSH access after diagnosis is finished.
+
+## 8. Internet research and direct-flow comparison
+
+- [x] 8.1 Research official OpenWrt/CAKE guidance and compare local and direct WAN traffic; discard failed and proxy-confounded comparisons as acceptance evidence.
+- [x] 8.2 Integrate CAKE host isolation, explicit normal/preferred tins and strict readback; retain safe legacy cleanup and refusal of foreign schedulers.
+- [x] 8.3 Test installed binary with identically sourced direct normal/preferred downloads and normal-only capacity; verify unchanged original settings and publish evidence/code.
