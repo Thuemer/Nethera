@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -16,6 +17,9 @@ import (
 var version = "dev"
 
 func main() {
+	priorityOnly := flag.Bool("priority-only", false, "run independent priority worker, without DNS control")
+	priorityApply := flag.String("priority-apply", "", "apply a checked priority JSON file once")
+	priorityRemove := flag.Bool("priority-remove", false, "remove only priority-owned rules and queues")
 	dryRun := flag.Bool("dry-run", false, "collect once and print the messages instead of publishing them")
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
@@ -25,6 +29,29 @@ func main() {
 		return
 	}
 
+	if *priorityRemove {
+		if err := newPriorityWorker().cleanup(); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+	if *priorityApply != "" {
+		data, err := os.ReadFile(*priorityApply)
+		if err != nil {
+			log.Fatal(err)
+		}
+		c, err := parsePriority(data)
+		if err != nil {
+			log.Fatal(err)
+		}
+		result := newPriorityWorker().reconcile(c)
+		encoded, _ := json.Marshal(result)
+		fmt.Println(string(encoded))
+		if !result.Applied {
+			os.Exit(1)
+		}
+		return
+	}
 	// procd forwards standard error to the system log (logread -e nethera-agent)
 	log.SetOutput(os.Stderr)
 	log.SetFlags(0)
@@ -35,6 +62,15 @@ func main() {
 		log.Fatalf("configuration error: %v", err)
 	}
 
+	if *priorityOnly {
+		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer stop()
+		log.SetPrefix("nethera-priority: ")
+		if err := runPriority(ctx, cfg); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	agent := NewAgent(cfg, RouterSources())
 
 	if *dryRun {

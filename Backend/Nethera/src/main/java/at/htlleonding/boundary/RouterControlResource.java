@@ -1,6 +1,16 @@
 package at.htlleonding.boundary;
 
 import at.htlleonding.control.DnsDesiredState;
+import at.htlleonding.control.PriorityControlService;
+import at.htlleonding.control.RouterControlChanged;
+import at.htlleonding.model.DevicePriority;
+import jakarta.enterprise.event.Event;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.BadRequestException;
+import java.util.Set;
 import at.htlleonding.control.RouterControlPublisher;
 import at.htlleonding.model.BlockList;
 import at.htlleonding.model.Config;
@@ -32,6 +42,9 @@ import java.util.TreeMap;
 public class RouterControlResource {
 
     @Inject
+    PriorityControlService priorityControl;
+
+    @Inject
     EntityManager entityManager;
 
     @Inject
@@ -43,6 +56,30 @@ public class RouterControlResource {
     // The logged-in user's router (router-ownership); 404 when no router is connected
     @Inject
     CurrentRouter currentRouter;
+
+    @Inject
+    Event<RouterControlChanged> controlChanged;
+
+    @PUT
+    @Path("priority/devices/{deviceId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response savePriority(@PathParam("deviceId") Long deviceId, PriorityDto dto) {
+        if (!publisher.enabled()) throw new WebApplicationException("MQTT-Routersteuerung nicht verfügbar", 501);
+        currentRouter.device(deviceId);
+        if (dto == null || !Set.of("high", "normal").contains(dto.mode() == null ? "" : dto.mode()))
+            throw new BadRequestException("Priorität muss high oder normal sein");
+        var preference = entityManager.find(DevicePriority.class, deviceId);
+        if (preference == null) {
+            preference = new DevicePriority(); preference.setDeviceId(deviceId);
+            entityManager.persist(preference);
+        }
+        preference.setMode(dto.mode());
+        controlChanged.fire(new RouterControlChanged());
+        return Response.accepted(Map.of("accepted", true, "mode", dto.mode())).build();
+    }
+
+    public record PriorityDto(String mode) {}
 
     @GET
     @Path("status")
@@ -76,9 +113,9 @@ public class RouterControlResource {
                 routerId,
                 connection,
                 state == null ? null : state.getCheckedAt(),
-                new CapabilitiesDto(publisher.enabled()),
+                new CapabilitiesDto(publisher.enabled(), publisher.enabled()),
                 new AdblockDto(installed, enabled, adblockApplied),
-                Map.of(),
+                priorityControl.status(routerId, connection),
                 blocklists,
                 Map.of(),
                 confirmed ? state.getError() : null);
@@ -115,7 +152,7 @@ public class RouterControlResource {
                             Map<String, Object> timeLimits, String error) {
     }
 
-    public record CapabilitiesDto(boolean adblockInstall) {
+    public record CapabilitiesDto(boolean adblockInstall, boolean devicePriority) {
     }
 
     public record AdblockDto(boolean installed, boolean enabled, boolean applied) {

@@ -424,3 +424,38 @@ test('disabled browser storage cannot turn a saved backend rule into an error', 
   const h = harness('time-limits.js');
   h.run(`localStorage.setItem=()=>{throw new Error('disabled')};saveLimits()`);
 });
+
+test('live priority writes only its own endpoint while other protection stays in the draft', async () => {
+  const h = securityHarness();
+  h.run(`Object.assign(state, {loaded:true, preview:true, dataMode:'live', rulesKnown:false,
+    routerControl:{connection:'online', capabilities:{devicePriority:true},priority:{1:{mode:'normal',applied:true}}}});
+    localDraft={request(){throw new Error('unexpected draft write')}};
+    renderRouterControlStatus=()=>{};`);
+  h.field('priorityDevice').value='1'; h.field('priorityMode').value='high';
+  await h.run('savePriority({preventDefault(){}})');
+  assert.equal(h.calls.length,1);
+  assert.equal(h.calls[0].url,'http://test/api/router-control/priority/devices/1');
+  assert.deepEqual(h.calls[0].body,{mode:'high'});
+  assert.equal(h.run('state.presets[0].priorityMode'),false);
+  assert.equal(h.run('state.assignments[0].presetId'),7);
+  assert.equal(h.run('state.routerControl.priority[1].applied'),false);
+  await assert.rejects(h.run(`apiJson(SECURITY_API + '/presets', {method:'POST'}, true)`), /Live-Priorisierung/);
+  await assert.rejects(h.run(`apiJson(SECURITY_API + '/presets', {method:'POST'})`), /unexpected draft/);
+});
+
+test('live priority confirmation works without revealing or applying local draft presets', () => {
+  const h=securityHarness();
+  h.run(`Object.assign(state,{preview:true,dataMode:'live',rulesKnown:false,
+    routerControl:{connection:'online',capabilities:{devicePriority:true},priority:{1:{mode:'high',applied:true}}}});renderPriorityList()`);
+  assert.match(h.field('priorityList').innerHTML,/Tablet · Bevorzugt.*Am Router bestätigt/);
+  h.run("state.routerControl.connection='offline';renderPriorityList()");
+  assert.doesNotMatch(h.field('priorityList').innerHTML,/Am Router bestätigt/);
+});
+
+test('priority on an older backend still reports a local draft', () => {
+  const h = securityHarness();
+  h.run(`state.preview=true;setStatus('Gerätepriorität gespeichert.', 'success')`);
+  // The generic draft guard is not bypassed merely by the message wording.
+  h.run(`let statusText='';document.getElementById('statusBox').setAttribute=(name,value)=>{if(name==='text')statusText=value};setStatus('Gerätepriorität gespeichert.', 'success')`);
+  assert.match(h.run('statusText'),/lokalen Entwurf/);
+});

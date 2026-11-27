@@ -18,11 +18,14 @@ const state = {
   wifiNetworks: []
 };
 let localDraft = null, draftBase = null, draftKey = null;
+const livePriority = () => state.dataMode === 'live' && state.routerControl?.capabilities?.devicePriority === true;
 const canEditRules = () => state.preview || state.rulesKnown;
 
 function renderDraft() {
   const discard = document.getElementById('discardDraft');
   if (discard) discard.disabled = !localDraft?.dirty && !state.draftError;
+  const notice = document.getElementById('draftNotice');
+  if (notice) notice.textContent = livePriority() ? 'Gerätepriorität wird am Router gespeichert. Andere Schutzänderungen bleiben lokale Entwürfe.' : 'Nur in diesem Browser-Tab. Keine Übertragung an den Router.';
   const confirmed = (draftBase?.blocklists || []).filter(item => item.confirmationSource === 'ROUTER_ACK');
   const section = document.getElementById('confirmedRules');
   if (section) section.hidden = !confirmed.length || state.dataMode !== 'live';
@@ -66,20 +69,21 @@ function sanitizeDomain(value) {
   } catch { return ''; }
 }
 
-function setStatus(text, tone = 'info') {
-  if (state.preview && tone === 'success') text = 'Im lokalen Entwurf gespeichert. Nicht an den Router gesendet.';
+function setStatus(text, tone = 'info', liveWrite = false) {
+  if (state.preview && tone === 'success' && !liveWrite) text = 'Im lokalen Entwurf gespeichert. Nicht an den Router gesendet.';
   const status = document.getElementById('statusBox');
   if (status) status.hidden = false;
   status?.setAttribute('text', text);
   status?.setAttribute('state', tone);
 }
 
-async function apiJson(url, options = {}) {
+async function apiJson(url, options = {}, priorityWrite = false) {
   if (options.method && options.method !== 'GET') {
-    if (state.preview) {
+    if (state.preview && !priorityWrite) {
       if (!state.loaded || !localDraft) throw new Error('Lokaler Entwurf nicht geladen.');
       return localDraft.request(draftBase, new URL(url).pathname, options);
     }
+    if (priorityWrite && (!livePriority() || !url.startsWith(`${API_BASE_URL}/api/router-control/priority/devices/`))) throw new Error('Live-Priorisierung nicht verfügbar.');
     await NetheraApi.requireLive();
     if (!state.rulesKnown && (url.startsWith(`${SECURITY_API}/`) || url.startsWith(`${API_BASE_URL}/api/device-time-limits/`))) {
       throw new Error('Regeln wurden noch nicht vollständig vom Router gemeldet. Bestehende Einstellungen bleiben unverändert.');
@@ -208,7 +212,8 @@ function renderRouterControlStatus() {
     ? 'Jede Blockliste zeigt ihren bestätigten Routerstatus einzeln an.'
     : 'Sperrlisten sind gespeichert; die Wirkung am Router ist nicht bestätigt.';
   const priorityNote = document.getElementById('priorityActual');
-  if (priorityNote) priorityNote.textContent = state.preview
+  if (priorityNote) priorityNote.textContent = livePriority()
+    ? 'Gerätepriorität wird übertragen. Bestätigt wird die Warteschlangenregel am Router; keine garantierte Internetbandbreite.' : state.preview
     ? 'Lokale Prioritätswünsche. Keine Änderung an der Bandbreite oder am Router.' : state.dataMode === 'demo'
     ? 'Beispiel-Prioritäten · Keine Änderung am Router.'
     : !state.rulesKnown
@@ -659,27 +664,27 @@ function renderPriorityList() {
   list.innerHTML = state.devices.map(device => {
     const preset = presetForDevice(device.id);
     const locallyChanged = preset?.localDraft || state.draftDeviceIds?.assignments?.includes(Number(device.id));
-    if (!state.rulesKnown && !preset && !locallyChanged) {
+    if (!livePriority() && !state.rulesKnown && !preset && !locallyChanged) {
       return `<div class="priority-row"><span>${escapeText(device.hostname)}</span><span class="badge">Priorität nicht gemeldet</span></div>`;
     }
-    const desired = preset?.priorityMode ? 'high' : 'normal';
     const actual = state.routerControl?.priority?.[device.id];
-    const confirmed = !state.preview && state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
-    const status = locallyChanged ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerwirkung unbestätigt';
-    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : 'Normal'}</span><span class="badge ${confirmed ? 'ok' : ''}">${status}</span></div>`;
+    const desired = livePriority() ? actual?.mode : preset?.priorityMode ? 'high' : 'normal';
+    const confirmed = (!state.preview || livePriority()) && state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === desired;
+    const status = livePriority() ? (!actual ? 'Priorität nicht verfügbar' : confirmed ? 'Am Router bestätigt' : actual.error ? 'Routerfehler' : 'Routerwirkung unbestätigt') : locallyChanged ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerwirkung unbestätigt';
+    return `<div class="priority-row"><span>${escapeText(device.hostname)} · ${desired === 'high' ? 'Bevorzugt' : desired === 'normal' ? 'Normal' : 'Nicht verfügbar'}</span><span class="badge ${confirmed ? 'ok' : ''}">${status}</span></div>`;
   }).join('');
 }
 
 function updatePrioritySelection() {
   const deviceId = Number(document.getElementById('priorityDevice').value);
   const select = document.getElementById('priorityMode');
-  select.value = presetForDevice(deviceId)?.priorityMode ? 'high' : 'normal';
+  select.value = livePriority() ? state.routerControl?.priority?.[deviceId]?.mode || 'normal' : presetForDevice(deviceId)?.priorityMode ? 'high' : 'normal';
   select.dispatchEvent(new Event('change', { bubbles: true }));
   updatePriorityPreview();
 }
 
 function updatePriorityPreview() {
-  if (!canEditRules()) {
+  if (!livePriority() && !canEditRules()) {
     document.getElementById('priorityPreview').textContent = 'Zuweisungen sind noch nicht vollständig vom Router gemeldet. Keine Änderung möglich.';
     return;
   }
@@ -687,11 +692,22 @@ function updatePriorityPreview() {
   const high = document.getElementById('priorityMode').value === 'high';
   const actual = state.routerControl?.priority?.[device?.id];
   const confirmed = state.routerControl?.connection === 'online' && actual?.applied === true && actual?.mode === (high ? 'high' : 'normal');
-  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · ${state.preview ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerbestätigung ausstehend'}`;
+  document.getElementById('priorityPreview').textContent = `${device?.hostname || 'Kein Gerät'} · ${high ? 'Bevorzugt bei hoher Netzauslastung' : 'Keine Bevorzugung'} · ${state.preview && !livePriority() ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : confirmed ? 'Am Router bestätigt' : 'Routerbestätigung ausstehend'}`;
 }
 
 async function savePriority(event) {
   event.preventDefault();
+  if (livePriority()) {
+    const deviceId = Number(document.getElementById('priorityDevice').value);
+    if (!state.devices.some(device => Number(device.id) === deviceId)) throw new Error('Kein Gerät ausgewählt');
+    await apiJson(`${API_BASE_URL}/api/router-control/priority/devices/${deviceId}`, {
+      method: 'PUT', body: JSON.stringify({ mode: document.getElementById('priorityMode').value })
+    }, true);
+    state.routerControl.priority[deviceId] = { mode: document.getElementById('priorityMode').value, applied: false };
+    renderRouterControlStatus();
+    setStatus('Gerätepriorität gespeichert. Routerbestätigung ausstehend; mit „Status prüfen“ aktualisieren.', 'success', true);
+    return;
+  }
   await saveDeviceProfile(Number(document.getElementById('priorityDevice').value), { priorityMode: document.getElementById('priorityMode').value === 'high' });
   await loadSecurityState();
   setStatus('Gerätepriorität gespeichert. Den Routerstatus siehst du bei der Geräteübersicht.', 'success');

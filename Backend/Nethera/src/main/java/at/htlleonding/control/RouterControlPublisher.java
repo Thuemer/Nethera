@@ -42,8 +42,11 @@ public class RouterControlPublisher {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     static final int SCHEMA_VERSION = 1;
 
-    private record Prepared(String topic, byte[] payload) {
+    record Prepared(String topic, byte[] payload) {
     }
+
+    @Inject
+    PriorityControlService priorityControl;
 
     @Inject
     EntityManager entityManager;
@@ -103,7 +106,7 @@ public class RouterControlPublisher {
         List<DevicePresetAssignment> assignments = entityManager.createNamedQuery(DevicePresetAssignment.QUERY_FIND_ALL, DevicePresetAssignment.class).getResultList();
         List<ConnectedDevice> devices = entityManager.createNamedQuery(ConnectedDevice.QUERY_FIND_ALL, ConnectedDevice.class).getResultList();
 
-        List<Prepared> messages = new ArrayList<>();
+        List<Prepared> messages = new ArrayList<>(priorityControl.prepare(force, routers, presets, assignments, devices));
         for (Router router : routers) {
             boolean adblock = adblockWanted(entityManager, router.getId());
             DnsDesiredState desired = DnsDesiredState.build(router.getId(), adblock, blocklists, groups, members, presets, assignments, devices);

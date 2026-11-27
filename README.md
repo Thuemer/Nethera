@@ -140,6 +140,12 @@ Routerkonfiguration haben eigene Speicherpfade; eine erfolgreiche Speicherung
 belegt allein noch keine Routerwirkung. Dashboard-Bereiche und Layout bleiben
 anpassbar, Website und App unterstützen mobile Ansichten.
 
+Die Gerätepriorisierung **Normal / Bevorzugt** wird durch einen separaten
+Routerdienst ergänzt. Installation, technische Grenzen und die Übergabe für den
+späteren Backend-/Frontend-Rollout sind unter
+[Gerätepriorität](Documentation/device-priority.md) dokumentiert. Der Cloud-Rollout
+ist noch ausständig; ein Git-Push allein aktiviert die Funktion dort nicht.
+
 **Gespeichert ist nicht automatisch am Router aktiv:** Maßgeblich ist die
 ausgewiesene Routerbestätigung. Feste Mbit/s-/Prozentanteile sind keine fertige
 Funktion. Live-Werte stammen aus den als Routerdaten gekennzeichneten

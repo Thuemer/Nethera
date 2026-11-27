@@ -1,0 +1,5 @@
+/usr/bin/nethera-priority
+/etc/init.d/nethera-priority
+/etc/rc.d/S99nethera-priority
+/etc/rc.d/K10nethera-priority
+/etc/nethera-priority.json
