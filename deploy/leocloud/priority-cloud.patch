@@ -140,3 +140,30 @@
          long deviceId = QuarkusTransaction.requiringNew().call(() -> {
              var device = new ConnectedDevice(); device.setRouter(em.find(Router.class, 1L));
              device.setMacAddress(MAC); device.setHostname("Combined control test");
+--- a/Backend/Nethera/src/main/java/at/htlleonding/boundary/PriorityBandwidthResource.java
++++ b/Backend/Nethera/src/main/java/at/htlleonding/boundary/PriorityBandwidthResource.java
+@@ -5,7 +5,7 @@
+ import at.htlleonding.control.RouterControlPublisher;
+ import at.htlleonding.model.PriorityBandwidthSettings;
+ import at.htlleonding.model.Router;
+-import at.htlleonding.services.CurrentRouter;
++import org.eclipse.microprofile.config.inject.ConfigProperty;
+ import at.htlleonding.telemetry.RouterDataPolicy;
+ import io.quarkus.security.Authenticated;
+ import jakarta.enterprise.event.Event;
+@@ -23,13 +23,13 @@
+ @Consumes(MediaType.APPLICATION_JSON)
+ public class PriorityBandwidthResource {
+     @Inject EntityManager em;
+-    @Inject CurrentRouter currentRouter;
++    @ConfigProperty(name="nethera.router.id", defaultValue="1") long routerId;
+     @Inject PriorityControlService priority;
+     @Inject RouterControlPublisher publisher;
+     @Inject RouterDataPolicy policy;
+     @Inject Event<RouterControlChanged> changed;
+ 
+-    private Router router() { return currentRouter.require(); }
++    private Router router() { Router router=em.find(Router.class,routerId); if(router==null)throw new NotFoundException("Router nicht gefunden"); return router; }
+ 
+     @GET
+     public Map<String,Object> get() {

@@ -7,7 +7,7 @@ const root=process.env.NETHERA_TEST_ROOT||path.resolve(__dirname,'..');
 (async()=>{
  const browser=await chromium.launch({channel:process.env.NETHERA_BROWSER||'chrome',headless:true});
  try{
-  const context=await browser.newContext();const page=await context.newPage();const errors=[],writes=[];let failBlockWrite=false;
+  const context=await browser.newContext();const page=await context.newPage();const errors=[],writes=[];let failBlockWrite=false;let bandwidth={configured:true,desired:{enabled:true,downloadKbit:60000,uploadKbit:10000},applied:true};
   page.on('pageerror',e=>errors.push(e.message));
   const device={id:24,hostname:'Test-MacBook',macAddress:'02:27:00:00:00:24',ipAddress:'192.0.2.24',connectionType:'wifi',isOnline:true};
   let control={routerId:1,connection:'online',checkedAt:new Date().toISOString(),capabilities:{devicePriority:true,timeControl:true},
@@ -24,6 +24,10 @@ const root=process.env.NETHERA_TEST_ROOT||path.resolve(__dirname,'..');
     if(url.pathname==='/api/routers/list')return route.fulfill({json:[{id:1,name:'Testnetz',dataMode:'live',connection:'online',devices:[device]}]});
     if(url.pathname==='/api/security/state')return route.fulfill({json:data});
     if(url.pathname==='/api/router-control/status')return route.fulfill({json:control});
+    if(url.pathname==='/api/router-control/priority/bandwidth'){
+      if(request.method()==='PUT'){bandwidth={configured:true,desired:request.postDataJSON(),applied:false};return route.fulfill({status:202,json:{accepted:true}})}
+      return route.fulfill({json:bandwidth});
+    }
     if(url.pathname==='/api/router-control/priority/devices/24'){
       control.priority[24]={mode:request.postDataJSON().mode,applied:false};return route.fulfill({status:202,json:{accepted:true}});
     }
@@ -79,6 +83,14 @@ const root=process.env.NETHERA_TEST_ROOT||path.resolve(__dirname,'..');
   assert.ok(!data.blocklists.some(item=>item.urlPattern.includes('youtube.com')));
   if(process.env.NETHERA_SCREENSHOTS){fs.mkdirSync(process.env.NETHERA_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.NETHERA_SCREENSHOTS,'website-group-error-mobile.png'),fullPage:true})}
   failBlockWrite=false;
+  await page.locator('[data-tab="priority"]').click();
+  assert.equal(await page.locator('#priorityDownloadMbit').inputValue(),'60');
+  await page.locator('#priorityDownloadMbit').fill('50');
+  await page.locator('#priorityBandwidthForm [type="submit"]').click();
+  await page.waitForFunction(()=>document.querySelector('#priorityBandwidthStatus').textContent.includes('ausstehend'));
+  assert.deepEqual(bandwidth.desired,{enabled:true,downloadKbit:50000,uploadKbit:10000});
+  assert.ok(!await page.locator('#priorityList').innerText().then(t=>t.includes('Am Router bestätigt')));
+  assert.equal(control.timeApplied,true);assert.equal(control.adblock.enabled,true);
   // Exercise existing live protection paths after the new priority write.
   await page.evaluate(()=>updateBlocklistDomain(5,'example.com','blocked.example'));
   await page.evaluate(()=>{document.getElementById('adProtectionEnabled').checked=false;return saveAdProtection({preventDefault(){}})});

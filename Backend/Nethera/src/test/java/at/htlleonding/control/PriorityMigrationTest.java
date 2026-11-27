@@ -26,6 +26,9 @@ class PriorityMigrationTest {
                         + "CREATE TABLE account(id bigint PRIMARY KEY, name text); INSERT INTO account VALUES(1,'keep login');");
                 String migration = Files.readString(Path.of("migrations/20261127_device_priority.sql"));
                 sql.execute(migration);
+                String shaping=Files.readString(Path.of("migrations/20261127_priority_bandwidth.sql"));
+                sql.execute(shaping);
+                sql.execute(shaping);
                 sql.execute("INSERT INTO device_priority VALUES(7,'high');"
                         + "INSERT INTO priority_control_state(router_id,desired_version,applied_version) VALUES(1,99,99);");
                 sql.execute(migration);

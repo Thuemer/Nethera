@@ -74,6 +74,11 @@ class PriorityTimeControlIT {
         assertTrue(status().path("capabilities").path("timeControl").asBoolean());
         assertTrue(status().path("capabilities").path("devicePriority").asBoolean());
 
+        given().contentType(ContentType.JSON).body("{\"enabled\":true,\"downloadKbit\":60000,\"uploadKbit\":10000}")
+                .put("/api/router-control/priority/bandwidth").then().statusCode(202);
+        given().contentType(ContentType.JSON).body("{}").put("/api/router-control/priority/bandwidth").then().statusCode(400);
+        given().contentType(ContentType.JSON).body("{\"enabled\":true,\"downloadKbit\":0,\"uploadKbit\":10000}")
+                .put("/api/router-control/priority/bandwidth").then().statusCode(400);
         String priorityEndpoint="/api/router-control/priority/devices/"+deviceId;
         given().contentType(ContentType.JSON).body("{\"mode\":\"high\"}").put(priorityEndpoint).then().statusCode(202);
         JsonNode desired=await(() -> {var value=retained("priority");return value!=null&&value.path("devices").path(MAC).asText().equals("high")?value:null;});
@@ -114,7 +119,9 @@ class PriorityTimeControlIT {
 
     static void priorityAck(JsonNode desired,long version)throws Exception{
         ObjectNode ack=JSON.createObjectNode().put("v",1).put("ts",Instant.now().getEpochSecond()).put("version",version).put("applied",true);
-        ack.set("devices",desired.path("devices"));publish("nethera/1/telemetry/priority",ack.toString());
+        ack.set("devices",desired.path("devices"));
+        ObjectNode bandwidth=desired.path("bandwidth").deepCopy();bandwidth.put("active",true).put("source","backend");ack.set("bandwidth",bandwidth);
+        publish("nethera/1/telemetry/priority",ack.toString());
     }
     static JsonNode status()throws Exception{return JSON.readTree(given().get("/api/router-control/status").then().statusCode(200).extract().asString());}
     static JsonNode retained(String topic)throws Exception{

@@ -3,3 +3,4 @@
 /etc/rc.d/S99nethera-priority
 /etc/rc.d/K10nethera-priority
 /etc/nethera-priority.json
+/etc/nethera-priority-bandwidth.json

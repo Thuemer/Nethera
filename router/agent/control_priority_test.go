@@ -29,7 +29,7 @@ func TestPriorityValidation(t *testing.T) {
 func TestPriorityRulesIPv4IPv6AndNormalRemoval(t *testing.T) {
 	c := priorityControl{V: 1, Version: 1, Devices: map[string]string{"02:00:00:00:00:01": "high", "02:00:00:00:00:02": "normal"}}
 	rules := priorityRules(c, map[string][]string{"02:00:00:00:00:01": {"192.168.1.5", "2001:db8::5"}})
-	for _, want := range []string{"ether saddr 02:00:00:00:00:01", "ip daddr 192.168.1.5", "ip6 daddr 2001:db8::5", "0x7e000001"} {
+	for _, want := range []string{"ether saddr 02:00:00:00:00:01", "ip daddr 192.168.1.5", "ip6 daddr 2001:db8::5", "0x7d000010"} {
 		if !strings.Contains(rules, want) {
 			t.Fatal(want)
 		}
@@ -50,7 +50,7 @@ func TestPriorityForeignQueuesUntouched(t *testing.T) {
 			}
 			return []byte(out), nil
 		}}
-		if err := w.ensureQueue("wan"); err == nil {
+		if err := w.ensureShapedQueue("wan", 10000); err == nil {
 			t.Fatal("accepted foreign queue")
 		}
 	}
@@ -65,6 +65,8 @@ func TestPriorityNormalCleanupPreservesForeignQueues(t *testing.T) {
 			return []byte("table inet fw4\ntable inet nethera_priority\n"), nil
 		case "tc qdisc show":
 			return []byte("qdisc cake 1: dev other root\nqdisc drr 7e00: dev wan root\n"), nil
+		case "tc qdisc show dev wan":
+			return []byte("qdisc drr 7e00: root"), nil
 		case "nft delete table inet nethera_priority", "tc qdisc del dev wan root handle 7e00:":
 			return nil, nil
 		default:
@@ -75,7 +77,7 @@ func TestPriorityNormalCleanupPreservesForeignQueues(t *testing.T) {
 	if !result.Applied {
 		t.Fatal(result.Error)
 	}
-	if len(calls) != 4 {
+	if len(calls) != 5 {
 		t.Fatal(calls)
 	}
 }
@@ -89,7 +91,52 @@ func TestPriorityReadbackRequiresFallback(t *testing.T) {
 		}
 		return nil, nil
 	}}
-	if err := w.verifyQueue("wan"); err == nil {
+	if err := w.verifyShapedQueue("wan", 10000); err == nil {
 		t.Fatal("confirmed without default class")
+	}
+}
+
+func TestPriorityBandwidthValidationAndFallback(t *testing.T) {
+	for _, payload := range []string{
+		`{"v":1,"version":1,"devices":{},"bandwidth":{"enabled":true,"downloadKbit":0,"uploadKbit":1000}}`,
+		`{"v":1,"version":1,"devices":{},"bandwidth":{"enabled":true,"downloadKbit":60000,"uploadKbit":1000001}}`,
+		`{"v":1,"version":1,"devices":{},"bandwidth":{"enabled":false,"downloadKbit":60000,"uploadKbit":1000}}`,
+	} {
+		if _, err := parsePriority([]byte(payload)); err == nil {
+			t.Fatal("accepted invalid shaping rates")
+		}
+	}
+	local := func(string) ([]byte, error) {
+		return []byte(`{"enabled":true,"downloadKbit":60000,"uploadKbit":10000}`), nil
+	}
+	b, source, err := resolvePriorityBandwidth(priorityControl{}, local)
+	if err != nil || source != "local" || b.DownloadKbit != 60000 {
+		t.Fatal(b, source, err)
+	}
+	disabled := priorityBandwidth{}
+	b, source, err = resolvePriorityBandwidth(priorityControl{Bandwidth: &disabled}, local)
+	if err != nil || source != "backend" || b.Enabled {
+		t.Fatal("explicit disabled state must override local commissioning settings")
+	}
+}
+
+func TestPriorityShaperVerifiesNumericRatesAndWeights(t *testing.T) {
+	for _, rate := range []int{10000, 9999} {
+		w := priorityWorker{run: func(name string, args ...string) ([]byte, error) {
+			switch strings.Join(args, " ") {
+			case "qdisc show dev wan":
+				return []byte("qdisc htb 7d00: root default 0x20\nqdisc fq_codel 7e01: parent 7d00:10\nqdisc fq_codel 7e02: parent 7d00:20"), nil
+			case "-j -d class show dev wan":
+				return []byte(`[{"class":"htb","handle":"7d00:1","rate":1250000,"ceil":1250000},{"class":"htb","handle":"7d00:10","parent":"7d00:1","rate":833250,"ceil":1250000,"prio":0,"quantum":3000},{"class":"htb","handle":"7d00:20","parent":"7d00:1","rate":416750,"ceil":1250000,"prio":1,"quantum":1500}]`), nil
+			}
+			return nil, errors.New("unexpected command")
+		}}
+		err := w.verifyShapedQueue("wan", rate)
+		if rate == 10000 && err != nil {
+			t.Fatal(err)
+		}
+		if rate != 10000 && err == nil {
+			t.Fatal("confirmed mismatching bandwidth")
+		}
 	}
 }

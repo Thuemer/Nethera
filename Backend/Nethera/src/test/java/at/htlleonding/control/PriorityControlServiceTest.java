@@ -28,6 +28,28 @@ class PriorityControlServiceTest {
         service.ingest(1L, ack(10, now-10, false)); assertTrue(state.getApplied());
         service.ingest(1L, ack(10, now+1, false)); assertFalse(state.getApplied());
     }
+    @Test void validatesExplicitDirectionalCaps() {
+        assertTrue(new PriorityControlService.Bandwidth(true,60000,10000).valid());
+        assertFalse(new PriorityControlService.Bandwidth(true,0,10000).valid());
+        assertFalse(new PriorityControlService.Bandwidth(true,60000,1000001).valid());
+        assertTrue(new PriorityControlService.Bandwidth(false,0,0).valid());
+        assertFalse(new PriorityControlService.Bandwidth(false,60000,10000).valid());
+    }
+    @Test void bandwidthConfirmationRequiresFreshMatchingRatesAndActiveShaper() {
+        var rates=new at.htlleonding.model.PriorityBandwidthSettings();
+        rates.routerId=1L;rates.enabled=true;rates.downloadKbit=60000;rates.uploadKbit=10000;
+        when(service.entityManager.find(at.htlleonding.model.PriorityBandwidthSettings.class,1L)).thenReturn(rates);
+        state.setAppliedVersion(10L);state.setApplied(true);state.setCheckedAt(Instant.now());
+        state.setDesiredContent("{\"devices\":{},\"bandwidth\":{\"enabled\":true,\"downloadKbit\":60000,\"uploadKbit\":10000}}");
+        state.setReportedBandwidth("{\"enabled\":true,\"downloadKbit\":60000,\"uploadKbit\":10000,\"active\":true}");
+        assertEquals(true,service.bandwidthStatus(1L,"online").get("applied"));
+        rates.downloadKbit=50000;
+        assertEquals(false,service.bandwidthStatus(1L,"online").get("applied"));
+        rates.downloadKbit=60000;state.setReportedBandwidth(null);
+        assertEquals(false,service.bandwidthStatus(1L,"online").get("applied"));
+        state.setReportedBandwidth("{\"enabled\":true,\"downloadKbit\":60000,\"uploadKbit\":10000,\"active\":false}");
+        assertEquals(false,service.bandwidthStatus(1L,"online").get("applied"));
+    }
     @Test void rejectsMalformedAndFutureAckBeforeWriting() {
         assertThrows(InvalidPayloadException.class, () -> service.ingest(1L,"{}"));
         assertThrows(InvalidPayloadException.class, () -> service.ingest(1L,ack(10,Instant.now().plusSeconds(60).getEpochSecond(),true)));

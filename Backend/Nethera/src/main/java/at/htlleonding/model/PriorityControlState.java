@@ -22,6 +22,10 @@ public class PriorityControlState {
     private String error;
     @Column(name = "checked_at")
     private Instant checkedAt;
+    @Column(name = "reported_bandwidth", columnDefinition = "text")
+    private String reportedBandwidth;
+    public String getReportedBandwidth() { return reportedBandwidth; }
+    public void setReportedBandwidth(String value) { reportedBandwidth = value; }
     public Long getRouterId() { return routerId; }
     public void setRouterId(Long value) { routerId = value; }
     public Long getDesiredVersion() { return desiredVersion; }

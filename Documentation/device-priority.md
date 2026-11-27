@@ -76,3 +76,12 @@ Der gemeinsame Stand enthält die Historie von `feat/router-time-schedules` bis 
 Bei Website- und anderen Schutzformularen gibt es Rückmeldungen direkt am Formular: Speichern läuft, erfolgreich gespeichert oder nicht vollständig gespeichert. „Erfolgreich gespeichert“ bestätigt die Speicherung; „Am Router bestätigt“ ist ein eigener Zustand. Eine Website nur für Kinder: Gruppe „Kinder“ erstellen, Geräte zuordnen, unter Websites sperren „Eine Gruppe“ und „Kinder“ auswählen. Es wird eine Domain gesperrt, nicht nur der Pfad eines einzelnen Links. Automatische Kategorienfilter sind noch nicht implementiert und im Live-Modus deaktiviert.
 
 Der gemeldete TikTok-Zugriff auf der bestehenden Cloud wurde hier nicht an Router/Handy reproduziert. Domain-Speicherung, Gruppen-Zuordnung und API→MQTT-Bestätigung sind isoliert getestet. Ob TikTok auf einem konkreten Gerät vollständig gesperrt ist, muss nach dem Rollout mit dessen tatsächlicher Verbindung und frischen Anfragen geprüft werden; gespeicherte Regeln allein sind dafür kein Beleg.
+
+
+## Update 27.11.: kontrollierte Bandbreite
+
+Die neue Version ersetzt die bisherige ungedrosselte DRR-Verteilung durch HTB auf WAN und LAN-Bridge. Unter gleichzeitiger Last erhalten die bevorzugte Gruppe zwei Drittel und die normale Gruppe ein Drittel des eingestellten Limits. Beide dürfen freie Kapazität bis zum Gesamtlimit nutzen. Die Anteile gelten pro Gruppe, nicht pro Gerät.
+
+Im Frontend unter Schutz → Priorisierung lassen sich die globalen Download-/Upload-Limits konfigurieren. Dafür müssen Backend und Frontend gemeinsam aus dem kompatiblen Release aktualisiert und die neue Migration `20261127_priority_bandwidth.sql` nach `20261127_device_priority.sql` angewendet werden. Ohne neue Cloud-Version verwendet der Router seine lokale Bandbreitenkonfiguration. Aktuell sind dort 60/10 Mbit/s als Inbetriebnahmegrenzen gesetzt; diese Werte sind keine Messung des Anschlusses. Beim Netzwerkwechsel müssen beide Grenzen neu gewählt werden, typischerweise knapp unter der stabil verfügbaren Anschlussgeschwindigkeit.
+
+„Am Router bestätigt“ erfordert in der neuen Backend-Version passende aktive Bandbreitenklassen und aktuelle Bestätigung derselben Konfiguration. Ein höherer Speedtestwert für jedes bevorzugte Gerät ist dadurch nicht garantiert. Messungen und verbleibende Grenzen stehen im [Prüfprotokoll](../openspec/changes/device-priority-control/bandwidth-verification.md).

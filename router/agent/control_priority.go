@@ -24,17 +24,19 @@ const priorityHandle = "7e00:"
 var interfacePattern = regexp.MustCompile(`^[a-zA-Z0-9_.:-]{1,15}$`)
 
 type priorityControl struct {
-	V       int               `json:"v"`
-	Version int64             `json:"version"`
-	Devices map[string]string `json:"devices"`
+	Bandwidth *priorityBandwidth `json:"bandwidth,omitempty"`
+	V         int                `json:"v"`
+	Version   int64              `json:"version"`
+	Devices   map[string]string  `json:"devices"`
 }
 type priorityStatus struct {
-	V       int               `json:"v"`
-	TS      int64             `json:"ts"`
-	Version int64             `json:"version"`
-	Applied bool              `json:"applied"`
-	Devices map[string]string `json:"devices"`
-	Error   string            `json:"error,omitempty"`
+	Bandwidth priorityBandwidthReport `json:"bandwidth"`
+	V         int                     `json:"v"`
+	TS        int64                   `json:"ts"`
+	Version   int64                   `json:"version"`
+	Applied   bool                    `json:"applied"`
+	Devices   map[string]string       `json:"devices"`
+	Error     string                  `json:"error,omitempty"`
 }
 type priorityWorker struct {
 	run  func(string, ...string) ([]byte, error)
@@ -79,6 +81,11 @@ func parsePriority(data []byte) (priorityControl, error) {
 		}
 		normalized[mac] = mode
 	}
+	if c.Bandwidth != nil {
+		if err := c.Bandwidth.validate(); err != nil {
+			return c, err
+		}
+	}
 	c.Devices = normalized
 	return c, nil
 }
@@ -114,28 +121,13 @@ func (w priorityWorker) discover() ([]string, []string, error) {
 	if !interfacePattern.MatchString(lan.Device) {
 		return nil, nil, errors.New("LAN is not ready")
 	}
-	members, err := w.glob("/sys/class/net/" + lan.Device + "/brif/*")
-	if err != nil {
-		return nil, nil, err
-	}
-	downstream := []string{}
-	for _, m := range members {
-		n := filepath.Base(m)
-		if interfacePattern.MatchString(n) && n != wan.Device {
-			downstream = append(downstream, n)
-		}
-	}
-	if len(downstream) == 0 {
-		downstream = append(downstream, lan.Device)
-	}
-	sort.Strings(downstream)
-	return append([]string{wan.Device}, downstream...), downstream, nil
+	return []string{wan.Device, lan.Device}, []string{lan.Device}, nil
 }
 func (w priorityWorker) qdisc(dev string) (string, error) {
 	out, err := w.run("tc", "qdisc", "show", "dev", dev)
 	return string(out), err
 }
-func ownsPriorityQueue(out string) bool { return strings.Contains(out, "qdisc drr 7e00: root") }
+func ownsPriorityQueue(out string) bool { return ownedPriorityRoot(out) != "" }
 func freePriorityQueue(out string) bool {
 	for _, line := range strings.Split(out, "\n") {
 		if strings.Contains(" "+strings.TrimSpace(line)+" ", " root ") && !strings.HasPrefix(line, "qdisc noqueue 0:") {
@@ -151,7 +143,7 @@ func (w priorityWorker) ownedInterfaces() ([]string, error) {
 	}
 	result := []string{}
 	for _, line := range strings.Split(string(raw), "\n") {
-		if strings.HasPrefix(line, "qdisc drr 7e00: dev ") {
+		if strings.HasPrefix(line, "qdisc drr 7e00: dev ") || strings.HasPrefix(line, "qdisc htb 7d00: dev ") {
 			f := strings.Fields(line)
 			if len(f) > 4 && interfacePattern.MatchString(f[4]) {
 				result = append(result, f[4])
@@ -176,61 +168,9 @@ func (w priorityWorker) cleanup() error {
 		return err
 	}
 	for _, dev := range devices {
-		if err = w.command("tc", "qdisc", "del", "dev", dev, "root", "handle", priorityHandle); err != nil {
+		if err = w.deleteOwnedQueue(dev); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-func (w priorityWorker) ensureQueue(dev string) error {
-	out, err := w.qdisc(dev)
-	if err != nil {
-		return err
-	}
-	if ownsPriorityQueue(out) {
-		return w.verifyQueue(dev)
-	}
-	if !freePriorityQueue(out) {
-		return fmt.Errorf("foreign root qdisc on %s; left unchanged", dev)
-	}
-	steps := [][]string{
-		{"qdisc", "add", "dev", dev, "root", "handle", priorityHandle, "drr"},
-		{"class", "add", "dev", dev, "parent", priorityHandle, "classid", "7e00:1", "drr", "quantum", "3000"},
-		{"class", "add", "dev", dev, "parent", priorityHandle, "classid", "7e00:2", "drr", "quantum", "1500"},
-		{"qdisc", "add", "dev", dev, "parent", "7e00:1", "handle", "7e01:", "fq_codel"},
-		{"qdisc", "add", "dev", dev, "parent", "7e00:2", "handle", "7e02:", "fq_codel"},
-		{"filter", "add", "dev", dev, "parent", priorityHandle, "protocol", "all", "pref", "100", "matchall", "classid", "7e00:2"},
-	}
-	for _, s := range steps {
-		if err = w.command("tc", s...); err != nil {
-			_ = w.command("tc", "qdisc", "del", "dev", dev, "root", "handle", priorityHandle)
-			return err
-		}
-	}
-	return w.verifyQueue(dev)
-}
-func (w priorityWorker) verifyQueue(dev string) error {
-	out, err := w.qdisc(dev)
-	if err != nil {
-		return err
-	}
-	if !ownsPriorityQueue(out) || !strings.Contains(out, "qdisc fq_codel 7e01:") || !strings.Contains(out, "qdisc fq_codel 7e02:") {
-		return fmt.Errorf("priority queue readback failed on %s", dev)
-	}
-	outb, err := w.run("tc", "class", "show", "dev", dev)
-	if err != nil {
-		return err
-	}
-	out = string(outb)
-	if !strings.Contains(out, "class drr 7e00:1") || !strings.Contains(out, "quantum 3000") || !strings.Contains(out, "class drr 7e00:2") || !strings.Contains(out, "quantum 1500") {
-		return fmt.Errorf("priority class readback failed on %s", dev)
-	}
-	outb, err = w.run("tc", "filter", "show", "dev", dev, "parent", priorityHandle)
-	if err != nil {
-		return err
-	}
-	if !strings.Contains(string(outb), "matchall") || !strings.Contains(string(outb), "7e00:2") {
-		return fmt.Errorf("normal fallback missing on %s", dev)
 	}
 	return nil
 }
@@ -272,13 +212,13 @@ func priorityRules(c priorityControl, addresses map[string][]string) string {
 		if c.Devices[mac] != "high" {
 			continue
 		}
-		fmt.Fprintf(&b, " ether saddr %s counter meta priority set 0x7e000001\n", mac)
+		fmt.Fprintf(&b, " ether saddr %s counter meta priority set 0x7d000010\n", mac)
 		for _, ip := range addresses[mac] {
 			family := "ip6"
 			if net.ParseIP(ip).To4() != nil {
 				family = "ip"
 			}
-			fmt.Fprintf(&b, " %s daddr %s counter meta priority set 0x7e000001\n", family, ip)
+			fmt.Fprintf(&b, " %s daddr %s counter meta priority set 0x7d000010\n", family, ip)
 		}
 	}
 	b.WriteString(" }\n}\n")
@@ -294,7 +234,16 @@ func sortedPriorityMACs(c priorityControl) []string {
 }
 func (w priorityWorker) reconcile(c priorityControl) priorityStatus {
 	result := priorityStatus{V: 1, TS: time.Now().Unix(), Version: c.Version, Devices: c.Devices}
-	err := w.applyPriority(c)
+	read := w.read
+	if read == nil {
+		read = os.ReadFile
+	}
+	bandwidth, source, err := resolvePriorityBandwidth(c, read)
+	result.Bandwidth = priorityBandwidthReport{priorityBandwidth: bandwidth, Source: source}
+	if err == nil {
+		err = w.applyPriority(c, bandwidth)
+	}
+	result.Bandwidth.Active = err == nil && bandwidth.Enabled && hasHighPriority(c)
 	if err != nil {
 		result.Error = err.Error()
 	} else {
@@ -302,13 +251,23 @@ func (w priorityWorker) reconcile(c priorityControl) priorityStatus {
 	}
 	return result
 }
-func (w priorityWorker) applyPriority(c priorityControl) error {
-	high := false
+func hasHighPriority(c priorityControl) bool {
 	for _, mode := range c.Devices {
-		high = high || mode == "high"
+		if mode == "high" {
+			return true
+		}
 	}
-	if !high {
+	return false
+}
+func (w priorityWorker) applyPriority(c priorityControl, bandwidth priorityBandwidth) error {
+	if !hasHighPriority(c) {
 		return w.cleanup()
+	}
+	if !bandwidth.Enabled {
+		if err := w.cleanup(); err != nil {
+			return err
+		}
+		return errors.New("Bandbreitensteuerung fehlt oder ist deaktiviert; Anschlussraten einstellen")
 	}
 	for _, option := range []string{"flow_offloading", "flow_offloading_hw"} {
 		out, _ := w.run("uci", "-q", "get", "firewall.@defaults[0]."+option)
@@ -340,8 +299,12 @@ func (w priorityWorker) applyPriority(c priorityControl) error {
 			unmapped = append(unmapped, mac)
 		}
 	}
-	for _, dev := range devices {
-		if err = w.ensureQueue(dev); err != nil {
+	for i, dev := range devices {
+		rate := bandwidth.UploadKbit
+		if i == 1 {
+			rate = bandwidth.DownloadKbit
+		}
+		if err = w.ensureShapedQueue(dev, rate); err != nil {
 			return err
 		}
 	}
@@ -355,7 +318,7 @@ func (w priorityWorker) applyPriority(c priorityControl) error {
 			found = found || dev == old
 		}
 		if !found {
-			if err = w.command("tc", "qdisc", "del", "dev", old, "root", "handle", priorityHandle); err != nil {
+			if err = w.deleteOwnedQueue(old); err != nil {
 				return err
 			}
 		}
@@ -392,7 +355,7 @@ func (w priorityWorker) applyPriority(c priorityControl) error {
 	}
 	for _, mac := range sortedPriorityMACs(c) {
 		if c.Devices[mac] == "high" {
-			if !strings.Contains(string(out), "ether saddr "+mac) || !strings.Contains(string(out), "meta priority set 7e00:1") {
+			if !strings.Contains(string(out), "ether saddr "+mac) || !strings.Contains(string(out), "meta priority set 7d00:10") {
 				return fmt.Errorf("priority rule readback failed for %s", mac)
 			}
 			for _, ip := range addresses[mac] {

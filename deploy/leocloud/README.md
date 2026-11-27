@@ -75,12 +75,15 @@ Vor dem tatsächlichen Rollout die Anleitung aus `AGENTS.md` und
 `https://cloud.htl-leonding.ac.at/llms.txt` befolgen. Aktuelle Backend-/Frontend-
 Image-Digests und beide Datenbanken sichern. Die Zeitplan-Migration vom 22.11.
 ist laut bestehendem Release-Protokoll bereits angewendet; das prüfen. Dann
-**nur die neue additive Migration** aus dem erzeugten Release vor dem Backendwechsel:
+**die beiden additiven Migrationen in dieser Reihenfolge** aus dem erzeugten Release vor dem Backendwechsel:
 
 ```sh
 kubectl --context leocloud -n student-it220208 exec -i deployment/nethera-db -- \
   psql -v ON_ERROR_STOP=1 -U nethera -d nethera \
   < "$RELEASE_DIR/Backend/Nethera/migrations/20261127_device_priority.sql"
+kubectl --context leocloud -n student-it220208 exec -i deployment/nethera-db -- \
+  psql -v ON_ERROR_STOP=1 -U nethera -d nethera \
+  < "$RELEASE_DIR/Backend/Nethera/migrations/20261127_priority_bandwidth.sql"
 ```
 
 Danach neue private `linux/amd64`-Images mit neuen Tags aus **diesem Zielordner**

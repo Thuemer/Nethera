@@ -42,7 +42,7 @@ test('combined release preserves verified login and DNS/time baseline while addi
     const telemetry=text(combined,'Backend/Nethera/src/main/java/at/htlleonding/mqtt/TelemetryMessageHandler.java');
     assert.match(telemetry,/control\|time\|priority/);
     const manifest=JSON.parse(text(combined,'release-source.json'));
-    for(const suffix of ['PriorityControlService.java','DevicePriority.java','20261127_device_priority.sql','PriorityTimeControlIT.java']){
+    for(const suffix of ['PriorityControlService.java','DevicePriority.java','20261127_device_priority.sql','PriorityTimeControlIT.java','PriorityBandwidthResource.java','20261127_priority_bandwidth.sql']){
       assert.ok(manifest.files.some(f=>f.endsWith(suffix)),suffix);
     }
     assert.deepEqual(manifest.adapters,['time-schedules-cloud.patch','priority-cloud.patch']);

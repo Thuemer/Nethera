@@ -13,6 +13,7 @@ const state = {
   presets: [],
   assignments: [],
   timeLimits: [],
+  priorityBandwidth: null,
   routerControl: null,
   routerControlError: null,
   wifiNetworks: []
@@ -85,7 +86,7 @@ async function apiJson(url, options = {}, priorityWrite = false) {
       if (!state.loaded || !localDraft) throw new Error('Lokaler Entwurf nicht geladen.');
       return localDraft.request(draftBase, new URL(url).pathname, options);
     }
-    if (priorityWrite && (!livePriority() || !url.startsWith(`${API_BASE_URL}/api/router-control/priority/devices/`))) throw new Error('Live-Priorisierung nicht verfügbar.');
+    if (priorityWrite && (!livePriority() || !(url.startsWith(`${API_BASE_URL}/api/router-control/priority/devices/`) || url === `${API_BASE_URL}/api/router-control/priority/bandwidth`))) throw new Error('Live-Priorisierung nicht verfügbar.');
     await NetheraApi.requireLive();
     if (!state.rulesKnown && (url.startsWith(`${SECURITY_API}/`) || url.startsWith(`${API_BASE_URL}/api/device-time-limits/`))) {
       throw new Error('Regeln wurden noch nicht vollständig vom Router gemeldet. Bestehende Einstellungen bleiben unverändert.');
@@ -130,6 +131,7 @@ async function loadSecurityState(refresh = false) {
       timeLimits: data.timeLimits || []
     });
     if (router.dataMode === 'live') {
+      await loadPriorityBandwidth();
       // Connected router: changes go to the backend, which publishes them to the router.
       Object.assign(state, { preview: false });
       draftBase = null;
@@ -671,7 +673,51 @@ async function saveDeviceProfile(deviceId, changes) {
   return preset;
 }
 
+async function loadPriorityBandwidth() {
+  state.priorityBandwidth = null;
+  if (livePriority()) {
+    try {
+      const data = await apiJson(`${API_BASE_URL}/api/router-control/priority/bandwidth`);
+      if (data && typeof data === 'object' && !Array.isArray(data) && typeof data.configured === 'boolean') state.priorityBandwidth = data;
+    } catch {} // Older backend: device controls remain available; no bandwidth success is invented.
+  }
+  renderPriorityBandwidth();
+}
+
+function renderPriorityBandwidth() {
+  const section = document.getElementById('priorityBandwidthSection');
+  if (!section) return;
+  section.hidden = !livePriority();
+  const data = state.priorityBandwidth;
+  const values = data?.desired || data?.reported;
+  document.getElementById('priorityBandwidthEnabled').checked = values?.enabled === true;
+  document.getElementById('priorityDownloadMbit').value = values?.downloadKbit ? values.downloadKbit / 1000 : '';
+  document.getElementById('priorityUploadMbit').value = values?.uploadKbit ? values.uploadKbit / 1000 : '';
+  for (const id of ['priorityBandwidthEnabled','priorityDownloadMbit','priorityUploadMbit']) document.getElementById(id).disabled = !data;
+  document.querySelector('#priorityBandwidthForm [type="submit"]')?.toggleAttribute('disabled', !data);
+  document.getElementById('priorityBandwidthStatus').textContent = !data ? 'Bandbreiteneinstellungen noch nicht verfügbar. Backend muss aktualisiert werden.'
+    : data.applied ? 'Bandbreitensteuerung am Router bestätigt.'
+    : values?.enabled && !Object.values(state.routerControl?.priority || {}).some(item => item.mode === 'high') ? 'Grenzen gespeichert. Die Steuerung wird aktiv, sobald ein Gerät bevorzugt ist.'
+    : values?.enabled ? 'Grenzen geladen. Routerbestätigung ausstehend; mit Status prüfen aktualisieren.'
+    : 'Noch keine aktive Bandbreitensteuerung. Eine gespeicherte Gerätepriorität allein belegt keine bevorzugte Internetbandbreite.';
+}
+
+async function savePriorityBandwidth(event) {
+  event.preventDefault();
+  const enabled = document.getElementById('priorityBandwidthEnabled').checked;
+  const downloadKbit = enabled ? Math.round(Number(document.getElementById('priorityDownloadMbit').value) * 1000) : 0;
+  const uploadKbit = enabled ? Math.round(Number(document.getElementById('priorityUploadMbit').value) * 1000) : 0;
+  if (enabled && (![downloadKbit,uploadKbit].every(rate => Number.isInteger(rate) && rate >= 128 && rate <= 1000000))) throw new Error('Beide Grenzen müssen zwischen 0,128 und 1000 Mbit/s liegen.');
+  await apiJson(`${API_BASE_URL}/api/router-control/priority/bandwidth`, { method:'PUT', body:JSON.stringify({enabled,downloadKbit,uploadKbit}) }, true);
+  state.priorityBandwidth = { configured:true, desired:{enabled,downloadKbit,uploadKbit}, applied:false };
+  // Do not retain an earlier device confirmation after changing the shared cap.
+  Object.values(state.routerControl?.priority || {}).forEach(item => { item.applied = false; });
+  renderPriorityBandwidth(); renderPriorityList();
+  setStatus('Bandbreite gespeichert. Routerbestätigung ausstehend.', 'success', true);
+}
+
 function renderPriorityControls() {
+  renderPriorityBandwidth();
   const select = document.getElementById('priorityDevice');
   select.innerHTML = state.devices.map(device => `<option value="${device.id}">${escapeText(device.hostname)}</option>`).join('');
   updatePrioritySelection();
@@ -1028,7 +1074,7 @@ function setupEvents() {
   document.getElementById('installAdblock')?.addEventListener('click', requestAdblockInstallation);
   const forms = { groupForm: addGroup, groupBlocklistForm: saveGroupBlocklist, manualDomainForm: addManualDomain,
     adDomainForm: addAdDomain, presetForm: createPreset, applyPresetForm: applyExistingPreset,
-    priorityForm: savePriority, adProtectionForm: saveAdProtection };
+    priorityForm: savePriority, priorityBandwidthForm: savePriorityBandwidth, adProtectionForm: saveAdProtection };
   Object.entries(forms).forEach(([id, handler]) => {
     const form = document.getElementById(id);
     if (!form.querySelector('[data-form-feedback]')) {

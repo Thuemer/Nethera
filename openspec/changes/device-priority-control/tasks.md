@@ -26,3 +26,10 @@
 - [x] 5.1 Check all main pages, navigation, forms, responsive layouts and live/demo/error states with isolated browser fixtures.
 - [x] 5.2 Add visible saving/success/failure feedback near forms and verify group-only website blocking without network-wide changes.
 - [x] 5.3 Document limitations of category/TikTok blocking, preserve live security behavior, and include UI fixes in the compatible release.
+
+## 6. Controlled bandwidth after simultaneous speed-test report
+
+- [x] 6.1 Replace unshaped DRR with isolated HTB total-rate shaping and weighted classes on WAN and LAN bridge; validate/read back rates and preserve unrelated rules.
+- [x] 6.2 Add explicit configurable upload/download rates to backend/API/UI and compatibility release, with versioned shaping readback and migration.
+- [x] 6.3 Test real routed bridge traffic, shaping ceilings, rollback and existing DNS/time preservation; avoid claiming throughput advantage without a simultaneous client test.
+- [x] 6.4 Test source/cloud builds, document deployment and limitations, deliver changes and remove the temporary SSH key again.

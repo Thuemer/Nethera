@@ -23,3 +23,13 @@ The router SHALL weight preferred traffic above normal traffic without a fixed c
 #### Scenario: Changed network
 - **WHEN** WAN or LAN interfaces change
 - **THEN** the service re-discovers interfaces and does not assume a previous connection rate
+
+
+### Requirement: Explicit total-bandwidth shaping
+The router SHALL apply configured download and upload caps at the shared routed LAN/WAN boundary before weighting preferred/normal classes. No ISP rate SHALL be assumed in code. Readback SHALL verify actual caps; missing configuration SHALL NOT confirm high priority.
+#### Scenario: Shared bottleneck
+- **WHEN** preferred and normal routed traffic compete under configured caps
+- **THEN** both classes share the same directional total-rate parent and normal traffic can still transmit
+#### Scenario: Existing backend
+- **WHEN** an older command omits bandwidth and a router-local commissioning setting exists
+- **THEN** the worker uses and reports the explicit local caps without changing DNS/time commands

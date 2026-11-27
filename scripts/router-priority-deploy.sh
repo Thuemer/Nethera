@@ -23,7 +23,7 @@ if [ -f /etc/init.d/nethera-priority ]; then
  grep -q -- "--priority-only" /etc/init.d/nethera-priority || exit 1
  /etc/init.d/nethera-priority stop
 fi
-apk add tc-full kmod-sched-core kmod-sched-drr
+apk add tc-full kmod-sched-core kmod-sched-drr kmod-sched
 cp "$stage/usr/bin/nethera-priority" /usr/bin/nethera-priority
 chmod 755 /usr/bin/nethera-priority
 cp "$stage/etc/init.d/nethera-priority" /etc/init.d/nethera-priority

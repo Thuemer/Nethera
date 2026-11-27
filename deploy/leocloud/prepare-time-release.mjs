@@ -31,8 +31,8 @@ for (const path of ['src/main/java/at/htlleonding/telemetry/DeviceIngestor.java'
   put(`Backend/Nethera/${path}`, git('show', `${ingest}:Backend/Nethera/${path}`));
 }
 const files = [
-  'control/PriorityControlService.java', 'control/PriorityDesiredState.java',
-  'model/DevicePriority.java', 'model/PriorityControlState.java',
+  'boundary/PriorityBandwidthResource.java', 'control/PriorityControlService.java', 'control/PriorityDesiredState.java',
+  'model/DevicePriority.java', 'model/PriorityControlState.java', 'model/PriorityBandwidthSettings.java',
   'boundary/DeviceTimeLimitsResource.java', 'dto/DeviceTimeLimitDto.java',
   'model/DeviceTimeLimit.java', 'model/TimeControlState.java',
   'repository/DeviceTimeLimitsRepository.java',
@@ -47,7 +47,7 @@ files.push(...[
   'mqtt/PriorityTimeControlIT.java', 'mqtt/TimeControlIT.java', 'mqtt/TimePayloadParserTest.java', 'mqtt/TelemetryMessageHandlerTest.java',
   'mqtt/MqttTelemetryTestResource.java', 'ExampleResourceTest.java',
 ].map(path => `Backend/Nethera/src/test/java/at/htlleonding/${path}`));
-files.push('Backend/Nethera/migrations/20261122_time_control_bridge.sql', 'Backend/Nethera/migrations/20261127_device_priority.sql');
+files.push('Backend/Nethera/migrations/20261122_time_control_bridge.sql', 'Backend/Nethera/migrations/20261127_device_priority.sql', 'Backend/Nethera/migrations/20261127_priority_bandwidth.sql');
 files.push(...['index.html', 'security.html', 'security.js', 'time-limits.html', 'time-limits.js',
   'tests/rules.test.cjs', 'tests/presentation-browser.cjs', 'tests/time-control-browser.cjs', 'tests/priority-time-browser.cjs'].map(path => `Applikation/${path}`));
 for (const path of files) put(path, current(path));
