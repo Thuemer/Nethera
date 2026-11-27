@@ -24,6 +24,10 @@ type Sources struct {
 	ControlFile    string // last desired state, on flash so it survives a power cut
 	AdblockInit    string // init script of adblock-fast, exists once it is installed
 
+	// Time control (control_time.go)
+	TimeControlFile string // last desired time state, on flash
+	TimeUsageFile   string // used minutes per MAC, on flash
+
 	// Run executes a command and returns its standard output
 	Run func(name string, args ...string) ([]byte, error)
 	// RunLong is Run with more time, for installing packages
@@ -61,6 +65,9 @@ func RouterSources() Sources {
 		NftDir:         "/usr/share/nftables.d/table-post",
 		ControlFile:    "/etc/nethera/dns-control.json",
 		AdblockInit:    "/etc/init.d/adblock-fast",
+
+		TimeControlFile: "/etc/nethera/time-control.json",
+		TimeUsageFile:   "/etc/nethera/time-usage.json",
 
 		Run:     runner(commandTimeout),
 		RunLong: runner(longCommandTimeout),

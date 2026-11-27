@@ -69,9 +69,11 @@ function setMessage(message, isError = false) {
 }
 
 function updateStats() {
-    const total = state.devices.length;
-    const wifi = state.devices.filter(d => d.connectionType === 'wifi').length;
-    const lan = state.devices.filter(d => d.connectionType === 'lan').length;
+    // Counts show who is connected right now, like the dashboard; the table lists every known device.
+    const online = state.devices.filter(d => d.online);
+    const total = online.length;
+    const wifi = online.filter(d => d.connectionType === 'wifi').length;
+    const lan = online.filter(d => d.connectionType === 'lan').length;
 
     const available = state.dataMode !== 'unavailable';
     document.getElementById('statTotal').textContent = available ? String(total) : '—';
@@ -93,7 +95,7 @@ function renderTable() {
     if (!state.filteredDevices.length) {
         const row = document.createElement('tr');
         row.className = 'empty-row';
-        row.innerHTML = `<td colspan="4">${state.dataMode === 'unavailable' ? 'Keine bestätigten Gerätedaten verfügbar.' : 'Keine Clients für die aktuelle Filterung gefunden.'}</td>`;
+        row.innerHTML = `<td colspan="5">${state.dataMode === 'unavailable' ? 'Keine bestätigten Gerätedaten verfügbar.' : 'Keine Clients für die aktuelle Filterung gefunden.'}</td>`;
         body.appendChild(row);
         return;
     }
@@ -105,13 +107,14 @@ function renderTable() {
             <td class="client-name">${escapeHtml(device.hostname || 'Unbekanntes Gerät')}</td>
             <td class="client-address">${escapeHtml(device.ipAddress || '-')}</td>
             <td><span class="conn-badge ${device.connectionType}">${toConnectionLabel(device.connectionType)}</span></td>
+            <td><span class="online-badge ${device.online ? 'online' : 'offline'}"><i aria-hidden="true"></i>${device.online ? 'Online' : 'Offline'}</span></td>
             <td><button class="client-details-toggle" type="button" aria-expanded="false" aria-controls="${detailsId}" aria-label="Details zu ${escapeHtml(device.hostname || 'Unbekanntes Gerät')} anzeigen">Details <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></td>
         `;
         const detailRow = document.createElement('tr');
         detailRow.className = 'client-detail-row';
         detailRow.id = detailsId;
         detailRow.hidden = true;
-        detailRow.innerHTML = `<td colspan="4"><dl class="client-detail-grid">
+        detailRow.innerHTML = `<td colspan="5"><dl class="client-detail-grid">
             <div><dt>MAC-Adresse</dt><dd>${escapeHtml(device.macAddress || '-')}</dd></div>
             <div><dt>Zuletzt gesehen</dt><dd>${escapeHtml(formatDateTime(device.lastSeen))}</dd></div>
         </dl></td>`;
@@ -157,6 +160,7 @@ async function loadDevices() {
         const router = await NetheraApi.getPrimaryRouter();
         state.dataMode = router.dataMode;
         const rawDevices = Array.isArray(router?.devices) ? router.devices : [];
+        const online = new Set(NetheraApi.onlineDevices(router));
 
         state.devices = rawDevices.map(device => ({
             id: device.id,
@@ -164,7 +168,8 @@ async function loadDevices() {
             ipAddress: device.ipAddress,
             macAddress: device.macAddress,
             connectionType: normalizeConnectionType(device.connectionType),
-            lastSeen: device.lastSeen
+            lastSeen: device.lastSeen,
+            online: online.has(device)
         }));
 
         state.updatedAt = new Date();

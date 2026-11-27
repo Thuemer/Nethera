@@ -17,6 +17,8 @@ const state = {
   routerControl: null,
   routerControlError: null
 };
+let controlRequest = 0;
+let controlLoading = 0;
 
 function loadLimits() {
   try {
@@ -38,10 +40,11 @@ function normalizeLimit(limit) {
     deviceId: limit.deviceId,
     dailyLimit: Number(limit.dailyLimitMinutes ?? limit.dailyLimit ?? 0),
     usedMinutesToday: Number(limit.usedMinutesToday ?? 0),
-    from: limit.blockedFrom ?? limit.allowedFrom ?? limit.from ?? '21:00',
-    until: limit.blockedUntil ?? limit.allowedUntil ?? limit.until ?? '07:00',
+    from: 'blockedFrom' in limit ? limit.blockedFrom || '' : limit.allowedFrom ?? limit.from ?? '21:00',
+    until: 'blockedUntil' in limit ? limit.blockedUntil || '' : limit.allowedUntil ?? limit.until ?? '07:00',
     status: limit.status || 'active',
-    note: limit.note || ''
+    note: limit.note || '',
+    routerEnforcement: limit.routerEnforcement
   };
 }
 
@@ -90,7 +93,6 @@ async function saveBackendLimit(deviceId, limit) {
     body: JSON.stringify({
       deviceId: Number(deviceId),
       dailyLimitMinutes: limit.dailyLimit,
-      usedMinutesToday: limit.usedMinutesToday,
       blockedFrom: limit.from,
       blockedUntil: limit.until,
       status: limit.status,
@@ -99,9 +101,11 @@ async function saveBackendLimit(deviceId, limit) {
   });
 
   if (!response.ok) {
-    throw new Error(`Speichern fehlgeschlagen (${response.status})`);
+    throw new Error(`Speichern fehlgeschlagen (${response.status}). Bitte Uhrzeiten und Verbindung prüfen.`);
   }
 
+  state.routerControl = null;
+  controlRequest++;
   return normalizeLimit(await response.json());
 }
 
@@ -113,6 +117,8 @@ async function deleteBackendLimit(deviceId) {
   if (!response.ok && response.status !== 404) {
     throw new Error(`Loeschen fehlgeschlagen (${response.status})`);
   }
+  state.routerControl = null;
+  controlRequest++;
 }
 
 async function loadSecurityState() {
@@ -199,25 +205,36 @@ function renderRouterControlStatus() {
     : !state.routerControl
       ? 'Routerbestätigung noch nicht verfügbar. Zeitregeln werden zunächst nur gespeichert.'
       : state.routerControl.connection === 'online'
-        ? 'Router erreichbar. Die Wirkung steht bei jeder Zeitregel.'
+        ? state.routerControl.timeError
+          ? 'Zeitregeln konnten nicht übernommen werden. Bitte Routerstatus prüfen.'
+          : state.routerControl.timeApplied === true
+            ? 'Zeitregeln am Router bestätigt · Zeitzone Wien.'
+            : state.routerControl.timeApplied === false
+              ? 'Änderungen gespeichert · Routerbestätigung ausstehend.'
+              : 'Router erreichbar. Die Wirkung steht bei jeder Zeitregel.'
         : 'Router nicht erreichbar oder Status unbekannt. Gespeicherte Regeln sind nicht als wirksam bestätigt.';
   renderList();
 }
 
 async function loadRouterControlStatus() {
+  const request = ++controlRequest;
+  controlLoading++;
   try {
-    state.routerControl = await NetheraApi.getRouterControlStatus();
+    const result = await NetheraApi.getRouterControlStatus();
+    if (request !== controlRequest) return;
+    state.routerControl = result;
     state.routerControlError = null;
   } catch (error) {
+    if (request !== controlRequest) return;
     state.routerControl = null;
     state.routerControlError = error;
-  }
+  } finally { controlLoading--; }
   renderRouterControlStatus();
 }
 
 function validLimitInput(from, until, dailyLimit, note) {
   const time = /^([01]\d|2[0-3]):[0-5]\d$/;
-  if (!time.test(from) || !time.test(until) || from === until) return 'Bitte zwei unterschiedliche Uhrzeiten angeben.';
+  if ((!from && !until) ? !(dailyLimit > 0) : !time.test(from) || !time.test(until) || from === until) return 'Bitte zwei unterschiedliche Uhrzeiten oder ein Tagesbudget angeben.';
   if (!Number.isInteger(dailyLimit) || dailyLimit < 0 || dailyLimit > 1440) return 'Das Tagesbudget muss zwischen 0 und 1440 Minuten liegen.';
   if (note.length > 160) return 'Die Notiz darf höchstens 160 Zeichen enthalten.';
   return '';
@@ -289,9 +306,8 @@ function loadSelectedLimit() {
   limitStatus.value = limit.status || 'active';
   dailyLimit.dispatchEvent(new Event('change', { bubbles: true }));
   limitStatus.dispatchEvent(new Event('change', { bubbles: true }));
-  document.getElementById('usedMinutesToday').value = String(limit.usedMinutesToday ?? 0);
-  document.getElementById('blockedFrom').value = limit.from || '21:00';
-  document.getElementById('blockedUntil').value = limit.until || '07:00';
+  document.getElementById('blockedFrom').value = limit.from ?? '21:00';
+  document.getElementById('blockedUntil').value = limit.until ?? '07:00';
   document.getElementById('limitNote').value = limit.note || '';
   document.querySelector('.advanced-settings').open = Number(limit.dailyLimit) > 0;
   document.getElementById('clearLimitButton').disabled = !state.limits[key] || state.storageMode !== 'backend';
@@ -328,14 +344,15 @@ function updateSchedulePreview() {
   }
   preview.innerHTML = `
     <strong>${escapeText(device.hostname || 'Unbekanntes Gerät')}</strong>
-    <p>${paused ? 'Zeitsperre ausgeschaltet' : `Geplant: täglich kein Internet von <b>${escapeText(from)}</b> bis <b>${escapeText(until)}</b>${overnight}.`}</p>
+    <p>${paused ? 'Zeitsperre ausgeschaltet' : !from && !until ? 'Tagesbudget ohne feste Sperrzeit.' : `Geplant: täglich kein Internet von <b>${escapeText(from)}</b> bis <b>${escapeText(until)}</b>${overnight}.`}</p>
     <span>${paused ? 'Sperrzeit und Tageslimit sind pausiert.' : daily ? `Zusätzlich maximal ${formatMinutes(daily)} pro Tag.` : 'Außerhalb der Sperrzeit kein Tageslimit.'}</span>
-    <small>Uhrzeit: ${escapeText(Intl.DateTimeFormat().resolvedOptions().timeZone)} · Routerwirkung separat prüfen</small>`;
+    <small>Zeitzone: Wien · Routerwirkung separat prüfen</small>`;
   if (timeline) {
     timeline.hidden = false;
     const track = document.getElementById('scheduleTrack');
-    track.innerHTML = scheduleSegments(from, until, paused).map(segment => `<span class="schedule-segment${segment.blocked ? ' blocked' : ''}" style="--segment-width:${(segment.end - segment.start) / 1440 * 100}%"></span>`).join('');
-    track.setAttribute('aria-label', paused ? 'Keine Zeitsperre: Regel ausgeschaltet.' : `Geplante Sperrzeit täglich von ${from} bis ${until}${overnight}. Außerhalb keine Zeitsperre.`);
+    const segments = !from && !until ? [{ start: 0, end: 1440, blocked: false }] : scheduleSegments(from, until, paused);
+    track.innerHTML = segments.map(segment => `<span class="schedule-segment${segment.blocked ? ' blocked' : ''}" style="--segment-width:${(segment.end - segment.start) / 1440 * 100}%"></span>`).join('');
+    track.setAttribute('aria-label', paused ? 'Keine Zeitsperre: Regel ausgeschaltet.' : !from && !until ? 'Tagesbudget ohne feste Sperrzeit.' : `Geplante Sperrzeit täglich von ${from} bis ${until}${overnight}. Außerhalb keine Zeitsperre.`);
   }
   document.querySelectorAll('[data-schedule]').forEach(button => {
     const times = button.dataset.schedule === 'night' ? ['21:00', '07:00'] : ['14:00', '16:00'];
@@ -372,6 +389,8 @@ function setLimitBusy(busy) {
 function renderList() {
   const list = document.getElementById('limitsList');
   if (!list) return;
+  const openDetails = new Set([...list.querySelectorAll('details[open]')].map(item => item.dataset.detailKey));
+  const focused = list.contains(document.activeElement) ? document.activeElement : null;
 
   if (!state.filteredDevices.length) {
     list.innerHTML = state.loaded && state.devices.length
@@ -383,18 +402,23 @@ function renderList() {
   const renderCard = device => {
     const key = deviceKey(device);
     const limit = state.limits[key];
-    const blockedBySchedule = isBlockedNow(limit) || (limit?.status === 'active' && limit.dailyLimit > 0 && limit.usedMinutesToday >= limit.dailyLimit);
     const routerResult = state.routerControl?.timeLimits?.[device.id];
     const confirmed = state.routerControl?.connection === 'online' && routerResult?.applied === true;
     const blocked = confirmed && routerResult.blockedNow === true;
     const paused = limit?.status === 'paused';
-    const percent = limit ? usedPercent(limit) : 0;
+    const usage = state.dataMode === 'demo' ? limit?.usedMinutesToday
+      : confirmed && Number.isInteger(routerResult?.usedMinutesToday) ? routerResult.usedMinutesToday : null;
+    const measuredBudget = state.dataMode === 'demo' ? limit?.dailyLimit : confirmed ? routerResult?.budgetMinutesToday : null;
+    const hasUsage = Number.isInteger(usage) && Number.isInteger(measuredBudget) && measuredBudget > 0;
+    const percent = hasUsage ? usedPercent({ dailyLimit: measuredBudget, usedMinutesToday: usage }) : 0;
     const preset = presetForDevice(device.id);
     const cardState = blocked ? 'is-blocked' : paused ? 'is-paused' : '';
     const statusBadge = !limit
       ? '<span class="badge">Keine Regel</span>'
       : state.dataMode === 'demo'
         ? `<span class="badge">Beispiel · ${paused ? 'pausiert' : 'eingeschaltet'}</span>`
+      : limit.routerEnforcement === false
+        ? '<span class="badge">Noch nicht am Router aktiviert</span>'
       : blocked
         ? '<span class="badge danger">Am Router gesperrt</span>'
         : paused
@@ -411,16 +435,17 @@ function renderList() {
             ${statusBadge}
           </div>
           <p class="limit-summary">${limit
-            ? `Sperrzeit ${escapeText(limit.from)}–${escapeText(limit.until)}${limit.dailyLimit > 0 ? ` · ${formatMinutes(limit.dailyLimit)} pro Tag` : ''}`
+            ? `${limit.from && limit.until ? `Sperrzeit ${escapeText(limit.from)}–${escapeText(limit.until)}` : 'Tagesbudget'}${limit.dailyLimit > 0 ? ` · ${formatMinutes(limit.dailyLimit)} pro Tag` : ''}`
             : 'Noch keine Internetzeiten festgelegt.'}</p>
-          ${limit && !paused && !confirmed && blockedBySchedule && state.dataMode !== 'demo' ? '<p class="limit-summary">Zeitfenster läuft rechnerisch; Routerwirkung nicht bestätigt.</p>' : ''}
-          ${limit?.dailyLimit > 0 ? `<div class="budget-bar" role="progressbar" aria-label="Tageslimit genutzt" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"><span style="--budget: ${percent}%"></span></div>` : ''}
-          <details class="limit-details"><summary>Gerätedetails</summary><div class="limit-meta">
+          ${confirmed && routerResult?.reason ? `<p class="limit-summary">${escapeText(({window:'Sperrzeit',budget:'Tageslimit erreicht',manual:'Manuell offline',clock:'Uhrzeit noch unbekannt'})[routerResult.reason] || '')}</p>` : ''}
+          ${routerResult?.error || state.routerControl?.timeError ? '<p class="limit-summary">Der Router konnte die Zeitregel noch nicht übernehmen.</p>' : ''}
+          ${hasUsage ? `<div class="budget-bar" role="progressbar" aria-label="Tageslimit genutzt" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"><span style="--budget: ${percent}%"></span></div>` : ''}
+          <details class="limit-details" data-detail-key="${escapeText(key)}" ${openDetails.has(key) ? 'open' : ''}><summary>Gerätedetails</summary><div class="limit-meta">
             <span>IP: ${escapeText(device.ipAddress || '–')}</span>
             <span>MAC: ${escapeText(device.macAddress || '–')}</span>
             <span>Vorlage: ${escapeText(preset?.name || (state.rulesKnown ? 'Keine' : 'Nicht vom Router gemeldet'))}</span>
             ${limit?.note ? `<span>Notiz: ${escapeText(limit.note)}</span>` : ''}
-            ${limit?.dailyLimit > 0 ? `<span>${Number(limit.usedMinutesToday) || 0} Minuten heute erfasst</span>` : ''}
+            ${limit?.dailyLimit > 0 ? `<span>${hasUsage ? `${usage} von ${measuredBudget} Minuten heute erfasst` : 'Verbrauch noch nicht vom Router bestätigt'}</span>` : ''}
           </div></details>
         </div>
         <div class="limit-side">
@@ -438,9 +463,15 @@ function renderList() {
     list.innerHTML = `${withRule.length
       ? withRule.map(renderCard).join('')
       : '<p class="helper-text">Noch keine Internetzeiten eingerichtet.</p>'}
-      ${withoutRule.length ? `<details class="unconfigured-devices"><summary>Geräte ohne Regel (${withoutRule.length})</summary><div class="limit-list">${withoutRule.map(renderCard).join('')}</div></details>` : ''}`;
+      ${withoutRule.length ? `<details class="unconfigured-devices" data-detail-key="unconfigured" ${openDetails.has('unconfigured') ? 'open' : ''}><summary>Geräte ohne Regel (${withoutRule.length})</summary><div class="limit-list">${withoutRule.map(renderCard).join('')}</div></details>` : ''}`;
   } else {
     list.innerHTML = state.filteredDevices.map(renderCard).join('');
+  }
+  if (focused) {
+    const replacement = focused.tagName === 'SUMMARY'
+      ? [...list.querySelectorAll('details')].find(item => item.dataset.detailKey === focused.parentElement?.dataset.detailKey)?.querySelector('summary')
+      : [...list.querySelectorAll('button')].find(item => item.dataset.key === focused.dataset.key && item.dataset.action === focused.dataset.action);
+    replacement?.focus({ preventScroll: true });
   }
 }
 
@@ -531,7 +562,6 @@ async function saveSelectedLimit(event) {
 
   const nextLimit = {
     dailyLimit,
-    usedMinutesToday: Number(document.getElementById('usedMinutesToday').value) || 0,
     status: document.getElementById('limitStatus').value,
     from,
     until,
@@ -639,4 +669,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEvents();
   loadDevices();
   NetheraApi.watchSource(loadDevices);
+  const poll = setInterval(() => {
+    if (!document.hidden && state.dataMode === 'live' && !state.busy && !state.loading && !controlLoading) loadRouterControlStatus();
+  }, 5000);
+  window.addEventListener('pagehide', () => clearInterval(poll), { once: true });
 });

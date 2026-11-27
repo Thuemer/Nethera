@@ -53,11 +53,11 @@ async function checkStatus() {
 
   try {
     const router = await NetheraApi.getPrimaryRouter();
-    const wifiDevices = (router.devices || []).filter(device => String(device.connectionType || '').toLowerCase() === 'wifi');
+    const onlineDevices = NetheraApi.onlineDevices(router);
     document.getElementById('routerState')?.setAttribute('value', router.isOnline == null ? 'Unbekannt' : router.isOnline ? 'Online' : 'Offline');
     document.getElementById('routerState')?.setAttribute('tone', router.isOnline === false ? 'danger' : '');
-    document.getElementById('deviceCount')?.setAttribute('value', router.dataMode === 'unavailable' ? '—' : String(wifiDevices.length));
-    document.getElementById('deviceCount')?.setAttribute('detail', router.dataMode === 'demo' ? 'Beispielgeräte' : router.dataMode === 'unavailable' ? 'nicht verfügbar' : 'vom Router geladen');
+    document.getElementById('deviceCount')?.setAttribute('value', router.dataMode === 'unavailable' ? '—' : String(onlineDevices.length));
+    document.getElementById('deviceCount')?.setAttribute('detail', router.dataMode === 'demo' ? 'Beispielgeräte' : router.dataMode === 'unavailable' ? 'nicht verfügbar' : `von ${(router.devices || []).length} bekannten`);
     renderDetails(router, null);
     setStatus(router.dataMode === 'unavailable' ? 'Routerstatus derzeit unbekannt.' : router.dataMode === 'demo' ? 'Demo-Vorschau. Kein aktueller Routerstatus.' : 'Routerstatus aktualisiert.', router.dataMode === 'live' ? 'success' : 'info');
   } catch (error) {

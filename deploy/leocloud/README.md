@@ -46,6 +46,159 @@ ein Cloud-Rollout synchronisiert diese Daten automatisch.
 
 ## Aenderungen deployen
 
+### Gemeinsamer Release: Zeitpläne, Live-Sperren und Priorität (27.11.2026)
+
+**Dieser gemeinsame Quellstand integriert `52c9989` (Zeitpläne/Cloud-Korrekturen) und
+`f83ad40` (Priorisierung). Es wurde hier noch nichts auf LeoCloud ausgerollt.**
+Die folgende Vorbereitung erhält die bestehende gemeinsame Router-Nutzung und
+die bisherige Anmeldung. Das normale Branch-Backend enthält zusätzlich die
+Ownership-Arbeit und ist deshalb **nicht direkt** der Cloud-Build.
+
+Lokale Änderungen auf Deniz' Rechner zuerst sichern/committen und `main` ohne
+Verwerfen eigener Arbeit aktualisieren. Dann im Repository:
+
+```sh
+RELEASE_COMMIT=$(git rev-parse HEAD)
+RELEASE_DIR=$(mktemp -d /tmp/nethera-release-parent.XXXXXX)/combined
+node deploy/leocloud/prepare-time-release.mjs "$RELEASE_DIR" "$RELEASE_COMMIT"
+```
+
+Der Zielordner darf zuvor nicht existieren. `release-source.json` nennt die
+Revision, unveränderten Baselines, ausgewählten Dateien und beide Adapter.
+`WORKTREE` ist nur für lokale Tests. Der Generator prüft die Login-Prüfsumme
+`8912b216f8c534c814434cc235ceb988f20bae0a0bafc41fe85473e4328a3b2f`.
+Der zusätzliche `priority-cloud.patch` prüft neue Prioritäts-Schreibzugriffe gegen
+den konfigurierten gemeinsamen Router. Er ersetzt keine Konten, keine DNS- oder
+Zeitplan-Basis und verlangt keine Ownership-Migration.
+
+Vor dem tatsächlichen Rollout die Anleitung aus `AGENTS.md` und
+`https://cloud.htl-leonding.ac.at/llms.txt` befolgen. Aktuelle Backend-/Frontend-
+Image-Digests und beide Datenbanken sichern. Die Zeitplan-Migration vom 22.11.
+ist laut bestehendem Release-Protokoll bereits angewendet; das prüfen. Dann
+**nur die neue additive Migration** aus dem erzeugten Release vor dem Backendwechsel:
+
+```sh
+kubectl --context leocloud -n student-it220208 exec -i deployment/nethera-db -- \
+  psql -v ON_ERROR_STOP=1 -U nethera -d nethera \
+  < "$RELEASE_DIR/Backend/Nethera/migrations/20261127_device_priority.sql"
+```
+
+Danach neue private `linux/amd64`-Images mit neuen Tags aus **diesem Zielordner**
+bauen (Backend-Kontext `$RELEASE_DIR/Backend/Nethera`, Frontend-Dockerfile
+`$RELEASE_DIR/Applikation/Dockerfile` mit Kontext `$RELEASE_DIR`). Nach dem bisherigen
+Verfahren nur Backend-/Frontend-Imagefelder austauschen und Rollouts abwarten.
+**Kein vollständiges `stack.yaml apply`, kein Seed-Import, kein Datenbankreset.**
+Keycloak, Accounts, Secrets, Broker und PVCs bleiben erhalten. Die bestehenden
+MQTT-ACL-Wildcards decken `config/priority` und `telemetry/priority` bereits ab;
+die aktive ACL prüfen, nicht pauschal ersetzen oder den Broker neu starten.
+
+Den Router muss Deniz nicht vor Ort haben. Der separate Prioritätsdienst ist auf
+dem Cudy bereits installiert; für diesen Cloud-Rollout **keinen Router-Agenten
+ersetzen und `scripts/router-deploy.sh` nicht ausführen**. Der bestehende Agent
+behält Zeitplan-/DNS-Funktionen, der zusätzliche Dienst bearbeitet nur Priorität.
+
+Abnahme nach dem Rollout bei online verbundenem Router: bestehende Anmeldung,
+AdBlocker, Netzwerksperre, Gerätesperre, Kinder-Gruppensperre und Zeitplan prüfen;
+danach ein bekanntes Gerät Bevorzugt → Routerbestätigung → Normal → Bestätigung.
+Neue Formularrückmeldungen unterscheiden Speicherung und Routerwirkung.
+TikTok-/App-Zugriff und Verhalten unter Last sind zusätzlich am betroffenen Gerät
+zu testen. Es wurde in dieser Integrationssitzung kein echter Routertest wiederholt.
+
+Rollback: Testprioritäten/-zeitregeln erst kontrolliert aufheben und bestätigen,
+dann gesicherte Backend-/Frontend-Digests wiederherstellen. Additive Tabellen
+bleiben bestehen. Ein Image-Rollback allein entfernt keine bereits aktiven Regeln.
+Details und Tests: [Gerätepriorität](../../Documentation/device-priority.md) und
+[Integrationsprüfung](../../openspec/changes/device-priority-control/cloud-integration-verification.md).
+
+### Zeitplan-Bridge: kompatibler Cloud-Build (22.11.2026)
+
+Die laufende Cloud benutzt noch die gemeinsame Router-Zuordnung. Der Branch
+`feat/router-time-schedules` enthaelt durch seine Basis bereits die separate
+Ownership-Arbeit des Teams. Diese ist fuer diesen Rollout **nicht** freigegeben.
+Nicht das gesamte Branch-Backend bauen und keine Ownership-Migration ausfuehren.
+
+`prepare-time-release.mjs` erzeugt einen neuen, isolierten Build-Ordner:
+
+```sh
+node deploy/leocloud/prepare-time-release.mjs /tmp/nethera-time-release <commit>
+```
+
+Backend-Basis ist exakt `6065a405` plus nur `DeviceIngestor.java` und dessen Test
+aus `655dd275`, wie im laufenden Release vom 20.11. Dazu kommen die explizit im
+Skript gelisteten Zeitplan-Dateien und `time-schedules-cloud.patch`. Der Patch
+erhaelt die angemeldete gemeinsame Nutzung von Router `nethera.router.id` und
+verhindert Zeitplan-Schreibzugriffe auf andere Router. DNS-Steuerung und deren
+Konfiguration bleiben auf der laufenden Basis. Das Frontend basiert auf
+`f38f6204` plus den Zeitplan-Aenderungen; `account.js` bleibt bytegleich zur Cloud
+(SHA256 `8912b216f8c534c814434cc235ceb988f20bae0a0bafc41fe85473e4328a3b2f`).
+
+Vor dem Backend-Imagewechsel beide Datenbanken sichern und **nur**
+`Backend/Nethera/migrations/20261122_time_control_bridge.sql` ausfuehren.
+Bestehende Zeitregeln erhalten `router_enforcement=false` und werden nicht
+automatisch aktiviert. Schema-Modus bleibt `validate`, kein Seed-Import.
+Der MQTT-Zeitplan-Retry verwendet einen eigenen Vert.x-Timer/Worker, damit der
+allgemeine Scheduler weiterhin ausgeschaltet bleiben kann. Keine Broker-,
+Keycloak-, Secret- oder Volume-Aenderung erforderlich.
+
+Die erzeugte `release-source.json` dokumentiert die Basis und die Quellrevision.
+`WORKTREE` ist nur fuer lokale Vorabtests; ein Release muss einen Commit angeben.
+Die fuenf Tests in `account-router.test.cjs` gehoeren ausschliesslich zur noch
+nicht ausgerollten Ownership-Oberflaeche. Sie werden im vollstaendigen Branch
+getestet, nicht gegen das absichtlich beibehaltene Cloud-Login. Alle anderen
+Frontend-Tests muessen auch im Cloud-Build bestehen.
+
+Rollback: aktive Testregeln zuerst entfernen und die Routerbestaetigung abwarten,
+dann bei Bedarf die vorherigen Images zuruecksetzen. Additive Tabellen/Spalten
+und beide Datenbanken bleiben erhalten; nie Volumes loeschen.
+
+#### Ausgerollter Stand und Abnahme
+
+- Branch `feat/router-time-schedules`: Implementierung `e08d1db`, finale
+  Frontend-Build-Auswahl `6e7bc1d`. Frische Fetches ergaben keine neueren
+  Team-Commits; nur eigener Branch gepusht, kein Merge/Force-Push.
+- Backend `ghcr.io/denizbernecker/nethera-backend:20261122-214210`, Digest
+  `sha256:e0ed3ff5d4251bbc877d02174aa36269565202c96ef66505200d67364baede15`.
+- Frontend `ghcr.io/denizbernecker/nethera-frontend:20261122-214620`, Digest
+  `sha256:3597f1a58e333ce67d107467ae3e4acb1fd78d587e66337b1c5bd2665f1528a1`.
+- Beide Images privat, linux/amd64. Rollouts erfolgreich; laufende Pod-Digests
+  stimmen mit GHCR ueberein. Ausschliesslich Image-Felder per atomarem JSON-Patch
+  getauscht; kein vollstaendiges `stack.yaml apply`, kein Seed-Job.
+- Beide Datenbanken gesichert unter
+  `~/NetheraBackups/20261122-213800-time27-cloud/`. Dumps mit pg_restore geprueft;
+  Nethera-Dump in isoliertem Postgres wiederhergestellt und Migration zweimal
+  getestet. Danach Migration auf LeoCloud **vor** dem Backendwechsel ausgefuehrt.
+- Vor/nach Rollout und Test: 13 geschuetzte Tabellen unveraendert (darunter sieben
+  Accounts, sieben Keycloak-Credentials, Gruppen, Sperrlisten, Vorlagen und die
+  vorhandene pausierte Zeitregel). PVCs sowie alle sonstigen Deployment-Felder
+  unveraendert. Keycloak und Broker wurden nicht neu gestartet.
+- Alle 82 Frontend-Dateien mit dem vorherigen Cloud-Pod verglichen: nur
+  `index.html` (Cache-Version), `security.html/.js` und `time-limits.html/.js`
+  unterscheiden sich. Website, Topologie und Anmeldung bytegleich. Vier nicht
+  veroeffentlichte OneDrive-Duplikate bleiben auch im neuen Image ausgeschlossen.
+- 142 Backend-Tests im Feature-Branch, 127 im Cloud-Kompatibilitaetsbuild;
+  122 bzw. 117 passende Frontend-Tests erfolgreich. Go-Race/nft-Tests isoliert
+  erfolgreich. Zeitplan-Browsertest am finalen Image bei 1440/768/390/320 px
+  erfolgreich. HTTP: Website/Discovery 200, geschuetzte APIs ohne Login 401.
+- Echte Anmeldung nach Rollout erhalten. Am 22.11. gegen 22:51 Wien nur das
+  genehmigte Test-iPhone ueber die Website mit Fenster 22:50-22:53 gesperrt:
+  frische Routerbestaetigung und vom Nutzer bestaetigter Ausfall neuer Seiten.
+  Danach vor Fensterende ueber die Website ausgeschaltet: ACK und vom Nutzer
+  bestaetigte Internet-Freigabe. Testregel anschliessend geloescht.
+- Abschluss: keine aktivierte Zeitregel; leeres `devices`-Objekt am Router
+  bestaetigt, gewuenschte/gemeldete Version `1795384312622`, Uhr synchron,
+  kein Fehler. Urspruengliche Daten wieder unveraendert.
+- Netzwerksperre `tiktok.com` und Adblock-Probe `accounts.doubleclick.net` vor
+  und nach Test NXDOMAIN; `example.com` normal aufgeloest. DNS-Inhalt, Version
+  und Adblock-Bestaetigung unveraendert. Geraetespezifische DNS-Zuweisungen
+  wurden nicht veraendert; deren Regression ist automatisiert abgedeckt.
+
+Vorherige Images fuer den moeglichen Rollback:
+Backend `20261120-113326@sha256:55fafe39000f24bd24ac1b7f92d2c7b51cc4723c1f0dfdba004348a5f3b458e2`,
+Frontend `20261120-113300@sha256:4a4ef7731a1f830828181191983456e6292e718966483ad5902d73e792a2bafb`.
+Noch nicht abgenommen sind die Verbrauchsschwelle fuer Tagesbudgets und die
+vollstaendige Hardware-Matrix; Phase B (wiederverwendbare Wochen-/Gruppenplaene,
+Sofort-Overrides) ist weiterhin offen.
+
 Code- oder Theme-Aenderungen erscheinen nicht automatisch auf LeoCloud. Fuer
 Frontend- oder Backend-Code ist jeweils ein neuer Image-Build mit einem neuen
 UTC-Zeitstempel-Tag, ein Push nach GHCR und eine Anpassung des entsprechenden

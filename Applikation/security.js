@@ -26,6 +26,8 @@ function renderDraft() {
   if (discard) discard.disabled = !localDraft?.dirty && !state.draftError;
   const notice = document.getElementById('draftNotice');
   if (notice) notice.textContent = livePriority() ? 'Gerätepriorität wird am Router gespeichert. Andere Schutzänderungen bleiben lokale Entwürfe.' : 'Nur in diesem Browser-Tab. Keine Übertragung an den Router.';
+  const strip = document.querySelector('.draft-strip');
+  if (strip) strip.hidden = state.preview === false;
   const confirmed = (draftBase?.blocklists || []).filter(item => item.confirmationSource === 'ROUTER_ACK');
   const section = document.getElementById('confirmedRules');
   if (section) section.hidden = !confirmed.length || state.dataMode !== 'live';
@@ -127,6 +129,19 @@ async function loadSecurityState(refresh = false) {
       assignments: data.assignments || [],
       timeLimits: data.timeLimits || []
     });
+    if (router.dataMode === 'live') {
+      // Connected router: changes go to the backend, which publishes them to the router.
+      Object.assign(state, { preview: false });
+      draftBase = null;
+      if (document.body) document.body.dataset.localDraft = 'false';
+      renderAll();
+      setStatus('Routerdaten geladen. Änderungen werden an den Router gesendet.', 'info');
+      renderRouterControlStatus();
+      renderDraft();
+      updateReadOnlyControls();
+      return;
+    }
+    if (document.body) document.body.dataset.localDraft = 'true';
     const account = window.parent?.NetheraAccount ?? window.NetheraAccount;
     const owner = account?.keycloak?.tokenParsed?.sub || 'local-preview';
     const key = NetheraSecurityDraft.keyFor(API_BASE_URL, owner, router);
@@ -156,6 +171,11 @@ function updateReadOnlyControls() {
     if (readOnly && !control.disabled) { control.dataset.sourceDisabled = 'true'; control.disabled = true; }
     else if (!readOnly && control.dataset.sourceDisabled) { control.disabled = false; delete control.dataset.sourceDisabled; }
   });
+  // Category tokens have no domain source in the router backend yet.
+  for (const id of ['groupPkgGambling', 'groupPkgAdult', 'groupPkgSocial']) {
+    const control = document.getElementById(id);
+    if (control) control.disabled = state.dataMode === 'live' || !state.loaded;
+  }
 }
 
 function routerEffect(entry) {
@@ -287,7 +307,7 @@ function presetForDevice(deviceId) {
 
 function groupOptions(selectedId = '') {
   return [
-    `<option value="">${canEditRules() ? 'Keine Gruppe im Entwurf' : 'Nicht gemeldet'}</option>`,
+    `<option value="">${canEditRules() ? (state.preview ? 'Keine Gruppe im Entwurf' : 'Keine Gruppe') : 'Nicht gemeldet'}</option>`,
     ...state.groups.map(group => `<option value="${group.id}" ${Number(group.id) === Number(selectedId) ? 'selected' : ''}>${escapeText(group.name)}</option>`)
   ].join('');
 }
@@ -398,7 +418,7 @@ function renderGroupOverview() {
   const list = document.getElementById('groupOverviewList');
   if (!list) return;
   if (!state.groups.length) {
-    list.innerHTML = canEditRules() ? '<empty-state title="Noch keine Gruppen im Entwurf" text="Lege eine Gruppe an und ordne deine Geräte zu."></empty-state>' : '<empty-state title="Keine gemeldeten Gruppen" text="Der Router hat noch keine verifizierten Gruppen geliefert."></empty-state>';
+    list.innerHTML = canEditRules() ? `<empty-state title="Noch keine Gruppen${state.preview ? ' im Entwurf' : ''}" text="Lege eine Gruppe an und ordne deine Geräte zu."></empty-state>` : '<empty-state title="Keine gemeldeten Gruppen" text="Der Router hat noch keine verifizierten Gruppen geliefert."></empty-state>';
     return;
   }
 
@@ -433,7 +453,7 @@ function renderManualDomains() {
   const list = document.getElementById('manualDomainsList');
   if (!list) return;
   if (!state.blocklists.length) {
-    list.innerHTML = canEditRules() ? '<empty-state title="Keine Blocklisten im Entwurf" text="Füge die erste Website hinzu."></empty-state>' : '<empty-state title="Keine bestätigten Blocklisten" text="Es liegen noch keine verifizierten Sperrlisten oder Übernahmebestätigungen vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
+    list.innerHTML = canEditRules() ? `<empty-state title="Keine Blocklisten${state.preview ? ' im Entwurf' : ''}" text="Füge die erste Website hinzu."></empty-state>` : '<empty-state title="Keine bestätigten Blocklisten" text="Es liegen noch keine verifizierten Sperrlisten oder Übernahmebestätigungen vor. Bestehende Routerregeln bleiben unverändert."></empty-state>';
     return;
   }
 
@@ -466,7 +486,7 @@ function renderAdDomains() {
       </div>
       <span class="badge ${!blocklist.localDraft && blocklist.confirmationSource === 'ROUTER_ACK' ? 'ok' : ''}">${blocklist.localDraft ? 'Lokaler Entwurf' : state.dataMode === 'demo' ? 'Beispiel' : blocklist.confirmationSource === 'ROUTER_ACK' ? 'Am Router aktiv' : routerEffect(state.routerControl?.blocklists?.[blocklist.id])}</span>
     </article>
-  `).join('') || (canEditRules() ? '<empty-state title="Keine Werbe-Domains im Entwurf" text="Noch keine DNS-Blockliste vorhanden."></empty-state>' : '<empty-state title="Keine bestätigten Werbe-Domains" text="Keine aktuell bestätigte Domain-Liste. Der Adblock-Status wird separat angezeigt."></empty-state>');
+  `).join('') || (canEditRules() ? `<empty-state title="Keine Werbe-Domains${state.preview ? ' im Entwurf' : ''}" text="Noch keine DNS-Blockliste vorhanden."></empty-state>` : '<empty-state title="Keine bestätigten Werbe-Domains" text="Keine aktuell bestätigte Domain-Liste. Der Adblock-Status wird separat angezeigt."></empty-state>');
 }
 
 function renderPresetDeviceOptions() {
@@ -492,7 +512,7 @@ function renderPresets() {
   const list = document.getElementById('presetList');
   if (!list) return;
   if (!state.presets.length) {
-    list.innerHTML = canEditRules() ? '<empty-state title="Keine Vorlagen im Entwurf" text="Noch keine Vorlage gespeichert."></empty-state>' : '<empty-state title="Keine gemeldeten Vorlagen" text="Es liegen noch keine Vorlagen mit bestätigter Router-Herkunft vor."></empty-state>';
+    list.innerHTML = canEditRules() ? `<empty-state title="Keine Vorlagen${state.preview ? ' im Entwurf' : ''}" text="Noch keine Vorlage gespeichert."></empty-state>` : '<empty-state title="Keine gemeldeten Vorlagen" text="Es liegen noch keine Vorlagen mit bestätigter Router-Herkunft vor."></empty-state>';
     return;
   }
 
@@ -761,11 +781,9 @@ async function saveAdProtection(event) {
 
 async function applyPresetToDevice(deviceId, preset) {
   if (preset.blockedFrom && preset.blockedUntil) {
-    const current = state.timeLimits.find(item => Number(item.deviceId) === Number(deviceId));
     await apiJson(`${API_BASE_URL}/api/device-time-limits/${deviceId}`, { method: 'PUT', body: JSON.stringify({
       deviceId, dailyLimitMinutes: preset.timeLimitMinutes || 0, blockedFrom: preset.blockedFrom,
-      blockedUntil: preset.blockedUntil, usedMinutesToday: current?.usedMinutesToday || 0,
-      status: 'active', note: `Preset: ${preset.name}`
+      blockedUntil: preset.blockedUntil, status: 'active', note: `Preset: ${preset.name}`
     }) });
   }
   await apiJson(`${SECURITY_API}/devices/${deviceId}/preset/${preset.id}`, { method: 'PUT' });
@@ -848,11 +866,16 @@ async function saveGroupBlocklistSelection(groupId, blocklistId) {
   setStatus(`Blocklist für "${group.name}" gespeichert.`, 'success');
 }
 
+function domainFeedback(text, tone = 'info') {
+  const feedback = document.getElementById('domainSaveStatus');
+  if (feedback) { feedback.hidden = false; feedback.textContent = text; feedback.setAttribute('data-state', tone); }
+}
+
 async function addManualDomain(event) {
   event.preventDefault();
   const input = document.getElementById('manualDomainInput');
   const domain = sanitizeDomain(input.value);
-  if (!domain) return setStatus('Keine gültige Website-Adresse. Beispiel: youtube.com', 'error');
+  if (!domain) { domainFeedback('Bitte eine gültige Website-Adresse eingeben, z. B. tiktok.com.', 'error'); return setStatus('Keine gültige Website-Adresse. Beispiel: youtube.com', 'error'); }
   const scope = document.getElementById('domainScope').value;
   const targetId = Number(document.getElementById('domainTarget').value);
   const group = state.groups.find(item => Number(item.id) === targetId);
@@ -861,7 +884,7 @@ async function addManualDomain(event) {
   const preset = scope === 'device' ? presetForDevice(targetId) : null;
   const previous = scope === 'network' ? state.blocklists.find(item => item.sourceType === 'NETWORK')
     : state.blocklists.find(item => Number(item.id) === Number(scope === 'group' ? group.blocklistId : preset?.blocklistId));
-  if (blocklistDomains(previous).includes(domain)) return setStatus(`${domain} steht bereits in dieser Blockliste.`, 'info');
+  if (blocklistDomains(previous).includes(domain)) { domainFeedback(`${domain} steht bereits in dieser Blockliste.`); return setStatus(`${domain} steht bereits in dieser Blockliste.`, 'info'); }
   const target = scope === 'network' ? 'Gesamtes Netzwerk' : scope === 'group' ? group.name : device.hostname;
   const blocklist = await apiJson(`${SECURITY_API}/blocklists`, {
     method: 'POST',
@@ -873,6 +896,8 @@ async function addManualDomain(event) {
   if (scope === 'device') await saveDeviceProfile(targetId, { blocklistId: blocklist.id });
   input.value = '';
   await loadSecurityState();
+  const feedback = state.preview ? `${domain} · ${target}: Im lokalen Entwurf gespeichert. Nicht an den Router gesendet.` : `${domain} · ${target}: Erfolgreich gespeichert. Routerbestätigung ausstehend – mit „Status prüfen“ aktualisieren.`;
+  domainFeedback(feedback, 'success');
   setStatus(`${domain} · ${target}: Sperrregel gespeichert. Router-Anwendung ausstehend.`, 'success');
 }
 
@@ -1005,13 +1030,29 @@ function setupEvents() {
     adDomainForm: addAdDomain, presetForm: createPreset, applyPresetForm: applyExistingPreset,
     priorityForm: savePriority, adProtectionForm: saveAdProtection };
   Object.entries(forms).forEach(([id, handler]) => {
-    document.getElementById(id).addEventListener('submit', async event => {
+    const form = document.getElementById(id);
+    if (!form.querySelector('[data-form-feedback]')) {
+      const output = document.createElement('output');
+      output.className = 'effect-summary'; output.hidden = true;
+      output.setAttribute('data-form-feedback', ''); output.setAttribute('role', 'status'); output.setAttribute('aria-live', 'polite');
+      form.append(output);
+    }
+    form.addEventListener('submit', async event => {
       event.preventDefault();
       const button = event.currentTarget.querySelector('[type="submit"]');
       button.disabled = true;
-      try { await handler(event); }
-      catch (error) { setStatus(`Änderung nicht vollständig gespeichert: ${error.message}. Bitte neu laden und prüfen.`, 'error'); }
-      finally { button.disabled = state.preview ? !state.loaded : !NetheraApi.isLive(); }
+      form.setAttribute('aria-busy', 'true');
+      const feedback = event.currentTarget.querySelector('[data-form-feedback]');
+      if (feedback) { feedback.hidden = false; feedback.textContent = 'Wird gespeichert …'; }
+      try {
+        await handler(event);
+        if (feedback && feedback.textContent === 'Wird gespeichert …') {
+          feedback.textContent = document.getElementById('statusBox')?.getAttribute('text') || 'Aktion abgeschlossen.';
+          feedback.setAttribute('data-state', document.getElementById('statusBox')?.getAttribute('state') || 'info');
+        }
+      }
+      catch (error) { if (feedback) { feedback.textContent = `Nicht vollständig gespeichert: ${error.message}. Bitte den gespeicherten Stand prüfen.`; feedback.setAttribute('data-state', 'error'); } setStatus(`Änderung nicht vollständig gespeichert: ${error.message}. Bitte neu laden und prüfen.`, 'error'); }
+      finally { form.setAttribute('aria-busy', 'false'); button.disabled = state.preview ? !state.loaded : !NetheraApi.isLive(); }
     });
   });
   document.getElementById('groupBlocklistSelect')?.addEventListener('change', renderGroupBlocklistForm);

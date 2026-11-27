@@ -17,7 +17,11 @@ Package installation → snapshot installed packages and hashes; add dependencie
 MAC randomization and unknown IPv6 neighbors → report incomplete device mapping rather than claiming full application.
 
 ## Migration Plan
-Snapshot existing settings and binaries, install only required packages, add standalone service, test high/normal and rollback, verify old hashes and running service. Backend migration adds one table; deploy separately under hosting instructions. Remove temporary authorized key and local private key at completion.
+Snapshot existing settings and binaries, install only required packages, add standalone service, test high/normal and rollback, verify old hashes and running service. Backend migration adds two tables; deploy separately under hosting instructions. Remove temporary authorized key and local private key at completion.
 
 ## Open Questions
 End-to-end cloud activation depends on deployment access and existing MQTT ACLs.
+
+## Compatible cloud integration (27 November)
+
+Merge origin/feat/router-time-schedules at 52c9989. Keep live AdBlock/domain/device writes in security.js and the separate time publisher and status. The core source retains its ownership model; the established prepare-time-release.mjs build selects the verified shared-router bases and applies a narrow priority-cloud.patch after the existing time patch. The adapter checks devices against configured nethera.router.id and preserves the current authenticated shared access without adding ownership tables or replacing Keycloak/account.js. Test the generated release as well as the source branch. Do not deploy or modify the physical router during this integration.

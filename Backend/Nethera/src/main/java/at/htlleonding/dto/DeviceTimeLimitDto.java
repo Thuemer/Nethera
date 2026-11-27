@@ -8,6 +8,7 @@ public record DeviceTimeLimitDto(
         String blockedFrom,
         String blockedUntil,
         String status,
-        String note
+        String note,
+        Boolean routerEnforcement
 ) {
 }

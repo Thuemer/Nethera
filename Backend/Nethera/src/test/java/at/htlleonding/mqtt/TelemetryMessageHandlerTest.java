@@ -35,11 +35,22 @@ class TelemetryMessageHandlerTest {
         handler.dnsIngestor = mock(DnsIngestor.class);
         handler.deviceIngestor = mock(DeviceIngestor.class);
         handler.controlIngestor = mock(ControlIngestor.class);
+        handler.priorityControl = mock(at.htlleonding.control.PriorityControlService.class);
+        handler.timeIngestor = mock(at.htlleonding.telemetry.TimeIngestor.class);
         handler.freshness = mock(TelemetryFreshness.class);
 
         router = new Router();
         router.setId(1L);
         when(handler.entityManager.find(Router.class, 1L)).thenReturn(router);
+    }
+
+    @Test
+    void routesPriorityWithoutChangingTimeDnsOrConnectionFreshness() {
+        String payload = "priority payload is validated by the independent ingestor";
+        handler.handle("nethera/1/telemetry/priority", payload);
+        verify(handler.priorityControl).ingest(1L, payload);
+        verifyNoInteractions(handler.timeIngestor, handler.controlIngestor, handler.freshness);
+        assertNull(router.getLastSeen());
     }
 
     @Test
@@ -106,6 +117,14 @@ class TelemetryMessageHandlerTest {
         // The answer is retained and also arrives after a backend restart
         assertNull(router.getLastSeen());
         verifyNoInteractions(handler.freshness);
+    }
+
+    @Test
+    void timeAnswerDoesNotProveRouterIsAlive() {
+        handler.handle("nethera/1/telemetry/time", TimePayloadParserTest.REPORT);
+        verify(handler.timeIngestor).ingest(router, TelemetryPayloadParser.time(TimePayloadParserTest.REPORT));
+        assertNull(router.getLastSeen());
+        verifyNoInteractions(handler.freshness, handler.controlIngestor, handler.dnsIngestor);
     }
 
     @Test

@@ -32,6 +32,9 @@ function formatTime(value) {
     });
 }
 
+const SPEED_WINDOW_MS = 60 * 60 * 1000;
+const SPEED_GAP_MS = 3 * 60 * 1000;
+
 function sortByTimestamp(items) {
     return [...(items || [])].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
@@ -102,7 +105,7 @@ class RouterCard extends HTMLElement {
     }
 
     render() {
-        const devices = this.router?.devices?.length ?? '—';
+        const devices = this.router && this.router.dataMode !== 'unavailable' ? NetheraApi.onlineDevices(this.router).length : '—';
         const status = typeof this.router?.isOnline !== 'boolean' ? 'Unbekannt' : this.router.isOnline ? 'Online' : 'Offline';
         const lastSeen = formatDateTime(this.router?.lastSeen);
         const firmware = this.router?.firmware || '—';
@@ -152,13 +155,19 @@ class FeaturesCard extends HTMLElement {
             this.router = await getPrimaryRouter();
         } catch (error) {
             this.router = null;
-            
+        }
+        // The router list carries no address; the LAN IP lives in the router's configuration.
+        try {
+            this.config = this.router ? await NetheraApi.getConfiguration(this.router) : null;
+        } catch (error) {
+            this.config = null;
         }
 
         this.render();
     }
 
     render() {
+        const ipAddress = this.router?.ipAddress || this.config?.lanIp || this.config?.lan_ip || '—';
         const routerName = this.router?.name || '—';
         const model = this.router?.model || '—';
 
@@ -169,7 +178,7 @@ class FeaturesCard extends HTMLElement {
             <ul class="feature-list content-list">
                 <li><span class="feature-line"><span class="feature-name">Router-Name</span><span class="feature-value">${escapeHtml(routerName)}</span></span></li>
                 <li><span class="feature-line"><span class="feature-name">Modell</span><span class="feature-value">${escapeHtml(model)}</span></span></li>
-                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">${escapeHtml(this.router?.ipAddress || '—')}</span></span></li>
+                <li><span class="feature-line"><span class="feature-name">IP-Adresse</span><span class="feature-value">${escapeHtml(ipAddress)}</span></span></li>
             </ul>
         `;
     }
@@ -179,6 +188,7 @@ class FeaturesCard extends HTMLElement {
 class SpeedCard extends HTMLElement {
     constructor() {
         super();
+        this.times = [];
         this.upload = [];
         this.download = [];
         this.labels = [];
@@ -226,27 +236,54 @@ class SpeedCard extends HTMLElement {
     async loadSpeedData() {
         try {
             const router = await getPrimaryRouter();
-            const sortedSpeedStats = sortByTimestamp(router?.speedStats);
+            const sorted = sortByTimestamp(router?.speedStats)
+                .map(entry => ({ ...entry, time: new Date(entry.timestamp).getTime() }))
+                .filter(entry => Number.isFinite(entry.time));
+            // The router reports every 30 s; a full day of points is unreadable on a card, so show the last hour.
+            const end = sorted.at(-1)?.time;
+            const recent = end == null ? [] : sorted.filter(entry => entry.time >= end - SPEED_WINDOW_MS);
 
-            this.upload = sortedSpeedStats.map(entry => Number(entry.uploadSpeed) || 0);
-            this.download = sortedSpeedStats.map(entry => Number(entry.downloadSpeed) || 0);
-            this.labels = sortedSpeedStats.map(entry => formatTime(entry.timestamp));
+            this.times = recent.map(entry => entry.time);
+            this.upload = recent.map(entry => Number(entry.uploadSpeed) || 0);
+            this.download = recent.map(entry => Number(entry.downloadSpeed) || 0);
+            this.labels = recent.map(entry => formatTime(entry.timestamp));
 
-            const latestSpeed = sortedSpeedStats.at(-1);
+            const latestSpeed = sorted.at(-1);
             const uploadValue = this.querySelector('#uploadValue');
             const downloadValue = this.querySelector('#downloadValue');
             if (uploadValue) uploadValue.textContent = formatSpeed(latestSpeed?.uploadSpeed);
             if (downloadValue) downloadValue.textContent = formatSpeed(latestSpeed?.downloadSpeed);
         } catch (error) {
+            this.times = [];
             this.upload = [];
             this.download = [];
             this.labels = [];
-            
         }
 
         requestAnimationFrame(() => this.drawChart());
     }
 
+    // x position of sample i, by its time (gaps stay visible instead of being squeezed out)
+    xAt(canvas, i) {
+        const first = this.times[0];
+        const span = this.times.at(-1) - first;
+        const ratio = span > 0 ? (this.times[i] - first) / span : 0;
+        return this.padding.left + ratio * (canvas.width - this.padding.left - this.padding.right);
+    }
+
+    yAt(canvas, value, maxY) {
+        return canvas.height - this.padding.bottom - (value / maxY) * (canvas.height - this.padding.top - this.padding.bottom);
+    }
+
+    // Consecutive samples further apart than this belong to different stretches (router was offline)
+    segments() {
+        const result = [];
+        this.times.forEach((time, i) => {
+            if (!i || time - this.times[i - 1] > SPEED_GAP_MS) result.push([]);
+            result.at(-1).push(i);
+        });
+        return result;
+    }
 
     setupChartHover() {
         const canvas = this.querySelector('.speedChart');
@@ -257,10 +294,12 @@ class SpeedCard extends HTMLElement {
             if (!this.labels.length) return;
             const rect = canvas.getBoundingClientRect();
             const width = this._chartSize?.width || rect.width;
-            const plotWidth = width - this.padding.left - this.padding.right;
             const relX = Math.min(Math.max(event.clientX - rect.left, this.padding.left), width - this.padding.right);
-            const index = this.labels.length === 1 ? 0 : Math.round(((relX - this.padding.left) / plotWidth) * (this.labels.length - 1));
-            const safeIndex = Math.min(Math.max(index, 0), this.labels.length - 1);
+            const size = { width, height: this._chartSize?.height || rect.height };
+            let safeIndex = 0;
+            this.times.forEach((_, i) => {
+                if (Math.abs(this.xAt(size, i) - relX) < Math.abs(this.xAt(size, safeIndex) - relX)) safeIndex = i;
+            });
             tooltip.textContent = `${this.labels[safeIndex]} · ↓ ${formatSpeed(this.download[safeIndex])} · ↑ ${formatSpeed(this.upload[safeIndex])}`;
             tooltip.style.left = `${event.clientX - rect.left}px`;
             tooltip.style.top = `${event.clientY - rect.top}px`;
@@ -287,7 +326,7 @@ class SpeedCard extends HTMLElement {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
 
-        if (!this.upload.length || !this.download.length || !this.labels.length) {
+        if (!this.times.length || !this.upload.length || !this.download.length) {
             ctx.fillStyle = 'rgba(229,235,231,.72)';
             ctx.font = '14px Avenir Next, Segoe UI, sans-serif';
             ctx.textAlign = 'center';
@@ -361,56 +400,59 @@ class SpeedCard extends HTMLElement {
         }
         this.labels.forEach((label, i) => {
             if (!labelIndexes.has(i)) return;
-            const x =
-                this.padding.left +
-                ((this.labels.length === 1 ? 0 : i / (this.labels.length - 1))) *
-                    (canvas.width - this.padding.left - this.padding.right);
-
-            ctx.fillText(label, x, canvas.height - 10);
+            ctx.textAlign = i === 0 && this.labels.length > 1 ? 'left' : i === this.labels.length - 1 && i > 0 ? 'right' : 'center';
+            ctx.fillText(label, this.xAt(canvas, i), canvas.height - 10);
         });
     }
 
     drawLine(ctx, canvas, data, color, maxY) {
-        ctx.beginPath();
+        const baseline = canvas.height - this.padding.bottom;
         ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        data.forEach((val, i) => {
-            const x =
-                this.padding.left +
-                ((data.length === 1 ? 0 : i / (data.length - 1))) *
-                    (canvas.width - this.padding.left - this.padding.right);
+        this.segments().forEach(segment => {
+            const points = segment.map(i => [this.xAt(canvas, i), this.yAt(canvas, data[i], maxY)]);
+            if (points.length === 1) {
+                // A lone measurement between gaps: a dot is all there is to draw
+                ctx.beginPath();
+                ctx.arc(points[0][0], points[0][1], 3, 0, Math.PI * 2);
+                ctx.fill();
+                return;
+            }
 
-            const y =
-                canvas.height -
-                this.padding.bottom -
-                (val / maxY) *
-                    (canvas.height - this.padding.top - this.padding.bottom);
+            const trace = () => {
+                ctx.moveTo(points[0][0], points[0][1]);
+                for (let i = 1; i < points.length; i++) {
+                    // Smooth curve through the midpoints, so 30 s jitter does not look like a saw blade
+                    const [px, py] = points[i - 1];
+                    const [x, y] = points[i];
+                    ctx.quadraticCurveTo(px, py, (px + x) / 2, (py + y) / 2);
+                }
+                ctx.lineTo(points.at(-1)[0], points.at(-1)[1]);
+            };
 
-            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        });
-
-        ctx.stroke();
-
-        data.forEach((val, i) => {
-            const x =
-                this.padding.left +
-                ((data.length === 1 ? 0 : i / (data.length - 1))) *
-                    (canvas.width - this.padding.left - this.padding.right);
-
-            const y =
-                canvas.height -
-                this.padding.bottom -
-                (val / maxY) *
-                    (canvas.height - this.padding.top - this.padding.bottom);
+            ctx.save();
+            ctx.globalAlpha = 0.12;
+            ctx.beginPath();
+            trace();
+            ctx.lineTo(points.at(-1)[0], baseline);
+            ctx.lineTo(points[0][0], baseline);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
 
             ctx.beginPath();
-            ctx.fillStyle = color;
-            ctx.arc(x, y, 3.2, 0, Math.PI * 2);
-            ctx.fill();
+            trace();
+            ctx.stroke();
         });
+
+        const last = data.length - 1;
+        ctx.beginPath();
+        ctx.arc(this.xAt(canvas, last), this.yAt(canvas, data[last], maxY), 3.5, 0, Math.PI * 2);
+        ctx.fill();
     }
 }
 
@@ -562,8 +604,11 @@ class ClientsCard extends HTMLElement {
     async loadClientData() {
         try {
             const router = await getPrimaryRouter();
-            this.devices = router?.devices || [];
+            this.available = router?.dataMode !== 'unavailable';
+            this.devices = NetheraApi.onlineDevices(router)
+                .slice().sort((a, b) => new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0));
         } catch (error) {
+            this.available = false;
             this.devices = [];
         }
 
@@ -583,7 +628,7 @@ class ClientsCard extends HTMLElement {
                     <strong class="client-type">${escapeHtml(String(device.connectionType || '—').toUpperCase())}</strong>
                 </div>
             `).join('')
-            : '<div class="client-row"><span class="client-name">Keine Clients gefunden</span><strong class="client-type">—</strong></div>';
+            : '<div class="client-row"><span class="client-name">Keine Clients online</span><strong class="client-type">—</strong></div>';
 
         this.innerHTML = `
             <div class="card-header">
@@ -592,8 +637,8 @@ class ClientsCard extends HTMLElement {
             <div class="card-content-stack">
                 <div class="card-kpi-row">
                     <div class="card-kpi">
-                        <span class="card-kpi-label">Gesamt</span>
-                        <span class="card-kpi-value">${total || '—'}</span>
+                        <span class="card-kpi-label">Online</span>
+                        <span class="card-kpi-value">${this.available ? total : '—'}</span>
                     </div>
                     <div class="card-kpi align-right">
                         <span class="card-kpi-label">LAN / WLAN</span>

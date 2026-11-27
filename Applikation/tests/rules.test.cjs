@@ -8,7 +8,7 @@ function harness(file) {
   const fields = new Map();
   const calls = [];
   const field = id => {
-    if (!fields.has(id)) fields.set(id, { value: '', checked: false, setAttribute() {}, dispatchEvent() {} });
+    if (!fields.has(id)) fields.set(id, { value: '', checked: false, setAttribute() {}, dispatchEvent() {}, querySelectorAll: () => [], contains: () => false });
     return fields.get(id);
   };
   const context = vm.createContext({
@@ -205,14 +205,14 @@ test('network rule uses an explicit network-wide scope', async () => {
   assert.equal(h.calls[0].body.sourceType, 'NETWORK');
 });
 
-test('applying a preset persists its chosen schedule and preserves recorded usage', async () => {
+test('applying a preset persists its chosen schedule without sending browser usage', async () => {
   const h = securityHarness();
   await h.run('applyPresetToDevice(1, state.presets[0])');
   const limit = h.calls[0].body;
   assert.match(h.calls[0].url, /device-time-limits\/1$/);
   assert.equal(limit.blockedFrom, '22:00');
   assert.equal(limit.blockedUntil, '06:00');
-  assert.equal(limit.usedMinutesToday, 25);
+  assert.equal(limit.usedMinutesToday, undefined);
   assert.equal(limit.dailyLimitMinutes, 60);
 });
 
@@ -363,6 +363,8 @@ test('time limit validation rejects empty, equal and out-of-range values', () =>
   assert.match(h.run(`validLimitInput('07:00', '07:00', 0, '')`), /Uhrzeiten/);
   assert.match(h.run(`validLimitInput('21:00', '07:00', 1500, '')`), /Tagesbudget/);
   assert.equal(h.run(`validLimitInput('21:00', '07:00', 60, '')`), '');
+  assert.equal(h.run(`validLimitInput('', '', 60, '')`), '');
+  assert.equal(h.run(`normalizeLimit({blockedFrom:null, blockedUntil:null, dailyLimitMinutes:60}).from`), '');
 });
 
 test('scheduled time without router confirmation is never shown as a verified block', () => {
@@ -382,6 +384,29 @@ test('time limit readback is not confirmed while router is offline', () => {
     renderList();`);
   assert.match(h.field('limitsList').innerHTML, /Nur gespeichert/);
   assert.doesNotMatch(h.field('limitsList').innerHTML, /Am Router gesperrt/);
+});
+
+test('usage and blocking come only from a confirmed router report, not saved counters', () => {
+  const h = harness('time-limits.js');
+  h.run(`state.dataMode='live'; state.devices=[{id:1,hostname:'Tablet'}]; state.filteredDevices=state.devices;
+    state.limits={'1':{from:'21:00',until:'07:00',status:'active',dailyLimit:60,usedMinutesToday:999}};
+    renderList();`);
+  assert.doesNotMatch(h.field('limitsList').innerHTML, /999|role="progressbar"|is-blocked/);
+  h.run(`state.routerControl={connection:'online',timeLimits:{1:{applied:true,blockedNow:true,reason:'budget',usedMinutesToday:60,budgetMinutesToday:60}}}; renderList();`);
+  assert.match(h.field('limitsList').innerHTML, /Am Router gesperrt/);
+  assert.match(h.field('limitsList').innerHTML, /60 von 60/);
+  assert.match(h.field('limitsList').innerHTML, /Tageslimit erreicht/);
+});
+
+test('legacy rules stay visibly unactivated and removal waits for router confirmation', () => {
+  const h = harness('time-limits.js');
+  h.run(`state.dataMode='live'; state.devices=[{id:1,hostname:'Tablet'}]; state.filteredDevices=state.devices;
+    state.limits={'1':{from:'21:00',until:'07:00',status:'active',routerEnforcement:false}}; renderList();`);
+  assert.match(h.field('limitsList').innerHTML, /Noch nicht am Router aktiviert/);
+  h.run(`state.limits={}; state.routerControl={connection:'online',timeApplied:false}; renderRouterControlStatus();`);
+  assert.match(h.field('routerControlStatus').textContent, /Routerbestätigung ausstehend/);
+  h.run(`state.routerControl.timeApplied=true; renderRouterControlStatus();`);
+  assert.match(h.field('routerControlStatus').textContent, /am Router bestätigt/);
 });
 
 test('day preview covers midnight and daytime exactly without gaps', () => {
@@ -458,4 +483,18 @@ test('priority on an older backend still reports a local draft', () => {
   // The generic draft guard is not bypassed merely by the message wording.
   h.run(`let statusText='';document.getElementById('statusBox').setAttribute=(name,value)=>{if(name==='text')statusText=value};setStatus('Gerätepriorität gespeichert.', 'success')`);
   assert.match(h.run('statusText'),/lokalen Entwurf/);
+});
+
+test('a live router loads without the local draft and sends writes to the backend', async () => {
+  const h = harness('security.js');
+  h.run(`NetheraApi.getPrimaryRouter = async () => ({ id: 1, dataMode: 'live', devices: [{ id: 20, hostname: 'Laptop' }] });
+    NetheraApi.getSecurityState = async router => ({ dataMode: 'live', rulesKnown: true, devices: router.devices,
+      groups: [], members: [], presets: [], assignments: [], timeLimits: [],
+      blocklists: [{ id: 5, routerId: 1, sourceType: 'NETWORK', urlPattern: 'example.com' }] });
+    NetheraSecurityDraft = { keyFor() { throw new Error('draft must not be used'); } };`);
+  await h.run('loadSecurityState()');
+  assert.equal(h.run('state.preview'), false);
+  assert.equal(h.run('state.rulesKnown'), true);
+  await h.run(`apiJson(SECURITY_API + '/blocklists', { method: 'POST', body: JSON.stringify({ id: 5, urlPattern: 'example.com|youtube.com' }) })`);
+  assert.deepEqual(h.calls.map(call => [call.method, call.url]), [['POST', 'http://test/api/security/blocklists']]);
 });

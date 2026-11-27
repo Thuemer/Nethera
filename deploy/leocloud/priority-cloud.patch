@@ -1,0 +1,142 @@
+--- a/Backend/Nethera/src/main/java/at/htlleonding/boundary/RouterControlResource.java
++++ b/Backend/Nethera/src/main/java/at/htlleonding/boundary/RouterControlResource.java
+@@ -1,6 +1,19 @@
+ package at.htlleonding.boundary;
+ 
+ import at.htlleonding.control.DnsDesiredState;
++import at.htlleonding.control.PriorityControlService;
++import at.htlleonding.control.RouterControlChanged;
++import at.htlleonding.model.DevicePriority;
++import at.htlleonding.model.ConnectedDevice;
++import io.quarkus.security.Authenticated;
++import jakarta.enterprise.event.Event;
++import jakarta.transaction.Transactional;
++import jakarta.ws.rs.PUT;
++import jakarta.ws.rs.Consumes;
++import jakarta.ws.rs.PathParam;
++import jakarta.ws.rs.BadRequestException;
++import jakarta.ws.rs.NotFoundException;
++import java.util.Set;
+ import at.htlleonding.control.RouterControlPublisher;
+ import at.htlleonding.control.TimeControlPublisher;
+ import at.htlleonding.control.TimeControlStatus;
+@@ -44,6 +57,34 @@
+     @ConfigProperty(name = "nethera.router.id", defaultValue = "1")
+     long routerId;
+ 
++    @Inject PriorityControlService priorityControl;
++
++    @Inject
++    Event<RouterControlChanged> controlChanged;
++
++    @Authenticated
++    @PUT
++    @Path("priority/devices/{deviceId}")
++    @Consumes(MediaType.APPLICATION_JSON)
++    @Transactional
++    public Response savePriority(@PathParam("deviceId") Long deviceId, PriorityDto dto) {
++        if (!publisher.enabled()) throw new WebApplicationException("MQTT-Routersteuerung nicht verfügbar", 501);
++        ConnectedDevice device = entityManager.find(ConnectedDevice.class, deviceId);
++        if (device == null || device.getRouter() == null || device.getRouter().getId() != routerId)
++            throw new NotFoundException("Geraet nicht gefunden");
++        if (dto == null || !Set.of("high", "normal").contains(dto.mode() == null ? "" : dto.mode()))
++            throw new BadRequestException("Priorität muss high oder normal sein");
++        var preference = entityManager.find(DevicePriority.class, deviceId);
++        if (preference == null) {
++            preference = new DevicePriority(); preference.setDeviceId(deviceId); preference.setMode(dto.mode());
++            entityManager.persist(preference);
++        }
++        preference.setMode(dto.mode());
++        controlChanged.fire(new RouterControlChanged());
++        return Response.accepted(Map.of("accepted", true, "mode", dto.mode())).build();
++    }
++
++    public record PriorityDto(String mode) {}
+     @Inject TimeControlPublisher timePublisher;
+     @Inject TimeControlStatus timeStatus;
+ 
+@@ -79,9 +120,9 @@
+                 routerId,
+                 connection,
+                 state == null ? null : state.getCheckedAt(),
+-                new CapabilitiesDto(publisher.enabled(), timePublisher.enabled()),
++                new CapabilitiesDto(publisher.enabled(), timePublisher.enabled(), publisher.enabled()),
+                 new AdblockDto(installed, enabled, adblockApplied),
+-                Map.of(),
++                priorityControl.status(routerId, connection),
+                 blocklists,
+                 time.devices(),
+                 confirmed ? state.getError() : null,
+@@ -117,7 +158,7 @@
+                             Map<String, Object> timeLimits, String error, Instant timeCheckedAt, String timeError, String timezone, Boolean timeApplied) {
+     }
+ 
+-    public record CapabilitiesDto(boolean adblockInstall, boolean timeControl) {
++    public record CapabilitiesDto(boolean adblockInstall, boolean timeControl, boolean devicePriority) {
+     }
+ 
+     public record AdblockDto(boolean installed, boolean enabled, boolean applied) {
+--- a/Backend/Nethera/src/main/java/at/htlleonding/control/RouterControlPublisher.java
++++ b/Backend/Nethera/src/main/java/at/htlleonding/control/RouterControlPublisher.java
+@@ -42,8 +42,11 @@
+     private static final ObjectMapper MAPPER = new ObjectMapper();
+     static final int SCHEMA_VERSION = 1;
+ 
+-    private record Prepared(String topic, byte[] payload) {
++    record Prepared(String topic, byte[] payload) {
+     }
++
++    @Inject
++    PriorityControlService priorityControl;
+ 
+     @Inject
+     EntityManager entityManager;
+@@ -104,7 +107,7 @@
+         List<ConnectedDevice> devices = entityManager.createNamedQuery(ConnectedDevice.QUERY_FIND_ALL, ConnectedDevice.class).getResultList();
+         boolean adblock = adblockWanted(entityManager);
+ 
+-        List<Prepared> messages = new ArrayList<>();
++        List<Prepared> messages = new ArrayList<>(priorityControl.prepare(force, routers, presets, assignments, devices));
+         for (Router router : routers) {
+             DnsDesiredState desired = DnsDesiredState.build(router.getId(), adblock, blocklists, groups, members, presets, assignments, devices);
+             ObjectNode json = MAPPER.createObjectNode();
+--- a/Backend/Nethera/src/main/java/at/htlleonding/control/PriorityDesiredState.java
++++ b/Backend/Nethera/src/main/java/at/htlleonding/control/PriorityDesiredState.java
+@@ -19,7 +19,8 @@
+         preferences.forEach(p -> overrides.put(p.getDeviceId(), p.getMode()));
+         Map<Long, Boolean> high = new HashMap<>();
+         for (SecurityPreset preset : presets) {
+-            if (Objects.equals(preset.getRouterId(), routerId)) high.put(preset.getId(), Boolean.TRUE.equals(preset.getPriorityMode()));
++            // Shared-router release: presets have no ownership column; device routing is still checked below.
++            high.put(preset.getId(), Boolean.TRUE.equals(preset.getPriorityMode()));
+         }
+         Map<Long, Boolean> wanted = new HashMap<>();
+         for (DevicePresetAssignment assignment : assignments) {
+--- a/Backend/Nethera/src/test/java/at/htlleonding/control/PriorityDesiredStateTest.java
++++ b/Backend/Nethera/src/test/java/at/htlleonding/control/PriorityDesiredStateTest.java
+@@ -12,7 +12,7 @@
+         ConnectedDevice a = device(1L, router, "02:00:00:00:00:01");
+         ConnectedDevice b = device(2L, router, "02:00:00:00:00:02");
+         ConnectedDevice foreign = device(3L, other, "02:00:00:00:00:03");
+-        SecurityPreset preset = new SecurityPreset(); preset.setId(8L); preset.setRouterId(1L); preset.setPriorityMode(true);
++        SecurityPreset preset = new SecurityPreset(); preset.setId(8L); preset.setPriorityMode(true);
+         DevicePresetAssignment active = assignment(1L, 8L, "active");
+         DevicePresetAssignment paused = assignment(2L, 8L, "paused");
+         var base = PriorityDesiredState.build(1L, List.of(preset), List.of(active, paused), List.of(a,b,foreign));
+--- a/Backend/Nethera/src/test/java/at/htlleonding/mqtt/PriorityTimeControlIT.java
++++ b/Backend/Nethera/src/test/java/at/htlleonding/mqtt/PriorityTimeControlIT.java
+@@ -1,6 +1,5 @@
+ package at.htlleonding.mqtt;
+ 
+-import at.htlleonding.boundary.TestRouters;
+ import at.htlleonding.control.RouterControlPublisher;
+ import at.htlleonding.model.*;
+ import com.fasterxml.jackson.databind.JsonNode;
+@@ -31,7 +30,6 @@
+ 
+     @Test @TestSecurity(user = "combined-owner")
+     void priorityPreservesLiveNetworkDeviceDnsAdblockAndTimeSchedules() throws Exception {
+-        TestRouters.own(em, "combined-owner", 1L);
+         long deviceId = QuarkusTransaction.requiringNew().call(() -> {
+             var device = new ConnectedDevice(); device.setRouter(em.find(Router.class, 1L));
+             device.setMacAddress(MAC); device.setHostname("Combined control test");

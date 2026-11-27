@@ -202,26 +202,28 @@ const NetheraApi = (() => {
       && !routerControl.blocklists[item.id].error && (item.sourceType === 'NETWORK'
         || (item.sourceType === 'DNS' && routerControl.adblock?.installed === true
           && routerControl.adblock.enabled === true && routerControl.adblock.applied === true));
+    // The backend scopes /api/security/state to the account's router and publishes every change to it
+    // (RouterControlPublisher → DnsDesiredState). Its rows are the router's desired state, so they are shown
+    // and editable. Per-list ACKs from /api/router-control/status say whether the router took them over.
+    const forThisRouter = item => item?.routerId == null || String(item.routerId) === String(router.id);
     const blocklists = rows('blocklists').flatMap(item => {
-      if (fromRouter(item) && validId(item.id)) return [item];
-      if (!confirmedNetworkList(item)) return [];
-      const domains = routerDomains(item.urlPattern);
-      return domains.length ? [{ ...item, urlPattern: domains.join('|'), confirmationSource: 'ROUTER_ACK' }] : [];
+      if (!validId(item?.id) || !forThisRouter(item)) return [];
+      if (fromRouter(item)) return [item];
+      return [confirmedNetworkList(item) ? { ...item, confirmationSource: 'ROUTER_ACK' } : item];
     });
     const blocklistIds = ids(blocklists);
-    const hasBlocklist = item => item.blocklistId === null || (validId(item.blocklistId) && blocklistIds.has(String(item.blocklistId)));
-    const groups = rows('groups').filter(item => fromRouter(item) && validId(item.id) && hasBlocklist(item));
-    const presets = rows('presets').filter(item => fromRouter(item) && validId(item.id) && hasBlocklist(item));
+    const hasBlocklist = item => item.blocklistId == null || (validId(item.blocklistId) && blocklistIds.has(String(item.blocklistId)));
+    const groups = rows('groups').filter(item => validId(item?.id) && forThisRouter(item) && hasBlocklist(item));
+    const presets = rows('presets').filter(item => validId(item?.id) && forThisRouter(item) && hasBlocklist(item));
     const groupIds = ids(groups);
     const presetIds = ids(presets);
-    const members = rows('members').filter(item => fromRouter(item)
-      && validId(item.deviceId) && validId(item.groupId) && deviceIds.has(String(item.deviceId)) && groupIds.has(String(item.groupId)));
-    const assignments = rows('assignments').filter(item => fromRouter(item)
-      && validId(item.deviceId) && validId(item.presetId) && deviceIds.has(String(item.deviceId)) && presetIds.has(String(item.presetId)));
+    const members = rows('members').filter(item => validId(item?.deviceId) && validId(item.groupId)
+      && deviceIds.has(String(item.deviceId)) && groupIds.has(String(item.groupId)));
+    const assignments = rows('assignments').filter(item => validId(item?.deviceId) && validId(item.presetId)
+      && deviceIds.has(String(item.deviceId)) && presetIds.has(String(item.presetId)));
     const rules = { blocklists, groups, presets, members, assignments };
-    // Applied network lists do not establish complete device/group assignments or absence of other rules.
-    const rulesKnown = fromRouter(data) && data.rulesComplete === true
-      && Object.keys(rules).every(key => Array.isArray(data[key]) && data[key].length === rules[key].length);
+    // Live router: the saved backend state is the source of truth for what the router should enforce.
+    const rulesKnown = true;
     return { ...rules, rulesKnown, routerControl, routerControlError, dataMode: 'live', devices: router.devices,
       timeLimits: rows('timeLimits').filter(item => item && deviceIds.has(String(item.deviceId))) };
   }
@@ -290,6 +292,19 @@ const NetheraApi = (() => {
     return response.json();
   }
 
+  // Same rule as the topology: the backend sends no per-device online flag, but lastSeen is only
+  // refreshed while the router reports a device as reachable. Online = seen in the latest report.
+  const ONLINE_WINDOW_MS = 120000;
+  const timeOf = value => { const ms = value ? new Date(value).getTime() : NaN; return Number.isNaN(ms) ? null : ms; };
+  function onlineDevices(router) {
+    const devices = Array.isArray(router?.devices) ? router.devices : [];
+    const seen = devices.map(device => timeOf(device.lastSeen)).filter(ms => ms != null);
+    const reference = timeOf(router?.checkedAt) ?? (seen.length ? Math.max(...seen) : null);
+    return devices.filter(device => typeof device.isOnline === 'boolean' ? device.isOnline
+      : reference != null && timeOf(device.lastSeen) != null && timeOf(device.lastSeen) >= reference - ONLINE_WINDOW_MS);
+  }
+  function isDeviceOnline(router, device) { return onlineDevices(router).includes(device); }
+
   function userMessage(error) {
     const message = String(error?.message || '');
     if (/\b(401|403)\b/.test(message)) return 'Bitte melde dich erneut an, um diese Daten zu sehen.';
@@ -298,5 +313,6 @@ const NetheraApi = (() => {
   }
 
   return { getRouters, getPrimaryRouter, getRouterControlStatus, installAdblock, getAuthHeader, routerUrl, userMessage,
-    getSecurityState, getConnections, getConfiguration, selectDataSource, isLive, requireLive, watchSource };
+    getSecurityState, getConnections, getConfiguration, selectDataSource, isLive, requireLive, watchSource,
+    onlineDevices, isDeviceOnline };
 })();

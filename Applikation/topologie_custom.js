@@ -33,7 +33,8 @@
       if (!force && revision === draftRevision) return;
       draftRevision = revision;
       // Overlay only assignments, never the router's device inventory or connection state.
-      if (rules && ['live', 'demo'].includes(sourceRouter.dataMode)) {
+      // A live router has its rules sent to it directly, so only the demo uses the local draft.
+      if (rules && sourceRouter.dataMode === 'demo') {
         rules = NetheraSecurityDraft.create(sessionStorage, draftKey).snapshot({ ...rules, devices: sourceRouter.devices });
       }
     } catch { draftError = true; }

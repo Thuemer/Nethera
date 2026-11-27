@@ -7,7 +7,7 @@
   <link rel="icon" href="nethera_logo.png">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="nethera-select.css">
-  <link rel="stylesheet" href="security.css?v=20261116-local-draft">
+  <link rel="stylesheet" href="security.css?v=20261120-overview-box">
   <link rel="stylesheet" href="nethera-theme.css?v=20261119-polish">
   <link rel="stylesheet" href="data-source.css?v=20261119-polish">
 </head>
@@ -22,6 +22,7 @@
       <button type="button" data-tab="priority" role="tab"><i data-lucide="gauge"></i><span>Priorität</span></button>
       <button type="button" data-tab="wifi" role="tab"><i data-lucide="wifi"></i><span>WLAN-Analyse</span></button>
     </nav>
+    <div class="security-overview">
     <section class="security-context" aria-label="Bearbeitungsstatus">
     <div class="draft-strip" aria-label="Lokale Bearbeitung">
       <div><strong>Lokaler Entwurf</strong><span id="draftNotice">Nur in diesem Browser-Tab. Keine Übertragung an den Router.</span></div>
@@ -47,6 +48,7 @@
       <stat-card id="statPresets" label="Vorlagen" value="—" detail="gespeicherte Gerätevorlagen"></stat-card>
     </section>
     </details>
+    </div>
 
     <section class="tab-panel active" id="tab-groups">
       <div class="group-subtabs" role="group" aria-label="Geräte oder Gruppen"><button class="active" type="button" data-group-view="devices" aria-pressed="true">Geräte</button><button type="button" data-group-view="management" aria-pressed="false">Gruppen verwalten</button></div>
@@ -80,6 +82,7 @@
               <span>Gruppe</span>
               <select id="groupBlocklistSelect"></select>
             </label>
+            <p class="muted">Automatische Kategorienfilter sind noch nicht verfügbar. Einzelne Websites kannst du unten für diese Gruppe sperren.</p>
             <div class="package-list compact">
               <label class="security-toggle">
                 <span><strong>Glücksspiele</strong><small>Nur für diese Gruppe sperren</small></span>
@@ -114,10 +117,13 @@
             <label class="field" id="domainTargetField" hidden><span id="domainTargetLabel">Gerät</span><select id="domainTarget"></select></label>
             <label class="field">
               <span>Website-Adresse</span>
-              <input id="manualDomainInput" type="text" placeholder="z. B. youtube.com" required autocomplete="off">
+              <input id="manualDomainInput" type="text" placeholder="z. B. tiktok.com" required autocomplete="off" aria-describedby="domainAddressHint">
+              <small id="domainAddressHint">Die Domain wird gesperrt, nicht nur ein einzelner Link. Apps können weitere Domains verwenden.</small>
             </label>
+            <p class="muted" id="domainScopeHint">Nur für Kinder: Unter Geräte &amp; Gruppen die Gruppe „Kinder“ anlegen, ihre Geräte zuordnen und hier „Eine Gruppe“ wählen.</p>
             <output id="domainPreview" class="effect-summary" aria-live="polite"></output>
             <button class="refresh-btn" type="submit">Sperrregel speichern</button>
+            <output id="domainSaveStatus" class="effect-summary" role="status" aria-live="polite" data-form-feedback hidden></output>
           </form>
         </app-card>
         <app-card title="Geltungsbereich"><div id="domainScopeSummary" class="effect-summary"></div></app-card>
@@ -251,11 +257,11 @@
   </main>
 
   <script src="config.js"></script>
-  <script src="api.js?v=20261119-polish"></script>
+  <script src="api.js?v=20261120-online"></script>
   <script src="components.js"></script>
   <script src="nethera-select.js?v=20261118-polish2"></script>
   <script src="vendor/lucide.min.js"></script>
   <script src="security-draft.js?v=20261116-topology-draft"></script>
-  <script src="security.js?v=20261119-polish"></script>
+  <script src="security.js?v=20261127-time-priority"></script>
 </body>
 </html>

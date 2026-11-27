@@ -12,6 +12,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.BadRequestException;
 import java.util.Set;
 import at.htlleonding.control.RouterControlPublisher;
+import at.htlleonding.control.TimeControlPublisher;
+import at.htlleonding.control.TimeControlStatus;
 import at.htlleonding.model.BlockList;
 import at.htlleonding.model.Config;
 import at.htlleonding.model.Router;
@@ -71,7 +73,7 @@ public class RouterControlResource {
             throw new BadRequestException("Priorität muss high oder normal sein");
         var preference = entityManager.find(DevicePriority.class, deviceId);
         if (preference == null) {
-            preference = new DevicePriority(); preference.setDeviceId(deviceId);
+            preference = new DevicePriority(); preference.setDeviceId(deviceId); preference.setMode(dto.mode());
             entityManager.persist(preference);
         }
         preference.setMode(dto.mode());
@@ -80,6 +82,8 @@ public class RouterControlResource {
     }
 
     public record PriorityDto(String mode) {}
+    @Inject TimeControlPublisher timePublisher;
+    @Inject TimeControlStatus timeStatus;
 
     @GET
     @Path("status")
@@ -109,16 +113,18 @@ public class RouterControlResource {
             }
         }
 
+        var time = timeStatus.read(routerId, connection);
         return new StatusDto(
                 routerId,
                 connection,
                 state == null ? null : state.getCheckedAt(),
-                new CapabilitiesDto(publisher.enabled(), publisher.enabled()),
+                new CapabilitiesDto(publisher.enabled(), timePublisher.enabled(), publisher.enabled()),
                 new AdblockDto(installed, enabled, adblockApplied),
                 priorityControl.status(routerId, connection),
                 blocklists,
-                Map.of(),
-                confirmed ? state.getError() : null);
+                time.devices(),
+                confirmed ? state.getError() : null,
+                time.checkedAt(), time.error(), "Europe/Vienna", time.applied());
     }
 
     // The agent installs adblock-fast by itself as soon as adblock is wanted. So "install" switches
@@ -149,10 +155,10 @@ public class RouterControlResource {
     // routerId lets the frontend check that a confirmation belongs to the router it shows
     public record StatusDto(long routerId, String connection, Instant checkedAt, CapabilitiesDto capabilities, AdblockDto adblock,
                             Map<String, Object> priority, Map<String, BlocklistStatusDto> blocklists,
-                            Map<String, Object> timeLimits, String error) {
+                            Map<String, Object> timeLimits, String error, Instant timeCheckedAt, String timeError, String timezone, Boolean timeApplied) {
     }
 
-    public record CapabilitiesDto(boolean adblockInstall, boolean devicePriority) {
+    public record CapabilitiesDto(boolean adblockInstall, boolean timeControl, boolean devicePriority) {
     }
 
     public record AdblockDto(boolean installed, boolean enabled, boolean applied) {

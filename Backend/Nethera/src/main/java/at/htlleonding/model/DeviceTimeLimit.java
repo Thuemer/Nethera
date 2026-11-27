@@ -34,6 +34,13 @@ public class DeviceTimeLimit {
     private String status;
     private String note;
 
+    // Legacy/demo rows must not suddenly block a device after a backend upgrade.
+    @Column(name = "router_enforcement", nullable = false)
+    private Boolean routerEnforcement = false;
+
+    public Boolean getRouterEnforcement() { return routerEnforcement; }
+    public void setRouterEnforcement(Boolean value) { routerEnforcement = value; }
+
     public Long getId() {
         return id;
     }

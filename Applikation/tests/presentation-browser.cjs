@@ -83,10 +83,11 @@ const base = process.env.NETHERA_TEST_URL || 'http://localhost:5500';
         draft.request(data, `/api/security/devices/20/preset/${preset.id}`, { method: 'PUT' });
       });
       await topology.locator('#reload-network').click();
-      await topology.waitForFunction(() => document.querySelector('#group-legend').textContent.includes('Local family'));
+      await topology.waitForFunction(() => document.querySelector('#device-picker').options.length === 3);
+      assert.doesNotMatch(await topology.locator('#group-legend').innerText(), /Local family/);
       await topology.locator('#open-device-search').click();
       await topology.locator('#device-picker').selectOption('device-20');
-      assert.match(await topology.locator('#device-details').innerText(), /Priority draft/);
+      assert.doesNotMatch(await topology.locator('#device-details').innerText(), /Priority draft/);
       assert.match(await topology.locator('#device-details').innerText(), /192\.0\.2\.20/);
       assert.match(await topology.locator('#device-details').innerText(), /Online/);
       await topology.locator('#online-filter').click();
@@ -104,11 +105,12 @@ const base = process.env.NETHERA_TEST_URL || 'http://localhost:5500';
       assert.equal(await page.locator('#demo-mode-indicator').isVisible(), true);
       assert.doesNotMatch(await topology.locator('#group-legend').innerText(), /Local family/);
       offline = false; await topology.locator('#reload-network').click();
-      await topology.waitForFunction(() => document.querySelector('#group-legend').textContent.includes('Local family'));
+      await topology.waitForFunction(() => document.querySelector('#device-picker').options.length === 3);
+      assert.doesNotMatch(await topology.locator('#group-legend').innerText(), /Local family/);
       assert.equal(await page.locator('#demo-mode-indicator').isVisible(), false);
       assert.deepEqual(writes, []); assert.deepEqual(errors, []);
       await context.close();
     }
-    console.log('Presentation regressions passed: opt-in demo, normal accounts, live/offline separation, draft groups/presets, router connection status, mobile legend and no API writes.');
+    console.log('Presentation regressions passed: opt-in demo, normal accounts, live/offline separation, stale drafts excluded from live topology, router connection status, mobile legend and no API writes.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

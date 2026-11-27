@@ -41,7 +41,9 @@ public class DeviceTimeLimitsRepository {
         DeviceTimeLimit limit = findByDeviceId(device.getId()).orElseGet(DeviceTimeLimit::new);
         limit.setDevice(device);
         limit.setDailyLimitMinutes(input.getDailyLimitMinutes());
-        limit.setUsedMinutesToday(input.getUsedMinutesToday() == null ? 0 : input.getUsedMinutesToday());
+        // Browser-supplied usage is never a router measurement.
+        limit.setUsedMinutesToday(null);
+        limit.setRouterEnforcement(true);
         limit.setBlockedFrom(input.getBlockedFrom());
         limit.setBlockedUntil(input.getBlockedUntil());
         limit.setStatus(input.getStatus());

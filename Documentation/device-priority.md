@@ -7,11 +7,11 @@ Stand: 27. November 2026. Die neue Funktion entspricht **Schutz → Priorität �
 - **GitHub:** Nach Commit und Push liegen Quellcode, Tests, Migration und Installationsdateien im Repository. Git-Push installiert nichts auf einem Router und startet keinen Cloud-Rollout.
 - **Cudy:** `/usr/bin/nethera-priority` läuft als separater procd-Dienst. `/usr/bin/nethera-agent` und sein Dienst bleiben unverändert. Die neue Komponente nutzt die vorhandene `/etc/config/nethera` lesend, mit eigener MQTT-Client-ID `nethera-priority-<id>`.
 - **Backend:** Speichert Gerätewünsche separat von DNS-/Vorlagenzuweisungen. Neue Tabelle `device_priority`; eigene Version/Rückmeldung in `priority_control_state`.
-- **Frontend:** Nur das Geräteprioritätsformular schreibt live, wenn das Backend `capabilities.devicePriority: true` meldet. Andere Schutzformulare bleiben lokale Entwürfe. Bei altem Backend bleibt auch die Priorität ein Entwurf.
+- **Frontend:** Bei einem Live-Router schreiben AdBlocker und Website-/Geräte-/Gruppensperren weiterhin live wie im bisherigen Cloud-Release. Die Gerätepriorität verwendet bei `capabilities.devicePriority: true` ihren getrennten Schreibweg. Demo/Offline bleibt ein lokaler Entwurf.
 
 ## Nachricht vom Frontend bis zum Router
 
-1. `PUT /api/router-control/priority/devices/{deviceId}` mit `{"mode":"high"}` oder `{"mode":"normal"}`. Router und Gerät werden aus dem angemeldeten Konto geprüft; keine frei wählbare Router-ID.
+1. `PUT /api/router-control/priority/devices/{deviceId}` mit `{"mode":"high"}` oder `{"mode":"normal"}`. Im normalen Quellstand wird das Gerät gegen den Router des Kontos geprüft. Der kompatible Cloud-Build erhält stattdessen die bisherige authentifizierte gemeinsame Nutzung und prüft gegen `nethera.router.id`; keine frei wählbare Router-ID.
 2. Nach erfolgreichem Datenbank-Commit veröffentlicht das Backend den vollständigen Wunsch auf `nethera/<id>/config/priority` mit QoS 1 und retained:
 
    ```json
@@ -41,7 +41,7 @@ Der Router kann beim Cloud-Rollout ausgeschaltet oder an einem anderen Ort sein.
 
 1. Änderungen pullen und [AGENTS.md](../AGENTS.md) sowie `https://cloud.htl-leonding.ac.at/llms.txt` befolgen. Vor jedem Rollout die dort verlangten Skills lesen. Bestehende Images/Deployment-Konfiguration und Datenbank sichern.
 2. Einmal `Backend/Nethera/migrations/20261127_device_priority.sql` auf die bestehende Anwendungsdatenbank anwenden. Sie fügt nur zwei Tabellen hinzu. Keine Datenbank zurücksetzen, kein `drop-and-create`, keine PVCs löschen.
-3. Backend und Frontend aus diesem Stand bauen und nach dem bestehenden Verfahren ausrollen. LeoCloud benötigt `linux/amd64`-Images. Keine Keycloak-, Broker-, Router- oder Zugangsdaten ersetzen.
+3. Den gemeinsamen Release ausschließlich mit `deploy/leocloud/prepare-time-release.mjs` aus dem integrierten Commit erzeugen (siehe neue Anleitung in `deploy/leocloud/README.md`). Backend und Frontend aus dem erzeugten Ordner bauen und nach dem bestehenden Verfahren ausrollen. LeoCloud benötigt `linux/amd64`-Images. Keine Keycloak-, Broker-, Router- oder Zugangsdaten ersetzen.
 4. Die vorhandene MQTT-ACL muss dem Backend Schreiben auf `nethera/+/config/#` und dem jeweiligen Router Lesen auf `nethera/<id>/config/#` sowie Schreiben auf `nethera/<id>/telemetry/#` erlauben. Die Repository-ACL erlaubt das bereits. Die aktive Cloud-ACL vor Änderung prüfen; keine neuen Rechte vergeben, wenn die Regeln vorhanden sind.
 5. Mit dem Konto anmelden, das den Cudy besitzt. In Schutz → Priorität ein bekanntes Gerät wählen, Bevorzugt speichern, danach Status prüfen. Anschließend Normal speichern und Entfernung bestätigen. Nicht bloß den HTTP-Erfolg als Hardware-Nachweis werten.
 6. Bei Rollback zuerst neue Prioritäten auf Normal setzen bzw. den Prioritätsdienst stoppen; alte Backend-/Frontend-Images wiederherstellen. Die zwei neuen Tabellen dürfen bestehen bleiben. Ein Image-Rollback allein nimmt bereits installierte Routerregeln nicht zurück.
@@ -68,3 +68,11 @@ Andere Dienste und Pakete bleiben erhalten. Die gesicherte Ausgangskonfiguration
 ## Prüfung am Testgerät
 
 Siehe [Prüfprotokoll](../openspec/changes/device-priority-control/verification.md): echte Paketzuordnung in beiden Richtungen, Normal-Rücknahme, Dienststart mit gespeichertem Zustand, Stop-Cleanup und unveränderte Prüfsummen der bestehenden Konfiguration. Der temporäre SSH-Schlüssel wurde auf Router und Mac entfernt; eine erneute Anmeldung damit wurde nachweislich abgelehnt. Der Cudy wartet jetzt mit dem neuen Dienst auf die spätere Backend-Anbindung. Die Internetwirkung unter Sättigung und der komplette Cloud-Bedienweg sind noch nicht abgenommen.
+
+## Integrierter Stand mit Zeitplänen und Live-Sperren
+
+Der gemeinsame Stand enthält die Historie von `feat/router-time-schedules` bis `52c9989` plus die Priorisierung aus `f83ad40`. Nicht den normalen Hauptordner direkt als Cloud-Backend bauen: Der bewährte Release-Generator erhält die gemeinsame Router-Nutzung und bytegleiche Anmeldung. Er übernimmt jetzt auch die Prioritätsklassen, Migration und Integrationstests und wendet zusätzlich `priority-cloud.patch` an. Der bisherige Zeitplan-Publisher bleibt separat; die MQTT-Telemetrie verarbeitet sowohl `time` als auch `priority`.
+
+Bei Website- und anderen Schutzformularen gibt es Rückmeldungen direkt am Formular: Speichern läuft, erfolgreich gespeichert oder nicht vollständig gespeichert. „Erfolgreich gespeichert“ bestätigt die Speicherung; „Am Router bestätigt“ ist ein eigener Zustand. Eine Website nur für Kinder: Gruppe „Kinder“ erstellen, Geräte zuordnen, unter Websites sperren „Eine Gruppe“ und „Kinder“ auswählen. Es wird eine Domain gesperrt, nicht nur der Pfad eines einzelnen Links. Automatische Kategorienfilter sind noch nicht implementiert und im Live-Modus deaktiviert.
+
+Der gemeldete TikTok-Zugriff auf der bestehenden Cloud wurde hier nicht an Router/Handy reproduziert. Domain-Speicherung, Gruppen-Zuordnung und API→MQTT-Bestätigung sind isoliert getestet. Ob TikTok auf einem konkreten Gerät vollständig gesperrt ist, muss nach dem Rollout mit dessen tatsächlicher Verbindung und frischen Anfragen geprüft werden; gespeicherte Regeln allein sind dafür kein Beleg.

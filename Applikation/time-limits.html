@@ -44,8 +44,8 @@
           </fieldset>
 
           <div class="form-row">
-            <label class="field"><span>Internet sperren ab</span><input id="blockedFrom" type="time" value="21:00" required></label>
-            <label class="field"><span>Internet wieder erlauben ab</span><input id="blockedUntil" type="time" value="07:00" required></label>
+            <label class="field"><span>Internet sperren ab</span><input id="blockedFrom" type="time" value="21:00"></label>
+            <label class="field"><span>Internet wieder erlauben ab</span><input id="blockedUntil" type="time" value="07:00"></label>
           </div>
           <label class="field"><span>Sperrzeit-Regel</span><select id="limitStatus"><option value="active">Eingeschaltet</option><option value="paused">Ausgeschaltet – keine Zeitsperre</option></select></label>
 
@@ -63,7 +63,6 @@
               </select>
             </label>
 
-          <input id="usedMinutesToday" type="hidden" value="0">
           <label class="field">
             <span>Notiz</span>
             <input id="limitNote" type="text" maxlength="160" placeholder="z. B. Schultag, Gastgerät, Konsole">
@@ -80,7 +79,7 @@
       <app-card title="Vorschau der Regel">
         <div id="schedulePreview" class="effect-summary" aria-live="polite"></div>
         <div id="scheduleTimeline" class="schedule-timeline" hidden>
-          <div class="timeline-heading"><strong>Tagesablauf</strong><span>Täglich · 00–24 Uhr</span></div>
+          <div class="timeline-heading"><strong>Tagesablauf</strong><span>Täglich · Zeitzone Wien</span></div>
           <div id="scheduleTrack" class="schedule-track" role="img"></div>
           <div class="timeline-ticks" aria-hidden="true"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
           <div class="timeline-legend"><span><i class="allowed-swatch"></i>Keine Zeitsperre</span><span><i class="blocked-swatch"></i>Sperrzeit</span></div>
@@ -111,9 +110,9 @@
   </main>
 
   <script src="config.js"></script>
-  <script src="api.js?v=20261119-polish"></script>
+  <script src="api.js?v=20261120-online"></script>
   <script src="components.js"></script>
   <script src="nethera-select.js?v=20261118-polish2"></script>
-  <script src="time-limits.js?v=20261119-polish"></script>
+  <script src="time-limits.js?v=20261122-router-time"></script>
 </body>
 </html>
