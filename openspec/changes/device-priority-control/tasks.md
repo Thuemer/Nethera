@@ -52,3 +52,10 @@
 - [x] 9.2 Coordinate queue ownership with priority agent, report current adaptive rate and keep existing frontend device controls functional.
 - [x] 9.3 Verify controller lifecycle, no competing rate writes, manual override, stale health, rollback and unchanged DNS/time/network settings.
 - [x] 9.4 Run bounded load/latency tests on hardware, document measured limits and deliver source; keep physical-device acceptance explicit.
+
+
+## 10. Capacity-first follow-up
+
+- [x] 10.1 Start optional capacity-first download at the configured ceiling, accelerate recovery and ignore idle-only latency for reductions.
+- [x] 10.2 Verify spare-capacity access for normal/preferred traffic, contention, idle recovery and unchanged original router settings; document inconsistent priority result rather than declaring universal acceptance.
+- [x] 10.3 Document limits, deliver source and retain physical-device acceptance separately.

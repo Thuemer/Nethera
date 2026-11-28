@@ -43,3 +43,13 @@ The router SHALL isolate hosts within configured priority levels and assign norm
 #### Scenario: Autonomous WAN verification
 - **WHEN** two identical direct downloads are classified normal/preferred on a preferred client
 - **THEN** the diagnostic measures both, leaves preferred production classification unchanged, and restores temporary normal-flow rules through finally and a router-side watchdog
+
+
+### Requirement: Capacity-first adaptive download
+An enabled local capacity-first profile SHALL start at its configured download ceiling, recover from transient reductions without a fixed low idle rate, and SHALL NOT reduce a direction solely because of reflector latency while that direction is below its activity threshold. Normal traffic SHALL remain able to borrow unused capacity. Explicit manual bandwidth settings SHALL retain precedence.
+#### Scenario: Fast connection after idle
+- **WHEN** capacity-first starts or a reduced rate recovers without congestion
+- **THEN** it uses or probes towards the configured maximum instead of a hard-coded ISP rate
+#### Scenario: Idle reflector delay
+- **WHEN** only reflector latency is elevated and download is below the configured activity threshold
+- **THEN** that observation alone does not reduce the download shaper

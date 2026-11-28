@@ -156,3 +156,27 @@ func TestAdaptiveRateReadbackEnforcesBounds(t *testing.T) {
 		}
 	}
 }
+
+func TestCapacityFirstUsesCeilingAndFastRecovery(t *testing.T) {
+	p := adaptiveFixture()
+	p.CapacityFirst = true
+	for _, maximum := range []int{10000, 60000, 300000, 1000000} {
+		b := priorityBandwidth{Enabled: true, DownloadKbit: maximum, UploadKbit: 10000}
+		cfg, err := renderAdaptive(p, b, "wan", "br-lan")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, setting := range []string{fmt.Sprintf("base_dl_shaper_rate_kbps=%d\n", maximum), "shaper_rate_adjust_up_load_high=1.10\n", "shaper_rate_adjust_up_load_low=1.20\n", "shaper_rate_adjust_down_load_low=1.00\n", "dl_owd_delta_thr_ms=10.0\n", "dl_avg_owd_delta_thr_ms=30.0\n"} {
+			if !strings.Contains(string(cfg), setting) {
+				t.Fatal("missing capacity policy", maximum, setting)
+			}
+		}
+		if p.initialRate(maximum) != maximum {
+			t.Fatal("queue initializes below capacity-first ceiling")
+		}
+	}
+	p.CapacityFirst = false
+	if p.initialRate(1000000) != 35000 {
+		t.Fatal("legacy profile changed")
+	}
+}

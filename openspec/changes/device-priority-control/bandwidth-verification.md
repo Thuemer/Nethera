@@ -128,3 +128,29 @@ Lifecycle hardware checks: explicit temporary manual 60/10 config stopped adapta
 The diagnostic watchdog was corrected: this BusyBox has neither nohup nor timeout. The portable detached shell with ignored HUP and closed standard descriptors was verified across SSH disconnect; a stopped worker resumed and reconciled successfully after the 2 s proof timer. Earlier nohup-based interruption coverage was not valid; ordinary finally restoration had succeeded. The diagnostic now accepts `--streams 4`, rejects failed HTTP/timing samples, restores saved wishes and never persists test device assignments.
 
 Software checks: Go race tests (including config roundtrip/no-reset, manual override, stale/wrong-PID health, foreign service and rate bounds), 125 frontend unit tests, isolated priority/time browser fixture with fresh/stale adaptive feedback, compatibility release preservation test and shell/Bash syntax. No cloud rollout. Temporary diagnostic SSH access remains only for the unfinished physical-device acceptance; remove the exact key and local key files when that diagnosis ends.
+
+
+## Capacity-first follow-up, 28 November 2026
+
+User clarified that preferred must not mean a fixed low speed and normal devices must remain usable. Observed the prior controller at about 2.6 Mbit/s following latency events, with slow default recovery. Added optional local capacityFirst profile: initialize/base at configured maximum, +10% high-load probing, +20% low-load recovery per decay interval, no low idle decay; 10/30 ms download OWD thresholds. Idle (<1000 kbit/s in that direction) latency alone cannot request reduction. Bounds/manual precedence, original CAKE tins and host isolation remain unchanged. This trades tighter latency for faster capacity access, not universal throughput guarantees.
+
+Installed `priority-capacity-20261128-v2`, capacityFirst=true, 1–1000 Mbit/s download bounds and unchanged fixed 10 Mbit/s upload. Backup `/root/nethera-capacity-before/` holds the previously working binary/controller/local config and original setting hashes. An initial 15-minute installation rollback expired while diagnostics continued; its affected comparison was discarded. The new binary, config and local controller patch were then explicitly verified before the valid v2 runs. A repeat that overlapped another workload was also discarded, including the overlapping final baseline phase; do not count it as acceptance evidence.
+
+Valid v2 controlled direct 30 s four-vs-four TCP result: preferred 15.684 / normal 7.571 Mbit/s. Initial CAKE rate was 1000 Mbit/s, final 301.962 Mbit/s. These application flows did not demonstrate continuous saturation of a 300-Mbit/s shared link, so their ratio alone does not prove universal priority at that capacity.
+
+Separate v2 spare-capacity sequence, identical four direct 20 s downloads:
+
+| Phase | Aggregate payload Mbit/s | Queue rate at end Mbit/s |
+| --- | ---: | ---: |
+| All normal, own queues removed (before) | 20.877 | none |
+| Preferred test group alone | 16.170 | 810.000 |
+| Normal test group alone, other preferred device idle | 19.574 | 708.580 |
+
+Requests all had valid HTTP 200, received bytes and approximately 20 s durations. This confirms no low static normal/preferred rate ceiling in these runs; varying application results do not prove exact full-link utilization. The overlapping after-baseline is excluded. Saved device wishes were restored without persistence changes. No real 300-Mbit/s ISP acceptance is claimed.
+
+Deterministic tests execute the actual vendored Bash decision block (not a duplicate algorithm): idle jitter cannot lower rates, active congestion still reduces, clear high load probes up, low idle rates recover and configured 10/60/300/1000 Mbit/s ceilings hold. Go tests verify rendering/initialization at those ceilings and preserve the legacy profile and explicit manual overrides. System macOS Bash 3 cannot execute associative-array code; these tests passed using the installed OpenWrt Bash over SSH, without network load or configuration mutations.
+
+
+Valid independent v2 repeat, four TCP flows per group over 30 s: preferred **10.458**, normal **13.044 Mbit/s**, ratio 0.802; final CAKE rate **750.000 Mbit/s**. Include this negative comparison. The approximately 23.5-Mbit/s payload did not establish saturation of that configured shaper. Thus capacity-first fixes the low startup/idle policy but reliable Internet preference with near-full utilization remains **unverified**. Do not advertise the positive first comparison as a general solution or promise that a preferred device must always win a speedtest.
+
+Final v2 binary includes validation allowing capacity-first ceilings below the legacy commissioning base (e.g. 10 Mbit/s), because that base is unused in this mode. Go race tests, five real-Bash policy tests and strict OpenSpec/shell syntax passed. Priority service restart/manual override/all-normal lifecycle and original-config hash checks are recorded separately; temporary diagnostic access remains for unfinished physical acceptance.

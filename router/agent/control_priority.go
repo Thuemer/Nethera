@@ -351,7 +351,7 @@ func (w priorityWorker) applyPriority(c priorityControl, bandwidth priorityBandw
 					return err
 				}
 			}
-			rate = adaptivePlan.BaseDownloadKbit
+			rate = adaptivePlan.initialRate(bandwidth.DownloadKbit)
 		}
 		if err = w.ensureShapedQueue(dev, rate, i == 1); err != nil {
 			return err

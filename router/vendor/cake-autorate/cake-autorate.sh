@@ -1396,8 +1396,9 @@ do
 
 				load_condition[dl]=${dl_rate_load_condition} load_condition[ul]=${ul_rate_load_condition}
 
-				((bufferbloat_detected[dl])) && load_condition[dl]+=_bb
-				((bufferbloat_detected[ul])) && load_condition[ul]+=_bb
+				# Idle reflector jitter is not evidence that our traffic fills the link.
+				((bufferbloat_detected[dl] && achieved_rate_kbps[dl] >= connection_active_thr_kbps)) && load_condition[dl]+=_bb
+				((bufferbloat_detected[ul] && achieved_rate_kbps[ul] >= connection_active_thr_kbps)) && load_condition[ul]+=_bb
 
 				# Update shaper rates
 				for direction in dl ul
