@@ -4,3 +4,6 @@
 /etc/rc.d/K10nethera-priority
 /etc/nethera-priority.json
 /etc/nethera-priority-bandwidth.json
+/etc/init.d/nethera-autorate
+/etc/nethera-priority-adaptive.json
+/usr/lib/nethera-priority/cake-autorate/

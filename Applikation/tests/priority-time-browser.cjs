@@ -91,6 +91,12 @@ const root=process.env.NETHERA_TEST_ROOT||path.resolve(__dirname,'..');
   assert.deepEqual(bandwidth.desired,{enabled:true,downloadKbit:50000,uploadKbit:10000});
   assert.ok(!await page.locator('#priorityList').innerText().then(t=>t.includes('Am Router bestätigt')));
   assert.equal(control.timeApplied,true);assert.equal(control.adblock.enabled,true);
+  bandwidth={configured:false,reported:{enabled:true,downloadKbit:1000000,uploadKbit:10000,adaptive:true,active:true,currentDownloadKbit:42000},applied:true};
+  await page.evaluate(()=>loadPriorityBandwidth());
+  assert.match(await page.locator('#priorityBandwidthStatus').innerText(),/Automatische Downloadregelung.*42.0/);
+  bandwidth.applied=false;
+  await page.evaluate(()=>loadPriorityBandwidth());
+  assert.ok(!await page.locator('#priorityBandwidthStatus').innerText().then(t=>t.includes('Automatische Downloadregelung am Router aktiv')));
   // Exercise existing live protection paths after the new priority write.
   await page.evaluate(()=>updateBlocklistDomain(5,'example.com','blocked.example'));
   await page.evaluate(()=>{document.getElementById('adProtectionEnabled').checked=false;return saveAdProtection({preventDefault(){}})});

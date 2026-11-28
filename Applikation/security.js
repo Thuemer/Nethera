@@ -696,6 +696,7 @@ function renderPriorityBandwidth() {
   for (const id of ['priorityBandwidthEnabled','priorityDownloadMbit','priorityUploadMbit']) document.getElementById(id).disabled = !data;
   document.querySelector('#priorityBandwidthForm [type="submit"]')?.toggleAttribute('disabled', !data);
   document.getElementById('priorityBandwidthStatus').textContent = !data ? 'Bandbreiteneinstellungen noch nicht verfügbar. Backend muss aktualisiert werden.'
+    : data.applied && data.reported?.adaptive && data.reported?.active ? `Automatische Downloadregelung am Router aktiv: aktuell ${(Number(data.reported.currentDownloadKbit || 0) / 1000).toFixed(1)} Mbit/s. Feste Grenzen zu speichern beendet die lokale Automatik.`
     : data.applied ? 'Bandbreitensteuerung am Router bestätigt.'
     : values?.enabled && !Object.values(state.routerControl?.priority || {}).some(item => item.mode === 'high') ? 'Grenzen gespeichert. Die Steuerung wird aktiv, sobald ein Gerät bevorzugt ist.'
     : values?.enabled ? 'Grenzen geladen. Routerbestätigung ausstehend; mit Status prüfen aktualisieren.'

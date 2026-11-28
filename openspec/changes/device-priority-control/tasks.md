@@ -38,10 +38,17 @@
 
 - [x] 7.1 Tune rate-scaled bursts/quanta and verify readback without repeatedly rewriting matching classes.
 - [x] 7.2 Re-run controlled TCP contention and spare-capacity checks on the installed binary, preserve original settings and document actual-client limitations.
-- [ ] 7.3 Verify revised priority with actual simultaneous phone/laptop Internet traffic; remove the current temporary SSH access after diagnosis is finished.
+- [ ] 7.3 Remove current temporary SSH access after final bandwidth-policy acceptance. Actual phone/laptop preference swapping was verified at 20 Mbit/s; Internet advantage after user-requested release to port maximum remains unconfirmed.
 
 ## 8. Internet research and direct-flow comparison
 
 - [x] 8.1 Research official OpenWrt/CAKE guidance and compare local and direct WAN traffic; discard failed and proxy-confounded comparisons as acceptance evidence.
 - [x] 8.2 Integrate CAKE host isolation, explicit normal/preferred tins and strict readback; retain safe legacy cleanup and refusal of foreign schedulers.
 - [x] 8.3 Test installed binary with identically sourced direct normal/preferred downloads and normal-only capacity; verify unchanged original settings and publish evidence/code.
+
+## 9. Latency-based adaptive download control
+
+- [x] 9.1 Vendor and audit stable cake-autorate; add owned service, bounded configuration and fresh-response health.
+- [x] 9.2 Coordinate queue ownership with priority agent, report current adaptive rate and keep existing frontend device controls functional.
+- [x] 9.3 Verify controller lifecycle, no competing rate writes, manual override, stale health, rollback and unchanged DNS/time/network settings.
+- [x] 9.4 Run bounded load/latency tests on hardware, document measured limits and deliver source; keep physical-device acceptance explicit.

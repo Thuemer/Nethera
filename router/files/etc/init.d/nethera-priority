@@ -52,6 +52,7 @@ start_agent() {
 		NETHERA_WAN_IFACE="$wan_iface" \
 		NETHERA_TLS_CA="$tls_ca"
 	procd_set_param stderr 1
+ procd_set_param term_timeout 15
 	# Restart 5 s after an unexpected exit, without a retry limit
 	procd_set_param respawn 3600 5 0
 	procd_close_instance
@@ -68,5 +69,8 @@ service_triggers() {
 
 # Run after procd has stopped the worker, so reconciliation cannot recreate queues.
 service_stopped() {
+ if [ -f /etc/init.d/nethera-autorate ] && grep -q "# Nethera priority adaptive controller" /etc/init.d/nethera-autorate; then
+  /etc/init.d/nethera-autorate stop
+ fi
 	"$PROG" --priority-remove
 }

@@ -9,9 +9,10 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 cd "$ROOT/router/agent"
 go test ./...
-mkdir -p "$STAGE/usr/bin" "$STAGE/etc/init.d" "$STAGE/lib/upgrade/keep.d"
+mkdir -p "$STAGE/usr/bin" "$STAGE/etc/init.d" "$STAGE/lib/upgrade/keep.d" "$STAGE/usr/lib/nethera-priority/cake-autorate"
 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -ldflags '-s -w' -o "$STAGE/usr/bin/nethera-priority" .
-cp "$ROOT/router/files/etc/init.d/nethera-priority" "$STAGE/etc/init.d/"
+cp "$ROOT/router/files/etc/init.d/nethera-priority" "$ROOT/router/files/etc/init.d/nethera-autorate" "$STAGE/etc/init.d/"
+cp "$ROOT/router/vendor/cake-autorate/"* "$STAGE/usr/lib/nethera-priority/cake-autorate/"
 cp "$ROOT/router/files/lib/upgrade/keep.d/nethera-priority" "$STAGE/lib/upgrade/keep.d/"
 tar -C "$STAGE" -czf - . | ssh "$HOST" '
 set -eu
@@ -23,12 +24,19 @@ if [ -f /etc/init.d/nethera-priority ]; then
  grep -q -- "--priority-only" /etc/init.d/nethera-priority || exit 1
 fi
 # Fetch scheduler support before stopping a working priority service.
-apk add tc-full kmod-sched-core kmod-sched-cake
+if [ -f /etc/init.d/nethera-autorate ]; then
+ grep -q "# Nethera priority adaptive controller" /etc/init.d/nethera-autorate || exit 1
+fi
+apk add tc-full kmod-sched-core kmod-sched-cake bash fping
 if [ -f /etc/init.d/nethera-priority ]; then
  /etc/init.d/nethera-priority stop
 fi
 cp "$stage/usr/bin/nethera-priority" /usr/bin/nethera-priority
 chmod 755 /usr/bin/nethera-priority
+mkdir -p /usr/lib/nethera-priority/cake-autorate
+cp "$stage/usr/lib/nethera-priority/cake-autorate/"* /usr/lib/nethera-priority/cake-autorate/
+cp "$stage/etc/init.d/nethera-autorate" /etc/init.d/nethera-autorate
+chmod 755 /etc/init.d/nethera-autorate
 cp "$stage/etc/init.d/nethera-priority" /etc/init.d/nethera-priority
 chmod 755 /etc/init.d/nethera-priority
 cp "$stage/lib/upgrade/keep.d/nethera-priority" /lib/upgrade/keep.d/nethera-priority

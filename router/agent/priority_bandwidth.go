@@ -19,8 +19,11 @@ type priorityBandwidth struct {
 }
 type priorityBandwidthReport struct {
 	priorityBandwidth
-	Source string `json:"source"`
-	Active bool   `json:"active"`
+	Source              string `json:"source"`
+	Active              bool   `json:"active"`
+	Adaptive            bool   `json:"adaptive,omitempty"`
+	CurrentDownloadKbit int    `json:"currentDownloadKbit,omitempty"`
+	MinDownloadKbit     int    `json:"minDownloadKbit,omitempty"`
 }
 
 func (b priorityBandwidth) validate() error {
@@ -83,7 +86,7 @@ func (w priorityWorker) ensureShapedQueue(dev string, rate int, download bool) e
 	if !ownsPriorityQueue(out) && !freePriorityQueue(out) {
 		return fmt.Errorf("foreign root qdisc on %s; left unchanged", dev)
 	}
-	if strings.Contains(out, "qdisc cake 7d00: root") {
+	if strings.Contains(out, "qdisc cake 7d00: root") && !strings.Contains(out, "autorate-ingress") {
 		if w.verifyShapedQueue(dev, rate, download) == nil {
 			return nil
 		}
@@ -110,9 +113,13 @@ func cakeQueueArgs(verb, dev string, rate int, download bool) []string {
 	return []string{"qdisc", verb, "dev", dev, "root", "handle", priorityShaperHandle, "cake", "bandwidth", fmt.Sprintf("%dkbit", rate), "diffserv3", mode, nat, direction, "split-gso", "no-ack-filter", "nowash", "rtt", "100ms", "raw", "memlimit", "4mb", "fwmark", "0"}
 }
 func (w priorityWorker) verifyShapedQueue(dev string, rate int, download bool) error {
+	_, err := w.cakeRateReadback(dev, rate, rate, download)
+	return err
+}
+func (w priorityWorker) cakeRateReadback(dev string, minimum, maximum int, download bool) (int, error) {
 	data, err := w.run("tc", "-j", "qdisc", "show", "dev", dev)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var queues []struct {
 		Kind    string `json:"kind"`
@@ -132,10 +139,11 @@ func (w priorityWorker) verifyShapedQueue(dev string, rate int, download bool) e
 			Overhead  int    `json:"overhead"`
 			Memlimit  int    `json:"memlimit"`
 			FWMark    string `json:"fwmark"`
+			Autorate  string `json:"autorate"`
 		} `json:"options"`
 	}
 	if err = json.Unmarshal(data, &queues); err != nil {
-		return err
+		return 0, err
 	}
 	mode := "dual-srchost"
 	if download {
@@ -144,9 +152,9 @@ func (w priorityWorker) verifyShapedQueue(dev string, rate int, download bool) e
 	is := func(v *bool, want bool) bool { return v != nil && *v == want }
 	for _, q := range queues {
 		o := q.Options
-		if q.Kind == "cake" && q.Handle == priorityShaperHandle && q.Root && o.Bandwidth == int64(rate)*125 && o.Diffserv == "diffserv3" && o.Flowmode == mode && is(o.Nat, !download) && is(o.Ingress, download) && is(o.Wash, false) && is(o.SplitGSO, true) && is(o.Raw, true) && o.AckFilter == "disabled" && o.RTT == 100000 && o.Overhead == 0 && o.Memlimit == 4194304 && (o.FWMark == "0" || o.FWMark == "0x0") {
-			return nil
+		if q.Kind == "cake" && q.Handle == priorityShaperHandle && q.Root && o.Bandwidth >= int64(minimum)*125 && o.Bandwidth <= int64(maximum)*125 && o.Autorate == "" && o.Diffserv == "diffserv3" && o.Flowmode == mode && is(o.Nat, !download) && is(o.Ingress, download) && is(o.Wash, false) && is(o.SplitGSO, true) && is(o.Raw, true) && o.AckFilter == "disabled" && o.RTT == 100000 && o.Overhead == 0 && o.Memlimit == 4194304 && (o.FWMark == "0" || o.FWMark == "0x0") {
+			return int(o.Bandwidth / 125), nil
 		}
 	}
-	return fmt.Errorf("CAKE rate/host-isolation/priority readback failed on %s", dev)
+	return 0, fmt.Errorf("CAKE rate/host-isolation/priority readback failed on %s", dev)
 }

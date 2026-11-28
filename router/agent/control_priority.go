@@ -39,13 +39,14 @@ type priorityStatus struct {
 	Error     string                  `json:"error,omitempty"`
 }
 type priorityWorker struct {
-	run  func(string, ...string) ([]byte, error)
-	read func(string) ([]byte, error)
-	glob func(string) ([]string, error)
+	run      func(string, ...string) ([]byte, error)
+	read     func(string) ([]byte, error)
+	glob     func(string) ([]string, error)
+	adaptive *priorityAdaptive
 }
 
 func newPriorityWorker() priorityWorker {
-	return priorityWorker{run: func(name string, args ...string) ([]byte, error) {
+	w := priorityWorker{run: func(name string, args ...string) ([]byte, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 		out, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
@@ -54,6 +55,8 @@ func newPriorityWorker() priorityWorker {
 		}
 		return out, nil
 	}, read: os.ReadFile, glob: filepath.Glob}
+	w.adaptive = newPriorityAdaptive(w.run)
+	return w
 }
 func parsePriority(data []byte) (priorityControl, error) {
 	var c priorityControl
@@ -153,6 +156,11 @@ func (w priorityWorker) ownedInterfaces() ([]string, error) {
 	return result, nil
 }
 func (w priorityWorker) cleanup() error {
+	if w.adaptive != nil {
+		if err := w.adaptive.stop(); err != nil {
+			return err
+		}
+	}
 	// Inspect before deleting; never flush fw4 or delete a foreign qdisc.
 	raw, err := w.run("nft", "list", "tables")
 	if err != nil {
@@ -245,6 +253,15 @@ func (w priorityWorker) reconcile(c priorityControl) priorityStatus {
 	if err == nil {
 		err = w.applyPriority(c, bandwidth)
 	}
+	if w.adaptive != nil {
+		if p, e := w.adaptive.plan(c, bandwidth); e == nil && p != nil {
+			result.Bandwidth.Adaptive = true
+			result.Bandwidth.MinDownloadKbit = p.MinDownloadKbit
+			if devices, _, e := w.discover(); e == nil && len(devices) > 1 {
+				result.Bandwidth.CurrentDownloadKbit, _ = w.cakeRateReadback(devices[1], p.MinDownloadKbit, bandwidth.DownloadKbit, true)
+			}
+		}
+	}
 	result.Bandwidth.Active = err == nil && bandwidth.Enabled && hasHighPriority(c)
 	if err != nil {
 		result.Error = err.Error()
@@ -301,10 +318,40 @@ func (w priorityWorker) applyPriority(c priorityControl, bandwidth priorityBandw
 			unmapped = append(unmapped, mac)
 		}
 	}
+	var adaptivePlan *priorityAdaptiveConfig
+	adaptiveRunning := false
+	if w.adaptive != nil {
+		adaptivePlan, err = w.adaptive.plan(c, bandwidth)
+		if err != nil {
+			_ = w.adaptive.stop()
+			return err
+		}
+		if adaptivePlan == nil {
+			if err = w.adaptive.stop(); err != nil {
+				return err
+			}
+		} else {
+			adaptiveRunning, err = w.adaptive.prepare(*adaptivePlan, bandwidth, devices[0], devices[1])
+			if err != nil {
+				return err
+			}
+		}
+	}
 	for i, dev := range devices {
 		rate := bandwidth.UploadKbit
 		if i == 1 {
 			rate = bandwidth.DownloadKbit
+		}
+		if i == 1 && adaptivePlan != nil {
+			if adaptiveRunning {
+				if _, e := w.cakeRateReadback(dev, adaptivePlan.MinDownloadKbit, bandwidth.DownloadKbit, true); e == nil {
+					continue
+				}
+				if err = w.adaptive.stop(); err != nil {
+					return err
+				}
+			}
+			rate = adaptivePlan.BaseDownloadKbit
 		}
 		if err = w.ensureShapedQueue(dev, rate, i == 1); err != nil {
 			return err
@@ -373,10 +420,14 @@ func (w priorityWorker) applyPriority(c priorityControl, bandwidth priorityBandw
 	if len(unmapped) > 0 {
 		return fmt.Errorf("no current IP neighbor for %s; waiting for device", strings.Join(unmapped, ", "))
 	}
+	if adaptivePlan != nil {
+		return w.adaptive.start()
+	}
 	return nil
 }
 func runPriority(ctx context.Context, cfg Config) error {
 	worker := newPriorityWorker()
+	defer worker.adaptive.stop()
 	messages := make(chan []byte, 1)
 	connected := make(chan struct{}, 1)
 	options := mqtt.NewClientOptions().AddBroker(cfg.BrokerURL()).SetClientID(fmt.Sprintf("nethera-priority-%d", cfg.RouterID)).SetUsername(cfg.Username).SetPassword(cfg.Password).SetAutoReconnect(true).SetConnectRetry(true).SetConnectRetryInterval(10 * time.Second).SetKeepAlive(30 * time.Second).SetConnectTimeout(15 * time.Second).SetWriteTimeout(10 * time.Second)

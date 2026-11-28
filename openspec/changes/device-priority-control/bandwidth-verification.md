@@ -1,6 +1,6 @@
 # Bandwidth verification — 2026-11-27
 
-Current runtime: `priority-cake-20261127-v4`, diagnostic limits 20000/10000 kbit/s. HTB/DRR sections below are historical trials, superseded by the CAKE follow-up at the end.
+Current runtime: `priority-cake-20261127-v4`. On the user’s later request, download was raised from the 20000 kbit/s diagnostic ceiling to 1000000 kbit/s (verified 1-Gbit/s WAN port); upload remains 10000 kbit/s. HTB/DRR sections below are historical trials, superseded by the CAKE follow-up at the end.
 
 ## Implementation
 
@@ -89,3 +89,42 @@ Stop/start testing removed only the owned queues/table and restored active readb
 
 
 Final housekeeping removed only our temporary diagnostic/staging executables from router RAM storage. MemAvailable rose from 28,732 to 71,176 KiB; no claim is made that memory pressure caused the earlier results. A final rerun of the reusable 15 s production-classification test after cleanup measured preferred **6.053 Mbit/s** (11,351,534 bytes / 15.00253 s) and normal **3.781 Mbit/s** (7,091,694 bytes / 15.005776 s), ratio **1.601**. This lower advantage is included rather than selecting only the best run. Test exceptions were removed; active CAKE readback remains at 20/10 Mbit/s. Original settings, original running agent and DNS/time state still match the baseline. Overlay has 19.7 MiB free. Temporary SSH access is retained solely for the unfinished actual-device acceptance.
+
+
+## User-requested removal of the 20 Mbit/s ceiling
+
+Before the change, the user confirmed both real-device directions at 20 Mbit/s: preferred laptop 12.97 vs normal phone 6.59; after swapping preference, preferred phone 15.39 vs normal laptop 1.05. This confirms that the working limited profile follows the frontend choice.
+
+The user then explicitly requested maximum performance and autonomous retesting. Verified WAN speed 1000 Mbit/s, backed up the local bandwidth file to `/root/nethera-priority-research-before/bandwidth-before-unlimit.json`, and changed only local downloadKbit to 1000000. Upload remains 10000; desired device modes/version are unchanged. This is a physical-port ceiling, not a measured ISP rate or a claim of 1 Gbit/s Internet service. CAKE readback reports 1Gbit; no software/firmware change was needed.
+
+- Four bounded direct Internet downloads averaged 18.72 Mbit/s combined in that run. The attempted priority pair then returned HTTP 429. The failed pair was discarded, and further requests to that server stopped.
+- macOS download-only networkQuality (20 s bound) reported 19.84 Mbit/s; received bytes / phase duration averaged 17.86 Mbit/s. This is a current workload observation, not the contract speed or proof of a remaining 20 Mbit/s cap.
+- Local router-to-Mac normal-tin transfer: 100,000,000 bytes / 4.050029 s = 197.53 Mbit/s, proving that the removed 20 Mbit/s ceiling no longer constrains that path.
+- Two concurrent bounded local socket-classified transfers: preferred 100,000,000 bytes / 2.134911 s = 374.72 Mbit/s; normal 100,000,000 bytes / 4.630617 s = 172.76 Mbit/s. Both were on the Mac, not the actual phone/laptop pair. Completion averages include the period after the faster flow finished; do not add them to infer simultaneous Internet capacity.
+
+Conclusion: download is released up to the port maximum and local scheduling still differentiates test queues. Internet priority under the new high ceiling is **not reliably verified**: a shaper above the upstream bottleneck cannot be assumed to control it. Do not equate local results or applied=true with a guaranteed Internet speedtest advantage. A limit near the real connection rate, rather than the old arbitrary 20 Mbit/s, remains the standard approach if strong Internet QoS is required. The current maximum-download setting is retained as requested; no silent return to 20 Mbit/s.
+
+Temporary local test rules/executables were removed. Original configuration/agent/DNS/time hashes remain intact; the priority worker is resumed and the original agent remains running. Diagnostic SSH access remains until the final bandwidth-policy acceptance is settled.
+
+
+## Adaptive download commissioning, 28 November 2026
+
+Installed `priority-adaptive-20261128-v2`: stable cake-autorate v3.2.1 pinned to 7157e2fe3e90e5feee78d55fee8593d08a56f3a1; dedicated service, no upstream installer/SQM, WAN-bound fping, download only. Local bounds 1/35/1000 Mbit/s min/base/max; fixed upload 10. The base is an idle/start value, not a cap. No foreign root, UCI, original agent or existing DNS/time service was replaced.
+
+Eight direct preferred HTTPS downloads for 30 s all returned HTTP 200 with valid bounded durations. Payload aggregate was about 16.84 Mbit/s; actual CAKE rate rose from 35 to approximately 55 Mbit/s. Two priority reconciliations during load preserved the same controller PID and did not reset its rate. Rate and goodput are distinct measurements.
+
+Identical direct Apple HTTPS downloads, controlled normal port exceptions only, production preferred MAC/IP rules, 30 s:
+
+| Workload | Preferred aggregate Mbit/s | Normal aggregate Mbit/s |
+| --- | ---: | ---: |
+| One TCP flow per group, 25 s | 7.355 | 8.566 |
+| Four flows per group, first run | 12.153 | 7.614 |
+| Four flows per group, repeat | 14.153 | 6.426 |
+
+During the repeat, sampled CAKE rates ranged 35.499–67.080 Mbit/s. Both tins had backlog in several samples (e.g. normal 226338 bytes / preferred 113620 bytes), and the highest sampled normal/preferred average queue delays were 187478/60712 microseconds. This is a positive controlled contention result, not evidence of consistently low latency or guaranteed physical-device throughput. Do not omit the single-flow counterexample. Real phone/laptop acceptance and swapping preference remain open.
+
+Lifecycle hardware checks: explicit temporary manual 60/10 config stopped adaptation; all-normal removed owned queues; restoring the unchanged saved desired state restarted adaptation. Full priority-service stop/start removed and restored queues/controller cleanly. Original nethera-agent PID 2665 remained unchanged. All /etc/config/*, original agent binary/init, DNS and time state hashes matched `/root/nethera-adaptive-before/hashes`. The desired device/version JSON was unchanged. Installer rollback had previously restored the old binary at its safety timeout; the tested v2 was then reinstalled intentionally and that pending marker cleared.
+
+The diagnostic watchdog was corrected: this BusyBox has neither nohup nor timeout. The portable detached shell with ignored HUP and closed standard descriptors was verified across SSH disconnect; a stopped worker resumed and reconciled successfully after the 2 s proof timer. Earlier nohup-based interruption coverage was not valid; ordinary finally restoration had succeeded. The diagnostic now accepts `--streams 4`, rejects failed HTTP/timing samples, restores saved wishes and never persists test device assignments.
+
+Software checks: Go race tests (including config roundtrip/no-reset, manual override, stale/wrong-PID health, foreign service and rate bounds), 125 frontend unit tests, isolated priority/time browser fixture with fresh/stale adaptive feedback, compatibility release preservation test and shell/Bash syntax. No cloud rollout. Temporary diagnostic SSH access remains only for the unfinished physical-device acceptance; remove the exact key and local key files when that diagnosis ends.

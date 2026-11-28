@@ -130,6 +130,7 @@ func TestCakeReadbackRejectsWrongRateIsolationOrTinPolicy(t *testing.T) {
 		{"gso", `"split_gso":true`, `"split_gso":false`}, {"rtt", "100000,", "300000,"},
 		{"mark", `"fwmark":"0"`, `"fwmark":"255"`}, {"foreign", "7d00:", "1:"},
 		{"missing", `"nat":true,`, ""},
+		{"native autorate", `"fwmark":"0"`, `"fwmark":"0","autorate":"ingress"`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			w := priorityWorker{run: func(string, ...string) ([]byte, error) {
